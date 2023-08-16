@@ -23,13 +23,15 @@ namespace GameCore
             Type, FieldInfo, MemberExpression, IndexExpression, Type[], ParameterExpression,
             (bool isSupported, Expression writer, MemberAssignment memberBinding)>
             GenericTypeSupport =
-                (type, fieldInfo, fieldVisit, writerToRead, genericArguments, writerToWrite) =>
+                (type, fieldInfo, fieldInstance, writerToRead, genericArguments, writerToWrite) =>
         {
             //检测调用时想要的是 是否支持 还是 读写方法
             bool wantedResultIsSupported = fieldInfo == null;
 
             if (type.GetGenericTypeDefinition() == typeof(List<>))
             {
+                var write_LoopIndex = Expression.Variable(typeof(int), "i");
+                var write_BreakLabel = Expression.Label("break");
 
                 var read_NewListExpression = Expression.New(typeof(List<>).MakeGenericType(genericArguments[0]));
                 var read_LoopIndex = Expression.Variable(typeof(int), "i");
@@ -37,45 +39,42 @@ namespace GameCore
 
                 return (
                     true,
-                    //*== foreach (T item in obj)
+                    //*== for (int i = 0; i < values.Length ; i++)               values is List<T>
                     //*== {
-                    //*==   method.Invoke(null, new object[] { item, writer });
+                    //*==   method.Invoke(null, new object[] { values[i], writer });
                     //*== }
                     Expression.Block(
-                        typeof(List<>).MakeGenericType(genericArguments[0]),
+                        typeof(void),
                         new ParameterExpression[]
                         {
-                            read_LoopIndex
+                            write_LoopIndex
                         },
                         new Expression[]
                         {
-                            read_NewListExpression,
                             //定义一个类似 for 语句的循环
                             Expression.Loop(
                                 Expression.IfThenElse(
                                     //检测是否遍历完成
                                     Expression.LessThan(
-                                        read_LoopIndex,
-                                        Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListCount()
+                                        write_LoopIndex,
+                                        fieldInstance.ListCount()
                                     ),
                                     //遍历时执行
                                     Expression.Block(
-                                        //为列表添加元素
-                                        read_NewListExpression.ListAdd(
-                                            //把写入器对应的区块投给 T 的字节读取器
-                                            Expression.Call(
-                                                null,
-                                                Expression.Constant(ByteReader.GetReader(genericArguments[0].FullName), typeof(MethodInfo)),
-                                                Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListItem(read_LoopIndex)
-                                            )
+                                        //调用字节写入器
+                                        Expression.Call(
+                                            null,
+                                            Expression.Constant(ByteWriter.GetWriter(genericArguments[0].FullName), typeof(MethodInfo)),
+                                            fieldInstance.ListItem(write_LoopIndex),
+                                            writerToWrite
                                         ),
                                         //等效于 i++
-                                        Expression.PostIncrementAssign(read_LoopIndex)
+                                        Expression.PostIncrementAssign(write_LoopIndex)
                                     ),
                                     //如果遍历完了就 break
-                                    Expression.Break(read_BreakLabel)
+                                    Expression.Break(write_BreakLabel)
                                 ),
-                                read_BreakLabel
+                                write_BreakLabel
                             )
                         }
                     ),
@@ -133,11 +132,53 @@ namespace GameCore
             }
             else if (type.IsArray)
             {
-                var read_NewArrayExpression = Expression.NewArrayBounds(genericArguments[0], fieldVisit);
+                var write_LoopIndex = Expression.Variable(typeof(int), "i");
+                var write_BreakLabel = Expression.Label("break");
+
+                var read_NewArrayExpression = Expression.NewArrayBounds(genericArguments[0], fieldInstance);
                 var read_LoopIndex = Expression.Variable(typeof(int), "i");
                 var read_BreakLabel = Expression.Label("break");
 
-                return (true, null,
+                return (true,
+                    //*== for (int i = 0; i < values.Length ; i++)               values is T[]
+                    //*== {
+                    //*==   method.Invoke(null, new object[] { values[i], writer });
+                    //*== }
+                    Expression.Block(
+                        typeof(void),
+                        new ParameterExpression[]
+                        {
+                            write_LoopIndex
+                        },
+                        new Expression[]
+                        {
+                            //定义一个类似 for 语句的循环
+                            Expression.Loop(
+                                Expression.IfThenElse(
+                                    //检测是否遍历完成
+                                    Expression.LessThan(
+                                        write_LoopIndex,
+                                        fieldInstance.ArrayLength()
+                                    ),
+                                    //遍历时执行
+                                    Expression.Block(
+                                        //调用字节写入器
+                                        Expression.Call(
+                                            null,
+                                            Expression.Constant(ByteWriter.GetWriter(genericArguments[0].FullName), typeof(MethodInfo)),
+                                            fieldInstance.ListItem(write_LoopIndex),
+                                            writerToWrite
+                                        ),
+                                        //等效于 i++
+                                        Expression.PostIncrementAssign(write_LoopIndex)
+                                    ),
+                                    //如果遍历完了就 break
+                                    Expression.Break(write_BreakLabel)
+                                ),
+                                write_BreakLabel
+                            )
+                        }
+                    ),
                     //*== 在读取 field 时执行: 
                     //*== T[] values = new T[];
                     //*==
@@ -171,7 +212,7 @@ namespace GameCore
                                             //修改数组元素的值
                                             Expression.Assign(
                                                 //访问创建的数组
-                                                Expression.ArrayAccess(read_NewArrayExpression, read_LoopIndex),
+                                                read_NewArrayExpression.ArrayItem(read_LoopIndex),
                                                 //把写入器对应的区块投给 T 的字节读取器
                                                 Expression.Call(
                                                     null,
@@ -912,7 +953,7 @@ namespace GameCore
                     {
                         var memFieldInfo = usefulFields[i];
                         var memType = memFieldInfo.FieldType;
-                        var memFieldVisit = Expression.Field(Expression.Convert(writeParam_obj, type), memFieldInfo);                                                     //* ((T)obj).xx
+                        var memFieldInstance = Expression.Field(Expression.Convert(writeParam_obj, type), memFieldInfo);                                                     //* ((T)obj).xx
 
                         var writerToRead = Expression.Field(readParam_parameters, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListItem(i);
 
@@ -926,7 +967,7 @@ namespace GameCore
                             var genericArguments = memType.GetGenericArguments();
 
                             //TODO: Generic List
-                            var (_, writer, memberBinding) = GenericTypeSupport(memType, memFieldInfo, memFieldVisit, writerToRead, genericArguments, writerToWrite);
+                            var (_, writer, memberBinding) = GenericTypeSupport(memType, memFieldInfo, memFieldInstance, writerToRead, genericArguments, writerToWrite);
                             writers.Add(writer);
                             memberBindings.Add(memberBinding);
                         }
@@ -937,9 +978,9 @@ namespace GameCore
 
                             writers.Add(
                                 writerMethod.GetParameters().Length == 3 ?          //* writerMethod((object)((T)obj).xx, writer);
-                                    Expression.Invoke(autoWriterExpression[memType.FullName], memFieldVisit.Box(), firstWriter)
+                                    Expression.Invoke(autoWriterExpression[memType.FullName], memFieldInstance.Box(), firstWriter)
                                         :
-                                    Expression.Call(writerMethod, memFieldVisit, firstWriter)
+                                    Expression.Call(writerMethod, memFieldInstance, firstWriter)
                             );
 
                             memberBindings.Add(
