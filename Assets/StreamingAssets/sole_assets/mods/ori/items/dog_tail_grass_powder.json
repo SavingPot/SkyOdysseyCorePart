@@ -1,0 +1,8 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:dog_tail_grass_powder",
+        "texture": "ori:dog_tail_grass_powder",
+        "description": "ori:description.dog_tail_grass_powder"
+    }
+}

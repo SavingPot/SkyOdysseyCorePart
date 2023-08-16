@@ -1,0 +1,16 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:mangrove_saw",
+        "items": [
+            {
+                "id": "ori:mangrove_planks",
+                "count": 5
+            }
+        ],
+        "result": {
+            "id": "ori:mangrove_saw",
+            "count": 1
+        }
+    }
+}

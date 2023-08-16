@@ -1,0 +1,11 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:dog_tail_grass_dough",
+        "texture": "ori:dog_tail_grass_dough",
+        "description": "ori:description.dog_tail_grass_dough",
+        "tags": [
+            "ori:knife_cutting=ori:dog_tail_grass_noodles,1"
+        ]
+    }
+}

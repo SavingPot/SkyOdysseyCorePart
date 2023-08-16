@@ -1,0 +1,748 @@
+using GameCore.High;
+using SP.Tools;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using System.Linq;
+using System.IO;
+using SP.Tools.Unity;
+using System.Text;
+using GameCore.Converters;
+using TMPro;
+
+namespace GameCore.UI
+{
+    [CreateAfterSceneLoad(SceneNames.firstScene)]
+    public class InternalUIAdder : UIAdder
+    {
+        public static InternalUIAdder instance { get; private set; }
+
+        public class Mod_Info_WithPath
+        {
+            public string path;
+            public Mod_Info info;
+
+            public Mod_Info_WithPath(string path, Mod_Info info)
+            {
+                this.path = path;
+                this.info = info;
+            }
+        }
+
+        public List<WorldBasicData> worldFiles = new();
+        public List<Mod_Info_WithPath> modDirs = new();
+
+        public ScrollViewIdMessage modScrollView;
+        public PanelIdMessage modConfiguringPanel;
+        public Mod_Info_WithPath configuringModDir;
+
+        public static Action AfterRefreshWorldList = () => { };
+        public static Action AfterRefreshModView = () => { };
+
+        public PanelIdMessage worldConfigPanel;
+
+        private void Awake()
+        {
+            if (instance)
+            {
+                Debug.LogWarning("存在两个实例, 很可能导致异常");
+            }
+
+            instance = this;
+        }
+
+        public void RefreshWorldFiles()
+        {
+            worldFiles.Clear();
+
+            string[] vs = IOTools.GetFoldersInFolder(GInit.worldPath, true);
+            vs = vs.Where(p => File.Exists(World.GetBasicDataPath(p))).ToArray();
+
+            foreach (string folder in vs)
+            {
+                var basicData = JsonTools.LoadJson<WorldBasicData>(World.GetBasicDataPath(folder));
+
+                worldFiles.Add(basicData);
+            }
+        }
+
+        public void RefreshMods()
+        {
+            modDirs.Clear();
+
+            //只搜索 modsPath, 以防止 original 被关闭
+            string[] folders = IOTools.GetFoldersInFolder(GInit.modsPath, true);
+
+            List<string> info = new();
+
+            foreach (string folder in folders)
+            {
+                string infoPath = ModFactory.GetInfoPath(folder);
+
+                if (File.Exists(infoPath))
+                    info.Add(infoPath);
+            }
+
+            foreach (var path in info)
+            {
+                modDirs.Add(new(path, ModLoading.LoadInfo(JsonTools.LoadJObjectByPath(path), ModFactory.GetIconPath(IOTools.GetParentPath(path)))));
+            }
+        }
+
+        public void Start()
+        {
+            switch (GScene.name)
+            {
+                case SceneNames.firstScene:
+                    StartCoroutine(LoadLevel());
+                    break;
+
+                case SceneNames.mainScene:
+                    {
+                        #region 滚动背景
+                        var c = UObjectTools.CreateComponent<UIScrollingBackground>("ScrollingBackground");
+                        c.defaultPoint = Vector2.zero;
+                        c.scrollSpeed = -7;
+                        c.bound = -64;
+                        int count = 8;
+
+                        for (int i = -count / 2; i < count; i++)
+                        {
+                            var sp = UObjectTools.CreateComponent<SpriteRenderer>();
+                            sp.sprite = ModFactory.CompareTexture("ori:scroll_background")?.sprite;
+                            sp.transform.SetParent(c.transform);
+                            sp.transform.AddPosX(i * 64);
+                            c.renderers.Add(sp);
+                        }
+                        #endregion
+
+                        #region 游戏信息
+                        var gameInfoText = AddText(UPC.lowerRight, "ori:text.game_info");
+                        gameInfoText.SetSizeDelta(350, 200);
+                        gameInfoText.SetAPos(-gameInfoText.sd.x / 2, gameInfoText.sd.y / 2);
+                        gameInfoText.text.SetFontSize(16);
+                        gameInfoText.text.alignment = TMPro.TextAlignmentOptions.BottomRight;
+                        gameInfoText.AfterRefreshing += t =>
+                        {
+                            var sb = Tools.stringBuilderPool.Get();
+
+                            sb.Append(GameUI.CompareText("ori:game_version").text).AppendLine(GInit.gameVersion);
+                            sb.Append(GameUI.CompareText("ori:engine_version").text).AppendLine(GInit.unityVersion);
+                            sb.Append(GameUI.CompareText("ori:mod_count").text).AppendLine(ModFactory.mods.Count.ToString());
+
+                            t.text.text = sb.ToString();
+                            Tools.stringBuilderPool.Recover(sb);
+                        };
+                        #endregion
+
+                        var firstPanel = AddPanel("ori:panel.first");
+                        var joinGamePanel = AddPanel("ori:panel.join_game", true);
+                        var settingsPanel = AddPanel("ori:panel.settings", true);
+                        var setLanguagePanel = AddPanel("ori:panel.settings.language", true);
+                        var setPlayerSkinNamePanel = AddPanel("ori:panel.settings.playerSkinName", true);
+                        var chooseWorldPanel = AddPanel("ori:panel.choose_world", true);
+                        var createWorldPanel = AddPanel("ori:panel.create_world", true);
+                        var modViewPanel = AddPanel("ori:panel.mod_view", true);
+
+                        GameUI.SetPage(firstPanel);
+
+                        /* -------------------------------------------------------------------------- */
+                        /*                                    First                                   */
+                        /* -------------------------------------------------------------------------- */
+                        AddButton(UPC.middle, "ori:button.choose_world_panel", firstPanel).AddMethod(() => GameUI.SetPage(chooseWorldPanel)).rt.AddLocalPosY(10);
+                        AddButton(UPC.middle, "ori:button.join_game_panel", firstPanel).AddMethod(() => GameUI.SetPage(joinGamePanel)).rt.AddLocalPosY(-50);
+                        AddButton(UPC.middle, "ori:button.settings_panel", firstPanel).AddMethod(() => GameUI.SetPage(settingsPanel)).rt.AddLocalPosY(-110);
+                        AddButton(UPC.down, "ori:button.quit_game", firstPanel).AddMethod(() => { GInit.Quit(); }).AddAPosY(50);
+
+                        /* -------------------------------------------------------------------------- */
+                        /*                                  JoinGame                                  */
+                        /* -------------------------------------------------------------------------- */
+                        InputFieldIdMessage joinIPField = AddInputField(new(0.5f, 0.83f, 0.5f, 0.83f), "ori:inputfield.join_game_ip", joinGamePanel);
+                        joinIPField.field.text = $"127.0.0.1:{Tools.defaultPort}";
+                        joinIPField.field.onEndEdit.AddListener(_ =>
+                        {
+                            StringBuilder builder = Tools.stringBuilderPool.Get();
+
+                            builder.Append(joinIPField.field.text);
+                            builder.Replace("：", ":");
+                            builder.Replace("；", ";");
+                            builder.Replace("．", ".");
+                            builder.Replace("。", ".");
+                            builder.Replace("，", ",");
+                            builder.Replace(";", ":");
+                            builder.Replace(",", ".");
+                            builder.Replace("{", "[");
+                            builder.Replace("}", "]");
+                            builder.Replace("\r\n", "");
+
+                            joinIPField.field.text = builder.ToString();
+                            Tools.stringBuilderPool.Recover(builder);
+                        });
+
+                        var lanServersShow = AddScrollView(UPC.middle, "ori:sv.LANServers_show", joinGamePanel);
+                        AddButton(new(0.5f, 0.43f, 0.5f, 0.43f), "ori:button.refresh_LANServers", joinGamePanel).AddMethod(() =>
+                        {
+                            managerNetwork.discovery.StopDiscovery();
+
+                            lanServersShow.Clear();
+                            Client.respones.Clear();
+
+                            managerNetwork.discovery.OnServerFound.AddListener(sr =>
+                            {
+                                if (Client.respones.ContainsKey(sr.serverId))
+                                    return;
+
+                                Client.respones.Add(sr.serverId, sr);
+                                string targetIP = $"{sr.EndPoint.Address}:{Tools.defaultPort}";
+                                string text = $"{sr.worldName}[{sr.version}]\n({targetIP})";
+
+                                var lanServerButton = AddButton(UPC.middle, $"ori:button.LANServers_show.{sr.serverId}");
+                                lanServerButton.AddMethod(() => joinIPField.field.text = targetIP);
+                                lanServerButton.buttonText.AfterRefreshing += t => t.text.text = text;
+                                lanServerButton.buttonText.text.SetFontSize(16);
+
+                                lanServersShow.AddChild(lanServerButton);
+                            });
+
+                            managerNetwork.discovery.StartDiscovery();
+                        }).SetAPosOnBySizeRight(lanServersShow, 10);
+
+                        AddButton(new(0.5f, 0.43f, 0.5f, 0.43f), "ori:button.join_game", joinGamePanel).AddMethod(() =>
+                        {
+                            if (!joinIPField.field.text.Contains(':'))
+                                return;
+
+                            string[] splitted = joinIPField.field.text.Split(':');
+
+                            if (splitted.Length < 2)
+                                return;
+
+                            GM.StartGameClient(new(new ArraySegment<char>(joinIPField.field.text.ToCharArray(), 0, joinIPField.field.text.LastIndexOf(':')).ToArray()), Convert.ToUInt16(splitted[^1]));
+                        }).SetAPosOnBySizeDown(lanServersShow, 10);
+
+                        AddButton(new(0.5f, 0.1f, 0.5f, 0.1f), "ori:button.join_game_to_first", joinGamePanel).AddMethod(() =>
+                        {
+                            GameUI.SetPage(firstPanel);
+                            Client.Disconnect();
+                        });
+
+                        /* -------------------------------------------------------------------------- */
+                        /*                                 ChooseWorld                                */
+                        /* -------------------------------------------------------------------------- */
+                        var chooseWorldScrollView = AddScrollView(UPC.middle, "ori:scrollview.choose_world", chooseWorldPanel);
+
+                        RefreshWorldFiles();
+                        RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
+
+                        AddButton(UPC.middle, "ori:button.to_create_world", chooseWorldPanel).AddMethod(() =>
+                        {
+                            GameUI.SetPage(createWorldPanel);
+                        }).rt.AddLocalPosY(-(chooseWorldScrollView.rt.sizeDelta.y / 2) - 25);
+
+                        /* ------------------------------- CreateWorld ------------------------------ */
+                        var worldNameField = AddInputField(UPC.middle, "ori:inputfield.create_new_world_world_name", createWorldPanel);
+                        var worldSeedField = AddInputField(UPC.middle, "ori:inputfield.create_new_world_world_seed", createWorldPanel);
+                        worldSeedField.SetAPosOnBySizeDown(worldNameField, 15);
+                        worldSeedField.lockType = InputFieldIdMessage.LockType.IntNumber;
+                        worldSeedField.field.text = Tools.randomInt.ToString();
+                        //TODO: World view fix
+
+                        ButtonIdMessage create = AddButton(UPC.middle, "ori:button.create_new_world", createWorldPanel).AddMethod(() =>
+                        {
+                            if (worldNameField.field.text.IsNullOrWhiteSpace())
+                            {
+                                Debug.LogError("世界名不能为空");
+                                return;
+                            }
+
+                            GFiles.CreateWorld(worldSeedField.field.text.ToInt(), worldNameField.field.text);
+                            RefreshWorldFiles();
+                            RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
+                            GameUI.SetPage(chooseWorldPanel);
+                        });
+                        create.SetAPosOnBySizeDown(worldSeedField, 50);
+
+                        ButtonIdMessage cancel = AddButton(UPC.middle, "ori:button.create_new_world_cancel", createWorldPanel).AddMethod(() =>
+                        {
+                            GameUI.SetPage(chooseWorldPanel);
+                        });
+                        cancel.SetAPosOnBySizeDown(create, 15);
+
+                        /* ------------------------------- ConfigPanel ------------------------------ */
+                        worldConfigPanel = AddPanel("ori:panel.delete_world", true);
+                        string pathToDelete = string.Empty;
+
+                        ButtonIdMessage worldConfigPanel_back = AddButton(UPC.down, "ori:button.worldConfigPanel_back", worldConfigPanel).AddMethod(() =>
+                        {
+                            GameUI.SetPage(chooseWorldPanel);
+                        });
+                        worldConfigPanel_back.SetAPosY(worldConfigPanel_back.sd.y / 2 + 30);
+                        ButtonIdMessage deleteWorld = AddButton(UPC.middle, "ori:button.delete_world", worldConfigPanel).AddMethod(() =>
+                        {
+                            //删除世界
+                            IOTools.DeleteDir(pathToDelete);
+                            GFiles.world = null;
+
+                            //刷新文本
+                            RefreshWorldFiles();
+                            RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
+
+                            //返回界面
+                            GameUI.SetPage(chooseWorldPanel);
+                        });
+                        deleteWorld.buttonText.AfterRefreshing += t =>
+                        {
+                            try
+                            {
+                                t.text.text = GameUI.CompareText("ori:button.delete_world.text").text.Replace("{world_name}", IOTools.GetDirectoryName(pathToDelete));
+                            }
+                            catch
+                            {
+
+                            }
+                        };
+                        worldConfigPanel.CustomMethod += (type, param) =>
+                        {
+                            if (type == "ori:refresh")
+                            {
+                                pathToDelete = param;
+                                deleteWorld.buttonText.RefreshUI();
+                            }
+                        };
+
+                        AddButton(new(0.5f, 0.1f, 0.5f, 0.1f), "ori:button.choose_world_to_first", chooseWorldPanel).AddMethod(() => GameUI.SetPage(firstPanel));
+
+                        /* -------------------------------------------------------------------------- */
+                        /*                                  Settings                                 */
+                        /* -------------------------------------------------------------------------- */
+                        /* ----------------------------------- 返回 ----------------------------------- */
+                        AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings_to_first", settingsPanel).AddMethod(() => GameUI.SetPage(firstPanel));
+
+                        /* -------------------------------- 玩家名称设置 -------------------------------- */
+                        var playerNameField = AddInputField(UPC.middle, "ori:field.settings.playerName", settingsPanel);
+                        playerNameField.field.text = GFiles.settings.playerName;
+                        playerNameField.field.characterLimit = 20;
+                        playerNameField.OnUpdate += x => x.field.placeholder.enabled = true;
+                        playerNameField.field.placeholder.rectTransform.AddPosY(playerNameField.rt.sizeDelta.y / 2 + playerNameField.field.placeholder.rectTransform.sizeDelta.y / 2);
+                        playerNameField.field.placeholder.color = Color.white;
+                        playerNameField.mask.enabled = false;
+                        playerNameField.field.onValueChanged.AddListener(v =>
+                        {
+                            var placeholder = playerNameField.field.placeholder.GetComponent<TMP_Text>();
+
+                            if (string.IsNullOrWhiteSpace(playerNameField.field.text))
+                            {
+                                placeholder.text = GameUI.CompareText($"{playerNameField.id}_empty").text;
+                                return;
+                            }
+
+                            StringBuilder sb = Tools.stringBuilderPool.Get().Append(playerNameField.field.text);
+                            StringTools.ModifySpecialPath(sb, Player.defaultName, "x");
+                            playerNameField.field.text = sb.ToString();
+                            Tools.stringBuilderPool.Recover(sb);
+
+                            if (playerNameField.field.text.Length < 2)
+                            {
+                                placeholder.text = GameUI.CompareText($"{playerNameField.id}_short").text;
+                                return;
+                            }
+
+                            placeholder.text = GameUI.CompareText($"{playerNameField.id}_success").text.Replace("{value}", playerNameField.field.text);
+                            GFiles.settings.playerName = playerNameField.field.text;
+                        });
+
+                        /* ----------------------------------- 玩家皮肤 ----------------------------------- */
+                        var playerSkinSetButton = AddButton(UPC.middle, "ori:button.settings.playerSkinName", settingsPanel).AddMethod(() => GameUI.SetPage(setPlayerSkinNamePanel));
+                        var svPlayerSkinNames = AddScrollView(UPC.middle, "ori:sv.playerSkinNames", setPlayerSkinNamePanel);
+                        AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.playerSkinName.back", setPlayerSkinNamePanel).AddMethod(() => GameUI.SetPage(settingsPanel));
+                        playerSkinSetButton.SetAPosOnBySizeUp(playerNameField, 35);
+                        foreach (var path in IOTools.GetFoldersInFolder(GInit.playerSkinPath, true))
+                        {
+                            PlayerSkin data = new(path);
+                            data.Modify();
+
+                            var b = AddButton(UPC.middle, $"ori:button.playerSkinNames.{path}");
+                            b.buttonText.autoCompareText = false;
+                            b.buttonText.text.text = data.name;
+                            b.AddMethod(() =>
+                            {
+                                //设置设置中的语言ID
+                                GFiles.settings.playerSkinName = data.name;
+
+                                //将更改后的设置应用到文件
+                                GFiles.SaveAllDataToFiles();
+                            });
+
+                            GameUI.GenerateSkinShow(data, b.transform);
+
+                            svPlayerSkinNames.AddChild(b);
+                        }
+
+                        /* ----------------------------------- 语言 ----------------------------------- */
+                        var languageSetButton = AddButton(UPC.middle, "ori:button.settings.language", settingsPanel).AddMethod(() => GameUI.SetPage(setLanguagePanel));
+                        var svLanguages = AddScrollView(UPC.middle, "ori:sv.languages", setLanguagePanel);
+                        AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.language.back", setLanguagePanel).AddMethod(() => GameUI.SetPage(settingsPanel));
+                        languageSetButton.SetAPosOnBySizeUp(playerSkinSetButton, 20);
+                        foreach (var data in ModFactory.finalTextData)
+                        {
+                            var b = AddButton(UPC.middle, $"ori:button.languages.{data.id}");
+                            b.buttonText.autoCompareText = false;
+                            b.buttonText.text.text = data.textName.IsNullOrWhiteSpace() ? data.id : data.textName;
+                            b.AddMethod(() =>
+                            {
+                                //设置设置中的语言ID
+                                GFiles.settings.langId = data.id;
+
+                                //刷新文本
+                                for (int i = 0; i < IdMessageCenter.textMessages.Count; i++)
+                                {
+                                    IdMessageCenter.textMessages[i].RefreshUI();
+                                }
+                                for (int i = 0; i < IdMessageCenter.inputFieldMessages.Count; i++)
+                                {
+                                    IdMessageCenter.inputFieldMessages[i].RefreshUI();
+                                }
+
+                                //将更改后的设置应用到文件
+                                GFiles.SaveAllDataToFiles();
+                            });
+                            svLanguages.AddChild(b);
+                        }
+
+                        /* ---------------------------------- 控制设置 ---------------------------------- */
+                        var controlsPanel = AddPanel("ori:panel.settings.controls", GameUI.canvas.transform, true);
+                        var controlsSetButton = AddButton(UPC.middle, "ori:button.settings.controls", settingsPanel).AddMethod(() => GameUI.SetPage(controlsPanel));
+                        AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.controls.back", controlsPanel).AddMethod(() => GameUI.SetPage(settingsPanel));
+                        controlsSetButton.SetAPosOnBySizeDown(playerNameField, 20);
+
+                        /* -------------------------------- 玩家光标速度设置 -------------------------------- */
+                        ImageIdMessage playerCursorSpeedBackground = GameUI.AddImage(UPC.middle, "ori:image.settings.playerCursorSpeed_background", "ori:clear_button", controlsPanel);
+                        playerCursorSpeedBackground.sd = new(languageSetButton.sd.x, 64);
+
+                        var playerCursorSpeedSlider = AddSlider(UPC.middle, "ori:slider.settings.playerCursorSpeed", playerCursorSpeedBackground);
+                        playerCursorSpeedSlider.SetAPosY(-10);
+                        playerCursorSpeedSlider.slider.minValue = 1f;
+                        playerCursorSpeedSlider.slider.maxValue = 50f;
+                        playerCursorSpeedSlider.slider.wholeNumbers = true;
+                        playerCursorSpeedSlider.slider.value = GFiles.settings.playerCursorSpeed;
+                        playerCursorSpeedSlider.text.text.enableAutoSizing = true;
+                        playerCursorSpeedSlider.text.autoCompareText = false;
+                        playerCursorSpeedSlider.text.AfterRefreshing += x => x.text.text = $"{GameUI.CompareText("ori:player_cursor_speed").text}: {playerCursorSpeedSlider.slider.value}";
+                        playerCursorSpeedSlider.slider.onValueChanged.AddListener(v =>
+                        {
+                            GFiles.settings.playerCursorSpeed = Convert.ToInt32(v);
+                            playerCursorSpeedSlider.text.RefreshUI();
+                            GFiles.ApplyVolumesToMixers();
+                        });
+
+                        /* ---------------------------------- 界面设置 ---------------------------------- */
+                        //TODO: Anim speed
+                        //TODO: Canvas Scaler Scale
+
+                        /* ---------------------------------- 性能设置 ---------------------------------- */
+                        //TODO: Performance Level
+
+                        /* ----------------------------------- 音量 ----------------------------------- */
+                        var soundPanel = AddPanel("ori:panel.settings.sound", GameUI.canvas.transform, true);
+                        var volumeSetButton = AddButton(UPC.middle, "ori:button.settings.sound", settingsPanel).AddMethod(() => GameUI.SetPage(soundPanel));
+                        AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.sound.back", soundPanel).AddMethod(() => GameUI.SetPage(settingsPanel));
+                        volumeSetButton.SetAPosOnBySizeDown(controlsSetButton, 20);
+
+                        List<ImageIdMessage> sliderBgs = new();
+
+                        SetVolumeSlider("ori:slider.settings.sound.volume.global", "ori:image.settings.sound.volume.global.background", v => { if (v != null) GFiles.settings.volume.globalVolume = (int)v; return GFiles.settings.volume.globalVolume; });
+                        SetVolumeSlider("ori:slider.settings.sound.volume.music", "ori:image.settings.sound.volume.music.background", v => { if (v != null) GFiles.settings.volume.musicVolume = (int)v; return GFiles.settings.volume.musicVolume; });
+                        SetVolumeSlider("ori:slider.settings.sound.volume.default", "ori:image.settings.sound.volume.default.background", v => { if (v != null) GFiles.settings.volume.defaultVolume = (int)v; return GFiles.settings.volume.defaultVolume; });
+                        SetVolumeSlider("ori:slider.settings.sound.volume.ui", "ori:image.settings.sound.volume.ui.background", v => { if (v != null) GFiles.settings.volume.uiVolume = (int)v; return GFiles.settings.volume.uiVolume; });
+                        SetVolumeSlider("ori:slider.settings.sound.volume.ambient", "ori:image.settings.sound.volume.ambient.background", v => { if (v != null) GFiles.settings.volume.ambientVolume = (int)v; return GFiles.settings.volume.ambientVolume; });
+
+                        void SetVolumeSlider(string id, string bgId, Func<int?, float> setter)
+                        {
+                            ImageIdMessage bg = GameUI.AddImage(UPC.middle, bgId, "ori:clear_button", soundPanel);
+                            bg.sd = new(languageSetButton.sd.x, 64);
+                            bg.ap = new(0, 0.5f * bg.sd.y);
+
+                            if (sliderBgs.Count != 0)
+                            {
+                                bg.SetAPosOnBySizeDown(sliderBgs[^1], 0);
+                                sliderBgs[^1].SetAPosOnBySizeUp(bg, sliderBgs[^1].sd.y / 2);
+                            }
+
+                            var slider = AddSlider(UPC.middle, id, bg);
+                            slider.text.text.enableAutoSizing = true;
+                            slider.SetAPosY(-10);
+                            slider.slider.minValue = -80f;
+                            slider.slider.maxValue = 20f;
+                            slider.slider.wholeNumbers = true;
+                            slider.slider.value = setter(null);
+                            slider.text.autoCompareText = false;
+                            slider.text.AfterRefreshing += x => x.text.text = $"{GameUI.CompareText($"{id}.text").text}: {slider.slider.value}";
+                            slider.slider.onValueChanged.AddListener(v =>
+                            {
+                                setter(Convert.ToInt32(v));
+                                slider.text.RefreshUI();
+                            });
+
+
+                            sliderBgs.Add(bg);
+                        }
+
+                        sliderBgs[^1].AddAPosY(sliderBgs[^1].sd.y / 2);
+
+                        /* -------------------------------------------------------------------------- */
+                        /*                                  ModView                                  */
+                        /* -------------------------------------------------------------------------- */
+                        {
+                            ButtonIdMessage showButton = AddButton(UPC.lowerLeft, "ori:button.mod_view_panel", firstPanel).AddMethod(() => GameUI.SetPage(modViewPanel));
+                            showButton.rt.anchoredPosition = new(showButton.image.sprite.texture.width + 5, showButton.image.sprite.texture.height + 10);
+
+                            AddButton(new(0.5f, 0.1f, 0.5f, 0.1f), "ori:button.mod_view_to_first", modViewPanel).AddMethod(() => GameUI.SetPage(firstPanel));
+
+                            modScrollView = AddScrollView(UPC.middle, "ori:scrollview.mod_view", modViewPanel);
+                            modScrollView.gridLayoutGroup.spacing = new(0, 5);
+
+                            var openSourceButton = AddButton(UPC.middle, "ori:button.mod_open_source", modViewPanel);
+                            openSourceButton.SetAPosOnBySizeDown(modScrollView, 10);
+                            openSourceButton.AddMethod(() =>
+                            {
+                                switch (GInit.platform)
+                                {
+                                    case RuntimePlatform.WindowsEditor:
+                                    case RuntimePlatform.WindowsPlayer:
+                                    case RuntimePlatform.WindowsServer:
+#if UNITY_STANDALONE_WIN
+                                        WindowsTools.OpenPathInExplorer(GInit.modsPath.Replace("/", @"\"));
+#endif
+                                        break;
+
+                                    case RuntimePlatform.Android:
+                                        GUIUtility.systemCopyBuffer = GInit.modsPath.Replace("/", @"\");
+#if UNITY_ANDROID
+                                        AndroidTools.OpenFileManager();
+#endif
+
+                                        break;
+                                }
+                            });
+
+
+                            modConfiguringPanel = AddPanel("ori:panel.mod_view.mod_config", true);
+                            ButtonIdMessage modConfiguringPanel_ActivityButton = AddButton(UPC.middle, "ori:button.mod_view.mod_config.activity", modConfiguringPanel).AddMethod(() =>
+                            {
+                                configuringModDir.info.jo["ori:mod_info"]["enabled"] = !configuringModDir.info.enabled;
+                                File.WriteAllText(configuringModDir.path, configuringModDir.info.jo.ToString());
+
+                                RefreshMods();
+                                RefreshModView();
+                            });
+
+                            var backButton = AddButton(new(0.5f, 0.1f, 0.5f, 0.1f), "ori:button.mod_view.mod_config.back", modConfiguringPanel).AddMethod(() =>
+                            {
+                                GameUI.SetPage(modViewPanel);
+                            });
+
+                            modConfiguringPanel.CustomMethod += (id, _) =>
+                            {
+                                if (id == "ori:refresh")
+                                {
+                                    if (configuringModDir.info.enabled)
+                                        modConfiguringPanel_ActivityButton.buttonText.text.text = GameUI.currentLang.CompareOrCreateText("ori:disable").text;
+                                    else
+                                        modConfiguringPanel_ActivityButton.buttonText.text.text = GameUI.currentLang.CompareOrCreateText("ori:enable").text;
+                                    return;
+                                }
+                            };
+
+                            RefreshMods();
+                            RefreshModView();
+                        }
+
+                        break;
+                    }
+            }
+        }
+
+
+        private void Update()
+        {
+            if (modConfiguringPanel && configuringModDir != null)
+                modConfiguringPanel.CustomMethod("ori:refresh", null);
+        }
+
+        private void RefreshWorldList(ref ScrollViewIdMessage chooseWorldScrollView, PanelIdMessage panel)
+        {
+            chooseWorldScrollView.Clear();
+
+            for (int index = 0; index < worldFiles.Count; index++)
+            {
+                int i = index;
+                var file = worldFiles[i];
+                string worldPath = file.worldPath;
+                string worldName = file.worldName;
+                Vector2Int delBtnSize = new(40, 40);
+
+                Transform t = chooseWorldScrollView.transform.parent;
+                ImageTextButtonIdMessage lb = AddImageTextButton(UPC.middle, "ori:itb.choose_world_" + worldName + "_" + i).AddMethod(() => MethodAgent.TryRun(() =>
+                {
+                    UIDisappear(t.gameObject);
+
+                    //开始并设置游戏时间
+                    GM.StartGameHost(worldPath, () => GTime.time = GFiles.world.basicData.time);
+                }, true));
+
+                var configButton = GameUI.AddButton(UPC.lowerRight, "ori:button.config_world_" + worldPath, lb, "ori:square_button");
+                configButton.rt.SetParent(lb.rt);
+                string str = GameUI.CompareText("ori:button.config_world.text").text;
+                configButton.buttonText.AfterRefreshing += tc => tc.text.text = str;
+                configButton.sd = delBtnSize;
+                configButton.SetAPos(-configButton.sd.x / 2, configButton.sd.y / 2);
+                configButton.buttonText.sd = configButton.sd;
+                configButton.buttonText.text.SetFontSize(10);
+                configButton.AddMethod(() =>
+                {
+                    worldConfigPanel.CustomMethod("ori:refresh", worldPath);
+                    GameUI.SetPage(worldConfigPanel);
+                });
+                configButton.RefreshUI();
+
+                lb.image.AfterRefreshing += _ =>
+                {
+                    string imagePath = World.GetImagePath(worldPath);
+
+                    if (File.Exists(imagePath))
+                        MethodAgent.TryRun(() => lb.image.image.sprite = Tools.LoadSpriteByPath(imagePath));
+                    else
+                        lb.image.image.sprite = GInit.instance.textureUnknown.sprite;
+                };
+                lb.buttonTextUp.AfterRefreshing += o => o.text.text = worldName;
+                lb.buttonTextDown.AfterRefreshing += o => o.text.text = $"{file.seed} [{file.gameVersion}] ({file.time})";
+
+                chooseWorldScrollView.AddChild(lb.rt);
+                lb.ResetStatusInScrollView(chooseWorldScrollView);
+            }
+
+            AfterRefreshWorldList();
+        }
+
+        public void RefreshModView()
+        {
+            modScrollView.Clear();
+
+            for (int index = 0; index < modDirs.Count; index++)
+            {
+                int i = index;
+                var dir = modDirs[i];
+
+                ImageTextButtonIdMessage lb = AddImageTextButton(UPC.middle, "ori:button.edit_mod_" + dir.info.id).AddMethod(() => MethodAgent.TryRun(() =>
+                {
+                    configuringModDir = dir;
+                    GameUI.SetPage(modConfiguringPanel);
+                }, true));
+
+                lb.customVars.TryAdd("ori:mod_path", dir.path);
+
+                string newName = dir.info.name == null ? dir.info.id : GameUI.currentLang.CompareOrCreateText(dir.info.name).text;
+                string newID = dir.info.id;
+                string newDescription = dir.info.description == null ? string.Empty : GameUI.currentLang.CompareOrCreateText(dir.info.description).text;
+                string newVersion = dir.info.version;
+
+                lb.buttonTextUp.text.SetFontSize(15);
+                lb.buttonTextDown.text.SetFontSize(9);
+
+                lb.buttonTextUp.AfterRefreshing += o => o.text.text = $"{newName} ({newID})";
+                lb.buttonTextDown.AfterRefreshing += o => o.text.text = newDescription;
+
+                lb.image.image.sprite = dir.info.icon;
+
+                modScrollView.AddChild(lb);
+                lb.ResetStatusInScrollView(modScrollView);
+
+
+                TextIdMessage tRT = lb.CreateText("TextTopRight", TMPro.TextAlignmentOptions.TopRight);
+                tRT.AfterRefreshing += o => o.text.text = newVersion;
+            }
+
+            AfterRefreshModView();
+        }
+
+        private IEnumerator LoadLevel()
+        {
+            AsyncOperation operation = SceneManager.LoadSceneAsync(GScene.nextIndex);
+            operation.allowSceneActivation = false;
+
+            float earliestTime = Tools.time + 5;
+
+            var panel = AddPanel("ori:panel.first_scene_panel");
+            panel.panelImage.color = Tools.HexToColor("#176C79");
+
+            GameUI.GenerateLoadingBar(new(0.5f, 0.32f, 0.5f, 0.32f),
+                                    "ori:image.scene_loading_bar_bg", "ori:image.scene_loading_bar_full", "ori:text.scene_loading_progress_text",
+                                    "ori:loading_bar_1", "ori:loading_bar_1", "ori:scene_loading_mascot",
+                                    15, 0,
+                                    new(384, 24), new(50, 50),
+                                    () => operation.progress >= 0.9f ? 1 : operation.progress, () => $"{(operation.progress >= 0.9f ? 100 : operation.progress * 100)}%",
+                                    panel.transform);
+
+            GameUI.GenerateLoadingBar(new(0.5f, 0.17f, 0.5f, 0.17f),
+                                    "ori:image.mod_loading_bar_bg", "ori:image.mod_loading_bar_full", "ori:mod_loading_progress.scene_loading_progress_text",
+                                    "ori:loading_bar_2", "ori:loading_bar_2", "ori:mod_loading_mascot",
+                                    15, 0,
+                                    new(384, 24), new(50, 50),
+                                    () => (float)ModFactory.mods.Count / (float)ModFactory.modCountFound, () => $"{ModFactory.mods.Count}/{ModFactory.modCountFound}",
+                                    panel.transform);
+
+            var mascotImage = AddImage(UPC.middle, "ori:image.loading_mascot", "ori:loading_mascot_0", panel);
+            mascotImage.SetSizeDelta(200, 200);
+            mascotImage.SetAPos(0, 75);
+
+            Sprite[] sprites = new[]
+            {
+                ModFactory.CompareTexture("ori:loading_mascot_0").sprite,
+                ModFactory.CompareTexture("ori:loading_mascot_1").sprite,
+                ModFactory.CompareTexture("ori:loading_mascot_2").sprite,
+                ModFactory.CompareTexture("ori:loading_mascot_3").sprite,
+                ModFactory.CompareTexture("ori:loading_mascot_4").sprite,
+                ModFactory.CompareTexture("ori:loading_mascot_3").sprite,
+                ModFactory.CompareTexture("ori:loading_mascot_2").sprite,
+                ModFactory.CompareTexture("ori:loading_mascot_1").sprite,
+                ModFactory.CompareTexture("ori:loading_mascot_0").sprite,
+            };
+            AnimCenter.PlaySprites(2, sprites, sprite =>
+            {
+                if (mascotImage)
+                {
+                    mascotImage.image.sprite = sprite;
+                    return true;
+                }
+
+                return false;
+            });
+
+            while (!operation.isDone)
+            {
+#if UNITY_EDITOR
+                Keyboard keyboard = Keyboard.current;
+                Gamepad gamepad = Gamepad.current;
+                if (keyboard != null) if (keyboard.escapeKey.wasPressedThisFrame) earliestTime = float.MaxValue;
+                if (gamepad != null) if (gamepad.bButton.wasPressedThisFrame) earliestTime = float.MaxValue;
+                if (keyboard != null) if (keyboard.enterKey.wasPressedThisFrame) earliestTime = 0;
+                if (gamepad != null) if (gamepad.aButton.wasPressedThisFrame) earliestTime = 0;
+#endif
+
+                //加载好就进入下一场景
+                if (operation.progress >= 0.9f && ModFactory.mods.Count == ModFactory.modCountFound && Tools.time >= earliestTime)
+                {
+                    GScene.BeforeLoad(GScene.nextIndex);
+                    operation.allowSceneActivation = true;
+                    break;
+                }
+
+                yield return null;
+            }
+        }
+    }
+}

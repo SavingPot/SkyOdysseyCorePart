@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:tangerine_bark_vest",
+        "items": [
+            {
+                "id": "ori:tangerine_bark",
+                "count": 2
+            }
+        ],
+        "result": {
+            "id": "ori:tangerine_bark_vest"
+        }
+    }
+}

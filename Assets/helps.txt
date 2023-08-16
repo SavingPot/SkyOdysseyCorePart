@@ -1,0 +1,633 @@
+﻿像素: 高对比度, 描边, 抖动, 高光, 色彩
+当质感比较粗糙时, 应该使用抖动
+亮度降低, 饱和度提高, 色调逐渐向深色靠
+描边的暗部一定要有深色, 亮部一定要有亮色
+高光, 次高光, 暗部, 次暗部
+
+
+----- 反射 <-> 程序集终极解决-----
+Expression.Block 封装多个 Expression, 使用 Expression.Lambda 就可以把其封装成 Delegate 式的大块 Lambda
+
+(类)Activator.CreateInstance(type, params[null])
+Type.GetProperties包含基类(且实际相当于生成一个新的Property)Methods不包含!
+
+
+
+
+
+参数异常, 首个参数是Closure:
+这个问题可能是因为你用Expression.Lambda生成的委托是一个闭包，它捕获了一些外部的变量或常量。闭包会导致编译后的委托方法多出一个System.Runtime.CompilerServices.Closure类型的参数，用于存储捕获的变量或常量。¹²
+
+如果你想动态地调用这个委托方法，你需要传递一个Closure对象作为第一个参数，而不是null。³ 你可以通过反射来获取这个对象，或者直接调用委托的DynamicInvoke方法。⁴
+
+例如，你可以这样修改你的代码：
+
+```csharp
+var memberBindings = new List<MemberAssignment>();
+
+
+ foreach (var mem in toCombine)
+ {
+ var writerMethod = ByteWriter.GetWriter(mem.FieldType.FullName);
+ var readerMethod = ByteReader.GetReader(mem.FieldType.FullName);
+ var memVisit = Expression.Field(Expression.Convert(writeParam_obj, type), mem); //* ((T)obj).xx
+
+ writers.Add(
+ Expression.Call(writerMethod, memVisit, writeParam_writer) //* writerMethod(((T)obj).xx, writer);
+ );
+
+ memberBindings.Add(Expression.Bind(mem, Expression.Convert(Expression.Call(readerMethod, readParam_parameters), mem.FieldType))); //* ((T)obj).xx = readerMethod(parameters);
+ }
+
+ var newObj = Expression.MemberInit(Expression.New(type), memberBindings); //* T obj = new() { xx = * , yy = * };
+
+ // 生成一个Lambda表达式
+ var lambdaExpr = Expression.Lambda(Expression.Block(writers.ToArray()), writeParam_obj, writeParam_writer);
+ // 编译成一个委托
+ var writerDelegate = lambdaExpr.Compile();
+ // 获取委托的Target属性，它是一个Closure对象
+ var closure = writerDelegate.Target;
+ // 获取委托的Method属性
+ var writerMethod = writerDelegate.Method;
+ // 通过反射调用方法，传递Closure对象和其他参数
+ var result = writerMethod.Invoke(closure, new object[] { obj, writer });
+```
+
+希望这能解决你的问题。
+
+源: 与必应的对话， 2023/5/28
+(1) c# - Compiling a lambda expression results in delegate with Closure .... https://stackoverflow.com/questions/7935306/compiling-a-lambda-expression-results-in-delegate-with-closure-argument.
+(2) DLR LambdaExpressions and the System.Runtime.CompilerServices.Closure .... https://stackoverflow.com/questions/6233792/dlr-lambdaexpressions-and-the-system-runtime-compilerservices-closure-object.
+(3) DLR - Why isn't debug information showing up in my stacktrace?. https://stackoverflow.com/questions/15593223/dlr-why-isnt-debug-information-showing-up-in-my-stacktrace.
+(4) Closure Class (System.Runtime.CompilerServices) | Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.closure?view=netframework-4.8.1.
+
+
+
+
+
+
+https://www.cnblogs.com/Tammie/archive/2011/09/13/2174552.html
+https://www.cnblogs.com/cdaniu/p/15493555.html
+--------------------------------
+
+----- 线程回调终极解决 -----
+https://blog.csdn.net/qq_38613453/article/details/103284385
+--------------------------
+
+----- Mirror -----
+当关闭服务器或客户端时, Handles 会被清空
+如果调用 Send 时, 没有回调就会触发警告 No ****, may happen if no handle ****
+
+SyncVar 的 SyncInterval (syncInterval) 一定要设置为 0, 否则千千万bug找上门！ (尤其体现于初始化时玩家属性时)
+初始化和CD等应在 if (isServer) 语句中修改值
+------------------
+
+----- Json.Net -----
+使用 JToken.ToObject<T> 而不是 JToken.Value<T>
+--------------------
+
+----- 性能 -----
+Physics2D -> Use Multithreading -> true
+不要在循环内部实现try-catch, 即使用 try{for()xxxxx}catch{} 而不是 for() try{xxxxx} catch{}
+----------------
+
+----- VS Code -----
+热键 [Ctrl+D] https://blog.csdn.net/haihui1996/article/details/87937912
+-------------------
+
+----- Layer and LayerMask -----!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+LayerMask mask = 1 << 3；表示开启Layer3
+
+LayerMask mask = 0 << 8；表示关闭Layer8
+
+LayerMask mask = 1<<1|1<<9；表示开启Layer1和Layer9
+
+LayerMask mask = 0<<4|0<<5；表示关闭Layer4和Layer5
+
+LayerMask mask = ~(1 << 0) 打开所有的层
+
+LayerMask mask = ~(1 << 9) 打开除了第9之外的层
+-------------------------------
+
+
+TMP 导入字体资源一定要勾选 Multi Atlas Textures
+
+Thread 按顺序, Task 按顺序交给主线程 (因此可能有漏洞)
+
+
+行注释 Ctrl + K, Ctrl + C and Ctrl + K, Ctrl + U   or Ctrl + K, Ctrl + /
+块注释 Ctrl + Shift + /
+
+白名单优先, 白名单中指示出现几率
+
+forr + Tab 反向遍历
+
+Json 中, 每个类或是在根目录下的值都应有命名空间, 在类中的值则不需要
+
+new StackTrace().GetFrame(1).GetMethod().Name
+
+修改 Mirror.Editor
+
+[其他]
+Project Settings - Player - Standalone Player Options - Resizable Window => true (使玩家可以自定义窗口大小)
+https://edu.csdn.net/course/play/18616/246643
+http://www.csref.cn/vs100/class/System-IO-File.html
+http://www.csref.cn/vs100/class/System-IO-Directory.html
+http://www.hechaku.com/C_sharp/C__System_IOmingmingkongjian.html
+https://docs.microsoft.com/zh-cn/dotnet/api/system.io?view=net-5.0
+https://docs.microsoft.com/zh-cn/dotnet/api/system.io.path?view=net-5.0
+https://docs.microsoft.com/zh-cn/dotnet/api/system.io.filemode?view=net-5.0
+https://docs.microsoft.com/zh-cn/dotnet/api/system.io.fileaccess?view=net-5.0
+https://docs.microsoft.com/zh-cn/dotnet/api/system.io.streamwriter?view=net-5.0
+https://docs.microsoft.com/zh-cn/dotnet/api/system.io.streamreader?view=net-5.0
+https://docs.microsoft.com/zh-cn/dotnet/api/system.io?view=net-5.0
+https://docs.microsoft.com/zh-cn/dotnet/csharp/language-reference/builtin-types/enum
+https://www.runoob.com/csharp/csharp-struct.html
+https://www.cnblogs.com/mslalan/p/7452021.html
+https://zhuanlan.zhihu.com/p/100162855
+https://www.runoob.com/csharp/csharp-interface.html
+http://c.biancheng.net/view/2874.html
+https://blog.csdn.net/Dream_sunny/article/details/79982579?spm=1035.2023.3001.6557&utm_medium=distribute.pc_relevant_bbs_down.none-task-blog-2~default~OPENSEARCH~default-3.nonecase&depth_1-utm_source=distribute.pc_relevant_bbs_down.none-task-blog-2~default~OPENSEARCH~default-3.nonecase
+https://www.bejson.com/convert/json2csharp/
+https://www.cnblogs.com/Peng18233754457/p/14952916.html
+https://blog.csdn.net/weixin_33797791/article/details/93950396
+https://blog.csdn.net/qq_45096273/article/details/106618543
+https://blog.csdn.net/pigautumn/article/details/81781403
+https://blog.csdn.net/weixin_44054505/article/details/115671782
+https://docs.unity.cn/cn/2020.3/Manual/class-Animator.html
+https://docs.unity.cn/cn/2019.4/ScriptReference/Animator.html
+https://docs.unity.cn/cn/2019.4/ScriptReference/Animation.html
+https://blog.csdn.net/qq_28849871/article/details/72593569
+https://www.cnblogs.com/qq2351194611/p/12705362.html
+https://blog.csdn.net/YongshuangZhao/article/details/89879210
+https://blog.csdn.net/zhenmu/article/details/52892136
+https://blog.csdn.net/weixin_43945590/article/details/108889182
+https://www.cnblogs.com/fujianxiaopihai/p/10966235.html
+https://blog.csdn.net/qq_44512151/article/details/105572714
+https://www.h3c.com/cn/d_201901/1147005_30005_0.htm#_Toc535588090
+https://blog.csdn.net/simpleshao/article/details/90671510
+
+
+
+
+
+[Android]
+https://blog.csdn.net/Silber9/article/details/88388853
+https://blog.csdn.net/linxinfa/article/details/88605815
+
+
+
+
+
+[TileMap]
+Platform Effector 2D 可设置单向通过
+https://www.zhihu.com/people/you-mi-27-13/posts
+https://blog.csdn.net/mkr67n/article/details/108340749
+https://indienova.com/indie-game-development/procedural-content-generation-tile-based-random-cave-map/
+https://edu.csdn.net/course/detail/18616
+https://docs.unity.cn/cn/2020.3/Manual/Tilemap-ScriptableTiles-Example.html
+https://qastack.cn/gamedev/150917/how-to-get-all-tiles-from-a-tilemap
+https://cowlevel.net/article/1884799
+https://cowlevel.net/article/1884986
+https://cowlevel.net/people/virus_coke/article
+
+
+
+
+[动画]
+https://blog.csdn.net/weixin_39562801/article/details/88873511
+https://blog.csdn.net/yyq9111/article/details/53485076
+
+
+
+
+
+[AI]
+NavMesh中，Windows->Navigation菜单打开后，Agents设置中应将Radius设置为 *物体碰撞体的X+Y之和/4.5 （正确应为/6，但是容易被墙卡住，经实验应为/4.5）
+对于动态障碍物添加 *NavMeshObstacle组件，设置与Collider完全一致即可
+
+https://www.arongranberg.com/astar/download
+https://www.bilibili.com/video/BV1TR4y147E8
+https://www.bilibili.com/video/BV17b4y1U78N
+https://github.com/h8man/NavMeshPlus
+
+https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/
+https://github.com/Unity-Technologies/ml-agents/releases
+https://github.com/Unity-Technologies/ml-agents/blob/main/docs/Readme.md
+
+https://zhuanlan.zhihu.com/p/82617680
+https://blog.csdn.net/tianjuewudi/article/details/121115480
+https://blog.csdn.net/InkBamboo920/article/details/116144576
+*https://blog.csdn.net/ALL_BYA/article/details/120484608
+
+https://blog.csdn.net/a827443469/article/details/79029368
+**https://github.com/ShenZhouXieZhiFeng/TheAncestralNerve/
+
+
+
+
+[控制]
+Action Type 的三个类型：
+Value——若绑定了多个输入设备。同一时间内，最多只会处理一个设备的值。
+Pass through——若绑定了多个输入设备，同一时间会处理多个输入设备的值。
+Button——按键值，与Input.GetKey()类似。
+Input.GetAnyKey() == Keyboard.current.anyKey.isPressed
+Input.GetAnyKeyDown() == Keyboard.current.anyKey.wasPressedThisFrame
+
+//手柄震动
+Gamepad.current.SetMotorSpeeds(low, high);
+Gamepad.current.ResumeHaptics();
+yield return new WaitForSecondsRealtime(time);
+Gamepad.current.PauseHaptics();
+
+https://blog.csdn.net/wangjiangrong/article/details/104020387
+https://blog.csdn.net/wangjiangrong/article/details/104053517
+https://blog.csdn.net/sinat_28637063/article/details/105394385
+https://blog.csdn.net/tianxiaojie_blog/article/details/78293977
+http://ghostyii.com/xinput/
+
+
+
+
+[视觉]
+https://www.jianshu.com/p/a4dda23e5e68
+
+
+
+
+[联机与网络 - Mirror]
+client向server发送命令 (Command)      [Command(requiresAuthority = false)] 无需权限
+server向client的回调 (ClientRpc)
+https://blog.csdn.net/farcor_cn/article/details/110360424
+https://blog.csdn.net/yxl219/article/details/108101791
+https://blog.csdn.net/MoonWinding/article/details/121531941
+https://blog.csdn.net/final5788/article/details/78163329
+https://msyqgzt.gitee.io/blogs/2020/10/21/f68e6db7d782/
+https://blog.csdn.net/qq_30454411/article/details/79542263
+https://blog.csdn.net/pq8888168/article/details/82021028
+https://blog.csdn.net/NotMz/article/details/51227942
+https://blog.csdn.net/pq8888168/article/details/82012600
+https://blog.csdn.net/final5788/article/details/78163329
+https://www.jianshu.com/p/e9241bcb438f
+https://www.jianshu.com/p/c44638cd59f0
+
+
+
+
+
+[模组]
+https://github.com/topameng/tolua/releases
+https://zhuanlan.zhihu.com/p/42472089
+https://zhuanlan.zhihu.com/p/42472115
+https://juejin.cn/post/6844903553085997069
+https://juejin.cn/post/6844903559331315719
+https://juejin.cn/post/6844903559729774600
+https://blog.csdn.net/qq_41884036/article/details/107945540
+https://blog.csdn.net/linxinfa/article/details/105256840
+https://www.cnblogs.com/xingboy/p/10287425.html
+https://blog.csdn.net/Zhou_147258369/article/details/88065203
+https://blog.csdn.net/u013628121/article/details/102063412
+
+
+
+
+
+[优化]
+https://juejin.cn/post/6844903577924665357
+
+
+
+
+
+[委托与代码简化]
+https://www.cnblogs.com/chinarbolg/p/9601422.html
+https://zhuanlan.zhihu.com/p/82374938
+https://www.cnblogs.com/sxjljj/p/11348652.html
+https://www.cnblogs.com/youmingkuang/p/11459615.html
+
+
+
+
+
+-----Assets-----
+字体选用 [Consolas / Cascadia Code]
+https://www.zhihu.com/people/you-mi-27-13/posts
+https://lks.helloxjn.com/
+https://game-icons.net/
+https://kenney.nl/assets
+https://textcraft.net/
+https://craftpix.net/categorys/sprites/page/5/
+https://lks.helloxjn.com/
+https://azgaar.github.io/Fantasy-Map-Generator/
+https://sc.chinaz.com/yinxiao/
+https://bigjpg.com/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+撰写了文章 更新于 2019-08-12 00:14:31
+
+在unity中实现随机地形🍻（进阶版 ！）
+
+上文中的不足
+只有一个 Tilemap，不方便后续功能添加
+
+地图中小凸起较多 (毛刺)，不方便用玩家行走
+
+地图生成没有控制系统，不利于地图分享保存
+
+今天就开始优化上面三个问题，以下是优化方案 ：
+
+再添加一个 Tilemap ，将 地板 和 围墙 分开，利于后期分层进行操作
+
+添加一个剔除方法，如果一个墙壁四周均为地板，那么将他删除掉
+
+添加一个 种子 然后根据种子来生成地图，这样就可以方便分享地图
+
+f9f5e50d4c917ecc1e720e6042364fc7.jpg
+代码实现
+新建变量
+floor map （存放地板）
+
+wall map （存放墙壁）
+
+end tile （存放最后一个生成的 Tile，用来传送到下一个关卡）
+
+cutting （是否开启地图裁剪）
+
+map seed （存放地图种子，用来生成地图）
+
+public Tilemap floorMap;
+    public Tilemap wallMap;
+    public TileBase wallTile;
+    public TileBase floorTile;
+    public TileBase endTile;
+    public bool cutting; //是否剔除
+    public int mapSeed;  //地图种子
+    public int step;
+
+    Dictionary<int,Vector3Int> _road = new Dictionary<int,Vector3Int>(); //生成路的坐标
+    List<Vector3Int> _wall = new List<Vector3Int>();//墙的坐标
+地板的生成 
+    地板的坐标用字典来表示，key 表示地板类型（传送门 、普通地板...）value 来表示地板的坐标
+
+//生成地板
+    private void BuildRoad()
+    {
+        _wall.Clear();
+        _road.Clear();
+        
+        floorMap.ClearAllTiles();
+        wallMap.ClearAllTiles();
+        //生成起点
+        var nowPoint = new Vector3Int(0, 0, 0);
+
+        //按指定步数生成路径
+        for(int i = 0; _road.Count < step;)
+        {
+            if (!(_road.ContainsValue(nowPoint)))
+            {
+                _road.Add(i,nowPoint);
+                i++;
+            }
+            nowPoint += RandomRoadPoint();
+        }
+    }
+墙壁的生成
+角落缺角
+
+    墙壁的坐标用 List 来表示，生成墙壁的时候为了视觉上更加美观，避免出现角落缺块的情况，我多加了一些额外的判断。
+
+//生成墙壁
+    private void BuildWall()
+    {
+        foreach (var item in _road.Values)
+        {
+
+            var right = item + Vector3Int.right;
+            var left = item + Vector3Int.left;
+            var up = item + Vector3Int.up;
+            var down = item + Vector3Int.down;
+
+            var topLeft = item + Vector3Int.up + Vector3Int.left;
+            var topRight = item + Vector3Int.up + Vector3Int.right;
+            var bottomLeft = item + Vector3Int.down + Vector3Int.left;
+            var bottomRight = item + Vector3Int.down + Vector3Int.right;
+
+
+            if (!(_wall.Contains(up))    && !(_road.ContainsValue(up))) { _wall.Add(up); }
+            if (!(_wall.Contains(down))  && !(_road.ContainsValue(down))) { _wall.Add(down); }
+            if (!(_wall.Contains(left))  && !(_road.ContainsValue(left))) { _wall.Add(left); }
+            if (!(_wall.Contains(right)) && !(_road.ContainsValue(right))) { _wall.Add(right); }
+            if (!(_wall.Contains(topLeft)) && !(_road.ContainsValue(topLeft))) { _wall.Add(topLeft); }
+            if (!(_wall.Contains(topRight)) && !(_road.ContainsValue(topRight))) { _wall.Add(topRight); }
+            if (!(_wall.Contains(bottomLeft)) && !(_road.ContainsValue(bottomLeft))) { _wall.Add(bottomLeft); }
+            if (!(_wall.Contains(bottomRight)) && !(_road.ContainsValue(bottomRight))) { _wall.Add(bottomRight); }
+
+        }
+    }
+终点格子的生成
+    现在我们的墙壁和地板已经是分开俩个 map 去实现了，在真实情况下我们肯定是需要一个进入下一个关卡的入口的，为了方便实现同时增加用户的探索时长。我直接把最后一个生成的地板替换为了终点前往下一关的传送门。（这样并不是很完美，未来可能会加入钥匙🔑机制）
+
+//生成终点格子
+    private void CreateDestination()
+    {
+        if (_road.Count > 0)
+        {
+            floorMap.SetTile(_road[(step-1)],endTile);
+        }
+    }
+地图剔除“毛刺”实现
+    文章开头就说过，这个地图生成后会有一些“小毛刺”墙壁，所以我们要实现一个方法去优化这个问题，对比图如下 ：
+
+e6b8fab795e2781c20ada63f973e4ae6.jpg
+
+关闭优化
+0808000841c75b33bb6f7a4a577a62b7.jpg
+开启优化
+    可以明显看到我们的地图更加开阔，玩家的操作体验额有了提升。
+
+//修剪地图
+    private void CutMap()
+    {
+        var tempWall = new List<Vector3Int>(_wall);
+        var countRoad = 0;
+        int key = -1; //作为新加入的的tile的key
+        foreach (var item in _wall)
+        {
+            var right = item + Vector3Int.right;
+            var left = item + Vector3Int.left;
+            var up = item + Vector3Int.up;
+            var down = item + Vector3Int.down;
+
+            if (_road.ContainsValue(right))
+                countRoad++;
+            if (_road.ContainsValue(left))
+                countRoad++;
+            if (_road.ContainsValue(up))
+                countRoad++;
+            if (_road.ContainsValue(down))
+                countRoad++;
+
+            if (countRoad >= 3)
+            {
+                _road.Add(key,item);
+                tempWall.Remove(item);
+                countRoad = 0;
+                key--;
+                continue;
+            }
+
+            countRoad = 0;
+        }
+        _wall = tempWall;
+    }
+    然后在 Update 函数中检测我们是否开启了修建功能
+
+private void Update()
+    {
+    //为了方便测试我这里设置了按下 R 键生成一次地图
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            BuildRoad();
+            BuildWall();
+            if (cutting)
+            {
+                CutMap();
+            }
+        }
+    }
+
+
+实现地图种子
+    我们知道在几乎所有编程语言中，可以使用 相同的随机数种子 来生成一系列相同伪随机数。利用这个特点，我们可以在地图生成方法开始前设定我们的随机数种子这样只要种子相同即使是在不同的电脑上我们也可以得到相同的关卡。
+
+private void Start()
+    {
+        //设置随机数种子确保地图生成是同样的
+       Random.InitState(mapSeed);
+    }
+这就是本章的所有内容啦~
+
+
+
+
+
+
+
+
+{
+    "json_format": "0.4.6",
+    "ori:entity": {
+        "mod_list": {
+            "name_id": "ns:entityname_cat"
+        },
+        "summon": {
+            "biomes_black_list": ["ori:desert"],
+            "summon_in_unknown": {
+                "value": true,
+                "probability": 0.1
+            }
+        },
+        "inherent_components": {
+            "ori:id": "ns:cat",
+            "ori:health": {
+                "default": 35,
+                "max": 35,
+                "recovery_time": 5
+            },
+            "ori:movement": {
+                "max_speed": 3
+            },
+            "ori:acquire_items": [
+                "ns:orange"
+            ],
+            "ori:physics": {
+                "collision": {
+                    "scale_2d": [0.3, 0.3],
+                    "isTrigger": false
+                }
+            }
+        },
+        "tag_components": {
+            "ori:texture": {
+                "match_tag": "original_tag:cat_blue",
+                "match_type": "==",
+                "texture": "ori:blue_cat",
+                "called_types": ["on_summon"]
+            }
+        },
+        "triggers": {
+            "ori:summon": {
+                "add_tag": {
+                },
+                "play_sound": "ori:cat_miao"
+            },
+            "ori:log_summon": {
+                "normal_log": "生成了一只miao~~~"
+            },
+            "ori:cat_get_hurt": {
+                "check_value": {
+                },
+                "random": [
+                    {
+                        "probability": 1,
+                        "set_components": [
+                            {
+                                "id": "ori:health",
+                                "set_values": [
+                                    {
+                                        "id": "health_now",
+                                        "value": 35
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        "event": {
+            "ori:before_summon": {
+                "weight": [
+                    {
+                        "value": 1,
+                        "triggers":[ "ori:summon", "ori:log_summon"]
+                    }
+                ],
+                "random": [
+                    {
+                        "probability": 1,
+                        "trigger": [ "ori:summon"],
+                        "break": false
+                    }
+                ]
+            },
+            "ori:on_summon": {
+                "trigger": "ori:summon"
+            },
+            "ori:before_get_hurt": {
+                "trigger": "ori:cat_get_hurt"
+            },
+            "ori:on_get_hurt": {
+
+            }
+        }
+    }
+}

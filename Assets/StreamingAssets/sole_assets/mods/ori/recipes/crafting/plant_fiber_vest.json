@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:plant_fiber_vest",
+        "items": [
+            {
+                "id": "ori:plant_fiber",
+                "count": 2
+            }
+        ],
+        "result": {
+            "id": "ori:plant_fiber_vest"
+        }
+    }
+}

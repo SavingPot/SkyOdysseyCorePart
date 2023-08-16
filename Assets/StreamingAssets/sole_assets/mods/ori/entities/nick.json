@@ -1,0 +1,17 @@
+{
+    "json_format": "0.4.8",
+    "ori:entity": {
+        "id": "ori:nick",
+        "speed": 6,
+        "max_health": 200,
+        "physics": {
+            "collider": {
+                "size": [
+                    1,
+                    1.8
+                ]
+            },
+            "gravity": 20
+        }
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:bamboo",
+        "display": {
+            "texture_id": "ori:bamboo",
+            "description": "ori:description.bamboo"
+        },
+        "property": {
+            "hardness": 7
+        }
+    },
+    "ori:item": {
+        "damage": 15,
+        "tags": [
+            "ori:weapon",
+            "ori:sword",
+            "ori:plant"
+        ]
+    }
+}

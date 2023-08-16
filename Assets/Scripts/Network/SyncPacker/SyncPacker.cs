@@ -1,0 +1,701 @@
+using Cysharp.Threading.Tasks;
+using GameCore.High;
+using HarmonyLib;
+using Mirror;
+using SP.Tools;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
+using System;
+using UnityEngine;
+
+namespace GameCore
+{
+    // public class ByteReader
+    // {
+    //     public byte[] bytes;
+
+    //     public ByteReader(byte[] bytes)
+    //     {
+    //         this.bytes = bytes;
+    //     }
+    // }
+
+    /// <summary>
+    /// Sync Var Packer
+    /// </summary>
+    public static class SyncPacker
+    {
+        public static Action<NMSyncVar, ByteWriter> OnVarValueChange = (_, _) => { };
+        public static Action<NMRegisterSyncVar> OnRegisterVar = a => { };
+
+        public static readonly Dictionary<string, NMSyncVar> vars = new();
+
+        /// <summary>
+        /// 发送同步变量的间隔
+        /// </summary>
+        private static float _sendInterval;
+        public static float sendInterval
+        {
+            get => _sendInterval;
+            set
+            {
+                if (value <= 0)
+                {
+                    //按 defaultSendInterval 秒来同步
+                    Debug.LogError($"{nameof(sendInterval)} 值不应小于或等于 0, 否则程序将停止响应, 已按照 {nameof(defaultSendInterval)}:{defaultSendInterval} 处理");
+                    value = defaultSendInterval;
+                }
+
+                _sendInterval = value;
+            }
+        }
+
+        public const float defaultSendInterval = 0.1f;
+
+
+
+        #region 注册变量
+        /// <summary>
+        /// 注册同步变量, 只能在服务端调用
+        /// </summary>
+        /// <param name="varId"></param>
+        public static void RegisterVar(string varId, bool clientCanSet, ByteWriter defaultValue)
+        => RegisterVar(new(varId, clientCanSet, defaultValue));
+
+        /// <summary>
+        /// 注册同步变量, 只能在服务端调用
+        /// </summary>
+        /// <param name="varId"></param>
+        public static void RegisterVar(NMRegisterSyncVar var)
+        {
+            if (var.varId.IsNullOrWhiteSpace())
+            {
+                Debug.LogError("不可以注册空变量");
+                return;
+            }
+
+            if (!Server.isServer)
+            {
+                Debug.LogError("非服务器不可以注册变量");
+                return;
+            }
+
+            //保证服务器立马注册
+            LocalRegisterSyncVar(var);
+
+            Server.Send(var);
+        }
+
+        /// <summary>
+        /// 取消注册同步变量, 只能在服务端调用
+        /// </summary>
+        /// <param name="varId"></param>
+        public static void UnregisterVar(string varId) => UnregisterVar(new NMUnregisterSyncVar(varId));
+
+        /// <summary>
+        /// 取消注册同步变量, 只能在服务端调用
+        /// </summary>
+        /// <param name="var"></param>
+        public static void UnregisterVar(NMUnregisterSyncVar var)
+        {
+            if (!Server.isServer)
+            {
+                Debug.LogWarning("客户端无法取消注册同步变量");
+                return;
+            }
+
+            Server.Send(var);
+        }
+
+        /// <summary>
+        /// 取消注册同步变量, 只能在服务端调用
+        /// </summary>
+        /// <param name="var"></param>
+        public static void UnregisterVarCore(NMUnregisterSyncVar var)
+        {
+            if (!vars.Remove(var.varId))
+            {
+                Debug.LogError($"取消注册同步变量 {var.varId} 失败");
+            }
+        }
+        #endregion
+
+        public static async void StartAutoSync()
+        {
+            //按 sendInterval 秒的间隔来同步
+            await sendInterval;
+
+            if (!Server.isServer)
+                return;
+
+            Sync();
+
+            StartAutoSync();
+        }
+
+        /// <summary>
+        /// 立即同步所有变量
+        /// </summary>
+        public static void Sync()
+        {
+            if (!Server.isServer)
+            {
+                Debug.LogError("非服务器不可以同步变量");
+                return;
+            }
+
+            List<string> sets = new();
+
+            foreach (KeyValuePair<string, NMSyncVar> entry in vars)
+            {
+                //如果同步变量的值发生未改变就不同步
+                if (entry.Value.writerLastSync.Equals(entry.Value.writer))
+                    continue;
+
+                //将新值发送给所有客户端
+                Server.Send(entry.Value);
+
+                sets.Add(entry.Key);
+            }
+
+            foreach (var set in sets)
+            {
+                NMSyncVar temp = vars[set];
+                temp.writerLastSync = temp.writer;
+                vars[set] = temp;
+            }
+        }
+
+        public static NMSyncVar GetVar(string varId)
+        {
+            if (varId.IsNullOrEmpty())
+            {
+                Debug.LogWarning($"寻找的同步变量 ID 为空");
+                return default;
+            }
+
+            if (vars.TryGetValue(varId, out var value))
+            {
+                return value;
+            }
+
+            Debug.LogWarning($"未找到同步变量 {varId}");
+            return default;
+        }
+
+        public static bool HasVar(string varId)
+        {
+            if (varId.IsNullOrEmpty())
+                return false;
+
+            return vars.ContainsKey(varId);
+        }
+
+        public static bool IsValueCorrect(string id)
+        {
+            if (id.IsNullOrEmpty())
+                return false;
+
+            return vars.TryGetValue(id, out var value) && (value.writer.bytes != null || (value.writer.chunks != null && value.writer.chunks.Count != 0));
+        }
+
+        //TODO: string varId -> uint var;
+        public static bool SetValue(string varId, ByteWriter value)
+        {
+            if (varId.IsNullOrEmpty())
+            {
+                Debug.LogError("设置的同步变量 Id 为空");
+
+                return false;
+            }
+
+            if (vars.TryGetValue(varId, out var var))
+            {
+                //只有服务器拥有设置的权力
+                if (!var.clientCanSet && !Server.isServer)
+                {
+                    Debug.LogWarning($"客户端不能设置同步变量 {varId}, 原因是其 {nameof(NMSyncVar.clientCanSet)} 值为 false, 如果想在客户端设置请将其设置为 true");
+                    return false;
+                }
+
+                var oldWriter = var.writer;
+
+                //设置值
+                NMSyncVar tempVar = var;
+                tempVar.writer = value;
+
+                //服务器直接赋值
+                if (Server.isServer)
+                {
+                    vars[varId] = tempVar;
+                    OnVarValueChange.Invoke(tempVar, oldWriter);
+                }
+                //客户端发送给服务器赋值
+                else
+                {
+                    Client.Send(tempVar);
+                }
+
+                return true;
+            }
+
+            Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(SyncPacker.RegisterVar)}(string) 来注册同步变量");
+
+            return false;
+        }
+
+
+
+
+
+
+
+        public static Func<string, uint, string> InstanceGetId;
+        public static Func<string, uint, string> InstanceSetId;
+
+        public static Func<string, string> StaticGetId;
+        public static Func<string, string> StaticSetId;
+        public static Func<string, string> ReturnType;
+
+        public static Action StaticVarsRegister;
+
+        public static bool _InstanceSet(IVarInstanceID __instance, object value, MethodBase __originalMethod)
+        {
+            //获取写入器
+            ByteWriter writer = ByteWriter.Create();
+
+            //写入数据
+            ByteWriter.TypeWrite(__originalMethod.GetParameters()[0].ParameterType.FullName, value, writer);
+
+            SetValue(InstanceSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", __instance.varInstanceId), writer);
+            return false;
+        }
+
+        public static bool _InstanceGet(IVarInstanceID __instance, ref object __result, MethodBase __originalMethod)
+        {
+            var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
+            __result = ByteReader.TypeRead(ReturnType(path), GetVar(InstanceGetId(path, __instance.varInstanceId)).writer.chunks[0]);
+            return false;
+        }
+
+
+        public static bool _StaticSet(object value, MethodBase __originalMethod)
+        {
+            //获取写入器
+            ByteWriter writer = ByteWriter.Create();
+
+            //写入数据
+            ByteWriter.TypeWrite(__originalMethod.GetParameters()[0].ParameterType.FullName, value, writer);
+
+            SetValue(StaticSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}"), writer);
+            return false;
+        }
+
+        public static bool _StaticGet(ref object __result, MethodBase __originalMethod)
+        {
+            var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
+            __result = ByteReader.TypeRead(ReturnType(path), GetVar(StaticGetId(path)).writer.chunks[0]);
+            return false;
+        }
+
+
+
+        public static string _GetIDError(string id)
+        {
+            Debug.LogError($"获取 SyncVar {id} 失败!");
+            return null;
+        }
+
+        public static string _GetReturnTypeError(string id)
+        {
+            Debug.LogError($"获取 返回值 {id} 失败!");
+            return null;
+        }
+
+        public static void Init()
+        {
+            sendInterval = defaultSendInterval;
+
+            /* --------------------------------- 生成反射参数 --------------------------------- */
+            BindingFlags flags = ReflectionTools.BindingFlags_All;
+
+            /* --------------------------------- 获取定义的方法 --------------------------------- */
+            var _InstanceSet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._InstanceSet)}");
+            var _InstanceGet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._InstanceGet)}");
+
+            var _StaticSet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._StaticSet)}");
+            var _StaticGet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._StaticGet)}");
+
+            var GetInstanceID = typeof(SyncPacker).GetMethod("GetInstanceID", new Type[] { typeof(string), typeof(uint) });
+            var RegisterVar = typeof(SyncPacker).GetMethod("RegisterVar", new Type[] { typeof(string), typeof(bool), typeof(byte[]) });
+
+            ParameterExpression instanceGetIdParam_getter = Expression.Parameter(typeof(string), "id");
+            ParameterExpression instanceGetIdParam_instance = Expression.Parameter(typeof(uint), "instanceId");
+            ParameterExpression instanceSetIdParam_setter = Expression.Parameter(typeof(string), "id");
+            ParameterExpression instanceSetIdParam_instance = Expression.Parameter(typeof(uint), "instanceId");
+
+            ParameterExpression staticGetIdParam_getter = Expression.Parameter(typeof(string), "id");
+            ParameterExpression staticSetIdParam_setter = Expression.Parameter(typeof(string), "id");
+            ParameterExpression returnTypeParam_path = Expression.Parameter(typeof(string), "path");
+
+            List<SwitchCase> instanceGetIdCases = new();
+            List<SwitchCase> instanceSetIdCases = new();
+
+            List<SwitchCase> staticGetIdCases = new();
+            List<SwitchCase> staticSetIdCases = new();
+            List<SwitchCase> returnTypeCases = new();
+
+            Action staticVarsRegisterMethods = () => { };
+
+            /* -------------------------------------------------------------------------- */
+            //?                               更改方法内容                                 */
+            /* -------------------------------------------------------------------------- */
+            //遍历每个程序集中的方法
+            foreach (var ass in ModFactory.assemblies)
+            {
+                foreach (var type in ass.GetTypes())
+                {
+                    //排除无用的程序集, 加快加载
+                    if (type.Namespace == "System" || type.Namespace == "UnityEngine" || type.Namespace == "Mirror" || type.IsGenericType)
+                        continue;
+
+                    //获取所有可用方法
+                    foreach (var method in type.GetAllMethods())
+                    {
+                        if (AttributeGetter.TryGetAttribute<SyncGetterAttribute>(method, out var GetterAttr))
+                        {
+                            string methodPath = $"{type.FullName}.{method.Name}";
+
+                            if (method.ReturnType.FullName == typeof(void).FullName)
+                            {
+                                Debug.LogError($"同步变量获取器 {methodPath} 返回值必须不为空, 如 byte 的同步变量设置器应为 [SyncGetterAttribute] byte byte_get() => default;");
+                                continue;
+                            }
+
+                            if (ByteReader.GetReader(method.ReturnType.FullName) == null)
+                            {
+                                Debug.LogError($"无法找到类型 {method.ReturnType.FullName} ({methodPath}) 的字节读取器");
+                                continue;
+                            }
+
+                            returnTypeCases.Add(Expression.SwitchCase(Expression.Constant(method.ReturnType.FullName), Expression.Constant(methodPath)));
+
+                            /* ---------------------------------- 编辑方法 ---------------------------------- */
+                            Harmony harmony = new($"SyncPacker.harmony.getter.{methodPath}");
+                            var splitted = methodPath.Split("_get");
+
+                            if (splitted.Length != 2)
+                            {
+                                Debug.LogError($"同步变量获取器 {methodPath} 的格式必须为 *同步变量名_get*");
+                                continue;
+                            }
+
+                            if (!method.IsStatic)
+                            {
+                                instanceGetIdCases.Add(Expression.SwitchCase(Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceGetIdParam_instance), Expression.Constant(methodPath)));
+                                harmony.Patch(method, new HarmonyMethod(_InstanceGet));
+                            }
+                            else
+                            {
+                                staticGetIdCases.Add(Expression.SwitchCase(Expression.Constant(splitted[0]), Expression.Constant(methodPath)));
+                                harmony.Patch(method, new HarmonyMethod(_StaticGet));
+                            }
+                        }
+                        else if (AttributeGetter.TryGetAttribute<SyncSetterAttribute>(method, out var SetterAttr))
+                        {
+                            string methodPath = $"{type.FullName}.{method.Name}";
+
+                            if (method.GetParameters().Length == 0)
+                            {
+                                Debug.LogError($"同步变量设置器 {methodPath} 必须包含一个参数, 如 byte 的同步变量设置器应为 [SyncSetterAttribute] void byte_set(byte value) " + "{ }");
+                                continue;
+                            }
+
+                            if (ByteWriter.GetWriter(method.GetParameters()[0].ParameterType.FullName) == null)
+                            {
+                                Debug.LogError($"无法找到类型 {method.ReturnType.FullName} ({methodPath}) 的字节写入器");
+                                continue;
+                            }
+
+
+                            /* ---------------------------------- 编辑方法 ---------------------------------- */
+                            Harmony harmony = new($"SyncPacker.harmony.getter.{methodPath}");
+                            var splitted = methodPath.Split("_set");
+
+                            if (splitted.Length != 2)
+                            {
+                                Debug.LogError($"同步变量设置器 {methodPath} 的格式必须为 *同步变量名_set*");
+                                continue;
+                            }
+
+                            if (!method.IsStatic)
+                            {
+                                instanceSetIdCases.Add(Expression.SwitchCase(Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceSetIdParam_instance), Expression.Constant(methodPath)));
+                                harmony.Patch(method, new HarmonyMethod(_InstanceSet));
+                            }
+                            else
+                            {
+                                staticSetIdCases.Add(Expression.SwitchCase(Expression.Constant(splitted[0]), Expression.Constant(methodPath)));
+                                harmony.Patch(method, new HarmonyMethod(_StaticSet));
+                            }
+                        }
+                    }
+
+                    foreach (var property in type.GetAllProperties())
+                    {
+                        //获取呼叫类型
+                        if (AttributeGetter.TryGetAttribute<SyncAttribute>(property, out var att))
+                        {
+                            string propertyPath = $"{type.FullName}.{property.Name}";
+                            var propertyPathConst = Expression.Constant(propertyPath);
+
+                            /* ---------------------------------- 编辑方法 ---------------------------------- */
+                            Harmony harmony = new($"SyncPacker.harmony.{propertyPath}");
+
+                            if (!property.GetMethod.IsStatic)
+                            {
+
+                            }
+                            else
+                            {
+                                if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(property, out var defaultValueAttribute))
+                                {
+                                    if (defaultValueAttribute.defaultValue != null && property.PropertyType.FullName != defaultValueAttribute.defaultValue.GetType().FullName)
+                                    {
+                                        Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueAttribute.defaultValue.GetType().FullName}");
+                                        continue;
+                                    }
+
+                                    var writer = ByteWriter.Create();
+                                    ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueAttribute.defaultValue, writer);
+
+                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, writer);
+                                }
+                                else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(property, out var defaultValueFromMethodAttribute))
+                                {
+                                    MethodInfo defaultValueMethod = ModFactory.SearchUserMethod(defaultValueFromMethodAttribute.methodName);
+
+                                    if (defaultValueMethod == null)
+                                    {
+                                        Debug.LogError($"无法找到同步变量 {propertyPath} 的默认值获取方法 {defaultValueFromMethodAttribute.methodName}");
+                                        continue;
+                                    }
+
+                                    if (property.PropertyType.FullName != defaultValueMethod.ReturnType.FullName)
+                                    {
+                                        Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueMethod.ReturnType.FullName}");
+                                        continue;
+                                    }
+
+                                    if (defaultValueFromMethodAttribute.getValueUntilRegister)
+                                    {
+                                        staticVarsRegisterMethods += () =>
+                                        {
+                                            var writer = ByteWriter.Create();
+                                            ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueMethod.Invoke(null, null), writer);
+
+                                            SyncPacker.RegisterVar(propertyPath, true, writer);
+                                        };
+                                    }
+                                    else
+                                    {
+                                        var writer = ByteWriter.Create();
+                                        ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueMethod.Invoke(null, null), writer);
+
+                                        staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, writer);
+                                    }
+                                }
+                                else
+                                {
+                                    var writer = ByteWriter.Create();
+                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, writer);
+                                }
+
+                                if (!att.hook.IsNullOrWhiteSpace())
+                                {
+                                    MethodInfo method = !att.hook.Contains(".") ? type.GetMethodFromAllIncludingBases(att.hook) : ModFactory.SearchUserMethod(att.hook);  //.GetMethod(att.hook, flags)
+
+                                    if (method == null)
+                                    {
+                                        Debug.LogError($"无法找到 {propertyPath} 的钩子: {att.hook}");
+                                    }
+                                    else
+                                    {
+                                        OnVarValueChange += (var, value) =>
+                                        {
+                                            if (var.varId == propertyPath)
+                                            {
+                                                method.Invoke(null, null);
+                                            }
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            /* ----------------------------- 定义方法体 (Switch) ----------------------------- */
+            var instanceGetIdBody = Expression.Switch(instanceGetIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), instanceGetIdParam_getter), instanceGetIdCases.ToArray());
+            var instanceSetIdBody = Expression.Switch(instanceSetIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), instanceSetIdParam_setter), instanceSetIdCases.ToArray());
+
+            var staticGetIdBody = Expression.Switch(staticGetIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticGetIdParam_getter), staticGetIdCases.ToArray());
+            var staticSetIdBody = Expression.Switch(staticSetIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticSetIdParam_setter), staticSetIdCases.ToArray());
+            var staticReturnTypeBody = Expression.Switch(returnTypeParam_path, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetReturnTypeError)), returnTypeParam_path), returnTypeCases.ToArray());
+
+            /* ---------------------------------- 编译方法 ---------------------------------- */
+            InstanceGetId = Expression.Lambda<Func<string, uint, string>>(instanceGetIdBody, instanceGetIdParam_getter, instanceGetIdParam_instance).Compile();
+            InstanceSetId = Expression.Lambda<Func<string, uint, string>>(instanceSetIdBody, instanceSetIdParam_setter, instanceSetIdParam_instance).Compile();
+
+            StaticGetId = Expression.Lambda<Func<string, string>>(staticGetIdBody, staticGetIdParam_getter).Compile();
+            StaticSetId = Expression.Lambda<Func<string, string>>(staticSetIdBody, staticSetIdParam_setter).Compile();
+            ReturnType = Expression.Lambda<Func<string, string>>(staticReturnTypeBody, returnTypeParam_path).Compile();
+
+            StaticVarsRegister = staticVarsRegisterMethods;
+
+
+
+
+
+            NetworkCallbacks.OnTimeToServerCallback += async () =>
+            {
+                await UniTask.WaitUntil(() => Client.isClient);
+                await UniTask.NextFrame();
+
+                StaticVarsRegister();
+            };
+        }
+
+        public static string GetInstanceID(string property, uint instance)
+        {
+            return $"{property}-{instance}";
+        }
+
+        public static string GetInstanceID(StringBuilder sb, string property, uint instance)
+        {
+            sb.Append(property).Append("-").Append(instance);
+
+            //设置 varName 并注册变量
+            string value = sb.ToString();
+            sb.Clear();
+
+            return value;
+        }
+
+
+
+
+
+
+
+
+
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void BindMethods()
+        {
+            NetworkCallbacks.OnClientReady += conn =>
+            {
+                //如果是自己就不注册及同步
+                if (conn == Server.localConnection)
+                    return;
+
+                //当新客户端进入时使其注册同步变量
+                foreach (KeyValuePair<string, NMSyncVar> entry in vars)
+                {
+                    //让指定客户端重新注册同步变量
+                    conn.Send<NMRegisterSyncVar>(new(entry.Value.varId, entry.Value.clientCanSet, entry.Value.writer));
+                }
+            };
+
+            NetworkCallbacks.OnDisconnectFromServer += () =>
+            {
+                ClearVars();
+            };
+
+
+            NetworkCallbacks.OnStopServer += () =>
+            {
+                ClearVars();
+            };
+
+            static void ClearVars()
+            {
+                vars.Clear();
+                Debug.Log($"退出或关闭了服务器, {nameof(vars)} 被清空");
+            }
+
+            NetworkCallbacks.OnStartServer += () =>
+            {
+                StartAutoSync();
+            };
+
+            void OnClientGetNMSyncVar(NMSyncVar nm)
+            {
+                //如果自己是服务器就不要同步
+                if (Server.isServer)
+                    return;
+
+                if (vars.TryGetValue(nm.varId, out var var))
+                {
+                    var oldValue = var.writer;
+                    var.writer = nm.writer;
+                    vars[nm.varId] = var;
+                    OnVarValueChange.Invoke(var, oldValue);
+
+                    //Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
+                    return;
+                }
+
+                //Debug.LogError($"同步变量 {var.varId} 的值为 {var.varValue} 失败");
+            }
+
+            void OnServerGetNMSyncVar(NetworkConnectionToClient conn, NMSyncVar nm)
+            {
+                if (vars.TryGetValue(nm.varId, out var var))
+                {
+                    var oldValue = var.writer;
+                    var.writer = nm.writer;
+                    vars[nm.varId] = var;
+
+                    OnVarValueChange.Invoke(var, oldValue);
+                }
+            }
+
+            void OnClientGetNMRegisterSyncVar(NMRegisterSyncVar nm)
+            {
+                //服务器会提前进行注册, 不需要重复注册
+                if (Server.isServer)
+                    return;
+
+                LocalRegisterSyncVar(nm);
+            }
+
+            NetworkCallbacks.OnTimeToServerCallback += () =>
+            {
+                Server.Callback<NMSyncVar>(OnServerGetNMSyncVar);
+            };
+            NetworkCallbacks.OnTimeToClientCallback += () =>
+            {
+                Client.Callback<NMRegisterSyncVar>(OnClientGetNMRegisterSyncVar);
+                Client.Callback<NMUnregisterSyncVar>(UnregisterVarCore);
+                Client.Callback<NMSyncVar>(OnClientGetNMSyncVar);
+            };
+        }
+
+        private static void LocalRegisterSyncVar(NMRegisterSyncVar var)
+        {
+            //Debug.Log($"注册了{var.varId}");
+
+            if (!vars.TryAdd(var.varId, new(var.varId, var.defaultValue, var.clientCanSet)))
+            {
+                Debug.LogError($"注册 {var.varId} 失败, 其已存在");
+            }
+            //Debug.Log($"注册了同步变量 {var.varId}");
+            OnRegisterVar(var);
+        }
+    }
+}

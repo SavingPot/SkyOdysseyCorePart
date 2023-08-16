@@ -1,0 +1,55 @@
+{
+    "json_format": "0.6.2",
+    "ori:biome": {
+        "id": "ori:savannah_grassland",
+        "difficulty": 4,
+        "size_scope": {
+            "min": [
+                45,
+                45
+            ],
+            "max": [
+                90,
+                90
+            ]
+        },
+        "structures": [
+            {
+                "id": "ori:acacia_tree"
+            },
+            {
+                "id": "ori:cave"
+            }
+        ],
+        "blocks": [
+            {
+                "prefab": "ori:savannah_grass_surface"
+            },
+            {
+                "prefab": "ori:ores"
+            },
+            {
+                "prefab": "ori:pools"
+            },
+            {
+                "prefab": "ori:universal_surface"
+            },
+            {
+                "prefab": "ori:plants_tropic"
+            },
+            {
+                "block": "ori:grass",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 10
+                }
+            }
+        ],
+        "entities": {}
+    }
+}

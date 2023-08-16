@@ -1,0 +1,12 @@
+Logs
+Library
+*.csproj
+*.sln
+ignore.conf
+UserSettings
+Temp
+.plastic
+obj
+GameLauncher/Android
+GameLauncher/Windows
+StreamingAssets/sole_assets/mods/ori

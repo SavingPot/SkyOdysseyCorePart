@@ -1,0 +1,29 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:torch",
+        "display": {
+            "texture_id": "ori:torch_0",
+            "lightLevel": 5
+        },
+        "property": {
+            "hardness": 0.025,
+            "tags": [
+                "ori:light",
+                "ori:loot.barrel"
+            ],
+            "collidible": false,
+            "behaviour": "GameCore.TorchBlockBehaviour"
+        }
+    },
+    "ori:animations": {
+        "textures": [
+            "ori:torch_0",
+            "ori:torch_1",
+            "ori:torch_2",
+            "ori:torch_3",
+            "ori:torch_2"
+        ],
+        "time": 0.5
+    }
+}

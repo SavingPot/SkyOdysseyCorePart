@@ -1,0 +1,49 @@
+{
+    "json_format": "0.6.2",
+    "ori:block": {
+        "id": "ori:watermelon_crop",
+        "display": {
+            "texture_id": "ori:watermelon_crop_0",
+            "description": "ori:description.watermelon_crop"
+        },
+        "property": {
+            "hardness": 1.5,
+            "collidible": false,
+            "behaviour": "GameCore.CropBlockBehaviour"
+        }
+    },
+    "ori:corp_block": {
+        "display": {
+            "textures": [
+                {
+                    "index": 0,
+                    "texture": "ori:watermelon_crop_0"
+                },
+                {
+                    "index": 1,
+                    "texture": "ori:watermelon_crop_1"
+                },
+                {
+                    "index": 2,
+                    "texture": "ori:watermelon_crop_2"
+                },
+                {
+                    "index": 3,
+                    "texture": "ori:watermelon_crop_3"
+                },
+                {
+                    "index": 4,
+                    "texture": "ori:watermelon_crop_4"
+                }
+            ]
+        },
+        "property": {
+            "thread_count": 5,
+            "mature_crops": [
+                {
+                    "id": "ori:watermelon"
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:acacia_bark",
+        "items": [
+            {
+                "id": "ori:acacia_log"
+            }
+        ],
+        "result": {
+            "id": "ori:acacia_bark"
+        }
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "json_format": "0.4.8",
+    "ori:entity": {
+        "id": "ori:oak_tree_man",
+        "summon": {
+            "biome": "ori:oak_forest",
+            "default_probability": 50,
+            "time_earliest": 8,
+            "time_latest": 18
+        },
+        "drops": [
+            {
+                "id": "ori:oak_log",
+                "count": 6
+            }
+        ],
+        "speed": 2,
+        "physics": {
+            "collider": {
+                "size": [
+                    1.5,
+                    3
+                ]
+            },
+            "gravity": 20
+        },
+        "max_health": 200
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:flint",
+        "texture": "ori:flint",
+        "damage": 10,
+        "tags": [
+            "ori:loot.barrel"
+        ],
+        "description": "ori:description.flint"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:sea_hibiscus_stick",
+        "texture": "ori:sea_hibiscus_stick",
+        "damage": 10,
+        "tags": [
+            "ori:stick"
+        ],
+        "description": "ori:description.sea_hibiscus_stick"
+    }
+}

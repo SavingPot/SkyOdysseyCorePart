@@ -1,0 +1,12 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:portal_base",
+        "display": {
+            "texture_id": "ori:portal_base"
+        },
+        "property": {
+            "hardness": -1
+        }
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:gold_ore",
+        "display": {
+            "texture_id": "ori:gold_ore"
+        },
+        "property": {
+            "hardness": 14
+        }
+    }
+}

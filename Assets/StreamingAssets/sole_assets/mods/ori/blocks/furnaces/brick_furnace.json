@@ -1,0 +1,14 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:brick_furnace",
+        "display": {
+            "texture_id": "ori:brick_furnace",
+            "description": "ori:description.brick_furnace"
+        },
+        "property": {
+            "hardness": 25,
+            "behaviour": "GameCore.BrickFurnaceBlockBehaviour"
+        }
+    }
+}

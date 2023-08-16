@@ -1,0 +1,13 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:jungle_sword",
+        "texture": "ori:jungle_sword",
+        "damage": 20,
+        "tags": [
+            "ori:weapon",
+            "ori:sword"
+        ],
+        "description": "ori:description.jungle_sword"
+    }
+}

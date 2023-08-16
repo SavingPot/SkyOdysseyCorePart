@@ -1,0 +1,16 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:tangerine_saw",
+        "items": [
+            {
+                "id": "ori:tangerine_planks",
+                "count": 5
+            }
+        ],
+        "result": {
+            "id": "ori:tangerine_saw",
+            "count": 1
+        }
+    }
+}

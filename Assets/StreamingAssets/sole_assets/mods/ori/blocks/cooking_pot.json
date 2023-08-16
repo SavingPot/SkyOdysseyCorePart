@@ -1,0 +1,14 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:cooking_pot",
+        "display": {
+            "texture_id": "ori:cooking_pot",
+            "description": "ori:description.cooking_pot"
+        },
+        "property": {
+            "hardness": 10,
+            "behaviour": "GameCore.CookingPotBlockBehaviour"
+        }
+    }
+}

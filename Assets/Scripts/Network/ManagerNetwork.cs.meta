@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 38c734e63c43fa748982dc65da883592
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - transport: {instanceID: 0}
+  - authenticator: {instanceID: 0}
+  - playerPrefab: {instanceID: 0}
+  - joinIPInputField: {instanceID: 0}
+  - joinPortInputField: {instanceID: 0}
+  - hostPortInputField: {instanceID: 0}
+  - localPlayer: {instanceID: 0}
+  - enemyPrefab: {instanceID: 0}
+  - serversScrollView: {instanceID: 0}
+  - emergencyPrefabForEditor: {fileID: 1368055323630927165, guid: 1db77761612ac9d4d9cdfd9a2c490fff, type: 3}
+  executionOrder: 8
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

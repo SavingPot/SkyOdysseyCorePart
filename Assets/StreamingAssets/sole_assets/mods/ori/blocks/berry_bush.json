@@ -1,0 +1,18 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:berry_bush",
+        "display": {
+            "texture_id": "ori:berry_bush",
+            "description": "ori:description.berry_bush"
+        },
+        "property": {
+            "hardness": 1,
+            "tags": [
+                "ori:plant"
+            ],
+            "behaviour": "GameCore.BerryBushBehaviour",
+            "collidible": "false"
+        }
+    }
+}

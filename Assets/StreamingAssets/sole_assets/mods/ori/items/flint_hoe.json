@@ -1,0 +1,15 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:flint_hoe",
+        "texture": "ori:flint_hoe",
+        "damage": 15,
+        "excavation_strength": 65,
+        "tags": [
+            "ori:hoe"
+        ],
+        "description": "ori:description.flint_hoe",
+        "use_cd": 0.2,
+        "extra_distance": 0.2
+    }
+}

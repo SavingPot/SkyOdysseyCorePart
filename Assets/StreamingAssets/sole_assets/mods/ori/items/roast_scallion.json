@@ -1,0 +1,16 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:roast_scallion",
+        "texture": "ori:roast_scallion",
+        "damage": 10,
+        "tags": [
+            "ori:food",
+            "ori:cooked_food",
+            "ori:weapon",
+            "ori:sword",
+            "ori:edible=8"
+        ],
+        "description": "ori:description.roast_scallion"
+    }
+}

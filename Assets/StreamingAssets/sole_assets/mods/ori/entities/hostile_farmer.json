@@ -1,0 +1,22 @@
+{
+    "json_format": "0.4.8",
+    "ori:entity": {
+        "id": "ori:hostile_farmer",
+        "summon": {
+            "default_probability": 25,
+            "time_earliest": 5,
+            "time_latest": 17
+        },
+        "speed": 5,
+        "physics": {
+            "collider": {
+                "size": [
+                    1.5,
+                    2
+                ]
+            },
+            "gravity": 8
+        },
+        "max_health": 120
+    }
+}

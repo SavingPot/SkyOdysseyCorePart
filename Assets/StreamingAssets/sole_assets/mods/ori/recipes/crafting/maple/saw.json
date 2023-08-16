@@ -1,0 +1,16 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:maple_saw",
+        "items": [
+            {
+                "id": "ori:maple_planks",
+                "count": 5
+            }
+        ],
+        "result": {
+            "id": "ori:maple_saw",
+            "count": 1
+        }
+    }
+}

@@ -1,0 +1,152 @@
+{
+    "json_format": "0.7.0",
+    "prefab": {
+        "id": "ori:plants_tropic",
+        "content": [
+            {
+                "block": "ori:onion_crop",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 1
+                }
+            },
+            {
+                "block": "ori:potato_crop",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 1
+                }
+            },
+            {
+                "block": "ori:watermelon_crop",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 0.8
+                }
+            },
+            {
+                "block": "ori:pumpkin_crop",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 0.8
+                }
+            },
+            {
+                "block": "ori:dog_tail_grass",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 3
+                }
+            },
+            {
+                "block": "ori:rose",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 5
+                }
+            },
+            {
+                "block": "ori:daisy",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 1.5
+                }
+            },
+            {
+                "block": "ori:berry_bush",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 3.5
+                }
+            },
+            {
+                "block": "ori:bush",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 7
+                }
+            },
+            {
+                "block": "ori:sugar_cane",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 3
+                }
+            },
+            {
+                "block": "ori:sugar_cane",
+                "ranges": [
+                    "@surface + 2"
+                ],
+                "attached": {
+                    "id": "ori:sugar_cane"
+                },
+                "rules": {
+                    "probability": 20
+                }
+            },
+            {
+                "block": "ori:sugar_cane",
+                "ranges": [
+                    "@surface + 3"
+                ],
+                "attached": {
+                    "id": "ori:sugar_cane"
+                },
+                "rules": {
+                    "probability": 25
+                }
+            }
+        ]
+    }
+}

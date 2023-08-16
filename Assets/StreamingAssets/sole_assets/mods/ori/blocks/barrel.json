@@ -1,0 +1,14 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:barrel",
+        "display": {
+            "texture_id": "ori:barrel",
+            "description": "ori:description.barrel"
+        },
+        "property": {
+            "hardness": 10,
+            "behaviour": "GameCore.BarrelBlockBehaviour"
+        }
+    }
+}

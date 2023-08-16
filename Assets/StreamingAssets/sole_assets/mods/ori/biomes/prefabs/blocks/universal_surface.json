@@ -1,0 +1,17 @@
+{
+    "json_format": "0.7.0",
+    "prefab": {
+        "id": "ori:universal_surface",
+        "content": [
+            {
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "block": "ori:gravel",
+                "rules": {
+                    "probability": 10
+                }
+            }
+        ]
+    }
+}

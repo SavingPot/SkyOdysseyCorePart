@@ -1,0 +1,10 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:wooden_bowl_with_water",
+        "texture": "ori:wooden_bowl_with_water",
+        "damage": 8,
+        "tags": [],
+        "description": "ori:description.wooden_bowl_with_water"
+    }
+}

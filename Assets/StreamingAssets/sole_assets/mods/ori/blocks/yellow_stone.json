@@ -1,0 +1,16 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:yellow_stone",
+        "display": {
+            "texture_id": "ori:yellow_stone",
+            "description": "ori:description.yellow_stone"
+        },
+        "property": {
+            "hardness": 10,
+            "tags": [
+                "wall"
+            ]
+        }
+    }
+}

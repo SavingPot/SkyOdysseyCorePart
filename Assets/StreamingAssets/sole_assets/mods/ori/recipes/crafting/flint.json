@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:flint",
+        "items": [
+            {
+                "id": "ori:gravel",
+                "count": 2
+            }
+        ],
+        "result": {
+            "id": "ori:flint"
+        }
+    }
+}

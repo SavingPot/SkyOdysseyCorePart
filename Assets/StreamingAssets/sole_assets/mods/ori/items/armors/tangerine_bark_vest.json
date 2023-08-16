@@ -1,0 +1,17 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:tangerine_bark_vest",
+        "texture": "ori:tangerine_bark_vest.body",
+        "damage": 10,
+        "tags": [
+            "ori:bark_vest",
+            "ori:vest"
+        ],
+        "description": "ori:description.tangerine_bark_vest",
+        "breastplate": {
+            "defense": 1,
+            "body": "ori:tangerine_bark_vest.body"
+        }
+    }
+}

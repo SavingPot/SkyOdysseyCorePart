@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:acacia_stick",
+        "items": [
+            {
+                "id": "ori:acacia_planks"
+            }
+        ],
+        "result": {
+            "id": "ori:acacia_stick",
+            "count": 5
+        }
+    }
+}

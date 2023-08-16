@@ -1,0 +1,21 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:gravel",
+        "display": {
+            "texture_id": "ori:gravel_block"
+        },
+        "property": {
+            "hardness": 0.025,
+            "collidible": false,
+            "tags": [
+                "ori:loot.barrel"
+            ]
+        }
+    },
+    "ori:item": {
+        "texture": "ori:gravel_item",
+        "damage": 13,
+        "description": "ori:description.gravel"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:grass_block",
+        "items": [
+            {
+                "id": "ori:grass"
+            },
+            {
+                "id": "ori:dirt"
+            }
+        ],
+        "result": {
+            "id": "ori:grass_block"
+        }
+    }
+}

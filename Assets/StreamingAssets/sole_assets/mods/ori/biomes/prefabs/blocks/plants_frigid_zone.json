@@ -1,0 +1,20 @@
+{
+    "json_format": "0.7.0",
+    "prefab": {
+        "id": "ori:plants_frigid_zone",
+        "content": [
+            {
+                "block": "ori:honeysuckle",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 0.3
+                }
+            }
+        ]
+    }
+}

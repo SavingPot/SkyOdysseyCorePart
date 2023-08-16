@@ -1,0 +1,33 @@
+{
+    "json_format": "0.4.8",
+    "ori:entity": {
+        "id": "ori:savannah_grassland_slime",
+        "summon": {
+            "biome": "ori:savannah_grassland",
+            "default_probability": 80,
+            "time_earliest": 3,
+            "time_latest": 18
+        },
+        "drops": [
+            {
+                "id": "ori:slime_gel",
+                "count": 2
+            },
+            {
+                "id": "ori:savannah_grass_block",
+                "count": 2
+            }
+        ],
+        "speed": 3,
+        "physics": {
+            "collider": {
+                "size": [
+                    0.8,
+                    0.8
+                ]
+            },
+            "gravity": 8
+        },
+        "max_health": 40
+    }
+}

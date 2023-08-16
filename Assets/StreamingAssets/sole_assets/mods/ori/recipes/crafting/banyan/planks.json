@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:banyan_planks",
+        "items": [
+            {
+                "id": "ori:banyan_log"
+            }
+        ],
+        "result": {
+            "id": "ori:banyan_planks",
+            "count": 5
+        }
+    }
+}

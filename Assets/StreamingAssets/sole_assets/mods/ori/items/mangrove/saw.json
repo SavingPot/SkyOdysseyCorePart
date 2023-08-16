@@ -1,0 +1,13 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:mangrove_saw",
+        "texture": "ori:mangrove_saw",
+        "damage": 15,
+        "excavation_strength": 45,
+        "tags": [
+            "ori:saw"
+        ],
+        "description": "ori:description.mangrove_saw"
+    }
+}

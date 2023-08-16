@@ -1,0 +1,17 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:wooden_chest",
+        "display": {
+            "texture_id": "ori:wooden_chest"
+        },
+        "property": {
+            "hardness": 15,
+            "tags": [
+                "ori:chest"
+            ],
+            "collidible": false,
+            "behaviour": "GameCore.WoodenChestBlockBehaviour"
+        }
+    }
+}

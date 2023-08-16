@@ -1,0 +1,49 @@
+{
+    "json_format": "0.7.0",
+    "prefab": {
+        "id": "ori:pools",
+        "content": [
+            {
+                "ranges": [
+                    "@surface"
+                ],
+                "areas": [
+                    [
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0
+                    ],
+                    [
+                        2,
+                        0,
+                        0
+                    ],
+                    [
+                        3,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        -1,
+                        0
+                    ],
+                    [
+                        2,
+                        -1,
+                        0
+                    ]
+                ],
+                "block": "ori:water",
+                "rules": {
+                    "probability": 4
+                }
+            }
+        ]
+    }
+}

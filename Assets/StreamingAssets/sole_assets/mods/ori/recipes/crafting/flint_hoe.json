@@ -1,0 +1,26 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:flint_hoe",
+        "items": [
+            {
+                "tags": [
+                    "ori:stick"
+                ],
+                "count": 2
+            },
+            {
+                "id": "ori:straw_rope",
+                "count": 1
+            },
+            {
+                "id": "ori:flint",
+                "count": 1
+            }
+        ],
+        "result": {
+            "id": "ori:flint_hoe",
+            "count": 1
+        }
+    }
+}

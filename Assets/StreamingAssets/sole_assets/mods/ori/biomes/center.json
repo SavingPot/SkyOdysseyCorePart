@@ -1,0 +1,26 @@
+{
+    "json_format": "0.6.2",
+    "ori:biome": {
+        "id": "ori:center",
+        "difficulty": 0,
+        "size_scope": {
+            "min": [
+                70,
+                70
+            ],
+            "max": [
+                70,
+                70
+            ]
+        },
+        "blocks": [
+            {
+                "ranges": [
+                    "@bottom => @surface"
+                ],
+                "block": "ori:stone"
+            }
+        ],
+        "entities": {}
+    }
+}

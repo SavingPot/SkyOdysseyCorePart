@@ -1,0 +1,22 @@
+{
+    "json_format": "0.4.8",
+    "ori:entity": {
+        "id": "ori:ancient_boxer",
+        "summon": {
+            "default_probability": 50,
+            "time_earliest": 18,
+            "time_latest": 3
+        },
+        "speed": 3.5,
+        "physics": {
+            "collider": {
+                "size": [
+                    1.5,
+                    2
+                ]
+            },
+            "gravity": 7
+        },
+        "max_health": 80
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:banyan_bark",
+        "texture": "ori:banyan_bark",
+        "damage": 10,
+        "tags": [
+            "ori:bark"
+        ],
+        "description": "ori:description.banyan_bark"
+    }
+}

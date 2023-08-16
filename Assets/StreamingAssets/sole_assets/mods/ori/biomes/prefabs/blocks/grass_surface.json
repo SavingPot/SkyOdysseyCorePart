@@ -1,0 +1,29 @@
+{
+    "json_format": "0.7.0",
+    "prefab": {
+        "id": "ori:grass_surface",
+        "content": [
+            {
+                "ranges": [
+                    "@surface"
+                ],
+                "block": "ori:grass_block"
+            },
+            {
+                "ranges": [
+                    "@surface - 4 => @surface - 1"
+                ],
+                "block": "ori:dirt"
+            },
+            {
+                "ranges": [
+                    "@surface - 4 => @surface - 1"
+                ],
+                "block": "ori:clay",
+                "rules": {
+                    "probability": 4
+                }
+            }
+        ]
+    }
+}

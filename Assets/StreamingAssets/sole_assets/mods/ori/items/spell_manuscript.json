@@ -1,0 +1,11 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:spell_manuscript",
+        "texture": "ori:spell_manuscript",
+        "description": "ori:description.spell_manuscript",
+        "tags": [
+            "ori:loot.wooden_chest"
+        ]
+    }
+}

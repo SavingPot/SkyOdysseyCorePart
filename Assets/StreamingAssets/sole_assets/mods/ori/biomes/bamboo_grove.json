@@ -1,0 +1,99 @@
+{
+    "json_format": "0.6.2",
+    "ori:biome": {
+        "id": "ori:bamboo_grove",
+        "difficulty": 2,
+        "size_scope": {
+            "min": [
+                80,
+                60
+            ],
+            "max": [
+                100,
+                100
+            ]
+        },
+        "tags": [
+            "ori:rich"
+        ],
+        "structure": [
+            {
+                "id": "ori:cave"
+            }
+        ],
+        "blocks": [
+            {
+                "prefab": "ori:grass_surface"
+            },
+            {
+                "prefab": "ori:ores"
+            },
+            {
+                "prefab": "ori:pools"
+            },
+            {
+                "prefab": "ori:universal_surface"
+            },
+            {
+                "block": "ori:grass",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 10
+                }
+            },
+            {
+                "block": "ori:rose",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 5
+                }
+            },
+            {
+                "block": "ori:bamboo",
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 25
+                }
+            },
+            {
+                "block": "ori:bamboo",
+                "ranges": [
+                    "@surface + 2"
+                ],
+                "attached": {
+                    "id": "ori:bamboo"
+                },
+                "rules": {
+                    "probability": 20
+                }
+            },
+            {
+                "block": "ori:bamboo",
+                "ranges": [
+                    "@surface + 3"
+                ],
+                "attached": {
+                    "id": "ori:bamboo"
+                },
+                "rules": {
+                    "probability": 25
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,168 @@
+{
+    "json_format": "0.6.4",
+    "ori:structure": {
+        "id": "ori:cave",
+        "generation": {
+            "probability": 0.2,
+            "must_enough": false,
+            "require": [
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        0,
+                        0
+                    ]
+                }
+            ]
+        },
+        "blocks": {
+            "fixed": [
+                {
+                    "id": null,
+                    "pos": [
+                        0,
+                        0,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        0,
+                        0,
+                        1
+                    ]
+                },
+                {
+                    "id": null,
+                    "pos": [
+                        0,
+                        -1,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        0,
+                        -1,
+                        1
+                    ]
+                },
+                {
+                    "id": null,
+                    "pos": [
+                        0,
+                        1,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        0,
+                        1,
+                        1
+                    ]
+                },
+                {
+                    "id": null,
+                    "pos": [
+                        -1,
+                        0,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        -1,
+                        0,
+                        1
+                    ]
+                },
+                {
+                    "id": null,
+                    "pos": [
+                        -1,
+                        -1,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        -1,
+                        -1,
+                        1
+                    ]
+                },
+                {
+                    "id": null,
+                    "pos": [
+                        -1,
+                        1,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        -1,
+                        1,
+                        1
+                    ]
+                },
+                {
+                    "id": null,
+                    "pos": [
+                        1,
+                        0,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        1,
+                        0,
+                        1
+                    ]
+                },
+                {
+                    "id": null,
+                    "pos": [
+                        1,
+                        -1,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        1,
+                        -1,
+                        1
+                    ]
+                },
+                {
+                    "id": null,
+                    "pos": [
+                        1,
+                        1,
+                        0
+                    ]
+                },
+                {
+                    "id": "ori:stone",
+                    "pos": [
+                        1,
+                        1,
+                        1
+                    ]
+                }
+            ]
+        },
+        "entities": {}
+    }
+}

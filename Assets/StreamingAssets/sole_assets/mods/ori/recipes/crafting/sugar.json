@@ -1,0 +1,17 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:sugar",
+        "items": [
+            {
+                "id": "ori:sugar_cane"
+            },
+            {
+                "id": "ori:bottle"
+            }
+        ],
+        "result": {
+            "id": "ori:sugar"
+        }
+    }
+}

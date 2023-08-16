@@ -1,0 +1,41 @@
+{
+    "json_format": "0.6.2",
+    "ori:block": {
+        "id": "ori:potato_crop",
+        "display": {
+            "texture_id": "ori:potato_crop_0"
+        },
+        "property": {
+            "hardness": 1,
+            "collidible": false,
+            "behaviour": "GameCore.CropBlockBehaviour"
+        }
+    },
+    "ori:corp_block": {
+        "display": {
+            "textures": [
+                {
+                    "index": 0,
+                    "texture": "ori:potato_crop_0"
+                },
+                {
+                    "index": 1,
+                    "texture": "ori:potato_crop_1"
+                },
+                {
+                    "index": 2,
+                    "texture": "ori:potato_crop_2"
+                }
+            ]
+        },
+        "property": {
+            "thread_count": 3,
+            "mature_crops": [
+                {
+                    "id": "ori:potato",
+                    "count": 3
+                }
+            ]
+        }
+    }
+}

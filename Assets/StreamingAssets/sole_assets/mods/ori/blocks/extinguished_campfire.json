@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.2",
+    "ori:block": {
+        "id": "ori:extinguished_campfire",
+        "display": {
+            "texture_id": "ori:extinguished_campfire",
+            "description": "ori:description.extinguished_campfire"
+        },
+        "property": {
+            "hardness": 10,
+            "collidible": false,
+            "behaviour": "GameCore.ExtinguishedCampfireBlockBehaviour"
+        }
+    }
+}
