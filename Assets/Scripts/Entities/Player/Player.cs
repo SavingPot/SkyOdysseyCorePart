@@ -32,7 +32,7 @@ namespace GameCore
         public string id;
         public int num;
         public List<string> testList;
-        public string[] testArray;
+        public float[] testArray;
         public int? testNullable;
     }
 
@@ -463,7 +463,7 @@ namespace GameCore
         [Button("输出玩家名称")] private void EditorOutputPlayerName() => Debug.Log($"玩家名: {playerName}");
         [Button("输出玩家血量")] private void EditorOutputHealth() => Debug.Log($"血量: {health}");
         [Button("输出沙盒序号")] private void EditorOutputSandboxIndex() => Debug.Log($"沙盒序号: {sandboxIndex}");
-        [Button("AutoTest0 传输测试"), ServerRpc] private void EditorAutoTest0TransportationServer(NetworkConnection caller) { EditorAutoTest0TransportationCaller(new() { id = null, num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() }, testArray = new[] { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() }, testNullable = Tools.randomBool ? UnityEngine.Random.Range(-10000, 100000) : null }, caller); }
+        [Button("AutoTest0 传输测试"), ServerRpc] private void EditorAutoTest0TransportationServer(NetworkConnection caller) { EditorAutoTest0TransportationCaller(new() { id = null, num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() }, testArray = new[] { UnityEngine.Random.Range(-10000f, 100000f), UnityEngine.Random.Range(-10000f, 100000f), UnityEngine.Random.Range(-10000f, 100000f) }, testNullable = Tools.randomBool ? UnityEngine.Random.Range(-10000, 100000) : null }, caller); }
         [ConnectionRpc] private void EditorAutoTest0TransportationCaller(AutoTest0 param0, NetworkConnection caller) { Debug.Log($"id:{param0.id}, num:{param0.num}, testList:{param0.testList[0]}-{param0.testList[1]}-{param0.testList[2]}, testArray:{param0.testArray[0]}-{param0.testArray[1]}-{param0.testArray[2]}, nullable:{param0.testNullable}"); }
         [Button("AutoTest1 传输测试"), ServerRpc] private void EditorAutoTest1TransportationServer(NetworkConnection caller) { EditorAutoTest1TransportationCaller(new() { index = UnityEngine.Random.Range(0, 10000), self = Path.GetRandomFileName(), t0 = new() { id = Path.GetRandomFileName(), num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } } }, caller); }
         [ConnectionRpc] private void EditorAutoTest1TransportationCaller(AutoTest1 param0, NetworkConnection caller) { Debug.Log($"index:{param0.index}, self:{param0.self}            -id:{param0.t0.id}, num:{param0.t0.num}, tests:{param0.t0.testList[0]}-{param0.t0.testList[1]}-{param0.t0.testList[2]}"); }

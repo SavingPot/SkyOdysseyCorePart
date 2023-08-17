@@ -119,7 +119,7 @@ namespace GameCore
                                                 //提供列表的类型以获取对应 Add 方法
                                                 fieldType,
                                                 //把写入器对应的区块投给 T 的字节读取器
-                                                ByteReader.GetExpressionOfReading(chunksToRead.ListItem(read_LoopIndex),genericArg)
+                                                ByteReader.GetExpressionOfReading(chunksToRead.ListItem(read_LoopIndex), genericArg)
                                             ),
                                             //等效于 i++
                                             Expression.PostIncrementAssign(read_LoopIndex)
@@ -223,7 +223,7 @@ namespace GameCore
                                                 //访问创建的数组
                                                 read_NewArrayExpression.ArrayItem(read_LoopIndex),
                                                 //把写入器对应的区块投给 T 的字节读取器
-                                                ByteReader.GetExpressionOfReading(chunksToRead.ListItem(read_LoopIndex),genericArg)
+                                                ByteReader.GetExpressionOfReading(chunksToRead.ListItem(read_LoopIndex), genericArg)
                                             ),
                                             //等效于 i++
                                             Expression.PostIncrementAssign(read_LoopIndex)
@@ -252,20 +252,17 @@ namespace GameCore
                 var readerMethod = ByteReader.GetReader(genericArg.FullName);
 
                 return (true,
-                    //*== if (nullable == null)     nullable is Nullable<T>
-                    //*==   writer.WriteNull();
-                    //*== else
-                    //*==   writerMethod((T)nullable);
-                    Expression.IfThenElse(
-                        Expression.Equal(fieldInstance, Expression.Constant(null)),
-                        Expression.Call(writerToWrite, typeof(ByteWriter).GetMethod(nameof(ByteWriter.WriteNull))),
+                    //*== if (nullable != null)     nullable is Nullable<T>
+                    //*==   writerMethod(nullable);
+                    Expression.IfThen(
+                        Expression.NotEqual(fieldInstance, Expression.Constant(null)),
                         ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance, genericArg)
                     ),
                     //*== 在读取 field 时执行: 
-                    //*== if (writer.chunks.Count == 0)
+                    //*== if (writer.chunks[0].bytes == null)
                     //*==   return new T?;
                     //*== else
-                    //*==   return reader(writer.chunks[i]);
+                    //*==   return reader(writer.chunks[0]);
                     //TODO: Don't bind it here
                     Expression.Bind(
                         fieldInfo,
@@ -278,7 +275,7 @@ namespace GameCore
                             new Expression[]
                             {
                                 Expression.IfThenElse(
-                                    Expression.Equal(chunksToRead.ListCount(), Expression.Constant(0)),
+                                    Expression.Equal(Expression.Field(chunkZero, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))), Expression.Constant(null)),
                                     Expression.Assign(read_Temp, Expression.Convert(Expression.Constant(null), fieldType)),
                                     Expression.Assign(read_Temp, Expression.Convert(ByteReader.GetExpressionOfReading(chunkZero, genericArg), fieldType))
                                 ),
