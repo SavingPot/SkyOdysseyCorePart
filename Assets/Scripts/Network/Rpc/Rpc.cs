@@ -10,6 +10,8 @@ using UnityEngine;
 using System.Linq;
 using System.Reflection.Emit;
 using Mono.Cecil.Cil;
+using System.ComponentModel;
+using GameCore.Converters;
 
 namespace GameCore
 {
@@ -250,16 +252,20 @@ namespace GameCore
                 var chunkZero = chunksToRead.ListItem(0);
                 var writerMethod = ByteWriter.GetWriter(genericArg.FullName);
                 var readerMethod = ByteReader.GetReader(genericArg.FullName);
+                var doNotReadIdentity = Expression.Constant(Converters.ByteConverter.ToBytes(1025943687), typeof(byte[]));   //要写入随机数字, 是因为如果 genericArg 的写入器在某种情况下直接 WriteNull, 会导致判断失误
 
                 return (true,
-                    //*== if (nullable != null)     nullable is Nullable<T>
-                    //*==   writerMethod(nullable);
-                    Expression.IfThen(
-                        Expression.NotEqual(fieldInstance, Expression.Constant(null)),
+                    //*== if (nullable == null)     nullable is Nullable<T>
+                    //*==   writer.WriteNull();
+                    //*== else
+                    //*==   writerMethod((T)nullable);
+                    Expression.IfThenElse(
+                        Expression.Equal(fieldInstance, Expression.Constant(null)),
+                        Expression.Call(writerToWrite, typeof(ByteWriter).GetMethod(nameof(ByteWriter.Write)), doNotReadIdentity),
                         ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance, genericArg)
                     ),
                     //*== 在读取 field 时执行: 
-                    //*== if (writer.chunks[0].bytes == null)
+                    //*== if (Enumerable.Equal(writer.chunks[0].bytes, Converters.ByteConverter.ToBytes(1025943687)))
                     //*==   return new T?;
                     //*== else
                     //*==   return reader(writer.chunks[0]);
@@ -275,7 +281,10 @@ namespace GameCore
                             new Expression[]
                             {
                                 Expression.IfThenElse(
-                                    Expression.Equal(Expression.Field(chunkZero, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))), Expression.Constant(null)),
+                                    Expression.Call(
+                                        typeof(Enumerable).GetMethod("SequenceEqual", new Type[] { typeof(IEnumerable<>), typeof(IEnumerable<>)}),
+                                        Expression.Field(chunkZero, typeof(ByteWriter).GetField(nameof(ByteWriter.bytes))),
+                                        doNotReadIdentity),
                                     Expression.Assign(read_Temp, Expression.Convert(Expression.Constant(null), fieldType)),
                                     Expression.Assign(read_Temp, Expression.Convert(ByteReader.GetExpressionOfReading(chunkZero, genericArg), fieldType))
                                 ),
