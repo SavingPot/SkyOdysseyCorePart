@@ -17,6 +17,7 @@ namespace GameCore
         public const string Complete = "ori:complete";
         public const string Cooking = "ori:cooking";
         public const string Crafting = "ori:crafting";
+        public const string Death = "ori:death";
         public const string DestroyBlock = "ori:destroy_block";
         public const string Drink = "ori:drink";
         public const string Eat = "ori:eat";

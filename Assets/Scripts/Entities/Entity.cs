@@ -886,35 +886,35 @@ namespace GameCore
         }
 
         [ServerRpc]
-        protected static void ServerDeath(Entity param0, NetworkConnection caller)
+        protected static void ServerDeath(Entity entity, NetworkConnection caller)
         {
             //防止一生成就死亡时导致报错
-            if (param0.registeredSyncVars)
+            if (entity.registeredSyncVars)
             {
-                if (param0.isDead)
+                if (entity.isDead)
                 {
-                    Debug.LogError($"实体 {param0.gameObject.name} 已死亡, 请勿反复执行");
+                    Debug.LogError($"实体 {entity.gameObject.name} 已死亡, 请勿反复执行");
                     return;
                 }
 
-                param0.isDead = true;
+                entity.isDead = true;
             }
 
             //Debug.Log($"服务器: 实体 {name} 已死亡");
 
-            param0.OnDeathServer();
-            ClientDeath(param0, caller);
+            entity.OnDeathServer();
+            ClientDeath(entity, caller);
         }
 
         [ClientRpc]
-        protected static void ClientDeath(Entity param0, NetworkConnection caller)
+        protected static void ClientDeath(Entity entity, NetworkConnection caller)
         {
             //Debug.Log($"客户端: 实体 {name} 已死亡");
 
             //? 不要使用 RpcDeath 来回收资源等, 资源回收应该放在 OnDestroy 中, 因为服务器可能会在调用 RpcDeath 前删除物体
-            if (param0)
+            if (entity)
             {
-                param0.OnDeathClient();
+                entity.OnDeathClient();
             }
         }
         #endregion

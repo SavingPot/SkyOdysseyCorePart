@@ -246,24 +246,12 @@
             "path": "/items/tools/weapons/bows/wooden.png"
         },
         {
-            "id": "ori:loading_mascot_0",
-            "path": "/gui/loading_mascot_0.png"
+            "id": "ori:loading_house_0",
+            "path": "/gui/loading_house_0.png"
         },
         {
-            "id": "ori:loading_mascot_1",
-            "path": "/gui/loading_mascot_1.png"
-        },
-        {
-            "id": "ori:loading_mascot_2",
-            "path": "/gui/loading_mascot_2.png"
-        },
-        {
-            "id": "ori:loading_mascot_3",
-            "path": "/gui/loading_mascot_3.png"
-        },
-        {
-            "id": "ori:loading_mascot_4",
-            "path": "/gui/loading_mascot_4.png"
+            "id": "ori:loading_house_1",
+            "path": "/gui/loading_house_1.png"
         },
         {
             "id": "ori:scene_loading_mascot",

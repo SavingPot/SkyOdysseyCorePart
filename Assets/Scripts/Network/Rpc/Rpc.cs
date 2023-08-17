@@ -27,6 +27,7 @@ namespace GameCore
         {
             //检测调用时想要的是 是否支持 还是 读写方法
             bool wantedResultIsSupported = fieldInfo == null;
+            Debug.Log($"{fieldType.FullName} {writerToRead == null}");
             Expression chunksToRead = Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))); //*== writerToRead.chunks
 
 
@@ -841,7 +842,7 @@ namespace GameCore
 
                 if (!type.IsValueType)
                 {
-                    if (type.IsGenericType)
+                    if (type.IsGenericType || type.IsArray)
                     {
                         if (GenericTypeSupport(type, null, null, null, null, null).isSupported)
                         {
@@ -1019,7 +1020,6 @@ namespace GameCore
 
                             //TODO: Generic List
                             var (_, writer, memberBinding) = GenericTypeSupport(fieldType, fieldInfo, fieldInstance, writerToRead, genericArguments, writerToWrite);
-                            Debug.Log((writer == null) + " " + fieldType.FullName);
                             writers.Add(writer);
                             memberBindings.Add(memberBinding);
                         }

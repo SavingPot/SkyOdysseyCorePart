@@ -31,7 +31,9 @@ namespace GameCore
     {
         public string id;
         public int num;
-        public List<string> tests;
+        public List<string> testList;
+        public string[] testArray;
+        public int? testNullable;
     }
 
     [AutoByteConverter]
@@ -461,16 +463,16 @@ namespace GameCore
         [Button("输出玩家名称")] private void EditorOutputPlayerName() => Debug.Log($"玩家名: {playerName}");
         [Button("输出玩家血量")] private void EditorOutputHealth() => Debug.Log($"血量: {health}");
         [Button("输出沙盒序号")] private void EditorOutputSandboxIndex() => Debug.Log($"沙盒序号: {sandboxIndex}");
-        [Button("AutoTest0 传输测试"), ServerRpc] private void EditorAutoTest0TransportationServer(NetworkConnection caller) { EditorAutoTest0TransportationCaller(new() { id = null, num = UnityEngine.Random.Range(0, 10000), tests = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } }, caller); }
-        [ConnectionRpc] private void EditorAutoTest0TransportationCaller(AutoTest0 param0, NetworkConnection caller) { Debug.Log($"id:{param0.id}, num:{param0.num}, tests:{param0.tests[0]}-{param0.tests[1]}-{param0.tests[2]}"); }
-        [Button("AutoTest1 传输测试"), ServerRpc] private void EditorAutoTest1TransportationServer(NetworkConnection caller) { EditorAutoTest1TransportationCaller(new() { index = UnityEngine.Random.Range(0, 10000), self = Path.GetRandomFileName(), t0 = new() { id = Path.GetRandomFileName(), num = UnityEngine.Random.Range(0, 10000), tests = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } } }, caller); }
-        [ConnectionRpc] private void EditorAutoTest1TransportationCaller(AutoTest1 param0, NetworkConnection caller) { Debug.Log($"index:{param0.index}, self:{param0.self}            -id:{param0.t0.id}, num:{param0.t0.num}, tests:{param0.t0.tests[0]}-{param0.t0.tests[1]}-{param0.t0.tests[2]}"); }
+        [Button("AutoTest0 传输测试"), ServerRpc] private void EditorAutoTest0TransportationServer(NetworkConnection caller) { EditorAutoTest0TransportationCaller(new() { id = null, num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() }, testArray = new[] { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() }, testNullable = Tools.randomBool ? UnityEngine.Random.Range(-10000, 100000) : null }, caller); }
+        [ConnectionRpc] private void EditorAutoTest0TransportationCaller(AutoTest0 param0, NetworkConnection caller) { Debug.Log($"id:{param0.id}, num:{param0.num}, testList:{param0.testList[0]}-{param0.testList[1]}-{param0.testList[2]}, testArray:{param0.testArray[0]}-{param0.testArray[1]}-{param0.testArray[2]}, nullable:{param0.testNullable}"); }
+        [Button("AutoTest1 传输测试"), ServerRpc] private void EditorAutoTest1TransportationServer(NetworkConnection caller) { EditorAutoTest1TransportationCaller(new() { index = UnityEngine.Random.Range(0, 10000), self = Path.GetRandomFileName(), t0 = new() { id = Path.GetRandomFileName(), num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } } }, caller); }
+        [ConnectionRpc] private void EditorAutoTest1TransportationCaller(AutoTest1 param0, NetworkConnection caller) { Debug.Log($"index:{param0.index}, self:{param0.self}            -id:{param0.t0.id}, num:{param0.t0.num}, tests:{param0.t0.testList[0]}-{param0.t0.testList[1]}-{param0.t0.testList[2]}"); }
         [Button("AutoTest2 传输测试"), ServerRpc]
         private void EditorAutoTest2TransportationServer(NetworkConnection caller)
         {
-            EditorAutoTest2TransportationCaller(new() { byte_index = (byte)UnityEngine.Random.Range(0, 255), uint_index = (uint)UnityEngine.Random.Range(0, 100000), long_index = UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue), t1 = new() { index = UnityEngine.Random.Range(0, 10000), self = Path.GetRandomFileName(), t0 = new() { id = Path.GetRandomFileName(), num = UnityEngine.Random.Range(0, 10000), tests = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } } } }, caller);
+            EditorAutoTest2TransportationCaller(new() { byte_index = (byte)UnityEngine.Random.Range(0, 255), uint_index = (uint)UnityEngine.Random.Range(0, 100000), long_index = UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue), t1 = new() { index = UnityEngine.Random.Range(0, 10000), self = Path.GetRandomFileName(), t0 = new() { id = Path.GetRandomFileName(), num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } } } }, caller);
         }
-        [ConnectionRpc] private void EditorAutoTest2TransportationCaller(AutoTest2 param0, NetworkConnection caller) { Debug.Log($"uint-index:{param0.uint_index}, long-index:{param0.long_index}, byte-index:{param0.byte_index}             index:{param0.t1.index}, self:{param0.t1.self}            -id:{param0.t1.t0.id}, num:{param0.t1.t0.num}, tests:{param0.t1.t0.tests[0]}-{param0.t1.t0.tests[1]}-{param0.t1.t0.tests[2]}"); }
+        [ConnectionRpc] private void EditorAutoTest2TransportationCaller(AutoTest2 param0, NetworkConnection caller) { Debug.Log($"uint-index:{param0.uint_index}, long-index:{param0.long_index}, byte-index:{param0.byte_index}             index:{param0.t1.index}, self:{param0.t1.self}            -id:{param0.t1.t0.id}, num:{param0.t1.t0.num}, tests:{param0.t1.t0.testList[0]}-{param0.t1.t0.testList[1]}-{param0.t1.t0.testList[2]}"); }
         [Button("设置手中物品")]
         private void EditorSetUsingItem(string id = "ori:", ushort count = 1)
         {
@@ -1164,6 +1166,7 @@ namespace GameCore
 
             if (isLocalPlayer)
             {
+                GAudio.Play(AudioID.Death);
                 MethodAgent.CallUntil(() => pui != null, () => pui.rebornPanel.gameObject.SetActive(true));
             }
 

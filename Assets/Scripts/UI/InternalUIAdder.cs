@@ -677,7 +677,7 @@ namespace GameCore.UI
             float earliestTime = Tools.time + 5;
 
             var panel = GameUI.AddPanel("ori:panel.first_scene_panel");
-            panel.panelImage.color = Tools.HexToColor("#176C79");
+            panel.panelImage.color = Tools.HexToColor("#070714");
 
             GameUI.GenerateLoadingBar(new(0.5f, 0.32f, 0.5f, 0.32f),
                                     "ori:image.scene_loading_bar_bg", "ori:image.scene_loading_bar_full", "ori:text.scene_loading_progress_text",
@@ -695,27 +695,20 @@ namespace GameCore.UI
                                     () => (float)ModFactory.mods.Count / (float)ModFactory.modCountFound, () => $"{ModFactory.mods.Count}/{ModFactory.modCountFound}",
                                     panel.transform);
 
-            var mascotImage = GameUI.AddImage(UPC.middle, "ori:image.loading_mascot", "ori:loading_mascot_0", panel);
-            mascotImage.SetSizeDelta(200, 200);
-            mascotImage.SetAPos(0, 75);
+            var houseImage = GameUI.AddImage(UPC.middle, "ori:image.loading_house", "ori:loading_house_0", panel);
+            houseImage.SetSizeDelta(300, 300);
+            houseImage.SetAPos(0, 75);
 
             Sprite[] sprites = new[]
             {
-                ModFactory.CompareTexture("ori:loading_mascot_0").sprite,
-                ModFactory.CompareTexture("ori:loading_mascot_1").sprite,
-                ModFactory.CompareTexture("ori:loading_mascot_2").sprite,
-                ModFactory.CompareTexture("ori:loading_mascot_3").sprite,
-                ModFactory.CompareTexture("ori:loading_mascot_4").sprite,
-                ModFactory.CompareTexture("ori:loading_mascot_3").sprite,
-                ModFactory.CompareTexture("ori:loading_mascot_2").sprite,
-                ModFactory.CompareTexture("ori:loading_mascot_1").sprite,
-                ModFactory.CompareTexture("ori:loading_mascot_0").sprite,
+                ModFactory.CompareTexture("ori:loading_house_0").sprite,
+                ModFactory.CompareTexture("ori:loading_house_1").sprite,
             };
-            AnimCenter.PlaySprites(2, sprites, sprite =>
+            AnimCenter.PlaySprites(1.5f, sprites, sprite =>
             {
-                if (mascotImage)
+                if (houseImage)
                 {
-                    mascotImage.image.sprite = sprite;
+                    houseImage.image.sprite = sprite;
                     return true;
                 }
 
