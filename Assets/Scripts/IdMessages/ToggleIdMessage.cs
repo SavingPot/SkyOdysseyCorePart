@@ -9,19 +9,19 @@ using SP.Tools.Unity;
 
 namespace GameCore
 {
-    public class ToggleIdMessage : UIIdMessage<ToggleIdMessage>
+    public class ToggleIdentity : UIIdentity<ToggleIdentity>
     {
         private Toggle _toggle;
-        private ImageIdMessage _bg;
-        private ImageIdMessage _checkmark;
-        private ImageIdMessage _textBg;
-        private TextIdMessage _text;
+        private ImageIdentity _bg;
+        private ImageIdentity _checkmark;
+        private ImageIdentity _textBg;
+        private TextIdentity _text;
 
         public Toggle toggle { get { if (!_toggle) _toggle = GetComponent<Toggle>(); return _toggle; } }
-        public ImageIdMessage bg { get { if (!_bg) _bg = this.FindComponent<ImageIdMessage>("Background"); return _bg; } }
-        public ImageIdMessage checkmark { get { if (!_checkmark) _checkmark = bg.FindComponent<ImageIdMessage>("Checkmark"); return _checkmark; } }
-        public ImageIdMessage textBg { get { if (!_textBg) _textBg = this.FindComponent<ImageIdMessage>("TextBackground"); return _textBg; } }
-        public TextIdMessage text { get { if (!_text) _text = textBg.FindComponent<TextIdMessage>("Text"); return _text; } }
+        public ImageIdentity bg { get { if (!_bg) _bg = this.FindComponent<ImageIdentity>("Background"); return _bg; } }
+        public ImageIdentity checkmark { get { if (!_checkmark) _checkmark = bg.FindComponent<ImageIdentity>("Checkmark"); return _checkmark; } }
+        public ImageIdentity textBg { get { if (!_textBg) _textBg = this.FindComponent<ImageIdentity>("TextBackground"); return _textBg; } }
+        public TextIdentity text { get { if (!_text) _text = textBg.FindComponent<TextIdentity>("Text"); return _text; } }
 
 
 
@@ -29,7 +29,7 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.toggleMessages.Add(this);
+            IdentityCenter.toggleMessages.Add(this);
         }
 
         public override void SetID(string id)
@@ -42,14 +42,14 @@ namespace GameCore
             text.id = $"{id}.text";
         }
 
-        public ToggleIdMessage AddMethod(UnityAction<bool> call)
+        public ToggleIdentity AddMethod(UnityAction<bool> call)
         {
             toggle.onValueChanged.AddListener(call);
             return this;
         }
 
 
-        public void ResetStatusInScrollView(ScrollViewIdMessage scrollView)
+        public void ResetStatusInScrollView(ScrollViewIdentity scrollView)
         {
             SetScale(new(scrollView.gridLayoutGroup.cellSize.x, scrollView.gridLayoutGroup.cellSize.y));
         }

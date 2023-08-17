@@ -95,8 +95,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using Mirror;
+using SP.Tools;
 
 namespace GameCore
 {
@@ -108,14 +110,8 @@ namespace GameCore
 
 
 
-        // public ByteWriter NewChunk()
-        // {
-        //     ByteWriter point = Get();
-        //     chunks.Add(point);
-        //     return point;
-        // }
 
-        public ByteWriter Write(byte value)
+        public readonly ByteWriter Write(byte value)
         {
             ByteWriter chunk = Create();
 
@@ -125,7 +121,7 @@ namespace GameCore
             return chunk;
         }
 
-        public ByteWriter Write(byte[] value)
+        public readonly ByteWriter Write(byte[] value)
         {
             ByteWriter chunk = Create();
 
@@ -135,7 +131,7 @@ namespace GameCore
             return chunk;
         }
 
-        public ByteWriter WriteNull()
+        public readonly ByteWriter WriteNull()
         {
             ByteWriter chunk = Create();
 
@@ -143,7 +139,6 @@ namespace GameCore
             chunks.Add(chunk);
             return chunk;
         }
-
 
 
 
@@ -161,12 +156,27 @@ namespace GameCore
 
         public static Action<string, object, ByteWriter> TypeWrite;
         public static Func<string, MethodInfo> GetWriter;
+        public static Dictionary<string, Expression> autoWriterExpressions = new();
+        public static Expression GetExpressionOfWriting(Expression writerToWrite, Expression itemToWrite, Type type)
+        {
+            var writerMethod = GetWriter(type.FullName);
+
+            //调用字节写入器
+            return writerMethod.GetParameters().Length == 3 ?          //*== writerMethod((object)((T)obj).xx, writer);
+                Expression.Invoke(autoWriterExpressions[type.FullName], itemToWrite.Box(), writerToWrite)
+                    :
+                Expression.Call(writerMethod, Expression.Convert(itemToWrite, type), writerToWrite);
+        }
+
+        //TODO: use it
         private static Stack<ByteWriter> stack = new();
 
         public static ByteWriter Create()
         {
-            var result = new ByteWriter();
-            result.chunks = new();
+            var result = new ByteWriter
+            {
+                chunks = new()
+            };
             return result;
         }
 

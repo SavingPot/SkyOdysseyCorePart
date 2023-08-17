@@ -33,8 +33,8 @@ namespace GameCore
         public bool snapX = false;
         public bool snapY = false;
 
-        public ImageIdMessage background = null;
-        public ImageIdMessage handle = null;
+        public ImageIdentity background = null;
+        public ImageIdentity handle = null;
         private RectTransform baseRect = null;
 
         private Canvas canvas;

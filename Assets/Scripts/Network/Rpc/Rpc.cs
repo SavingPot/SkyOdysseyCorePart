@@ -23,19 +23,28 @@ namespace GameCore
             Type, FieldInfo, MemberExpression, IndexExpression, Type[], ParameterExpression,
             (bool isSupported, Expression writer, MemberAssignment memberBinding)>
             GenericTypeSupport =
-                (type, fieldInfo, fieldInstance, writerToRead, genericArguments, writerToWrite) =>
+                (fieldType, fieldInfo, fieldInstance, writerToRead, genericArguments, writerToWrite) =>
         {
             //检测调用时想要的是 是否支持 还是 读写方法
             bool wantedResultIsSupported = fieldInfo == null;
+            Expression chunksToRead = Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))); //*== writerToRead.chunks
 
-            if (type.GetGenericTypeDefinition() == typeof(List<>))
+
+            if (fieldType.GetGenericTypeDefinition() == typeof(List<>))
             {
+                if (wantedResultIsSupported)
+                    return (true, null, null);
+
                 var write_LoopIndex = Expression.Variable(typeof(int), "i");
                 var write_BreakLabel = Expression.Label("break");
 
-                var read_NewListExpression = Expression.New(typeof(List<>).MakeGenericType(genericArguments[0]));
+                var read_NewListExpression = Expression.Variable(fieldType, "list");
                 var read_LoopIndex = Expression.Variable(typeof(int), "i");
                 var read_BreakLabel = Expression.Label("break");
+
+                var genericArg = genericArguments[0];
+                var writerMethod = ByteWriter.GetWriter(genericArg.FullName);
+                var readerMethod = ByteReader.GetReader(genericArg.FullName);
 
                 return (
                     true,
@@ -62,12 +71,7 @@ namespace GameCore
                                     //遍历时执行
                                     Expression.Block(
                                         //调用字节写入器
-                                        Expression.Call(
-                                            null,
-                                            Expression.Constant(ByteWriter.GetWriter(genericArguments[0].FullName), typeof(MethodInfo)),
-                                            fieldInstance.ListItem(write_LoopIndex),
-                                            writerToWrite
-                                        ),
+                                        ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance.ListItem(write_LoopIndex), genericArg),
                                         //等效于 i++
                                         Expression.PostIncrementAssign(write_LoopIndex)
                                     ),
@@ -90,32 +94,31 @@ namespace GameCore
                     Expression.Bind(
                         fieldInfo,
                         Expression.Block(
-                            typeof(List<>).MakeGenericType(genericArguments[0]),
+                            fieldType,
                             new ParameterExpression[]
                             {
-                                read_LoopIndex
+                                read_LoopIndex,
+                                read_NewListExpression
                             },
                             new Expression[]
                             {
-                                read_NewListExpression,
+                                Expression.Assign(read_NewListExpression, Expression.New(fieldType)),
                                 //定义一个类似 for 语句的循环
                                 Expression.Loop(
                                     Expression.IfThenElse(
                                         //检测是否遍历完成
                                         Expression.LessThan(
                                             read_LoopIndex,
-                                            Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListCount()
+                                            chunksToRead.ListCount()
                                         ),
                                         //遍历时执行
                                         Expression.Block(
                                             //为列表添加元素
                                             read_NewListExpression.ListAdd(
+                                                //提供列表的类型以获取对应 Add 方法
+                                                fieldType,
                                                 //把写入器对应的区块投给 T 的字节读取器
-                                                Expression.Call(
-                                                    null,
-                                                    Expression.Constant(ByteReader.GetReader(genericArguments[0].FullName), typeof(MethodInfo)),
-                                                    Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListItem(read_LoopIndex)
-                                                )
+                                                ByteReader.GetExpressionOfReading(chunksToRead.ListItem(read_LoopIndex),genericArg)
                                             ),
                                             //等效于 i++
                                             Expression.PostIncrementAssign(read_LoopIndex)
@@ -124,20 +127,28 @@ namespace GameCore
                                         Expression.Break(read_BreakLabel)
                                     ),
                                     read_BreakLabel
-                                )
+                                ),
+                                read_NewListExpression
                             }
                         )
                     )
                 );
             }
-            else if (type.IsArray)
+            else if (fieldType.IsArray)
             {
+                if (wantedResultIsSupported)
+                    return (true, null, null);
+
                 var write_LoopIndex = Expression.Variable(typeof(int), "i");
                 var write_BreakLabel = Expression.Label("break");
 
-                var read_NewArrayExpression = Expression.NewArrayBounds(genericArguments[0], fieldInstance);
+                var read_NewArrayExpression = Expression.Variable(fieldType, "array");
                 var read_LoopIndex = Expression.Variable(typeof(int), "i");
                 var read_BreakLabel = Expression.Label("break");
+
+                var genericArg = genericArguments[0];
+                var writerMethod = ByteWriter.GetWriter(genericArg.FullName);
+                var readerMethod = ByteReader.GetReader(genericArg.FullName);
 
                 return (true,
                     //*== for (int i = 0; i < values.Length ; i++)               values is T[]
@@ -163,12 +174,7 @@ namespace GameCore
                                     //遍历时执行
                                     Expression.Block(
                                         //调用字节写入器
-                                        Expression.Call(
-                                            null,
-                                            Expression.Constant(ByteWriter.GetWriter(genericArguments[0].FullName), typeof(MethodInfo)),
-                                            fieldInstance.ListItem(write_LoopIndex),
-                                            writerToWrite
-                                        ),
+                                        ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance.ArrayItem(write_LoopIndex), genericArg),
                                         //等效于 i++
                                         Expression.PostIncrementAssign(write_LoopIndex)
                                     ),
@@ -188,37 +194,35 @@ namespace GameCore
                     //*== }
                     //*==
                     //*== return values;
+                    //TODO: Don't bind it here
                     Expression.Bind(
                         fieldInfo,
                         Expression.Block(
-                            genericArguments[0].MakeArrayType(),
+                            fieldType,
                             new ParameterExpression[]
                             {
-                                read_LoopIndex
+                                read_LoopIndex,
+                                read_NewArrayExpression
                             },
                             new Expression[]
                             {
-                                read_NewArrayExpression,
+                                Expression.Assign(read_NewArrayExpression, Expression.NewArrayBounds(genericArg, fieldInstance)),
                                 //定义一个类似 for 语句的循环
                                 Expression.Loop(
                                     Expression.IfThenElse(
                                         //检测是否遍历完成
                                         Expression.LessThan(
                                             read_LoopIndex,
-                                            Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListCount()
+                                            chunksToRead.ListCount()
                                         ),
                                         //遍历时执行
                                         Expression.Block(
-                                            //修改数组元素的值
+                                            //被赋值的是数组的元素
                                             Expression.Assign(
                                                 //访问创建的数组
                                                 read_NewArrayExpression.ArrayItem(read_LoopIndex),
                                                 //把写入器对应的区块投给 T 的字节读取器
-                                                Expression.Call(
-                                                    null,
-                                                    Expression.Constant(ByteReader.GetReader(genericArguments[0].FullName), typeof(MethodInfo)),
-                                                    Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListItem(read_LoopIndex)
-                                                )
+                                                ByteReader.GetExpressionOfReading(chunksToRead.ListItem(read_LoopIndex),genericArg)
                                             ),
                                             //等效于 i++
                                             Expression.PostIncrementAssign(read_LoopIndex)
@@ -227,7 +231,57 @@ namespace GameCore
                                         Expression.Break(read_BreakLabel)
                                     ),
                                     read_BreakLabel
-                                )
+                                ),
+                                read_NewArrayExpression
+                            }
+                        )
+                    )
+                );
+            }
+            else if (fieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                if (wantedResultIsSupported)
+                    return (true, null, null);
+
+                var read_Temp = Expression.Variable(fieldType);
+
+                var genericArg = genericArguments[0];
+                var chunkZero = chunksToRead.ListItem(0);
+                var writerMethod = ByteWriter.GetWriter(genericArg.FullName);
+                var readerMethod = ByteReader.GetReader(genericArg.FullName);
+
+                return (true,
+                    //*== if (nullable == null)     nullable is Nullable<T>
+                    //*==   writer.WriteNull();
+                    //*== else
+                    //*==   writerMethod((T)nullable);
+                    Expression.IfThenElse(
+                        Expression.Equal(fieldInstance, Expression.Constant(null)),
+                        Expression.Call(writerToWrite, typeof(ByteWriter).GetMethod(nameof(ByteWriter.WriteNull))),
+                        ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance, genericArg)
+                    ),
+                    //*== 在读取 field 时执行: 
+                    //*== if (writer.chunks.Count == 0)
+                    //*==   return new T?;
+                    //*== else
+                    //*==   return reader(writer.chunks[i]);
+                    //TODO: Don't bind it here
+                    Expression.Bind(
+                        fieldInfo,
+                        Expression.Block(
+                            fieldType,
+                            new ParameterExpression[]
+                            {
+                                read_Temp
+                            },
+                            new Expression[]
+                            {
+                                Expression.IfThenElse(
+                                    Expression.Equal(chunksToRead.ListCount(), Expression.Constant(0)),
+                                    Expression.Assign(read_Temp, Expression.Convert(Expression.Constant(null), fieldType)),
+                                    Expression.Assign(read_Temp, Expression.Convert(ByteReader.GetExpressionOfReading(chunkZero, genericArg), fieldType))
+                                ),
+                                read_Temp
                             }
                         )
                     )
@@ -756,9 +810,6 @@ namespace GameCore
             List<Type> typesToSolve = new();
             List<Type> typePaths = new();
 
-            Dictionary<string, Expression> autoWriterExpression = new();
-            Dictionary<string, Expression> autoReaderExpression = new();
-
 
 
             #region 方法定义
@@ -951,46 +1002,38 @@ namespace GameCore
 
                     for (int i = 0; i < usefulFields.Count; i++)
                     {
-                        var memFieldInfo = usefulFields[i];
-                        var memType = memFieldInfo.FieldType;
-                        var memFieldInstance = Expression.Field(Expression.Convert(writeParam_obj, type), memFieldInfo);                                                     //* ((T)obj).xx
+                        var fieldInfo = usefulFields[i];
+                        var fieldType = fieldInfo.FieldType;
+                        var fieldInstance = Expression.Field(Expression.Convert(writeParam_obj, type), fieldInfo);                                                     //* ((T)obj).xx
 
                         var writerToRead = Expression.Field(readParam_parameters, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListItem(i);
 
-                        //TODO: 同时去支持 Nullable
-                        if (memType.IsGenericType)
+                        //TODO: Combine Generic and normal
+                        if (fieldType.IsGenericType)
                         {
                             ParameterExpression writerToWrite = Expression.Variable(typeof(ByteWriter), "genericWriter");
                             writers.Add(Expression.Assign(writerToWrite, Expression.Call(firstWriter, typeof(ByteWriter).GetMethod(nameof(ByteWriter.WriteNull)))));      //* ByteWriter genericWriter = firstWriter.WriteNull();
                             argumentExpressions.Add(writerToWrite);
 
-                            var genericArguments = memType.GetGenericArguments();
+                            var genericArguments = fieldType.GetGenericArguments();
 
                             //TODO: Generic List
-                            var (_, writer, memberBinding) = GenericTypeSupport(memType, memFieldInfo, memFieldInstance, writerToRead, genericArguments, writerToWrite);
+                            var (_, writer, memberBinding) = GenericTypeSupport(fieldType, fieldInfo, fieldInstance, writerToRead, genericArguments, writerToWrite);
+                            Debug.Log((writer == null) + " " + fieldType.FullName);
                             writers.Add(writer);
                             memberBindings.Add(memberBinding);
                         }
                         else
                         {
-                            var writerMethod = ByteWriter.GetWriter(memType.FullName);
-                            var readerMethod = ByteReader.GetReader(memType.FullName);
+                            var writerMethod = ByteWriter.GetWriter(fieldType.FullName);
+                            var readerMethod = ByteReader.GetReader(fieldType.FullName);
 
-                            writers.Add(
-                                writerMethod.GetParameters().Length == 3 ?          //* writerMethod((object)((T)obj).xx, writer);
-                                    Expression.Invoke(autoWriterExpression[memType.FullName], memFieldInstance.Box(), firstWriter)
-                                        :
-                                    Expression.Call(writerMethod, memFieldInstance, firstWriter)
-                            );
+                            writers.Add(ByteWriter.GetExpressionOfWriting(firstWriter, fieldInstance, fieldType));
 
                             memberBindings.Add(
                                 Expression.Bind(
-                                    memFieldInfo,
-                                    Expression.Convert(writerMethod.GetParameters().Length == 3 ?           //* ((T)obj).xx = readerMethod(parameters.chunks[i]);
-                                        Expression.Invoke(autoReaderExpression[memType.FullName], writerToRead)
-                                            :
-                                        Expression.Call(readerMethod, writerToRead)
-                                    , memType)
+                                    fieldInfo,
+                                    ByteReader.GetExpressionOfReading(writerToRead, fieldType)
                                 )
                             );
                         }
@@ -1013,8 +1056,8 @@ namespace GameCore
                 var writerDelegateTarget = Expression.Constant(writerDelegate.Target, typeof(System.Runtime.CompilerServices.Closure));
                 var readerDelegateTarget = Expression.Constant(readerDelegate.Target, typeof(System.Runtime.CompilerServices.Closure));
 
-                autoWriterExpression.Add(type.FullName, writerLambda);
-                autoReaderExpression.Add(type.FullName, readerLambda);
+                ByteWriter.autoWriterExpressions.Add(type.FullName, writerLambda);
+                ByteReader.autoReaderExpressions.Add(type.FullName, readerLambda);
 
                 writeCases.Add(
                     Expression.SwitchCase(

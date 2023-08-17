@@ -23,17 +23,17 @@ namespace GameCore
 
         [Header("UI")]
         [AssetsOnly, LabelText("画布预制体"), Required(Tools.requiredErrorMessage)] public Canvas canvasPrefab;
-        [AssetsOnly, LabelText("按钮预制体"), Required(Tools.requiredErrorMessage)] public ButtonIdMessage buttonPrefab;
-        [AssetsOnly, LabelText("面板预制体"), Required(Tools.requiredErrorMessage)] public PanelIdMessage panelPrefab;
-        [AssetsOnly, LabelText("输入框预制体"), Required(Tools.requiredErrorMessage)] public InputFieldIdMessage inputFieldPrefab;
-        [AssetsOnly, LabelText("图片预制体"), Required(Tools.requiredErrorMessage)] public ImageIdMessage imagePrefab;
-        [AssetsOnly, LabelText("原始图片预制体"), Required(Tools.requiredErrorMessage)] public RawImageIdMessage rawImagePrefab;
-        [AssetsOnly, LabelText("文本预制体"), Required(Tools.requiredErrorMessage)] public TextIdMessage textPrefab;
-        [AssetsOnly, LabelText("开关预制体"), Required(Tools.requiredErrorMessage)] public ToggleIdMessage togglePrefab;
-        [AssetsOnly, LabelText("滚动视图预制体"), Required(Tools.requiredErrorMessage)] public ScrollViewIdMessage scrollViewPrefab;
-        [AssetsOnly, LabelText("图文按钮预制体"), Required(Tools.requiredErrorMessage)] public ImageTextButtonIdMessage imageTextButtonPrefab;
-        [AssetsOnly, LabelText("滑动条预制体"), Required(Tools.requiredErrorMessage)] public SliderIdMessage sliderPrefab;
-        [AssetsOnly, LabelText("输入按钮预制体"), Required(Tools.requiredErrorMessage)] public InputButtonIdMessage inputButtonPrefab;
+        [AssetsOnly, LabelText("按钮预制体"), Required(Tools.requiredErrorMessage)] public ButtonIdentity buttonPrefab;
+        [AssetsOnly, LabelText("面板预制体"), Required(Tools.requiredErrorMessage)] public PanelIdentity panelPrefab;
+        [AssetsOnly, LabelText("输入框预制体"), Required(Tools.requiredErrorMessage)] public InputFieldIdentity inputFieldPrefab;
+        [AssetsOnly, LabelText("图片预制体"), Required(Tools.requiredErrorMessage)] public ImageIdentity imagePrefab;
+        [AssetsOnly, LabelText("原始图片预制体"), Required(Tools.requiredErrorMessage)] public RawImageIdentity rawImagePrefab;
+        [AssetsOnly, LabelText("文本预制体"), Required(Tools.requiredErrorMessage)] public TextIdentity textPrefab;
+        [AssetsOnly, LabelText("开关预制体"), Required(Tools.requiredErrorMessage)] public ToggleIdentity togglePrefab;
+        [AssetsOnly, LabelText("滚动视图预制体"), Required(Tools.requiredErrorMessage)] public ScrollViewIdentity scrollViewPrefab;
+        [AssetsOnly, LabelText("图文按钮预制体"), Required(Tools.requiredErrorMessage)] public ImageTextButtonIdentity imageTextButtonPrefab;
+        [AssetsOnly, LabelText("滑动条预制体"), Required(Tools.requiredErrorMessage)] public SliderIdentity sliderPrefab;
+        [AssetsOnly, LabelText("输入按钮预制体"), Required(Tools.requiredErrorMessage)] public InputButtonIdentity inputButtonPrefab;
 
 
 

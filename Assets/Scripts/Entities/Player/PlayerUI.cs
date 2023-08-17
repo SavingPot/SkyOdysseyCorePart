@@ -58,15 +58,15 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     暂停                                     */
         /* -------------------------------------------------------------------------- */
-        public PanelIdMessage pausePanel;
+        public PanelIdentity pausePanel;
 
 
 
         /* -------------------------------------------------------------------------- */
         /*                                     聊天                                     */
         /* -------------------------------------------------------------------------- */
-        public ScrollViewIdMessage chatView;
-        public InputButtonIdMessage chatInput;
+        public ScrollViewIdentity chatView;
+        public InputButtonIdentity chatInput;
 
 
 
@@ -98,15 +98,15 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     昼夜条                                    */
         /* -------------------------------------------------------------------------- */
-        public ImageIdMessage dayNightBar;
-        public ImageIdMessage dayNightBarPointer;
+        public ImageIdentity dayNightBar;
+        public ImageIdentity dayNightBarPointer;
 
 
 
         /* -------------------------------------------------------------------------- */
         /*                                     状态                                     */
         /* -------------------------------------------------------------------------- */
-        public TextIdMessage statusText;
+        public TextIdentity statusText;
 
         public static float statusTextFadeOutTime = 5;
         public float statusTextFadeOutWaitedTime;
@@ -117,17 +117,17 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     重生                                     */
         /* -------------------------------------------------------------------------- */
-        public PanelIdMessage rebornPanel;
-        public TextIdMessage rebornPanelText;
-        public TextIdMessage rebornTimerText;
-        public ButtonIdMessage rebornButton;
+        public PanelIdentity rebornPanel;
+        public TextIdentity rebornPanelText;
+        public TextIdentity rebornTimerText;
+        public ButtonIdentity rebornButton;
 
 
 
         /* -------------------------------------------------------------------------- */
         /*                                     物品栏                                    */
         /* -------------------------------------------------------------------------- */
-        public PanelIdMessage inventoryMask;
+        public PanelIdentity inventoryMask;
         public readonly InventorySlotUI[] mainInventorySlots;
 
         public InventorySlotUI[] backpackUIs = new InventorySlotUI[Player.inventorySlotCount];
@@ -136,40 +136,40 @@ namespace GameCore
         public InventorySlotUI leggingUI;
 
         /* ----------------------------------- 背包 ----------------------------------- */
-        public ScrollViewIdMessage backpackItemView;
+        public ScrollViewIdentity backpackItemView;
 
 
         /* ----------------------------------- 合成 ----------------------------------- */
         public KeyValuePair<CraftingRecipe, List<Dictionary<int, ushort>>>? choseCraftRecipe;
         public Dictionary<CraftingRecipe, List<Dictionary<int, ushort>>> craftingResults = new();
-        public ScrollViewIdMessage craftingResultView;
-        public ScrollViewIdMessage craftingStuffView;
-        public ButtonIdMessage applyCraftingButton;
-        public TextIdMessage choseItemTitleText;
+        public ScrollViewIdentity craftingResultView;
+        public ScrollViewIdentity craftingStuffView;
+        public ButtonIdentity applyCraftingButton;
+        public TextIdentity choseItemTitleText;
 
 
 
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
-        public ImageIdMessage thirstBarBg;
-        public ImageIdMessage hungerBarBg;
-        public ImageIdMessage happinessBarBg;
-        public ImageIdMessage healthBarBg;
-        public ImageIdMessage thirstBarFull;
-        public ImageIdMessage hungerBarFull;
-        public ImageIdMessage happinessBarFull;
-        public ImageIdMessage healthBarFull;
+        public ImageIdentity thirstBarBg;
+        public ImageIdentity hungerBarBg;
+        public ImageIdentity happinessBarBg;
+        public ImageIdentity healthBarBg;
+        public ImageIdentity thirstBarFull;
+        public ImageIdentity hungerBarFull;
+        public ImageIdentity happinessBarFull;
+        public ImageIdentity healthBarFull;
 
 
 
         /* -------------------------------------------------------------------------- */
         /*                                    任务系统                                    */
         /* -------------------------------------------------------------------------- */
-        public ScrollViewIdMessage taskView;
-        public ImageIdMessage taskCompleteBackground;
-        public ImageIdMessage taskCompleteIcon;
-        public TextIdMessage taskCompleteText;
+        public ScrollViewIdentity taskView;
+        public ImageIdentity taskCompleteBackground;
+        public ImageIdentity taskCompleteIcon;
+        public TextIdentity taskCompleteText;
 
         public List<TaskData> tasks = new();
         public TaskNode taskNode;
@@ -186,14 +186,14 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public Joystick moveJoystick;
         public Joystick cursorJoystick;
-        public ImageIdMessage cursorImage;
-        public ButtonIdMessage attackButton;
-        public ButtonIdMessage controllingLayerUpButton;
-        public ButtonIdMessage controllingLayerDownButton;
-        public ButtonIdMessage interactionButton;
-        public ImageIdMessage useItemButtonImage;
-        public ButtonIdMessage useItemButton;
-        public ButtonIdMessage craftingButton;
+        public ImageIdentity cursorImage;
+        public ButtonIdentity attackButton;
+        public ButtonIdentity controllingLayerUpButton;
+        public ButtonIdentity controllingLayerDownButton;
+        public ButtonIdentity interactionButton;
+        public ImageIdentity useItemButtonImage;
+        public ButtonIdentity useItemButton;
+        public ButtonIdentity craftingButton;
 
 
 
@@ -202,9 +202,9 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     对话                                     */
         /* -------------------------------------------------------------------------- */
-        public PanelIdMessage dialogPanel;
-        public ImageIdMessage dialogHead;
-        public TextIdMessage dialogText;
+        public PanelIdentity dialogPanel;
+        public ImageIdentity dialogHead;
+        public TextIdentity dialogText;
 
         public DialogData displayingDialog;
         public Task dialogTask;
@@ -397,7 +397,7 @@ namespace GameCore
             /*                                    暂停界面                                    */
             /* -------------------------------------------------------------------------- */
 
-            pausePanel = GameUI.AddPanel("ori:panel.pause", true, GameUI.canvas.transform);
+            pausePanel = GameUI.AddPanel("ori:panel.pause", GameUI.canvas.transform, true);
 
             pausePanel.panelImage.SetColorBrightness(0.175f);
             pausePanel.panelImage.SetAlpha(0.65f);
@@ -405,11 +405,11 @@ namespace GameCore
 
             pausePanel.OnUpdate += x => x.rt.SetAsLastSibling();
 
-            ButtonIdMessage continueGame = GameUI.AddButton(UPC.middle, "ori:button.pause_continue_game", pausePanel).AddMethod(() =>
+            ButtonIdentity continueGame = GameUI.AddButton(UPC.middle, "ori:button.pause_continue_game", pausePanel).AddMethod(() =>
             {
                 GameUI.SetPage(null);
             });
-            ButtonIdMessage quitGame = GameUI.AddButton(UPC.middle, "ori:button.pause_quit_game", pausePanel).AddMethod(LeftGame);
+            ButtonIdentity quitGame = GameUI.AddButton(UPC.middle, "ori:button.pause_quit_game", pausePanel).AddMethod(LeftGame);
 
             continueGame.rt.AddLocalPosY(30);
             quitGame.rt.AddLocalPosY(-30);
@@ -624,7 +624,7 @@ namespace GameCore
                 SetIt(controllingLayerUpButton, 0, () => Player.ChangeControllingLayer(player, player.controllingLayer + 1));
                 SetIt(controllingLayerDownButton, -50, () => Player.ChangeControllingLayer(player, player.controllingLayer - 1));
 
-                static void SetIt(ButtonIdMessage button, int extraY, UnityAction ua)
+                static void SetIt(ButtonIdentity button, int extraY, UnityAction ua)
                 {
                     button.image.rectTransform.sizeDelta = new(50, 50);
                     button.rt.anchoredPosition = new(-140, -55 + extraY);
@@ -1003,7 +1003,7 @@ namespace GameCore
                 healthBarFull = GameUI.AddImage(posC, "ori:image.health_bar_full", "ori:health_bar");
                 SetIt(healthBarBg, healthBarFull, xExtraOffset, 0);
 
-                static void SetIt(ImageIdMessage bg, ImageIdMessage full, float xOffset, float yOffset)
+                static void SetIt(ImageIdentity bg, ImageIdentity full, float xOffset, float yOffset)
                 {
                     Vector2 size = new(144, 15);
                     Image.Type imageType = Image.Type.Filled;
@@ -1042,7 +1042,7 @@ namespace GameCore
 
             #region 重生
             {
-                rebornPanel = GameUI.AddPanel("ori:panel.reborn", true, GameUI.canvas.transform);
+                rebornPanel = GameUI.AddPanel("ori:panel.reborn", GameUI.canvas.transform, true);
                 rebornButton = GameUI.AddButton(UPC.middle, "ori:button.reborn", rebornPanel);
                 rebornPanelText = GameUI.AddText(UPC.middle, "ori:text.reborn_info", rebornPanel);
                 rebornTimerText = GameUI.AddText(UPC.middle, "ori:text.reborn_timer", rebornPanel);
@@ -1093,7 +1093,7 @@ namespace GameCore
             Right,
         }
 
-        public void GenerateSidebar(SidebarType type, string id, float cellSize, int sidebarSizeX, Vector2 spacing, string texture, string signTextureId, out ScrollViewIdMessage itemView, out ImageIdMessage signImageBackground, out ImageIdMessage signImage)
+        public void GenerateSidebar(SidebarType type, string id, float cellSize, int sidebarSizeX, Vector2 spacing, string texture, string signTextureId, out ScrollViewIdentity itemView, out ImageIdentity signImageBackground, out ImageIdentity signImage)
         {
             //桶的物品视图
             itemView = GameUI.AddScrollView(UPC.middle, id, inventoryMask);
@@ -1577,11 +1577,11 @@ namespace GameCore
 
         public class TaskNode : TaskStatus
         {
-            public ButtonIdMessage button;
-            public ImageIdMessage icon;
+            public ButtonIdentity button;
+            public ImageIdentity icon;
             public TaskData data;
             public TaskNode parent;
-            public ImageIdMessage line;
+            public ImageIdentity line;
             public List<TaskNode> nodes = new();
 
             public TaskNode(TaskData data)
@@ -1597,11 +1597,11 @@ namespace GameCore
         {
             public class TaskInfoUI
             {
-                public ImageIdMessage image;
-                public TextIdMessage nameText;
-                public TextIdMessage detailText;
+                public ImageIdentity image;
+                public TextIdentity nameText;
+                public TextIdentity detailText;
 
-                public TaskInfoUI(ImageIdMessage image, TextIdMessage nameText, TextIdMessage detailText)
+                public TaskInfoUI(ImageIdentity image, TextIdentity nameText, TextIdentity detailText)
                 {
                     this.image = image;
                     this.nameText = nameText;
@@ -1615,9 +1615,9 @@ namespace GameCore
             {
                 if (uiInstance == null || !uiInstance.image || !uiInstance.nameText || !uiInstance.detailText)
                 {
-                    ImageIdMessage image = GameUI.AddImage(UPC.middle, "ori:image.task_info_shower", "ori:item_info_shower");
-                    TextIdMessage nameText = GameUI.AddText(UPC.upperLeft, "ori:text.task_info_shower.name", image);
-                    TextIdMessage detailText = GameUI.AddText(UPC.upperLeft, "ori:text.task_info_shower.detail", image);
+                    ImageIdentity image = GameUI.AddImage(UPC.middle, "ori:image.task_info_shower", "ori:item_info_shower");
+                    TextIdentity nameText = GameUI.AddText(UPC.upperLeft, "ori:text.task_info_shower.name", image);
+                    TextIdentity detailText = GameUI.AddText(UPC.upperLeft, "ori:text.task_info_shower.detail", image);
 
                     nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
                     detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
@@ -1715,13 +1715,13 @@ namespace GameCore
     /* -------------------------------------------------------------------------- */
     public class InventorySlotUI
     {
-        public ButtonIdMessage button;
-        public ImageIdMessage content;
+        public ButtonIdentity button;
+        public ImageIdentity content;
 
         public static InventorySlotUI Generate(string buttonId, string imageId, Vector2 sizeDelta)
         {
-            ButtonIdMessage button = GameUI.AddButton(UPC.middle, buttonId);
-            ImageIdMessage image = GameUI.AddImage(UPC.middle, imageId, null, button);
+            ButtonIdentity button = GameUI.AddButton(UPC.middle, buttonId);
+            ImageIdentity image = GameUI.AddImage(UPC.middle, imageId, null, button);
 
             button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
             image.image.sprite = null;
@@ -1794,7 +1794,7 @@ namespace GameCore
             }
         }
 
-        public InventorySlotUI(ButtonIdMessage button, ImageIdMessage content)
+        public InventorySlotUI(ButtonIdentity button, ImageIdentity content)
         {
             this.button = button;
             this.content = content;
@@ -1809,9 +1809,9 @@ namespace GameCore
         {
             if (uiInstance == null || !uiInstance.image || !uiInstance.nameText || !uiInstance.detailText)
             {
-                ImageIdMessage image = GameUI.AddImage(UPC.middle, "ori:image.item_info_shower", "ori:item_info_shower");
-                TextIdMessage nameText = GameUI.AddText(UPC.upperLeft, "ori:text.item_info_shower.name", image);
-                TextIdMessage detailText = GameUI.AddText(UPC.upperLeft, "ori:text.item_info_shower.detail", image);
+                ImageIdentity image = GameUI.AddImage(UPC.middle, "ori:image.item_info_shower", "ori:item_info_shower");
+                TextIdentity nameText = GameUI.AddText(UPC.upperLeft, "ori:text.item_info_shower.name", image);
+                TextIdentity detailText = GameUI.AddText(UPC.upperLeft, "ori:text.item_info_shower.detail", image);
 
                 nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
                 detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
@@ -1907,11 +1907,11 @@ namespace GameCore
 
     public class ItemInfoUI
     {
-        public ImageIdMessage image;
-        public TextIdMessage nameText;
-        public TextIdMessage detailText;
+        public ImageIdentity image;
+        public TextIdentity nameText;
+        public TextIdentity detailText;
 
-        public ItemInfoUI(ImageIdMessage image, TextIdMessage nameText, TextIdMessage detailText)
+        public ItemInfoUI(ImageIdentity image, TextIdentity nameText, TextIdentity detailText)
         {
             this.image = image;
             this.nameText = nameText;

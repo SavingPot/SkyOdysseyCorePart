@@ -8,23 +8,23 @@ using GameCore.High;
 
 namespace GameCore
 {
-    public class ImageTextButtonIdMessage : UIIdMessage<ImageTextButtonIdMessage>
+    public class ImageTextButtonIdentity : UIIdentity<ImageTextButtonIdentity>
     {
-        private ButtonIdMessage _button;
-        private ImageIdMessage _image;
-        private TextIdMessage _buttonTextUp;
-        private TextIdMessage _buttonTextDown;
+        private ButtonIdentity _button;
+        private ImageIdentity _image;
+        private TextIdentity _buttonTextUp;
+        private TextIdentity _buttonTextDown;
 
-        public ButtonIdMessage button { get { if (!_button) _button = transform.Find("ButtonPrefab").GetComponent<ButtonIdMessage>(); return _button; } }
-        public ImageIdMessage image { get { if (!_image) _image = transform.Find("ImagePrefab").GetComponent<ImageIdMessage>(); return _image; } }
-        public TextIdMessage buttonTextUp { get { if (!_buttonTextUp) _buttonTextUp = transform.Find("ButtonPrefab/TextPrefabUp").GetComponent<TextIdMessage>(); return _buttonTextUp; } }
-        public TextIdMessage buttonTextDown { get { if (!_buttonTextDown) _buttonTextDown = transform.Find("ButtonPrefab/TextPrefabDown").GetComponent<TextIdMessage>(); return _buttonTextDown; } }
+        public ButtonIdentity button { get { if (!_button) _button = transform.Find("ButtonPrefab").GetComponent<ButtonIdentity>(); return _button; } }
+        public ImageIdentity image { get { if (!_image) _image = transform.Find("ImagePrefab").GetComponent<ImageIdentity>(); return _image; } }
+        public TextIdentity buttonTextUp { get { if (!_buttonTextUp) _buttonTextUp = transform.Find("ButtonPrefab/TextPrefabUp").GetComponent<TextIdentity>(); return _buttonTextUp; } }
+        public TextIdentity buttonTextDown { get { if (!_buttonTextDown) _buttonTextDown = transform.Find("ButtonPrefab/TextPrefabDown").GetComponent<TextIdentity>(); return _buttonTextDown; } }
 
         protected override void Awake()
         {
             base.Awake();
 
-            IdMessageCenter.imageTextButtonMessage.Add(this);
+            IdentityCenter.imageTextButtonMessage.Add(this);
         }
 
         public override void SetID(string id)
@@ -37,15 +37,15 @@ namespace GameCore
             buttonTextDown.id = $"{id}.buttonTextDown";
         }
 
-        public ImageTextButtonIdMessage AddMethod(UnityAction call)
+        public ImageTextButtonIdentity AddMethod(UnityAction call)
         {
             button.button.onClick.AddListener(call);
             return this;
         }
 
-        public TextIdMessage CreateText(string name, TextAlignmentOptions alignmentOptions)
+        public TextIdentity CreateText(string name, TextAlignmentOptions alignmentOptions)
         {
-            TextIdMessage text = Instantiate(buttonTextDown);
+            TextIdentity text = Instantiate(buttonTextDown);
             text.rt.SetParent(buttonTextDown.rt.parent);
             text.rt.localScale = Vector3.one;
             text.gameObject.name = name;
@@ -57,7 +57,7 @@ namespace GameCore
             return text;
         }
 
-        public void ResetStatusInScrollView(ScrollViewIdMessage scrollView)
+        public void ResetStatusInScrollView(ScrollViewIdentity scrollView)
         {
             SetScale(new(scrollView.gridLayoutGroup.cellSize.x, scrollView.gridLayoutGroup.cellSize.y));
         }

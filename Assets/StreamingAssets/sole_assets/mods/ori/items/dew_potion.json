@@ -1,0 +1,12 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:dew_potion",
+        "texture": "ori:dew_potion",
+        "damage": 10,
+        "tags": [
+            "ori:drinkable=100"
+        ],
+        "description": "ori:description.dew_potion"
+    }
+}

@@ -5,35 +5,35 @@ using UnityEngine;
 
 namespace GameCore
 {
-    public static class IdMessageCenter
+    public static class IdentityCenter
     {
-        public static readonly List<IdMessage> messages = new();
-        public static readonly List<UIIdMessage> uiMessages = new();
-        public static readonly List<ButtonIdMessage> buttonMessages = new();
-        public static readonly List<PanelIdMessage> panelMessages = new();
-        public static readonly List<InputFieldIdMessage> inputFieldMessages = new();
-        public static readonly List<ImageIdMessage> imageMessages = new();
-        public static readonly List<RawImageIdMessage> rawImageMessages = new();
-        public static readonly List<SliderIdMessage> sliderMessages = new();
-        public static readonly List<TextIdMessage> textMessages = new();
-        public static readonly List<ToggleIdMessage> toggleMessages = new();
-        public static readonly List<ImageTextButtonIdMessage> imageTextButtonMessage = new();
-        public static readonly List<InputButtonIdMessage> inputButtonMessage = new();
-        public static readonly List<ScrollViewIdMessage> scrollViewMessage = new();
+        public static readonly List<IdentityComponent> messages = new();
+        public static readonly List<UIIdentity> uiMessages = new();
+        public static readonly List<ButtonIdentity> buttonMessages = new();
+        public static readonly List<PanelIdentity> panelMessages = new();
+        public static readonly List<InputFieldIdentity> inputFieldMessages = new();
+        public static readonly List<ImageIdentity> imageMessages = new();
+        public static readonly List<RawImageIdentity> rawImageMessages = new();
+        public static readonly List<SliderIdentity> sliderMessages = new();
+        public static readonly List<TextIdentity> textMessages = new();
+        public static readonly List<ToggleIdentity> toggleMessages = new();
+        public static readonly List<ImageTextButtonIdentity> imageTextButtonMessage = new();
+        public static readonly List<InputButtonIdentity> inputButtonMessage = new();
+        public static readonly List<ScrollViewIdentity> scrollViewMessage = new();
 
-        public static IdMessage CompareMessage(string id) => CompareMessage(messages, id);
-        public static UIIdMessage CompareUIMessage(string id) => CompareMessage(uiMessages, id);
-        public static ButtonIdMessage CompareButtonMessage(string id) => CompareMessage(buttonMessages, id);
-        public static PanelIdMessage ComparePanelMessage(string id) => CompareMessage(panelMessages, id);
-        public static InputFieldIdMessage CompareInputFieldMessage(string id) => CompareMessage(inputFieldMessages, id);
-        public static ImageIdMessage CompareImageMessage(string id) => CompareMessage(imageMessages, id);
-        public static RawImageIdMessage CompareRawImageMessage(string id) => CompareMessage(rawImageMessages, id);
-        public static SliderIdMessage CompareSliderMessage(string id) => CompareMessage(sliderMessages, id);
-        public static TextIdMessage CompareTextMessage(string id) => CompareMessage(textMessages, id);
-        public static ToggleIdMessage CompareToggleMessage(string id) => CompareMessage(toggleMessages, id);
-        public static ImageTextButtonIdMessage CompareImageTextButtonMessage(string id) => CompareMessage(imageTextButtonMessage, id);
-        public static ImageTextButtonIdMessage CompareInputButtonMessage(string id) => CompareMessage(imageTextButtonMessage, id);
-        public static ScrollViewIdMessage CompareScrollViewMessage(string id) => CompareMessage(scrollViewMessage, id);
+        public static IdentityComponent CompareMessage(string id) => CompareMessage(messages, id);
+        public static UIIdentity CompareUIMessage(string id) => CompareMessage(uiMessages, id);
+        public static ButtonIdentity CompareButtonMessage(string id) => CompareMessage(buttonMessages, id);
+        public static PanelIdentity ComparePanelMessage(string id) => CompareMessage(panelMessages, id);
+        public static InputFieldIdentity CompareInputFieldMessage(string id) => CompareMessage(inputFieldMessages, id);
+        public static ImageIdentity CompareImageMessage(string id) => CompareMessage(imageMessages, id);
+        public static RawImageIdentity CompareRawImageMessage(string id) => CompareMessage(rawImageMessages, id);
+        public static SliderIdentity CompareSliderMessage(string id) => CompareMessage(sliderMessages, id);
+        public static TextIdentity CompareTextMessage(string id) => CompareMessage(textMessages, id);
+        public static ToggleIdentity CompareToggleMessage(string id) => CompareMessage(toggleMessages, id);
+        public static ImageTextButtonIdentity CompareImageTextButtonMessage(string id) => CompareMessage(imageTextButtonMessage, id);
+        public static ImageTextButtonIdentity CompareInputButtonMessage(string id) => CompareMessage(imageTextButtonMessage, id);
+        public static ScrollViewIdentity CompareScrollViewMessage(string id) => CompareMessage(scrollViewMessage, id);
 
 
         [RuntimeInitializeOnLoadMethod]
@@ -59,7 +59,7 @@ namespace GameCore
             // CheckMessages(scrollViewMessage);
         }
 
-        public static T CompareMessage<T>(List<T> idMessages, string messageId) where T : IdMessage
+        public static T CompareMessage<T>(List<T> idMessages, string messageId) where T : IdentityComponent
         {
             var messages = idMessages.Where(p => p.id == messageId).ToArray();
 
@@ -76,76 +76,76 @@ namespace GameCore
         //             messages.RemoveAt(i);
         // }
 
-        public static void Remove(IdMessage msg)
+        public static void Remove(IdentityComponent msg)
         {
             messages.Remove(msg);
 
-            if (msg is UIIdMessage)
+            if (msg is UIIdentity)
             {
-                if (uiMessages.Remove((UIIdMessage)msg))
+                if (uiMessages.Remove((UIIdentity)msg))
                 {
-                    if (msg is ButtonIdMessage)
+                    if (msg is ButtonIdentity)
                     {
-                        if (buttonMessages.Remove((ButtonIdMessage)msg))
+                        if (buttonMessages.Remove((ButtonIdentity)msg))
                             return;
                     }
-                    else if (msg is PanelIdMessage)
+                    else if (msg is PanelIdentity)
                     {
-                        if (panelMessages.Remove((PanelIdMessage)msg))
-                            return;
-                    }
-
-                    else if (msg is InputFieldIdMessage)
-                    {
-                        if (inputFieldMessages.Remove((InputFieldIdMessage)msg))
+                        if (panelMessages.Remove((PanelIdentity)msg))
                             return;
                     }
 
-                    else if (msg is ImageIdMessage)
+                    else if (msg is InputFieldIdentity)
                     {
-                        if (imageMessages.Remove((ImageIdMessage)msg))
+                        if (inputFieldMessages.Remove((InputFieldIdentity)msg))
                             return;
                     }
 
-                    else if (msg is RawImageIdMessage)
+                    else if (msg is ImageIdentity)
                     {
-                        if (rawImageMessages.Remove((RawImageIdMessage)msg))
+                        if (imageMessages.Remove((ImageIdentity)msg))
                             return;
                     }
 
-                    else if (msg is SliderIdMessage)
+                    else if (msg is RawImageIdentity)
                     {
-                        if (sliderMessages.Remove((SliderIdMessage)msg))
+                        if (rawImageMessages.Remove((RawImageIdentity)msg))
                             return;
                     }
 
-                    else if (msg is TextIdMessage)
+                    else if (msg is SliderIdentity)
                     {
-                        if (textMessages.Remove((TextIdMessage)msg))
+                        if (sliderMessages.Remove((SliderIdentity)msg))
                             return;
                     }
 
-                    else if (msg is ToggleIdMessage)
+                    else if (msg is TextIdentity)
                     {
-                        if (toggleMessages.Remove((ToggleIdMessage)msg))
+                        if (textMessages.Remove((TextIdentity)msg))
                             return;
                     }
 
-                    else if (msg is InputButtonIdMessage)
+                    else if (msg is ToggleIdentity)
                     {
-                        if (inputButtonMessage.Remove((InputButtonIdMessage)msg))
+                        if (toggleMessages.Remove((ToggleIdentity)msg))
                             return;
                     }
 
-                    else if (msg is ImageTextButtonIdMessage)
+                    else if (msg is InputButtonIdentity)
                     {
-                        if (imageTextButtonMessage.Remove((ImageTextButtonIdMessage)msg))
+                        if (inputButtonMessage.Remove((InputButtonIdentity)msg))
                             return;
                     }
 
-                    else if (msg is ScrollViewIdMessage)
+                    else if (msg is ImageTextButtonIdentity)
                     {
-                        if (scrollViewMessage.Remove((ScrollViewIdMessage)msg))
+                        if (imageTextButtonMessage.Remove((ImageTextButtonIdentity)msg))
+                            return;
+                    }
+
+                    else if (msg is ScrollViewIdentity)
+                    {
+                        if (scrollViewMessage.Remove((ScrollViewIdentity)msg))
                             return;
                     }
 

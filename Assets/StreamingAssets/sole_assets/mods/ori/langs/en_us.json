@@ -173,6 +173,14 @@
                 "text": "Get Bark Vest"
             },
             {
+                "id": "ori:description.dew_grass",
+                "text": "It seems to have magical power, perhaps having it boiled in a pot will be good"
+            },
+            {
+                "id": "ori:description.dew_potion",
+                "text": "It seems to have magical power, one sip replenishes full hydration instantly"
+            },
+            {
                 "id": "ori:description.mana_stone",
                 "text": "Mana stone is used to store magic energy, it can also release magic if a spell is injected"
             },
@@ -895,6 +903,18 @@
             {
                 "id": "ori:potato",
                 "text": "Potato"
+            },
+            {
+                "id": "ori:potato_chips",
+                "text": "Potato chips"
+            },
+            {
+                "id": "ori:potato_cake",
+                "text": "Potato cake"
+            },
+            {
+                "id": "ori:green_dumpling",
+                "text": "Green dumpling"
             },
             {
                 "id": "ori:potato_crop",

@@ -173,6 +173,14 @@
                 "text": "獲得樹皮背心"
             },
             {
+                "id": "ori:description.dew_grass",
+                "text": "其似乎具有神奇的力量, 也許可以用鍋煮煮看"
+            },
+            {
+                "id": "ori:description.dew_potion",
+                "text": "其似乎具有神奇的力量, 一口即可回滿飲水值"
+            },
+            {
                 "id": "ori:description.mana_stone",
                 "text": "魔能石被用於儲存魔能, 若注入魔咒, 也可以釋放魔法"
             },
@@ -895,6 +903,18 @@
             {
                 "id": "ori:potato",
                 "text": "洋芋"
+            },
+            {
+                "id": "ori:potato_chips",
+                "text": "薯片"
+            },
+            {
+                "id": "ori:potato_cake",
+                "text": "洋芋饼"
+            },
+            {
+                "id": "ori:green_dumpling",
+                "text": "青团"
             },
             {
                 "id": "ori:potato_crop",

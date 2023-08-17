@@ -38,6 +38,7 @@ namespace GameCore
         public const string Pillworm = "ori:pillworm";
         public const string RainForestSlime = "ori:rain_forest_slime";
         public const string SavannahGrasslandSlime = "ori:savannah_grassland_slime";
+        public const string Savage = "ori:savage";
         public const string Snail = "ori:snail";
         public const string SnowfieldGuard = "ori:snowfield_guard";
         public const string SnowfieldGuardSnowball = "ori:snowfield_guard_snowball";

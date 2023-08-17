@@ -6,7 +6,7 @@ using GameCore.High;
 
 namespace GameCore
 {
-    public class ImageIdMessage : UIIdMessage<ImageIdMessage>
+    public class ImageIdentity : UIIdentity<ImageIdentity>
     {
         private Image _image;
 
@@ -17,7 +17,7 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.imageMessages.Add(this);
+            IdentityCenter.imageMessages.Add(this);
         }
     }
 }

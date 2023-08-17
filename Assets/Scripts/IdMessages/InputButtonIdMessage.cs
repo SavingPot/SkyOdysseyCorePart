@@ -9,19 +9,19 @@ using GameCore.High;
 
 namespace GameCore
 {
-    public class InputButtonIdMessage : UIIdMessage<InputButtonIdMessage>
+    public class InputButtonIdentity : UIIdentity<InputButtonIdentity>
     {
-        private ButtonIdMessage _button;
-        private InputFieldIdMessage _field;
+        private ButtonIdentity _button;
+        private InputFieldIdentity _field;
 
-        public ButtonIdMessage button { get { if (!_button) _button = transform.Find("ButtonPrefab").GetComponent<ButtonIdMessage>(); return _button; } }
-        public InputFieldIdMessage field { get { if (!_field) _field = transform.Find("InputFieldPrefab").GetComponent<InputFieldIdMessage>(); return _field; } }
+        public ButtonIdentity button { get { if (!_button) _button = transform.Find("ButtonPrefab").GetComponent<ButtonIdentity>(); return _button; } }
+        public InputFieldIdentity field { get { if (!_field) _field = transform.Find("InputFieldPrefab").GetComponent<InputFieldIdentity>(); return _field; } }
 
         protected override void Awake()
         {
             base.Awake();
 
-            IdMessageCenter.inputButtonMessage.Add(this);
+            IdentityCenter.inputButtonMessage.Add(this);
         }
 
         public override void SetID(string id)
@@ -32,13 +32,13 @@ namespace GameCore
             button.id = $"{id}.button";
         }
 
-        public InputButtonIdMessage AddMethod(UnityAction call)
+        public InputButtonIdentity AddMethod(UnityAction call)
         {
             button.AddMethod(call);
             return this;
         }
 
-        public void ResetStatusInScrollView(ScrollViewIdMessage scrollView)
+        public void ResetStatusInScrollView(ScrollViewIdentity scrollView)
         {
             SetSize(new(scrollView.gridLayoutGroup.cellSize.x, scrollView.gridLayoutGroup.cellSize.y));
         }

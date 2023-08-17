@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 namespace GameCore
 {
     [RequireComponent(typeof(CanvasGroup)), DisallowMultipleComponent]
-    public class UIIdMessage : IdMessage, IRectTransform
+    public class UIIdentity : IdentityComponent, IRectTransform
     {
         private RectTransform _rectTransform;
         private CanvasGroup _canvasGroup;
@@ -26,7 +26,7 @@ namespace GameCore
 
         }
 
-        public UIIdMessage SetRefresh(bool value)
+        public UIIdentity SetRefresh(bool value)
         {
             doRefresh = value;
             return this;
@@ -36,13 +36,13 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.uiMessages.Add(this);
+            IdentityCenter.uiMessages.Add(this);
         }
 
         protected virtual void InternalRefreshUI() { }
     }
 
-    public class UIIdMessage<T> : UIIdMessage where T : UIIdMessage<T>
+    public class UIIdentity<T> : UIIdentity where T : UIIdentity<T>
     {
         public event Action<T> AfterRefreshing = t =>
         {
@@ -53,7 +53,7 @@ namespace GameCore
         protected override void Start()
         {
             base.Start();
-            
+
             RefreshUI();
         }
 

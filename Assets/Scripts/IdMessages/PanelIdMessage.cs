@@ -6,7 +6,7 @@ using GameCore.High;
 
 namespace GameCore
 {
-    public class PanelIdMessage : UIIdMessage<PanelIdMessage>
+    public class PanelIdentity : UIIdentity<PanelIdentity>
     {
         private Image _panelImage;
 
@@ -16,7 +16,7 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.panelMessages.Add(this);
+            IdentityCenter.panelMessages.Add(this);
         }
     }
 }

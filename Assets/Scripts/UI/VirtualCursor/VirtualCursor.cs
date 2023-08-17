@@ -14,8 +14,8 @@ namespace GameCore
     {
         #region UI 展示
 
-        private ImageIdMessage _image;
-        public ImageIdMessage image
+        private ImageIdentity _image;
+        public ImageIdentity image
         {
             get
             {

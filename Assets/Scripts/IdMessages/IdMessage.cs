@@ -5,7 +5,7 @@ using System;
 
 namespace GameCore
 {
-    public class IdMessage : MonoBehaviour, IStringId
+    public class IdentityComponent : MonoBehaviour, IStringId
     {
         public string id { get; set; }
 
@@ -22,7 +22,7 @@ namespace GameCore
 
         protected virtual void Awake()
         {
-            IdMessageCenter.messages.Add(this);
+            IdentityCenter.messages.Add(this);
         }
 
         public virtual void SetID(string id)
@@ -33,7 +33,7 @@ namespace GameCore
 
         private void OnDestroy()
         {
-            IdMessageCenter.Remove(this);
+            IdentityCenter.Remove(this);
         }
     }
 }

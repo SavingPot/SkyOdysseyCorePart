@@ -9,15 +9,15 @@ using System;
 
 namespace GameCore
 {
-    public class ButtonIdMessage : UIIdMessage<ButtonIdMessage>
+    public class ButtonIdentity : UIIdentity<ButtonIdentity>
     {
         private GameButton _button;
-        private TextIdMessage _buttonText;
+        private TextIdentity _buttonText;
         private Image _image;
 
 
         public GameButton button { get { if (!_button) _button = GetComponent<GameButton>(); return _button; } }
-        public TextIdMessage buttonText { get { if (!_buttonText) _buttonText = GetComponentInChildren<TextIdMessage>(); return _buttonText; } }
+        public TextIdentity buttonText { get { if (!_buttonText) _buttonText = GetComponentInChildren<TextIdentity>(); return _buttonText; } }
         public Image image { get { if (!_image) _image = GetComponent<Image>(); return _image; } }
 
 
@@ -26,7 +26,7 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.buttonMessages.Add(this);
+            IdentityCenter.buttonMessages.Add(this);
         }
 
         public override void SetID(string id)
@@ -36,7 +36,7 @@ namespace GameCore
             buttonText.id = $"{id}.text";
         }
 
-        public ButtonIdMessage AddMethod(UnityAction call)
+        public ButtonIdentity AddMethod(UnityAction call)
         {
             button.onClick.AddListener(call);
             return this;

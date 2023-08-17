@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace GameCore
 {
-    public class ScrollViewIdMessage : UIIdMessage<ScrollViewIdMessage>
+    public class ScrollViewIdentity : UIIdentity<ScrollViewIdentity>
     {
         private Image _scrollViewImage;
         private ScrollRect _scrollRect;
@@ -12,7 +12,7 @@ namespace GameCore
         private Image _viewportImage;
         private Mask _viewportMask;
         private GridLayoutGroup _gridLayoutGroup;
-        
+
         public Image scrollViewImage { get { if (!_scrollViewImage) _scrollViewImage = GetComponent<Image>(); return _scrollViewImage; } }
         public ScrollRect scrollRect { get { if (!_scrollRect) _scrollRect = GetComponent<ScrollRect>(); return _scrollRect; } }
         public RectTransform content { get { if (!_content) _content = rectTransform.Find("Viewport/Content").GetComponent<RectTransform>(); return _content; } }
@@ -24,7 +24,7 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.scrollViewMessage.Add(this);
+            IdentityCenter.scrollViewMessage.Add(this);
         }
 
         public void Clear() => content.DestroyChildren();

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
+using SP.Tools;
 
 namespace GameCore
 {
@@ -10,6 +12,17 @@ namespace GameCore
 
         public static Func<string, ByteWriter, object> TypeRead;
         public static Func<string, MethodInfo> GetReader;
+        public static Dictionary<string, Expression> autoReaderExpressions = new();
+        public static Expression GetExpressionOfReading(Expression writerToRead, Type type)
+        {
+            var readerMethod = GetReader(type.FullName);
+
+            return Expression.Convert(readerMethod.GetParameters().Length == 2 ?           //* ((T)obj).xx = readerMethod(writerToRead.chunks[i]);
+                Expression.Invoke(autoReaderExpressions[type.FullName], writerToRead)
+                    :
+                Expression.Call(readerMethod, writerToRead)
+            , type);
+        }
 
         // public byte[] Read(byte value)
         // {

@@ -9,7 +9,7 @@ using GameCore.UI;
 
 namespace GameCore
 {
-    public class InputFieldIdMessage : UIIdMessage<InputFieldIdMessage>
+    public class InputFieldIdentity : UIIdentity<InputFieldIdentity>
     {
         private TMP_InputField _field;
         public TMP_InputField field { get { if (!_field) _field = GetComponent<TMP_InputField>(); return _field; } }
@@ -38,7 +38,7 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.inputFieldMessages.Add(this);
+            IdentityCenter.inputFieldMessages.Add(this);
         }
 
         protected override void Update()

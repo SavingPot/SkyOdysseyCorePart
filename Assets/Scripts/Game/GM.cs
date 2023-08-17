@@ -399,7 +399,7 @@ namespace GameCore
             }
         }
 
-        public static KeyValuePair<PanelIdMessage, TextIdMessage> SandboxGenerationMask(UnityAction<PanelIdMessage, TextIdMessage> afterFadingIn, UnityAction<PanelIdMessage, TextIdMessage> afterFadingOut)
+        public static KeyValuePair<PanelIdentity, TextIdentity> SandboxGenerationMask(UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
         {
             return GameUI.GenerateMask("ori:panel.wait_generating_the_sandbox", "ori:text.wait_generating_the_sandbox", afterFadingIn, afterFadingOut);
         }

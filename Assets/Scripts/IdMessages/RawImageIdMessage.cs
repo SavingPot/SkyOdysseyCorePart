@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace GameCore
 {
-    public class RawImageIdMessage : UIIdMessage<RawImageIdMessage>
+    public class RawImageIdentity : UIIdentity<RawImageIdentity>
     {
         private RawImage _image;
 
@@ -16,7 +16,7 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.rawImageMessages.Add(this);
+            IdentityCenter.rawImageMessages.Add(this);
         }
     }
 }

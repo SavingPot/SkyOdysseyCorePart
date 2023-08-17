@@ -567,7 +567,7 @@ namespace GameCore
         [BoxGroup("组件")]
         [LabelText("名字文本")]
         [ReadOnly]
-        public TextIdMessage nameText;
+        public TextIdentity nameText;
 
 
 
@@ -2321,9 +2321,9 @@ namespace GameCore
     {
         public class ItemDraggerUI
         {
-            public ImageIdMessage image;
+            public ImageIdentity image;
 
-            public ItemDraggerUI(ImageIdMessage image)
+            public ItemDraggerUI(ImageIdentity image)
             {
                 this.image = image;
             }
@@ -2391,7 +2391,7 @@ namespace GameCore
         {
             if (uiInstance == null || !uiInstance.image)
             {
-                ImageIdMessage image = GameUI.AddImage(UPC.middle, "ori:image.item_dragger", "ori:square_button_flat");
+                ImageIdentity image = GameUI.AddImage(UPC.middle, "ori:image.item_dragger", "ori:square_button_flat");
                 image.OnUpdate += i =>
                 {
                     i.ap = GControls.cursorPosInMainCanvas;

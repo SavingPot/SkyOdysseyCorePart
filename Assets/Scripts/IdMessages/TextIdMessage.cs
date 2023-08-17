@@ -7,7 +7,7 @@ using GameCore.UI;
 
 namespace GameCore
 {
-    public class TextIdMessage : UIIdMessage<TextIdMessage>
+    public class TextIdentity : UIIdentity<TextIdentity>
     {
         private TMP_Text _text;
 
@@ -19,7 +19,7 @@ namespace GameCore
         {
             base.Awake();
 
-            IdMessageCenter.textMessages.Add(this);
+            IdentityCenter.textMessages.Add(this);
         }
 
         protected override void InternalRefreshUI()

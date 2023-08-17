@@ -21,11 +21,11 @@ namespace GameCore.UI
         public class PanelPage
         {
             public PanelPage last;
-            public UIIdMessage ui;
+            public UIIdentity ui;
             public DisappearType disappearType;
             public AppearType appearType;
 
-            public PanelPage(PanelPage lastPage, UIIdMessage ui, DisappearType disappearType, AppearType appearType)
+            public PanelPage(PanelPage lastPage, UIIdentity ui, DisappearType disappearType, AppearType appearType)
             {
                 this.last = lastPage;
                 this.ui = ui;
@@ -58,7 +58,7 @@ namespace GameCore.UI
 
         public static PanelPage page { get; private set; }
 
-        public static void SetPage(UIIdMessage value, DisappearType disappearType = DisappearType.PositionDownToUp, AppearType appearType = AppearType.PositionUpToDown)
+        public static void SetPage(UIIdentity value, DisappearType disappearType = DisappearType.PositionDownToUp, AppearType appearType = AppearType.PositionUpToDown)
         {
             //播放消失
             if (page != null)
@@ -216,7 +216,7 @@ namespace GameCore.UI
 
 
 
-        private static T InstantiateIdMsg<T>(T original, string id) where T : IdMessage
+        private static T InstantiateIdMsg<T>(T original, string id) where T : IdentityComponent
         {
             T msg = GameObject.Instantiate<T>(original);
             msg.SetID(id);
@@ -229,20 +229,20 @@ namespace GameCore.UI
         #region 添加 UI
 
         #region 添加图片
-        public static ImageIdMessage AddImage(Vector4 positionCurrent, string id, string spriteId, GameObject gameObject)
-        => AddImage(positionCurrent, id, spriteId, gameObject.transform);
+        public static ImageIdentity AddImage(Vector4 positionCurrent, string id, string spriteId, GameObject parent)
+        => AddImage(positionCurrent, id, spriteId, parent.transform);
 
-        public static ImageIdMessage AddImage(Vector4 positionCurrent, string id, string spriteId, UIIdMessage panelIdMessage)
-        => AddImage(positionCurrent, id, spriteId, panelIdMessage.transform);
+        public static ImageIdentity AddImage(Vector4 positionCurrent, string id, string spriteId, UIIdentity parent)
+        => AddImage(positionCurrent, id, spriteId, parent.transform);
 
-        public static ImageIdMessage AddImage(Vector4 positionCurrent, string id, string spriteId, string panelId)
-        => AddImage(positionCurrent, id, spriteId, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static ImageIdentity AddImage(Vector4 positionCurrent, string id, string spriteId, string parentId)
+        => AddImage(positionCurrent, id, spriteId, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static ImageIdMessage AddImage(Vector4 positionCurrent, string id, string spriteId, Transform trans = null)
+        public static ImageIdentity AddImage(Vector4 positionCurrent, string id, string spriteId, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.imagePrefab, id);
 
-            msg.rectTransform.SetParent(trans == null ? canvas.transform : trans);
+            msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
             msg.rectTransform.localPosition = Vector2.zero;
             msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -256,20 +256,20 @@ namespace GameCore.UI
         #endregion
 
         #region 添加原始图片
-        public static RawImageIdMessage AddRawImage(Vector4 positionCurrent, string id, GameObject gameObject)
-        => AddRawImage(positionCurrent, id, gameObject.transform);
+        public static RawImageIdentity AddRawImage(Vector4 positionCurrent, string id, GameObject parent)
+        => AddRawImage(positionCurrent, id, parent.transform);
 
-        public static RawImageIdMessage AddRawImage(Vector4 positionCurrent, string id, UIIdMessage panelIdMessage)
-        => AddRawImage(positionCurrent, id, panelIdMessage.transform);
+        public static RawImageIdentity AddRawImage(Vector4 positionCurrent, string id, IRectTransform parent)
+        => AddRawImage(positionCurrent, id, parent.rectTransform);
 
-        public static RawImageIdMessage AddRawImage(Vector4 positionCurrent, string id, string panelId)
-        => AddRawImage(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static RawImageIdentity AddRawImage(Vector4 positionCurrent, string id, string parentId)
+        => AddRawImage(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static RawImageIdMessage AddRawImage(Vector4 positionCurrent, string id, Transform trans = null)
+        public static RawImageIdentity AddRawImage(Vector4 positionCurrent, string id, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.rawImagePrefab, id);
 
-            msg.rectTransform.SetParent(trans == null ? canvas.transform : trans);
+            msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
             msg.rectTransform.localPosition = Vector2.zero;
             msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -280,20 +280,20 @@ namespace GameCore.UI
         #endregion
 
         #region 添加滚动视图
-        public static ScrollViewIdMessage AddScrollView(Vector4 positionCurrent, string id, GameObject gameObject)
-        => AddScrollView(positionCurrent, id, gameObject.transform);
+        public static ScrollViewIdentity AddScrollView(Vector4 positionCurrent, string id, GameObject parent)
+        => AddScrollView(positionCurrent, id, parent.transform);
 
-        public static ScrollViewIdMessage AddScrollView(Vector4 positionCurrent, string id, UIIdMessage panelIdMessage)
-        => AddScrollView(positionCurrent, id, panelIdMessage.transform);
+        public static ScrollViewIdentity AddScrollView(Vector4 positionCurrent, string id, IRectTransform parent)
+        => AddScrollView(positionCurrent, id, parent.rectTransform);
 
-        public static ScrollViewIdMessage AddScrollView(Vector4 positionCurrent, string id, string panelId)
-        => AddScrollView(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static ScrollViewIdentity AddScrollView(Vector4 positionCurrent, string id, string parentId)
+        => AddScrollView(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static ScrollViewIdMessage AddScrollView(Vector4 positionCurrent, string id, Transform trans = null)
+        public static ScrollViewIdentity AddScrollView(Vector4 positionCurrent, string id, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.scrollViewPrefab, id);
 
-            msg.rectTransform.SetParent(trans == null ? canvas.transform : trans);
+            msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
             msg.rectTransform.localPosition = Vector2.zero;
             msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -303,20 +303,20 @@ namespace GameCore.UI
         #endregion
 
         #region 添加文本
-        public static TextIdMessage AddText(Vector4 positionCurrent, string id, GameObject gameObject)
-        => AddText(positionCurrent, id, gameObject.transform);
+        public static TextIdentity AddText(Vector4 positionCurrent, string id, GameObject parent)
+        => AddText(positionCurrent, id, parent.transform);
 
-        public static TextIdMessage AddText(Vector4 positionCurrent, string id, UIIdMessage panelIdMessage)
-        => AddText(positionCurrent, id, panelIdMessage.transform);
+        public static TextIdentity AddText(Vector4 positionCurrent, string id, IRectTransform parent)
+        => AddText(positionCurrent, id, parent.rectTransform);
 
-        public static TextIdMessage AddText(Vector4 positionCurrent, string id, string panelId)
-        => AddText(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static TextIdentity AddText(Vector4 positionCurrent, string id, string parentId)
+        => AddText(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static TextIdMessage AddText(Vector4 positionCurrent, string id, Transform trans = null)
+        public static TextIdentity AddText(Vector4 positionCurrent, string id, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.textPrefab, id);
 
-            msg.rectTransform.SetParent(trans == null ? canvas.transform : trans);
+            msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
             msg.rectTransform.localPosition = Vector2.zero;
             msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -326,20 +326,20 @@ namespace GameCore.UI
         #endregion
 
         #region 添加开关
-        public static ToggleIdMessage AddToggle(Vector4 positionCurrent, string id, GameObject gameObject)
-        => AddToggle(positionCurrent, id, gameObject.transform);
+        public static ToggleIdentity AddToggle(Vector4 positionCurrent, string id, GameObject parent)
+        => AddToggle(positionCurrent, id, parent.transform);
 
-        public static ToggleIdMessage AddToggle(Vector4 positionCurrent, string id, UIIdMessage panelIdMessage)
-        => AddToggle(positionCurrent, id, panelIdMessage.transform);
+        public static ToggleIdentity AddToggle(Vector4 positionCurrent, string id, IRectTransform parent)
+        => AddToggle(positionCurrent, id, parent.rectTransform);
 
-        public static ToggleIdMessage AddToggle(Vector4 positionCurrent, string id, string panelId)
-        => AddToggle(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static ToggleIdentity AddToggle(Vector4 positionCurrent, string id, string parentId)
+        => AddToggle(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static ToggleIdMessage AddToggle(Vector4 positionCurrent, string id, Transform trans = null)
+        public static ToggleIdentity AddToggle(Vector4 positionCurrent, string id, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.togglePrefab, id);
 
-            msg.rectTransform.SetParent(trans == null ? canvas.transform : trans);
+            msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
             msg.rectTransform.localPosition = Vector2.zero;
             msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -362,21 +362,21 @@ namespace GameCore.UI
         #endregion
 
         #region 添加输入框
-        public static InputFieldIdMessage AddInputField(Vector4 positionCurrent, string id, GameObject gameObject)
-        => AddInputField(positionCurrent, id, gameObject.transform);
+        public static InputFieldIdentity AddInputField(Vector4 positionCurrent, string id, GameObject parent)
+        => AddInputField(positionCurrent, id, parent.transform);
 
-        public static InputFieldIdMessage AddInputField(Vector4 positionCurrent, string id, UIIdMessage panelIdMessage)
-        => AddInputField(positionCurrent, id, panelIdMessage.transform);
+        public static InputFieldIdentity AddInputField(Vector4 positionCurrent, string id, IRectTransform parent)
+        => AddInputField(positionCurrent, id, parent.rectTransform);
 
-        public static InputFieldIdMessage AddInputField(Vector4 positionCurrent, string id, string panelId)
-        => AddInputField(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static InputFieldIdentity AddInputField(Vector4 positionCurrent, string id, string parentId)
+        => AddInputField(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static InputFieldIdMessage AddInputField(Vector4 positionCurrent, string id, Transform trans = null)
+        public static InputFieldIdentity AddInputField(Vector4 positionCurrent, string id, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.inputFieldPrefab, id);
 
             msg.image.sprite = ModFactory.CompareTexture("ori:button").sprite;
-            msg.rectTransform.SetParent(trans == null ? canvas.transform : trans);
+            msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
             msg.rectTransform.localPosition = Vector2.zero;
             msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -386,20 +386,20 @@ namespace GameCore.UI
         #endregion
 
         #region 添加图文按钮
-        public static ImageTextButtonIdMessage AddImageTextButton(Vector4 positionCurrent, string id, GameObject gameObject)
-        => AddImageTextButton(positionCurrent, id, gameObject.transform);
+        public static ImageTextButtonIdentity AddImageTextButton(Vector4 positionCurrent, string id, GameObject parent)
+        => AddImageTextButton(positionCurrent, id, parent.transform);
 
-        public static ImageTextButtonIdMessage AddImageTextButton(Vector4 positionCurrent, string id, UIIdMessage panelIdMessage)
-        => AddImageTextButton(positionCurrent, id, panelIdMessage.transform);
+        public static ImageTextButtonIdentity AddImageTextButton(Vector4 positionCurrent, string id, IRectTransform parent)
+        => AddImageTextButton(positionCurrent, id, parent.rectTransform);
 
-        public static ImageTextButtonIdMessage AddImageTextButton(Vector4 positionCurrent, string id, string panelId)
-        => AddImageTextButton(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static ImageTextButtonIdentity AddImageTextButton(Vector4 positionCurrent, string id, string parentId)
+        => AddImageTextButton(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static ImageTextButtonIdMessage AddImageTextButton(Vector4 positionCurrent, string id, Transform trans = null)
+        public static ImageTextButtonIdentity AddImageTextButton(Vector4 positionCurrent, string id, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.imageTextButtonPrefab, id);
 
-            msg.rectTransform.SetParent(trans == null ? canvas.transform : trans);
+            msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
             msg.rectTransform.localPosition = Vector2.zero;
             msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -412,20 +412,20 @@ namespace GameCore.UI
         #endregion
 
         #region 添加输入按钮
-        public static InputButtonIdMessage AddInputButton(Vector4 positionCurrent, string id, GameObject gameObject)
-        => AddInputButton(positionCurrent, id, gameObject.transform);
+        public static InputButtonIdentity AddInputButton(Vector4 positionCurrent, string id, GameObject parent)
+        => AddInputButton(positionCurrent, id, parent.transform);
 
-        public static InputButtonIdMessage AddInputButton(Vector4 positionCurrent, string id, IRectTransform irt)
-        => AddInputButton(positionCurrent, id, irt.rectTransform);
+        public static InputButtonIdentity AddInputButton(Vector4 positionCurrent, string id, IRectTransform parent)
+        => AddInputButton(positionCurrent, id, parent.rectTransform);
 
-        public static InputButtonIdMessage AddInputButton(Vector4 positionCurrent, string id, string panelId)
-        => AddInputButton(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static InputButtonIdentity AddInputButton(Vector4 positionCurrent, string id, string parentId)
+        => AddInputButton(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static InputButtonIdMessage AddInputButton(Vector4 positionCurrent, string id, Transform trans = null)
+        public static InputButtonIdentity AddInputButton(Vector4 positionCurrent, string id, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.inputButtonPrefab, id);
 
-            msg.rt.SetParent(trans == null ? canvas.transform : trans);
+            msg.rt.SetParent(parent == null ? canvas.transform : parent);
             msg.rt.localPosition = Vector2.zero;
             msg.rt.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rt.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -439,20 +439,20 @@ namespace GameCore.UI
         #endregion
 
         #region 添加滑动条
-        public static SliderIdMessage AddSlider(Vector4 positionCurrent, string id, GameObject gameObject)
-        => AddSlider(positionCurrent, id, gameObject.transform);
+        public static SliderIdentity AddSlider(Vector4 positionCurrent, string id, GameObject parent)
+        => AddSlider(positionCurrent, id, parent.transform);
 
-        public static SliderIdMessage AddSlider(Vector4 positionCurrent, string id, IRectTransform irt)
-        => AddSlider(positionCurrent, id, irt.rectTransform);
+        public static SliderIdentity AddSlider(Vector4 positionCurrent, string id, IRectTransform parent)
+        => AddSlider(positionCurrent, id, parent.rectTransform);
 
-        public static SliderIdMessage AddSlider(Vector4 positionCurrent, string id, string panelId)
-        => AddSlider(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform);
+        public static SliderIdentity AddSlider(Vector4 positionCurrent, string id, string parentId)
+        => AddSlider(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
 
-        public static SliderIdMessage AddSlider(Vector4 positionCurrent, string id, Transform trans = null)
+        public static SliderIdentity AddSlider(Vector4 positionCurrent, string id, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.sliderPrefab, id);
 
-            msg.rt.SetParent(trans ? trans : canvas.transform);
+            msg.rt.SetParent(parent ? parent : canvas.transform);
             msg.rt.localPosition = Vector2.zero;
             msg.rt.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rt.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -467,24 +467,23 @@ namespace GameCore.UI
         #endregion
 
         #region 添加面板
-        public static PanelIdMessage AddPanel(string id) => AddPanel(id, false, null);
+        public static PanelIdentity AddPanel(string id) => AddPanel(id, parent: (Transform)null, false);
 
-        public static PanelIdMessage AddPanel(string id, IRectTransform irt) => AddPanel(id, false, irt.rectTransform);
-        public static PanelIdMessage AddPanel(string id, IRectTransform irt, bool disable) => AddPanel(id, disable, irt.rectTransform);
+        public static PanelIdentity AddPanel(string id, IRectTransform parent) => AddPanel(id, parent.rectTransform, false);
+        public static PanelIdentity AddPanel(string id, IRectTransform parent, bool disable) => AddPanel(id, parent.rectTransform, disable);
 
-        public static PanelIdMessage AddPanel(string id, string parentId) => AddPanel(id, false, IdMessageCenter.ComparePanelMessage(parentId).transform);
-        public static PanelIdMessage AddPanel(string id, string parentId, bool disable) => AddPanel(id, disable, IdMessageCenter.ComparePanelMessage(parentId).transform);
+        public static PanelIdentity AddPanel(string id, string parentId) => AddPanel(id, IdentityCenter.ComparePanelMessage(parentId).transform, false);
+        public static PanelIdentity AddPanel(string id, string parentId, bool disable) => AddPanel(id, IdentityCenter.ComparePanelMessage(parentId).transform, disable);
 
-        public static PanelIdMessage AddPanel(string id, GameObject go) => AddPanel(id, false, go.transform);
-        public static PanelIdMessage AddPanel(string id, GameObject go, bool disable) => AddPanel(id, disable, go.transform);
+        public static PanelIdentity AddPanel(string id, GameObject parent) => AddPanel(id, parent.transform, false);
+        public static PanelIdentity AddPanel(string id, GameObject parent, bool disable) => AddPanel(id, parent.transform, disable);
 
-        public static PanelIdMessage AddPanel(string id, Transform trans) => AddPanel(id, false, trans);
-
-        public static PanelIdMessage AddPanel(string id, bool disable, Transform trans)
+        public static PanelIdentity AddPanel(string id, Transform parent) => AddPanel(id, parent, false);
+        public static PanelIdentity AddPanel(string id, Transform parent, bool disable)
         {
             var msg = InstantiateIdMsg(GInit.instance.panelPrefab, id);
 
-            msg.rt.SetParent(trans ? trans : canvas.transform);
+            msg.rt.SetParent(parent ? parent : canvas.transform);
             msg.rt.anchorMin = Vector2.zero;
             msg.rt.anchorMax = Vector2.one;
             msg.rt.localScale = Vector2.one;
@@ -499,23 +498,23 @@ namespace GameCore.UI
         #endregion
 
         #region 添加按钮
-        public static ButtonIdMessage AddButton(Vector4 positionCurrent, string id)
+        public static ButtonIdentity AddButton(Vector4 positionCurrent, string id)
         => AddButtonInternal(positionCurrent, id, canvas.transform, "ori:button");
 
-        public static ButtonIdMessage AddButton(Vector4 positionCurrent, string id, Transform trans, string buttonSpriteId = "ori:button")
-        => AddButtonInternal(positionCurrent, id, trans, buttonSpriteId);
+        public static ButtonIdentity AddButton(Vector4 positionCurrent, string id, Transform parent, string buttonSpriteId = "ori:button")
+        => AddButtonInternal(positionCurrent, id, parent, buttonSpriteId);
 
-        public static ButtonIdMessage AddButton(Vector4 positionCurrent, string id, UIIdMessage panelIdMessage, string buttonSpriteId = "ori:button")
-        => AddButtonInternal(positionCurrent, id, panelIdMessage.transform, buttonSpriteId);
+        public static ButtonIdentity AddButton(Vector4 positionCurrent, string id, IRectTransform parent, string buttonSpriteId = "ori:button")
+        => AddButtonInternal(positionCurrent, id, parent.rectTransform, buttonSpriteId);
 
-        public static ButtonIdMessage AddButton(Vector4 positionCurrent, string id, string panelId, string buttonSpriteId = "ori:button")
-        => AddButtonInternal(positionCurrent, id, IdMessageCenter.ComparePanelMessage(panelId).transform, buttonSpriteId);
+        public static ButtonIdentity AddButton(Vector4 positionCurrent, string id, string parentId, string buttonSpriteId = "ori:button")
+        => AddButtonInternal(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform, buttonSpriteId);
 
-        static internal ButtonIdMessage AddButtonInternal(Vector4 positionCurrent, string id, Transform trans, string buttonSpriteId = "ori:button")
+        static internal ButtonIdentity AddButtonInternal(Vector4 positionCurrent, string id, Transform parent, string buttonSpriteId = "ori:button")
         {
             var msg = InstantiateIdMsg(GInit.instance.buttonPrefab, id);
 
-            msg.rectTransform.SetParent(trans);
+            msg.rectTransform.SetParent(parent);
             msg.rectTransform.localPosition = Vector2.zero;
             msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
@@ -527,13 +526,13 @@ namespace GameCore.UI
         }
         #endregion
 
-        public static (ImageIdMessage, ImageIdMessage, ImageIdMessage, ImageIdMessage, ImageIdMessage, ImageIdMessage, ImageIdMessage, ImageIdMessage) GenerateSkinShow(PlayerSkin skin, Transform parent)
+        public static (ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity) GenerateSkinShow(PlayerSkin skin, Transform parent)
         {
             float bodyWide = 20;
             Vector2 bodySD = new(bodyWide, bodyWide / skin.body.texture.width * skin.body.texture.height);
             Vector2 headSD = new(bodySD.x * 1.15f, bodySD.x * 1.3f);
-            Vector2 rightArmSD = new (bodySD.y * skin.rightArm.texture.width / skin.rightArm.texture.height, bodySD.y);
-            Vector2 leftArmSD = new (bodySD.y * skin.leftArm.texture.width / skin.leftArm.texture.height, bodySD.y);
+            Vector2 rightArmSD = new(bodySD.y * skin.rightArm.texture.width / skin.rightArm.texture.height, bodySD.y);
+            Vector2 leftArmSD = new(bodySD.y * skin.leftArm.texture.width / skin.leftArm.texture.height, bodySD.y);
             Vector2 rightLegSD = new(bodySD.x / 2, bodySD.x / 2 / skin.rightLeg.texture.width * skin.rightLeg.texture.height);
             Vector2 leftLegSD = new(bodySD.x / 2, bodySD.x / 2 / skin.leftLeg.texture.width * skin.leftLeg.texture.height);
             Vector2 rightFootSD = new(rightLegSD.x * 1.35f, rightLegSD.x * 1.35f / skin.rightFoot.texture.width * skin.rightFoot.texture.height);
@@ -557,7 +556,7 @@ namespace GameCore.UI
             rightArm.transform.SetAsFirstSibling();
             head.transform.SetAsFirstSibling();
 
-            ImageIdMessage InitI(string name, Vector4 pointer, Sprite sprite, BodyPartType type, Vector2 sd, Vector2 offset, Transform parent)
+            ImageIdentity InitI(string name, Vector4 pointer, Sprite sprite, BodyPartType type, Vector2 sd, Vector2 offset, Transform parent)
             {
                 var img = GameUI.AddImage(pointer, $"ori:image.playerSkinNames.{skin.name}.{name}", null, parent);
 
@@ -571,7 +570,7 @@ namespace GameCore.UI
             return (body, head, rightArm, leftArm, rightLeg, leftLeg, rightFoot, leftFoot);
         }
 
-        public static (ImageIdMessage, ImageIdMessage, ImageIdMessage, TextIdMessage) GenerateLoadingBar(
+        public static (ImageIdentity, ImageIdentity, ImageIdentity, TextIdentity) GenerateLoadingBar(
             Vector4 positionCurrent,
             string bgId, string fullId, string textId,
             string backgroundSprite, string contentSprite, string mascotSprite,
@@ -617,7 +616,7 @@ namespace GameCore.UI
             return (barBg, barFull, mascot, progressText);
         }
 
-        public static KeyValuePair<PanelIdMessage, TextIdMessage> GenerateMask(string panelId, string textId, UnityAction<PanelIdMessage, TextIdMessage> afterFadingIn, UnityAction<PanelIdMessage, TextIdMessage> afterFadingOut)
+        public static KeyValuePair<PanelIdentity, TextIdentity> GenerateMask(string panelId, string textId, UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
         {
             //初始化 UI
             var panel = AddPanel(panelId);
