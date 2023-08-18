@@ -265,7 +265,7 @@ namespace GameCore
                         ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance, genericArg)
                     ),
                     //*== 在读取 field 时执行: 
-                    //*== if (Enumerable.Equal(writer.chunks[0].bytes, Converters.ByteConverter.ToBytes(1025943687)))
+                    //*== if (Enumerable.SequenceEqual(writer.chunks[0].bytes, Converters.ByteConverter.ToBytes(1025943687)))
                     //*==   return new T?;
                     //*== else
                     //*==   return reader(writer.chunks[0]);
@@ -282,7 +282,7 @@ namespace GameCore
                             {
                                 Expression.IfThenElse(
                                     Expression.Call(
-                                        typeof(Enumerable).GetMethod("SequenceEqual", new Type[] { typeof(IEnumerable<>), typeof(IEnumerable<>)}),
+                                        typeof(IEnumerableExtensions).GetMethod("ArrayEqual"),
                                         Expression.Field(chunkZero, typeof(ByteWriter).GetField(nameof(ByteWriter.bytes))),
                                         doNotReadIdentity),
                                     Expression.Assign(read_Temp, Expression.Convert(Expression.Constant(null), fieldType)),
