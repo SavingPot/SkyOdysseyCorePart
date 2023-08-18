@@ -265,7 +265,7 @@ namespace GameCore
                         ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance, genericArg)
                     ),
                     //*== 在读取 field 时执行: 
-                    //*== if (writer.bytes == null)
+                    //*== if (writer.bytes != null)
                     //*==   return new T?;
                     //*== else
                     //*==   return reader(writer.chunks[0]);
@@ -281,8 +281,8 @@ namespace GameCore
                             new Expression[]
                             {
                                 Expression.IfThenElse(
-                                    Expression.Equal(Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.bytes))), Expression.Constant(null)),
-                                    Expression.Assign(read_Temp, Expression.Convert(Expression.Constant(null), fieldType)),
+                                    Expression.NotEqual(Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.bytes))), Expression.Constant(null)),
+                                    Expression.Assign(read_Temp, Expression.New(fieldType)),
                                     Expression.Assign(read_Temp, Expression.Convert(ByteReader.GetExpressionOfReading(chunkZero, genericArg), fieldType))
                                 ),
                                 read_Temp
