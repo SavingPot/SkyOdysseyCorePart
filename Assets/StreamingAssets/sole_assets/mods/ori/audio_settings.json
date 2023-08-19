@@ -21,6 +21,11 @@
             "loop": true
         },
         {
+            "id": "ori:death",
+            "path": "/death.ogg",
+            "volume": 1.1
+        },
+        {
             "id": "ori:hoe",
             "path": "/hoe.ogg"
         },

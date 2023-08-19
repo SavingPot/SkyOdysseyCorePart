@@ -133,7 +133,7 @@ namespace GameCore
             if (Client.isClient)
             {
                 /* -------------------------------- 设置全局光照亮度 -------------------------------- */
-                globalLight.intensity = (time * 2 / timeOneDay).Range(0.15f, 0.85f);
+                globalLight.intensity = (time * 2 / timeOneDay).Range(0.1f, 0.85f);
 
                 /* --------------------------------- 设置天空颜色 --------------------------------- */
                 byte delta = (byte)Mathf.Min(GTime.darknessLevel * 12, 180);   //* xx 是为了扩大时间的影响, 要限制在 <= 180, 否则天会变绿
