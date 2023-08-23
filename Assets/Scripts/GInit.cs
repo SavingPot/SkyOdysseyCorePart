@@ -68,7 +68,7 @@ namespace GameCore
         [Required(Tools.requiredErrorMessage)]
         [AssetsOnly]
         [LabelText("实体的预制体")]
-        //TODO: public, no methods
+        //TODO: make them public, don't use methods to get the fields
         private EntityInit entityPrefab;
 
         [SerializeField]
@@ -202,23 +202,29 @@ namespace GameCore
             //创建缓存目录
             Directory.CreateDirectory(cachePath);
 
-            if (platform == RuntimePlatform.Android)
+            switch (platform)
             {
-                //定义压缩包路径与解压路径
-                string zipFilePath = Path.Combine(cachePath, "game_apk.zip");
-                string unzipPath = Path.Combine(cachePath, "game_apk_unzipped");
+                case RuntimePlatform.Android:
+                    //定义压缩包路径与解压路径
+                    string zipFilePath = Path.Combine(cachePath, "game_apk.zip");
+                    string unzipPath = Path.Combine(cachePath, "game_apk_unzipped");
 
-                //将APK文件复制到缓存路径并解压   (Application.dataPath 就是 APK 目录)
-                File.Copy(Application.dataPath, zipFilePath, true);
-                ZipTools.UnzipFile(zipFilePath, unzipPath);
+                    //将APK文件复制到缓存路径并解压   (Application.dataPath 就是 APK 目录)
+                    File.Copy(Application.dataPath, zipFilePath, true);
+                    ZipTools.UnzipFile(zipFilePath, unzipPath);
 
-                //APK根/assets/sole_assets
-                soleAssetsPath = Path.Combine(unzipPath, "assets", "sole_assets");
-            }
-            else
-            {
-                //Windows Editor: Project/Assets/StreamingAssets/sole_assets   Windows Runtime: XXX_Data/StreamingAssets/sole_assets
-                soleAssetsPath = Path.Combine(Application.dataPath, "StreamingAssets", "sole_assets");
+                    //APK根/assets/sole_assets
+                    soleAssetsPath = Path.Combine(unzipPath, "assets", "sole_assets");
+                    break;
+
+                case RuntimePlatform.WindowsPlayer:
+                    // SkyOdyssey_Data/StreamingAssets/sole_assets
+                    soleAssetsPath = Path.Combine(Application.dataPath, "StreamingAssets", "sole_assets");
+                    break;
+
+                case RuntimePlatform.WindowsEditor:
+                    soleAssetsPath = "D:/MakeGames/GameProject/ori_copy_for_editor/sole_assets";
+                    break;
             }
 
 

@@ -236,7 +236,7 @@ namespace GameCore.UI
         => AddImage(positionCurrent, id, spriteId, parent.transform);
 
         public static ImageIdentity AddImage(Vector4 positionCurrent, string id, string spriteId, string parentId)
-        => AddImage(positionCurrent, id, spriteId, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddImage(positionCurrent, id, spriteId, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static ImageIdentity AddImage(Vector4 positionCurrent, string id, string spriteId, Transform parent = null)
         {
@@ -263,7 +263,7 @@ namespace GameCore.UI
         => AddRawImage(positionCurrent, id, parent.rectTransform);
 
         public static RawImageIdentity AddRawImage(Vector4 positionCurrent, string id, string parentId)
-        => AddRawImage(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddRawImage(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static RawImageIdentity AddRawImage(Vector4 positionCurrent, string id, Transform parent = null)
         {
@@ -287,7 +287,7 @@ namespace GameCore.UI
         => AddScrollView(positionCurrent, id, parent.rectTransform);
 
         public static ScrollViewIdentity AddScrollView(Vector4 positionCurrent, string id, string parentId)
-        => AddScrollView(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddScrollView(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static ScrollViewIdentity AddScrollView(Vector4 positionCurrent, string id, Transform parent = null)
         {
@@ -310,7 +310,7 @@ namespace GameCore.UI
         => AddText(positionCurrent, id, parent.rectTransform);
 
         public static TextIdentity AddText(Vector4 positionCurrent, string id, string parentId)
-        => AddText(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddText(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static TextIdentity AddText(Vector4 positionCurrent, string id, Transform parent = null)
         {
@@ -333,7 +333,7 @@ namespace GameCore.UI
         => AddToggle(positionCurrent, id, parent.rectTransform);
 
         public static ToggleIdentity AddToggle(Vector4 positionCurrent, string id, string parentId)
-        => AddToggle(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddToggle(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static ToggleIdentity AddToggle(Vector4 positionCurrent, string id, Transform parent = null)
         {
@@ -369,7 +369,7 @@ namespace GameCore.UI
         => AddInputField(positionCurrent, id, parent.rectTransform);
 
         public static InputFieldIdentity AddInputField(Vector4 positionCurrent, string id, string parentId)
-        => AddInputField(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddInputField(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static InputFieldIdentity AddInputField(Vector4 positionCurrent, string id, Transform parent = null)
         {
@@ -393,7 +393,7 @@ namespace GameCore.UI
         => AddImageTextButton(positionCurrent, id, parent.rectTransform);
 
         public static ImageTextButtonIdentity AddImageTextButton(Vector4 positionCurrent, string id, string parentId)
-        => AddImageTextButton(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddImageTextButton(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static ImageTextButtonIdentity AddImageTextButton(Vector4 positionCurrent, string id, Transform parent = null)
         {
@@ -419,7 +419,7 @@ namespace GameCore.UI
         => AddInputButton(positionCurrent, id, parent.rectTransform);
 
         public static InputButtonIdentity AddInputButton(Vector4 positionCurrent, string id, string parentId)
-        => AddInputButton(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddInputButton(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static InputButtonIdentity AddInputButton(Vector4 positionCurrent, string id, Transform parent = null)
         {
@@ -446,7 +446,7 @@ namespace GameCore.UI
         => AddSlider(positionCurrent, id, parent.rectTransform);
 
         public static SliderIdentity AddSlider(Vector4 positionCurrent, string id, string parentId)
-        => AddSlider(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform);
+        => AddSlider(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform);
 
         public static SliderIdentity AddSlider(Vector4 positionCurrent, string id, Transform parent = null)
         {
@@ -472,8 +472,8 @@ namespace GameCore.UI
         public static PanelIdentity AddPanel(string id, IRectTransform parent) => AddPanel(id, parent.rectTransform, false);
         public static PanelIdentity AddPanel(string id, IRectTransform parent, bool disable) => AddPanel(id, parent.rectTransform, disable);
 
-        public static PanelIdentity AddPanel(string id, string parentId) => AddPanel(id, IdentityCenter.ComparePanelMessage(parentId).transform, false);
-        public static PanelIdentity AddPanel(string id, string parentId, bool disable) => AddPanel(id, IdentityCenter.ComparePanelMessage(parentId).transform, disable);
+        public static PanelIdentity AddPanel(string id, string parentId) => AddPanel(id, IdentityCenter.ComparePanelIdentity(parentId).transform, false);
+        public static PanelIdentity AddPanel(string id, string parentId, bool disable) => AddPanel(id, IdentityCenter.ComparePanelIdentity(parentId).transform, disable);
 
         public static PanelIdentity AddPanel(string id, GameObject parent) => AddPanel(id, parent.transform, false);
         public static PanelIdentity AddPanel(string id, GameObject parent, bool disable) => AddPanel(id, parent.transform, disable);
@@ -508,7 +508,7 @@ namespace GameCore.UI
         => AddButtonInternal(positionCurrent, id, parent.rectTransform, buttonSpriteId);
 
         public static ButtonIdentity AddButton(Vector4 positionCurrent, string id, string parentId, string buttonSpriteId = "ori:button")
-        => AddButtonInternal(positionCurrent, id, IdentityCenter.ComparePanelMessage(parentId).transform, buttonSpriteId);
+        => AddButtonInternal(positionCurrent, id, IdentityCenter.ComparePanelIdentity(parentId).transform, buttonSpriteId);
 
         static internal ButtonIdentity AddButtonInternal(Vector4 positionCurrent, string id, Transform parent, string buttonSpriteId = "ori:button")
         {

@@ -5,7 +5,7 @@ using UnityEditor;
 public class AssetReferenceFinder
 {
     // 存储所有依赖关系
-    private static Dictionary<string, List<string>> referenceCacheDic = new Dictionary<string, List<string>>();
+    private static Dictionary<string, List<string>> referenceCacheDic = new();
 
     // 在 Assets 文件件下鼠标右键弹板中添加按钮 AssetBeDepend
     [MenuItem("Assets/Find Assets References")]
@@ -66,7 +66,7 @@ public class AssetReferenceFinder
         }
 
         // 将依赖关系打印出来
-        foreach(var file in list)
+        foreach (var file in list)
         {
             Debug.LogError(filePath + "   被:" + file + "    引用");
         }

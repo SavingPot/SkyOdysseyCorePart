@@ -398,13 +398,13 @@ namespace GameCore.UI
                                 GFiles.settings.langId = data.id;
 
                                 //刷新文本
-                                for (int i = 0; i < IdentityCenter.textMessages.Count; i++)
+                                for (int i = 0; i < IdentityCenter.textIdentities.Count; i++)
                                 {
-                                    IdentityCenter.textMessages[i].RefreshUI();
+                                    IdentityCenter.textIdentities[i].RefreshUI();
                                 }
-                                for (int i = 0; i < IdentityCenter.inputFieldMessages.Count; i++)
+                                for (int i = 0; i < IdentityCenter.inputFieldIdentities.Count; i++)
                                 {
-                                    IdentityCenter.inputFieldMessages[i].RefreshUI();
+                                    IdentityCenter.inputFieldIdentities[i].RefreshUI();
                                 }
 
                                 //将更改后的设置应用到文件

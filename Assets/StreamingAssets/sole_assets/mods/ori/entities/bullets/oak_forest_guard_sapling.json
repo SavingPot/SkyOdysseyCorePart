@@ -1,9 +1,0 @@
-{
-    "json_format": "0.4.8",
-    "ori:entity": {
-        "id": "ori:oak_forest_guard_sapling",
-        "physics": {
-            "gravity": 0
-        }
-    }
-}

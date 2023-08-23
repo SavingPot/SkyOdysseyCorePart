@@ -137,6 +137,7 @@ namespace GameCore
                     )
                 );
             }
+            //Complete array part
             else if (fieldType.IsArray)
             {
                 if (wantedResultIsSupported)
@@ -241,6 +242,7 @@ namespace GameCore
                     )
                 );
             }
+            //Complete nullable part
             else if (fieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
                 if (wantedResultIsSupported)
