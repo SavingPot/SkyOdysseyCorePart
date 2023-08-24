@@ -430,9 +430,9 @@ namespace GameCore
 
             modCountFound = modPathsWithInfo.Length;
 
-            for (int i = 0; i < modPathsWithInfo.Length; i++)
+            foreach (var path in modPathsWithInfo)
             {
-                LoadMod(modPathsWithInfo[i], false);
+                LoadMod(path, false);
                 //Task loading = new(() => LoadMod(modPathsWithInfo[i]));
 
                 //loading.Start();

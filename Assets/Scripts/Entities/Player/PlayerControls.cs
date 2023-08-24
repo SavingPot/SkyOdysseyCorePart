@@ -178,9 +178,9 @@ namespace GameCore
 
         public static Func<Player, bool> ThrowItem = (p) => GControls.mode switch
             {
-                ControlMode.Touchscreen => false,// p.pui != null && p.pui.attackButton && p.pui.attackButton.button.isPressed,
-                ControlMode.KeyboardAndMouse => Keyboard.current?.backquoteKey?.isPressed ?? false,
-                ControlMode.Gamepad => false,//Gamepad.current?.rightTrigger?.isPressed ?? false,
+                ControlMode.Touchscreen => false,
+                ControlMode.KeyboardAndMouse => Keyboard.current?.backquoteKey?.wasPressedThisFrame ?? false,
+                ControlMode.Gamepad => false,
                 _ => false
             };
 

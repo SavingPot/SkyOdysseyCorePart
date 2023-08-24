@@ -20,7 +20,6 @@ namespace GameCore
         public const string Earthworm = "ori:earthworm";
         public const string Fly = "ori:fly";
         public const string GrasslandGuard = "ori:grassland_guard";
-        public const string GrasslandGuardStorm = "ori:grassland_guard_storm";
         public const string GrasslandSlime = "ori:grassland_slime";
         public const string GrasslandSpore = "ori:grassland_spore";
         public const string HostileFarmer = "ori:hostile_farmer";
