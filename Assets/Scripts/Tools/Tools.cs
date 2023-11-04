@@ -746,7 +746,7 @@ namespace GameCore
         /// <remarks>
         /// Name of the main page scene
         /// </remarks>
-        public const string mainScene = "MainMenu";
+        public const string mainMenu = "MainMenu";
 
         /// <summary>
         /// 游戏场景的名字

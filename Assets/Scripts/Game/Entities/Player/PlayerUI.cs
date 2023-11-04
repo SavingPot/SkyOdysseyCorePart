@@ -127,13 +127,18 @@ namespace GameCore
 
         public async void ShowRebornPanel()
         {
+            await 3;
+
+            rebornPanel.panelImage.color = new(0, 0, 0, 0);
+            rebornButton.buttonText.text.color = new(1, 1, 1, 0);
             rebornButton.button.image.color = new(1, 1, 1, 0);
             rebornButton.button.interactable = false;
             GameUI.FadeIn(rebornPanel.panelImage);
 
-            await 2;
+            await 3;
             rebornButton.button.interactable = true;
             GameUI.FadeIn(rebornButton.image);
+            GameUI.FadeIn(rebornButton.buttonText.text);
         }
 
 
@@ -415,9 +420,7 @@ namespace GameCore
 
             pausePanel.panelImage.SetColorBrightness(0.175f);
             pausePanel.panelImage.SetAlpha(0.65f);
-            pausePanel.OnUpdate += x => x.rt.SetAsLastSibling();
-
-            pausePanel.OnUpdate += x => x.rt.SetAsLastSibling();
+            pausePanel.OnUpdate += x => GameUI.SetUILayerToTop(x);
 
             ButtonIdentity continueGame = GameUI.AddButton(UPC.middle, "ori:button.pause_continue_game", pausePanel).AddMethod(() =>
             {
@@ -440,7 +443,7 @@ namespace GameCore
             chatView.gameObject.SetActive(false);
 
             chatInput = GameUI.AddInputButton(UPC.down, "ori:input_button.chat", chatView);
-            chatInput.field.image.color = new(1, 1, 1, 0.3f);
+            chatInput.field.image.color = new(1, 1, 1, 0.8f);
             chatInput.button.image.color = new(1, 1, 1, 0.8f);
             chatInput.AddMethod(() =>
             {
@@ -459,7 +462,7 @@ namespace GameCore
                 chatView.gridLayoutGroup.cellSize = new(GameUI.canvasScaler.referenceResolution.x, 50);
                 chatView.gridLayoutGroup.spacing = new(0, 10);
 
-                chatView.rt.SetAsLastSibling();
+                GameUI.SetUILayerToTop(chatView);
             };
 
 
@@ -484,7 +487,7 @@ namespace GameCore
 
             taskView.OnUpdate += _ =>
             {
-                taskView.rt.SetAsLastSibling();
+                GameUI.SetUILayerToTop(taskView);
             };
 
             /* -------------------------------- 生成任务完成图像 -------------------------------- */
@@ -494,7 +497,7 @@ namespace GameCore
             taskCompleteBackground.gameObject.SetActive(false);
             taskCompleteBackground.OnUpdate += _ =>
             {
-                taskView.rt.SetAsLastSibling();
+                GameUI.SetUILayerToTop(taskView);
             };
 
             taskCompleteIcon = GameUI.AddImage(UPC.left, "ori:image.task_complete_icon", null, taskCompleteBackground);
@@ -1061,16 +1064,20 @@ namespace GameCore
                 rebornPanelText = GameUI.AddText(UPC.middle, "ori:text.reborn_info", rebornPanel);
                 rebornTimerText = GameUI.AddText(UPC.middle, "ori:text.reborn_timer", rebornPanel);
 
-                rebornPanel.panelImage.color = new(0, 0, 0, 0);
                 rebornPanelText.SetAPosY(100);
                 rebornPanelText.SetSizeDelta(500, 120);
                 rebornPanelText.text.SetFontSize(24);
+                rebornPanelText.RefreshUI();
 
                 rebornButton.SetAPosY(-20);
-                rebornButton.button.image.color = new(1, 1, 1, 0);
+                rebornButton.buttonText.RefreshUI();
                 rebornButton.AddMethod(() =>
                 {
+                    rebornButton.button.interactable = false;
                     GameUI.FadeOut(rebornPanel.panelImage);
+                    GameUI.FadeIn(rebornButton.image);
+                    GameUI.FadeIn(rebornButton.buttonText.text);
+
                     player.Reborn(player.maxHealth, null);
                 });
 

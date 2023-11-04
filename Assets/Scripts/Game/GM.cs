@@ -285,6 +285,7 @@ namespace GameCore
             };
         }
 
+        //Unite StartGameHost and StartGameCLient
         public static async void StartGameHost(string worldDirPath, Action callback)
         {
             ushort port = Tools.GetUnoccupiedPort();
@@ -384,6 +385,11 @@ namespace GameCore
 
             ////ManagerNetwork.instance.SummonAllPlayers();
 
+            panel.OnUpdate += pg =>
+            {
+                GameUI.SetUILayerToTop(pg);
+            };
+
             async void InternalAfterGeneratingExistingSandbox(Sandbox sandbox)
             {
                 await UniTask.WaitUntil(() => Player.local && Player.local.correctedSyncVars);
@@ -445,7 +451,7 @@ namespace GameCore
 
                 panel.OnUpdate += pg =>
                 {
-                    pg.transform.SetSiblingIndex(pg.transform.childCount - 1);
+                    GameUI.SetUILayerToTop(pg);
                 };
 
                 GameCallbacks.AfterGeneratingExistingSandbox += InternalAfterGeneratingExistingSandbox;

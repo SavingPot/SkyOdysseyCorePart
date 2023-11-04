@@ -526,6 +526,7 @@ namespace GameCore.UI
         }
         #endregion
 
+        //TODO: recomplete it
         public static (ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity) GenerateSkinShow(PlayerSkin skin, Transform parent)
         {
             float bodyWide = 20;
@@ -558,7 +559,7 @@ namespace GameCore.UI
 
             ImageIdentity InitI(string name, Vector4 pointer, Sprite sprite, BodyPartType type, Vector2 sd, Vector2 offset, Transform parent)
             {
-                var img = GameUI.AddImage(pointer, $"ori:image.playerSkinNames.{skin.name}.{name}", null, parent);
+                var img = AddImage(pointer, $"ori:image.playerSkinNames.{skin.name}.{name}", null, parent);
 
                 img.sd = sd;
                 img.image.sprite = sprite;
@@ -572,7 +573,7 @@ namespace GameCore.UI
 
         public static (ImageIdentity barBg, ImageIdentity barFull, ImageIdentity mascot, TextIdentity progressText) GenerateLoadingBar(
             Vector4 positionCurrent,
-            string bgId, string fullId, string textId,
+            string bgId, string fullId,string mascotId, string textId,
             string backgroundSprite, string contentSprite, string mascotSprite,
             float mascotYDelta, float textYDelta,
             Vector2 barScale, Vector2 mascotScale,
@@ -580,8 +581,8 @@ namespace GameCore.UI
             Transform parent)
         {
             var barBg = AddImage(positionCurrent, bgId, backgroundSprite, parent);
-            var barFull = AddImage(UPC.middle, fullId, contentSprite, barBg);
-            var mascot = AddImage(UPC.left, fullId, mascotSprite, barBg);
+            var barFull = AddImage(UPC.stretchMiddle, fullId, contentSprite, barBg);
+            var mascot = AddImage(UPC.left, mascotId, mascotSprite, barBg);
             var progressText = AddText(UPC.middle, textId, barBg);
 
             barBg.sd = barScale;
@@ -649,6 +650,27 @@ namespace GameCore.UI
             return new(panel, text);
         }
         #endregion
+
+        public static void SetUILayer(UIIdentity ui, int layer)
+        {
+            int lowestIndex = ui.transform.parent.childCount - 1;
+            ui.transform.SetSiblingIndex(Mathf.Max(lowestIndex, lowestIndex - layer));
+        }
+
+        public static void SetUILayerToOverTop(UIIdentity ui)
+        {
+            SetUILayer(ui, 0);
+        }
+
+        public static void SetUILayerToTop(UIIdentity ui)
+        {
+            SetUILayer(ui, 1);
+        }
+
+        public static void SetUILayerToFirst(UIIdentity ui)
+        {
+            SetUILayer(ui, 2);
+        }
 
         #region 视觉效果
         #region 淡出入
