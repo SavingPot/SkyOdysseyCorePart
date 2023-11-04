@@ -116,15 +116,6 @@ namespace GameCore.High
             }
             else
             {
-                foreach (var block in blocks)
-                {
-                    if (block)
-                    {
-                        //执行行为包的更新
-                        block.DoUpdate();
-                    }
-                }
-
                 if (!totalRendererEnabled)
                 {
                     EnableRenderers();
@@ -253,17 +244,6 @@ namespace GameCore.High
             chunk.totalRendererEnabled = e;
         };
 
-        public void RefreshBlocks()
-        {
-            foreach (Block block in blocks)
-            {
-                if (block)
-                {
-                    block.RefreshBlock();
-                }
-            }
-        }
-
         public Block GetBlock(Vector2Int mapPos, BlockLayer layer)
         {
             foreach (Block block in blocks)
@@ -312,9 +292,12 @@ namespace GameCore.High
 
                     map.blockPool.Recover(block);
 
+                    GameCallbacks.CallOnRemoveBlock(pos, layer, editSandbox, true);
                     return;
                 }
             }
+
+            GameCallbacks.CallOnRemoveBlock(pos, layer, editSandbox, false);
         }
 
         public Block AddBlock(Vector2Int pos, BlockLayer layer, BlockData block, string customData, bool editSandbox)

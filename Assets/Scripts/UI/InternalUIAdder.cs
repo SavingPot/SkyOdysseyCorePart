@@ -671,29 +671,35 @@ namespace GameCore.UI
 
         private IEnumerator LoadLevel()
         {
+            float earliestExitTime = Tools.time + 5;
+
+            //先开始加载场景
             AsyncOperation operation = SceneManager.LoadSceneAsync(GScene.nextIndex);
             operation.allowSceneActivation = false;
-
-            float earliestTime = Tools.time + 5;
 
             var panel = GameUI.AddPanel("ori:panel.first_scene_panel");
             panel.panelImage.color = Tools.HexToColor("#070714");
 
-            GameUI.GenerateLoadingBar(new(0.5f, 0.32f, 0.5f, 0.32f),
-                                    "ori:image.scene_loading_bar_bg", "ori:image.scene_loading_bar_full", "ori:text.scene_loading_progress_text",
-                                    "ori:loading_bar_1", "ori:loading_bar_1", "ori:scene_loading_mascot",
-                                    15, 0,
-                                    new(384, 24), new(50, 50),
-                                    () => operation.progress >= 0.9f ? 1 : operation.progress, () => $"{(operation.progress >= 0.9f ? 100 : operation.progress * 100)}%",
-                                    panel.transform);
-
-            GameUI.GenerateLoadingBar(new(0.5f, 0.17f, 0.5f, 0.17f),
-                                    "ori:image.mod_loading_bar_bg", "ori:image.mod_loading_bar_full", "ori:mod_loading_progress.scene_loading_progress_text",
+            var (barBg, barFull, mascotImage, progressText) = GameUI.GenerateLoadingBar(UPC.stretchBottom,
+                                    "ori:image.mod_loading_bar_bg", "ori:image.mod_loading_bar_full", "ori:mod_loading_progress.mod_loading_progress_text",
                                     "ori:loading_bar_2", "ori:loading_bar_2", "ori:mod_loading_mascot",
                                     15, 0,
-                                    new(384, 24), new(50, 50),
-                                    () => (float)ModFactory.mods.Count / (float)ModFactory.modCountFound, () => $"{ModFactory.mods.Count}/{ModFactory.modCountFound}",
+                                    new(0, 24), new(50, 50),
+                                    () => (float)ModFactory.mods.Count / (float)ModFactory.modCountFound,
+                                    () => $"Loading... {ModFactory.mods.Count}/{ModFactory.modCountFound}", //TODO; Make Loading into text comparation
                                     panel.transform);
+
+            //刷新吉祥物位置
+            mascotImage.OnUpdate += img =>
+            {
+                var progressFloat = (float)ModFactory.mods.Count / (float)ModFactory.modCountFound;
+
+                mascotImage.SetAPosX(progressFloat * GameUI.canvasRT.sizeDelta.x);
+            };
+
+            barBg.SetAPosY(barBg.sd.y / 2);
+            barFull.SetAPosY(barFull.sd.y / 2);
+            progressText.SetSizeDelta(400, 30);
 
             var houseImage = GameUI.AddImage(UPC.middle, "ori:image.loading_house", "ori:loading_house_0", panel);
             houseImage.SetSizeDelta(300, 300);
@@ -720,14 +726,14 @@ namespace GameCore.UI
 #if UNITY_EDITOR
                 Keyboard keyboard = Keyboard.current;
                 Gamepad gamepad = Gamepad.current;
-                if (keyboard != null) if (keyboard.escapeKey.wasPressedThisFrame) earliestTime = float.MaxValue;
-                if (gamepad != null) if (gamepad.bButton.wasPressedThisFrame) earliestTime = float.MaxValue;
-                if (keyboard != null) if (keyboard.enterKey.wasPressedThisFrame) earliestTime = 0;
-                if (gamepad != null) if (gamepad.aButton.wasPressedThisFrame) earliestTime = 0;
+                if (keyboard != null) if (keyboard.escapeKey.wasPressedThisFrame) earliestExitTime = float.MaxValue;
+                if (gamepad != null) if (gamepad.bButton.wasPressedThisFrame) earliestExitTime = float.MaxValue;
+                if (keyboard != null) if (keyboard.enterKey.wasPressedThisFrame) earliestExitTime = 0;
+                if (gamepad != null) if (gamepad.aButton.wasPressedThisFrame) earliestExitTime = 0;
 #endif
 
                 //加载好就进入下一场景
-                if (operation.progress >= 0.9f && ModFactory.mods.Count == ModFactory.modCountFound && Tools.time >= earliestTime)
+                if (operation.progress >= 0.9f && ModFactory.mods.Count == ModFactory.modCountFound && Tools.time >= earliestExitTime)
                 {
                     GScene.BeforeLoad(GScene.nextIndex);
                     operation.allowSceneActivation = true;

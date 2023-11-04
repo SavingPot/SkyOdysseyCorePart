@@ -112,7 +112,6 @@ namespace GameCore
                         {
                             creature.anim.SetAnim("attack_leftarm", false);
 
-                            Debug.Log("AS");
                             if (creature.isMoving)
                             {
                                 //重播放移动动画
@@ -138,7 +137,7 @@ namespace GameCore
                         .OnStepComplete(() =>
                         {
                             creature.anim.SetAnim("attack_rightarm", false);
-
+                            Debug.Log($"Attacked!: {creature.isMoving}");
                             if (creature.isMoving)
                             {
                                 //重播放移动动画
@@ -373,16 +372,17 @@ namespace GameCore
         }
 
         [ServerRpc]
-        protected static void ServerOnStartMovement(Creature param0, NetworkConnection caller)
+        protected static void ServerOnStartMovement(Creature creature, NetworkConnection caller)
         {
-            param0.isMoving = true;
-            CallerOnStartMovement(param0, caller);
+            Debug.Log($"Started!: {creature.isMoving}");
+            creature.isMoving = true;
+            ConnectionOnStartMovement(creature, caller);
         }
 
         [ConnectionRpc]
-        protected static void CallerOnStartMovement(Creature param0, NetworkConnection caller)
+        protected static void ConnectionOnStartMovement(Creature creature, NetworkConnection caller)
         {
-            param0.OnStartMovementAction();
+            creature.OnStartMovementAction();
         }
 
         public Action OnStartMovementAction = () => { Debug.Log("STARTED"); };
@@ -401,16 +401,17 @@ namespace GameCore
         }
 
         [ServerRpc]
-        protected static void ServerOnStopMovement(Creature param0, NetworkConnection caller)
+        protected static void ServerOnStopMovement(Creature creature, NetworkConnection caller)
         {
-            param0.isMoving = false;
-            ClientOnStopMovement(param0, caller);
+            Debug.Log($"Stopped!: {creature.isMoving}");
+            creature.isMoving = false;
+            ClientOnStopMovement(creature, caller);
         }
 
         [ConnectionRpc]
-        protected static void ClientOnStopMovement(Creature param0, NetworkConnection caller)
+        protected static void ClientOnStopMovement(Creature creature, NetworkConnection caller)
         {
-            param0.OnStopMovementAction();
+            creature.OnStopMovementAction();
         }
 
         public Action OnStopMovementAction = () => { };

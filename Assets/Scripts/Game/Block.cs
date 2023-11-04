@@ -136,34 +136,17 @@ namespace GameCore
 
         public virtual void DoStart()
         {
-
+            sr.sprite = data.defaultTexture.sprite;
+            blockCollider.isTrigger = !data.collidible || layer != BlockLayer.Wall;
         }
 
-        public virtual void DoUpdate()
+        public virtual void OnUpdate()
         {
 
         }
 
         #endregion
 
-        public virtual void RefreshTexture()
-        {
-            sr.sprite = data.defaultTexture.sprite;
-        }
-
-        public void RefreshCollider()
-        {
-            blockCollider.isTrigger = !data.collidible || layer != BlockLayer.Wall;
-        }
-
-        public void RefreshBlock()
-        {
-            //刷新贴图
-            RefreshTexture();
-
-            //刷新碰撞体
-            RefreshCollider();
-        }
 
         public void TakeDamage(float damage)
         {

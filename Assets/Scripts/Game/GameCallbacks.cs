@@ -24,7 +24,14 @@ namespace GameCore
         public static event Action<Sandbox> AfterGeneratingNewSandbox = _ => { };
 
         public static event Action<Vector2Int, BlockLayer, BlockData> OnBlockDestroyed = (_, _, _) => { };
-        public static event Action<Vector2Int, BlockLayer, Block, Chunk> OnAddBlock = (_, _, _, _) => { };
+        public static event Action<Vector2Int, BlockLayer, bool, bool> OnRemoveBlock = (pos, layer, editSandbox, successful) =>
+        {
+            Map.instance.UpdateAt(pos, layer);
+        };
+        public static event Action<Vector2Int, BlockLayer, Block, Chunk> OnAddBlock = (pos, layer, block, chunk) =>
+        {
+            Map.instance.UpdateAt(pos, layer);
+        };
 
 
         public static event Action OnSaveAllDataToFiles = () => { Debug.Log("保存了所有数据至文件"); };
@@ -36,7 +43,8 @@ namespace GameCore
         internal static void CallAfterGeneratingNewSandbox(Sandbox sandbox) => AfterGeneratingNewSandbox(sandbox);
 
         internal static void CallOnBlockDestroyed(Vector2Int vec, BlockLayer loc, BlockData block) => OnBlockDestroyed(vec, loc, block);
-        internal static void CallOnAddBlock(Vector2Int vec, BlockLayer loc, Block block, Chunk chunk) => OnAddBlock(vec, loc, block, chunk);
+        internal static void CallOnRemoveBlock(Vector2Int pos, BlockLayer layer, bool editSandbox, bool successful) => OnRemoveBlock(pos, layer, editSandbox, successful);
+        internal static void CallOnAddBlock(Vector2Int pos, BlockLayer layer, Block block, Chunk chunk) => OnAddBlock(pos, layer, block, chunk);
 
         internal static void CallOnSaveAllDataToFiles() => OnSaveAllDataToFiles();
     }

@@ -453,7 +453,10 @@ namespace GameCore
         public static void Item_Write(Item item, ByteWriter writer)
         {
             if (Item.Null(item))
+            {
+                Debug.Log("It is null! I Write");
                 writer.WriteNull();
+            }
             else
             {
                 var kid = writer.Write(ByteConverter.ToBytes(item.data.id));
@@ -466,8 +469,11 @@ namespace GameCore
         [ByteReader("GameCore.Item")]
         public static object Item_Read(ByteWriter writer)
         {
-            if (writer.bytes == null || writer.bytes.Length == 0)
+            if (writer.bytes == null)
+            {
+                Debug.Log("It is null! I Read");
                 return null;
+            }
             else
             {
                 Item item = ModFactory.CompareItem(ByteConverter.ToString(writer.bytes)).ToExtended();

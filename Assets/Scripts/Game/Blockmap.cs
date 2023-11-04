@@ -18,7 +18,7 @@ namespace GameCore
         public class BlockPool
         {
             public Stack<GameObject> stack = new();
-            private Map map;
+            private readonly Map map;
 
             public Block Get(Vector2Int pos, BlockLayer layer, BlockData data, string customData)
             {
@@ -54,7 +54,7 @@ namespace GameCore
 
 
                 /* --------------------------------- 移动到新的区块 -------------------------------- */
-                block.chunk = Map.instance.AddChunk(PosConvert.BlockPosToChunkIndex(pos)); ;
+                block.chunk = map.AddChunk(PosConvert.BlockPosToChunkIndex(pos)); ;
                 block.transform.SetParent(block.chunk.transform);
 
                 bool addedToChunk = false;
@@ -79,8 +79,8 @@ namespace GameCore
                 block.gameObject.name = data.id;
 
                 /* ----------------------------------- 初始化 ---------------------------------- */
-                block.RefreshBlock();
                 block.DoStart();
+                map.UpdateAt(block.pos, block.layer);
 
                 return block;
             }
@@ -304,14 +304,6 @@ namespace GameCore
             return bs;
         }
 
-        public void RefreshBlocks()
-        {
-            foreach (Chunk chunk in chunks)
-            {
-                chunk.RefreshBlocks();
-            }
-        }
-
         public void RecoverChunks()
         {
             for (int i = chunks.Count - 1; i >= 0; i--)
@@ -389,6 +381,32 @@ namespace GameCore
             Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
 
             AddChunk(chunkIndexTo).RemoveBlock(pos, layer, editSandbox);
+        }
+
+        public void UpdateAt(Vector2Int pos, BlockLayer layer)
+        {
+            Vector2Int[] points = new[]
+            {
+                new (pos.x - 1, pos.y - 1),
+                new (pos.x - 1, pos.y),
+                new (pos.x - 1, pos.y + 1),
+                new (pos.x, pos.y - 1),
+                pos,
+                new (pos.x, pos.y + 1),
+                new (pos.x + 1, pos.y - 1),
+                new (pos.x + 1, pos.y),
+                new (pos.x + 1, pos.y + 1)
+            };
+
+            foreach (Vector2Int p in points)
+            {
+                var block = GetBlock(p, layer);
+
+                if (block)
+                {
+                    block.OnUpdate();
+                }
+            }
         }
     }
 

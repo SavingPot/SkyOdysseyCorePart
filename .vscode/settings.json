@@ -59,5 +59,6 @@
         "filemanager",
         "inital",
         "rwstopwatch"
-    ]
+    ],
+    "dotnet.preferCSharpExtension": true
 }

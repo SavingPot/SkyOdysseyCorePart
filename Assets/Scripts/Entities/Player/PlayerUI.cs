@@ -1777,7 +1777,7 @@ namespace GameCore
 
                     if (container is Player player)
                     {
-                        player.inventory.TryGetItemBehaviour(index).ModifyInfo(ui);
+                        player.inventory.TryGetItemBehaviour(index)?.ModifyInfo(ui);
                     }
                 };
                 button.button.OnPointerExitAction = _ => ItemInfoShower.Hide();

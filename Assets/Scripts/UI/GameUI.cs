@@ -570,7 +570,7 @@ namespace GameCore.UI
             return (body, head, rightArm, leftArm, rightLeg, leftLeg, rightFoot, leftFoot);
         }
 
-        public static (ImageIdentity, ImageIdentity, ImageIdentity, TextIdentity) GenerateLoadingBar(
+        public static (ImageIdentity barBg, ImageIdentity barFull, ImageIdentity mascot, TextIdentity progressText) GenerateLoadingBar(
             Vector4 positionCurrent,
             string bgId, string fullId, string textId,
             string backgroundSprite, string contentSprite, string mascotSprite,
