@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using DG.Tweening;
 
 namespace GameCore
 {
@@ -121,6 +122,19 @@ namespace GameCore
         public TextIdentity rebornPanelText;
         public TextIdentity rebornTimerText;
         public ButtonIdentity rebornButton;
+
+
+
+        public async void ShowRebornPanel()
+        {
+            rebornButton.button.image.color = new(1, 1, 1, 0);
+            rebornButton.button.interactable = false;
+            GameUI.FadeIn(rebornPanel.panelImage);
+
+            await 2;
+            rebornButton.button.interactable = true;
+            GameUI.FadeIn(rebornButton.image);
+        }
 
 
 
@@ -1047,16 +1061,17 @@ namespace GameCore
                 rebornPanelText = GameUI.AddText(UPC.middle, "ori:text.reborn_info", rebornPanel);
                 rebornTimerText = GameUI.AddText(UPC.middle, "ori:text.reborn_timer", rebornPanel);
 
-                rebornPanel.panelImage.color = new Color32(50, 50, 50, 80);
+                rebornPanel.panelImage.color = new(0, 0, 0, 0);
                 rebornPanelText.SetAPosY(100);
                 rebornPanelText.SetSizeDelta(500, 120);
                 rebornPanelText.text.SetFontSize(24);
-                rebornButton.SetAPosY(-20);
 
+                rebornButton.SetAPosY(-20);
+                rebornButton.button.image.color = new(1, 1, 1, 0);
                 rebornButton.AddMethod(() =>
                 {
+                    GameUI.FadeOut(rebornPanel.panelImage);
                     player.Reborn(player.maxHealth, null);
-                    rebornPanel.gameObject.SetActive(false);
                 });
 
                 rebornPanel.OnUpdate += i =>

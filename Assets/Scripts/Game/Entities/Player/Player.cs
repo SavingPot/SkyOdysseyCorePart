@@ -1166,7 +1166,7 @@ namespace GameCore
             if (isLocalPlayer)
             {
                 GAudio.Play(AudioID.Death);
-                MethodAgent.CallUntil(() => pui != null, () => pui.rebornPanel.gameObject.SetActive(true));
+                MethodAgent.CallUntil(() => pui != null, () => pui.ShowRebornPanel());
             }
 
             anim.KillSequences();

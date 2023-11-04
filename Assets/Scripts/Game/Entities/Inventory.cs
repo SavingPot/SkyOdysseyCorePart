@@ -603,7 +603,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class ItemData : IdClassBase, IDatumTexture, ITags
+    public class ItemData : IdClassBase, ITags
     {
         public const float defaultDamage = 5;
         public const ushort defaultMaxCount = 32;
@@ -625,7 +625,6 @@ namespace GameCore
 
 
 
-        TextureData IDatumTexture.texture { get => texture; set => texture = value; }
         [NonSerialized, LabelText("标签")] public List<string> tags = new();
         List<string> ITags.tags { get => tags; }
 

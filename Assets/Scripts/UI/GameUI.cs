@@ -652,6 +652,7 @@ namespace GameCore.UI
 
         #region 视觉效果
         #region 淡出入
+        //TODO: delayTime to duration
         public static void FadeOut(Graphic target, bool setActiveToFalse = true, float delayTime = 0, UIAnimationAction? fadeAction = null)
         => InternalFade(target, true, setActiveToFalse, delayTime, fadeAction);
 

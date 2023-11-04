@@ -1190,35 +1190,21 @@ namespace GameCore
     }
 
 
-    public interface IDatumTexture
+    //TODO: 解决 ModClass 与 ModClassChild
+    public class ModClass : IdClassBase, IJOFormatCore
     {
-        TextureData texture { get; set; }
-    }
-
-    public interface IModClass : IJOFormatCore
-    {
-
-    }
-
-    public interface IModClassChild : IJOFormatCoreChild
-    {
-
-    }
-
-    public class ModClass : IdClassBase, IModClass
-    {
-        [LabelText("JF")] public string jsonFormat;
-        [LabelText("加载时的 JF")] public string jsonFormatWhenLoad;
+        [LabelText("Json 格式")] public string jsonFormat;
+        [LabelText("加载时的 Json 格式")] public string jsonFormatWhenLoad;
 
         string IJsonFormat.jsonFormat { get => jsonFormat; set => jsonFormat = value; }
         string IJsonFormatWhenLoad.jsonFormatWhenLoad { get => jsonFormatWhenLoad; set => jsonFormatWhenLoad = value; }
         public JObject jo { get; set; }
     }
 
-    public class ModClassChild : IdClassBase, IModClassChild
+    public class ModClassChild : IdClassBase, IJOFormatCoreChild
     {
-        [LabelText("JF")] public string jsonFormat;
-        [LabelText("加载时的 JF")] public string jsonFormatWhenLoad;
+        [LabelText("Json 格式")] public string jsonFormat;
+        [LabelText("加载时的 Json 格式")] public string jsonFormatWhenLoad;
 
         string IJsonFormat.jsonFormat { get => jsonFormat; set => jsonFormat = value; }
         string IJsonFormatWhenLoad.jsonFormatWhenLoad { get => jsonFormatWhenLoad; set => jsonFormatWhenLoad = value; }
