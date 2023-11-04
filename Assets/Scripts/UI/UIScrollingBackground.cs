@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using GameCore;
 using Sirenix.OdinInspector;
+using GameCore.High;
 
 namespace GameCore.UI
 {
