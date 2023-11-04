@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using GameCore;
-using GameCore.High;
 using Sirenix.OdinInspector;
 
 namespace GameCore.UI
