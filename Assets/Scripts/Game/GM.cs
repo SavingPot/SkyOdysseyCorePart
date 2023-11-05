@@ -278,7 +278,7 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             NetworkCallbacks.OnClientChangeScene += (conn, n) =>
             {
-                if (n.newSceneName == SceneNames.gameScene)
+                if (n.newSceneName == SceneNames.GameScene)
                 {
                     ManagerNetwork.instance.AddPlayer(conn);
                 }
@@ -489,7 +489,7 @@ namespace GameCore
         //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMDestroyBlock(NetworkConnection conn, NMDestroyBlock n)
         {
-            if (GScene.name != SceneNames.gameScene)
+            if (GScene.name != SceneNames.GameScene)
                 return;
 
             //如果服务器上存在该方块
@@ -520,7 +520,7 @@ namespace GameCore
         //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMSetBlockMessage(NetworkConnection conn, NMSetBlock n)
         {
-            if (GScene.name != SceneNames.gameScene)
+            if (GScene.name != SceneNames.GameScene)
                 return;
 
             //将消息转发给客户端
@@ -530,7 +530,7 @@ namespace GameCore
         //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMSetBlockCustomData(NetworkConnection conn, NMSetBlockCustomData n)
         {
-            if (GScene.name != SceneNames.gameScene)
+            if (GScene.name != SceneNames.GameScene)
                 return;
 
             //将消息转发给客户端
@@ -540,7 +540,7 @@ namespace GameCore
         //当客户端收到 NMPos 消息时的回调
         static void OnClientGetNMDestroyBlockMessage(NMDestroyBlock n) => MethodAgent.TryRun(() =>
         {
-            if (GScene.name != SceneNames.gameScene)
+            if (GScene.name != SceneNames.GameScene)
                 return;
 
             //把指定位置的方块摧毁
@@ -552,7 +552,7 @@ namespace GameCore
         //当服务器收到 NMPos 消息时的回调
         static void OnClientGetNMSetBlockMessage(NMSetBlock n)
         {
-            if (GScene.name != SceneNames.gameScene)
+            if (GScene.name != SceneNames.GameScene)
                 return;
 
             map.SetBlock(n.pos, n.layer, n.block == null ? null : ModFactory.CompareBlockDatum(n.block), n.customData, true);
@@ -561,7 +561,7 @@ namespace GameCore
         //当服务器收到 NMPos 消息时的回调
         static void OnClientGetNMSetBlockCustomData(NMSetBlockCustomData n)
         {
-            if (GScene.name != SceneNames.gameScene)
+            if (GScene.name != SceneNames.GameScene)
                 return;
 
             if (map.TryGetBlock(n.pos, n.layer, out Block block))

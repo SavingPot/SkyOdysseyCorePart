@@ -159,11 +159,109 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1906424539}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9667801609023355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7050744861373135478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cf30b93f1232034484bbdb9a27c0573, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  globalAudioMixer: {fileID: 24300002, guid: 71eb54355d52797438892fd1d4e9e8bf, type: 2}
+  musicAudioMixer: {fileID: 24300002, guid: 2ac6308e3d7816d46bc70bc4dd04ca73, type: 2}
+  defaultAudioMixer: {fileID: 24300002, guid: 66522f23ee90e5848bfc5924522b906a, type: 2}
+  uiAudioMixer: {fileID: 24300002, guid: fb4ed5e748fb88a4fab0de72ce3b94c0, type: 2}
+  ambientAudioMixer: {fileID: 24300002, guid: 216c00331587edd4cb0d81a5edb9f3cd, type: 2}
+  canvasPrefab: {fileID: 3987011044123077084, guid: ab6798ddf183896459c5df028d46de53, type: 3}
+  buttonPrefab: {fileID: -6208085390207933823, guid: fd6805abaae4abd4ba5d787e87465193, type: 3}
+  panelPrefab: {fileID: -1427529596805776713, guid: 81c3f0113204b294aa0702e1469fb016, type: 3}
+  inputFieldPrefab: {fileID: -8004134274671379352, guid: 025aceade24963a4ab95f8761dde7649, type: 3}
+  imagePrefab: {fileID: 8655228118689503475, guid: a3b67cc247b1204438d09a803592a106, type: 3}
+  rawImagePrefab: {fileID: 8664280013663876419, guid: 1e92d8c2b368640478f356713a0082d2, type: 3}
+  textPrefab: {fileID: 7020570711730763728, guid: bd63b5fb32c653048bfe5b04b96a643b, type: 3}
+  togglePrefab: {fileID: 3566780173391776446, guid: 7d973a5c835601b45b1ca4f96ad47015, type: 3}
+  scrollViewPrefab: {fileID: -8823137610959073338, guid: ada1b6b7c9e78194a8eb51d6c8a332e1, type: 3}
+  imageTextButtonPrefab: {fileID: -2814501411830329645, guid: c07c16a52fda4ec40bd66b6af10ac478, type: 3}
+  sliderPrefab: {fileID: 5718689625494893524, guid: 4974a0956503c9349b835d48bed5edcc, type: 3}
+  inputButtonPrefab: {fileID: 2350845918341032102, guid: 674b25d6537d1a445aa5305b6fbcea8d, type: 3}
+  BiomeGuardParticleSystemPrefab: {fileID: 485566635066567655, guid: fba59f987f0e86f43a646fc38f9bb47d, type: 3}
+  BloodParticleSystemPrefab: {fileID: 6932245279680308088, guid: 8e91920c3298476478bde70485a58cb3, type: 3}
+  DamageTextPrefab: {fileID: 9112274955252947408, guid: 9f5e9fc64c8b8c948ab7ea33632d232d, type: 3}
+  managerAudioPrefab: {fileID: 5908685896901835420, guid: 24942f41183a3454fa5e381481008343, type: 3}
+  managerNetworkPrefab: {fileID: 1368055323630927165, guid: 1db77761612ac9d4d9cdfd9a2c490fff, type: 3}
+  toolsPrefab: {fileID: 4992625376824649478, guid: 42b14ce0d3381af488867b640823f7d7, type: 3}
+  spriteLitMat: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  spriteUnknown: {fileID: 21300000, guid: eb6aa624a1e3d584ba801421178e1824, type: 3}
+  textureUnknown:
+    id: 
+    texturePath: 
+  blockUnknown:
+    id: 
+    jsonFormat: 
+    jsonFormatWhenLoad: 
+    hardness: 0
+    defaultTexture:
+      id: 
+      texturePath: 
+    description: 
+    collidible: 1
+    drops: []
+    lightLevel: 0
+    behaviourName: 
+    tags: []
+  entityPrefab: {fileID: 5246644827719253145, guid: 89b8c0828bd2d8342b8d026735402211, type: 3}
+  itemEntityPrefab: {fileID: -1276353731835276603, guid: 29cee456a70502444bf575a9d24f687c, type: 3}
+  enemyPrefab: {fileID: -1159103054575226767, guid: ba829cbffa56d1d4789453ea1535cff9, type: 3}
+  npcPrefab: {fileID: -6749035963941349616, guid: e8279c53ee688be4fa1af410193aefc8, type: 3}
+  creaturePrefab: {fileID: -7392080320599077345, guid: 235a85535f1e97143b87378140bd944c, type: 3}
+  blockPrefab: {fileID: 5036970408661540792, guid: 065f75fa8f0c3a747a6547b129480f3e, type: 3}
+--- !u!4 &3573521923736553548
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7050744861373135478}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7050744861373135478
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3573521923736553548}
+  - component: {fileID: 9667801609023355}
+  m_Layer: 0
+  m_Name: GInit
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 1906424541}
+  - {fileID: 3573521923736553548}

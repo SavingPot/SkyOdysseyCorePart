@@ -13,10 +13,12 @@ using SP.Tools.Unity;
 using System.Text;
 using GameCore.Converters;
 using TMPro;
+using Cysharp.Threading.Tasks;
+using DG.Tweening;
 
 namespace GameCore.UI
 {
-    [CreateAfterSceneLoad(SceneNames.firstScene)]
+    [CreateAfterSceneLoad(new string[] { SceneNames.PreloadScene, SceneNames.MainMenu })]
     public class InternalUIAdder : MonoBehaviour
     {
         public static InternalUIAdder instance { get; private set; }
@@ -44,6 +46,7 @@ namespace GameCore.UI
         public static Action AfterRefreshModView = () => { };
 
         public PanelIdentity worldConfigPanel;
+        public static bool hasShowedModLoadingInterface;
 
         private void Awake()
         {
@@ -93,18 +96,76 @@ namespace GameCore.UI
             }
         }
 
-        public void Start()
+        public async void Start()
         {
             switch (GScene.name)
             {
-                case SceneNames.firstScene:
-                    StartCoroutine(LoadMainMenu());
+                case SceneNames.MainMenu:
+                    if (!hasShowedModLoadingInterface)
+                    {
+                        float earliestExitTime = Tools.time + 5;
+
+                        //先开始加载场景
+                        var panel = GameUI.AddPanel("ori:panel.first_scene_panel");
+                        panel.panelImage.color = Tools.HexToColor("#070714");
+
+                        var (barBg, barFull, mascotImage, progressText) = GameUI.GenerateLoadingBar(UPC.stretchBottom,
+                                                "ori:image.mod_loading_bar_bg", "ori:image.mod_loading_bar_full", "ori:image.mod_loading_bar_mascot", "ori:mod_loading_progress.mod_loading_progress_text",
+                                                "ori:loading_bar_2", "ori:loading_bar_2", "ori:mod_loading_mascot",
+                                                15, 0,
+                                                new(0, 24), new(50, 50),
+                                                () => (float)ModFactory.mods.Count / (float)ModFactory.modCountFound,
+                                                () => $"Loading... {ModFactory.mods.Count}/{ModFactory.modCountFound}", //TODO; Make Loading into text comparation
+                                                panel.transform);
+
+                        //刷新吉祥物位置
+                        mascotImage.OnUpdate += img =>
+                        {
+                            var progressFloat = (float)ModFactory.mods.Count / (float)ModFactory.modCountFound;
+
+                            mascotImage.SetAPosX(progressFloat * GameUI.canvasRT.sizeDelta.x);
+                        };
+
+                        barBg.SetAPosY(barBg.sd.y / 2);
+                        progressText.SetSizeDelta(400, 30);
+
+                        var houseImage = GameUI.AddImage(UPC.middle, "ori:image.loading_house", "ori:loading_house_0", panel);
+                        houseImage.SetSizeDelta(300, 300);
+                        houseImage.SetAPos(0, 75);
+
+                        Sprite[] sprites = new[]
+                        {
+                            ModFactory.CompareTexture("ori:loading_house_0").sprite,
+                            ModFactory.CompareTexture("ori:loading_house_1").sprite,
+                        };
+                        var _ = AnimCenter.PlaySprites(1.5f, sprites, sprite =>
+                        {
+                            if (houseImage)
+                            {
+                                houseImage.image.sprite = sprite;
+                                return true;
+                            }
+
+                            return false;
+                        });
+
+                        while (ModFactory.mods.Count < ModFactory.modCountFound || Tools.time < earliestExitTime)
+                        {
+                            await UniTask.NextFrame();
+                        }
+
+                        hasShowedModLoadingInterface = true;
+                        GameUI.FadeOutGroup(panel, true, 2, new(() => Destroy(panel.gameObject)));
+                        await 2;
+                    }
+
                     #region 滚动背景
                     var c = UObjectTools.CreateComponent<UIScrollingBackground>("ScrollingBackground");
                     c.defaultPoint = Vector2.zero;
                     c.scrollSpeed = -7;
                     c.bound = -64;
                     int count = 8;
+                    float appearDuration = 3;
 
                     for (int i = -count / 2; i < count; i++)
                     {
@@ -113,7 +174,11 @@ namespace GameCore.UI
                         sp.transform.SetParent(c.transform);
                         sp.transform.AddPosX(i * 64);
                         c.renderers.Add(sp);
+
+                        sp.color = new(0, 0, 0, 0);
+                        var _ = sp.DOColor(Color.white, appearDuration);
                     }
+                    await appearDuration; //等到动画播放完成
                     #endregion
 
                     #region 游戏信息
@@ -664,77 +729,17 @@ namespace GameCore.UI
             AfterRefreshModView();
         }
 
-        private IEnumerator LoadMainMenu()
+        [RuntimeInitializeOnLoadMethod]
+        private static void BindMethod()
         {
-            float earliestExitTime = Tools.time + 5;
-
-            //先开始加载场景
-            var panel = GameUI.AddPanel("ori:panel.first_scene_panel");
-            panel.panelImage.color = Tools.HexToColor("#070714");
-
-            var (barBg, barFull, mascotImage, progressText) = GameUI.GenerateLoadingBar(UPC.down,
-                                    "ori:image.mod_loading_bar_bg", "ori:image.mod_loading_bar_full", "ori:image.mod_loading_bar_mascot", "ori:mod_loading_progress.mod_loading_progress_text",
-                                    "ori:loading_bar_2", "ori:loading_bar_2", "ori:mod_loading_mascot",
-                                    15, 0,
-                                    new(0, 24), new(50, 50),
-                                    () => (float)ModFactory.mods.Count / (float)ModFactory.modCountFound,
-                                    () => $"Loading... {ModFactory.mods.Count}/{ModFactory.modCountFound}", //TODO; Make Loading into text comparation
-                                    panel.transform);
-
-            //刷新吉祥物位置
-            mascotImage.OnUpdate += img =>
+            GScene.AfterChanged += scene =>
             {
-                var progressFloat = (float)ModFactory.mods.Count / (float)ModFactory.modCountFound;
-
-                mascotImage.SetAPosX(progressFloat * GameUI.canvasRT.sizeDelta.x);
-            };
-
-            barBg.SetAPosY(barBg.sd.y / 2);
-            progressText.SetSizeDelta(400, 30);
-
-            var houseImage = GameUI.AddImage(UPC.middle, "ori:image.loading_house", "ori:loading_house_0", panel);
-            houseImage.SetSizeDelta(300, 300);
-            houseImage.SetAPos(0, 75);
-
-            Sprite[] sprites = new[]
-            {
-                ModFactory.CompareTexture("ori:loading_house_0").sprite,
-                ModFactory.CompareTexture("ori:loading_house_1").sprite,
-            };
-            AnimCenter.PlaySprites(1.5f, sprites, sprite =>
-            {
-                if (houseImage)
+                //如果加载过模组了就创建 UI 对象, 否则让 ModFacotry 来创建
+                if (hasShowedModLoadingInterface)
                 {
-                    houseImage.image.sprite = sprite;
-                    return true;
+                    MethodAgent.QueueOnMainThread(_ => Tools.NewObjectToComponent(typeof(InternalUIAdder)));
                 }
-
-                return false;
-            });
-
-//TODO
-            while (true)//(!operation.isDone)
-            {
-#if UNITY_EDITOR
-                Keyboard keyboard = Keyboard.current;
-                Gamepad gamepad = Gamepad.current;
-                if (keyboard != null) if (keyboard.escapeKey.wasPressedThisFrame) earliestExitTime = float.MaxValue;
-                if (gamepad != null) if (gamepad.bButton.wasPressedThisFrame) earliestExitTime = float.MaxValue;
-                if (keyboard != null) if (keyboard.enterKey.wasPressedThisFrame) earliestExitTime = 0;
-                if (gamepad != null) if (gamepad.aButton.wasPressedThisFrame) earliestExitTime = 0;
-#endif
-
-                //加载好就进入下一场景
-                //TODO: change this to being like the logo staying like Stardew Valley
-                // if (operation.progress >= 0.9f && ModFactory.mods.Count == ModFactory.modCountFound && Tools.time >= earliestExitTime)
-                // {
-                //     GScene.BeforeLoad(GScene.nextIndex);
-                //     operation.allowSceneActivation = true;
-                //     break;
-                // }
-
-                yield return null;
-            }
+            };
         }
     }
 }

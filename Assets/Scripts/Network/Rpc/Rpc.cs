@@ -1499,7 +1499,14 @@ namespace GameCore
 
         public static void LocalCall(string mtdPath, NetworkConnection caller, ByteWriter parameters, uint instance)
         {
-            LocalMethod(mtdPath, caller, parameters, Entity.GetEntityByNetId(instance));
+            try
+            {
+                LocalMethod(mtdPath, caller, parameters, Entity.GetEntityByNetId(instance));
+            }
+            catch (Exception ex)
+            {
+                throw new($"\n调用本地方法 {mtdPath} 时发生了异常!!!\n具体异常如下, 其可以是字节转换器的问题, 也可以是被调用的本地方法本身诱发的异常!\n异常将被抛出以防止破坏客户端和服务器!\n{ex}");
+            }
         }
     }
 

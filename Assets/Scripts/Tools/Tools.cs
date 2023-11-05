@@ -732,29 +732,9 @@ namespace GameCore
     /// </remarks>
     public struct SceneNames
     {
-        /// <summary>
-        /// 首个场景的名字
-        /// </summary>
-        /// <remarks>
-        /// Name of the first scene
-        /// </remarks>
-        public const string firstScene = "InitializationScene";
-
-        /// <summary>
-        /// 主页面场景的名字
-        /// </summary>
-        /// <remarks>
-        /// Name of the main page scene
-        /// </remarks>
-        public const string mainMenu = "MainMenu";
-
-        /// <summary>
-        /// 游戏场景的名字
-        /// </summary>
-        /// <remarks>
-        /// Name of the game scene
-        /// </remarks>
-        public const string gameScene = "GameScene";
+        public const string PreloadScene = "PreloadScene";
+        public const string MainMenu = "MainMenu";
+        public const string GameScene = "GameScene";
     }
 
 

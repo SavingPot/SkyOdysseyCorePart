@@ -531,9 +531,10 @@ namespace GameCore
             }
         }
 
-        public static bool Null(Item item1)
+        //TODO: Rename null to is null
+        public static bool Null(Item item)
         {
-            return string.IsNullOrWhiteSpace(item1?.data?.id);
+            return string.IsNullOrWhiteSpace(item?.data?.id);
         }
 
         public static bool Same(Item item1, Item item2)

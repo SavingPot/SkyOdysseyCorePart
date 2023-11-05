@@ -46,7 +46,7 @@ namespace GameCore
 #endif
 
 
-            SceneManager.LoadScene(1);
+            //SceneManager.LoadScene(0);
         }
     }
 }

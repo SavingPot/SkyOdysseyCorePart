@@ -915,7 +915,7 @@ namespace GameCore
             //播放淡入动画
             if (pui.statusText.text.color.a == 1)
                 pui.statusText.text.SetAlpha(0);
-            pui.statusText.text.FadeIn();
+            GameUI.FadeIn(pui.statusText.text);
 
             //准备播放淡出动画
             pui.statusTextFadeOutWaitedTime = 0;
@@ -942,7 +942,7 @@ namespace GameCore
             Tools.KillTweensOf(pui.statusText.text);
 
             pui.statusText.text.SetAlpha(1);
-            pui.statusText.text.FadeOut();
+            GameUI.FadeOut(pui.statusText.text);
             pui.preparingToFadeOutStatusText = false;
         }
 
@@ -1748,7 +1748,7 @@ namespace GameCore
         [ClientRpc]
         public void ClientSetItem(string index, Item item, NetworkConnection caller = null)
         {
-            if (string.IsNullOrEmpty(item?.data?.id))
+            if (Item.Null(item))
             {
                 item = null;
             }

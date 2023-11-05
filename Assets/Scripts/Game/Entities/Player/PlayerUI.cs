@@ -60,6 +60,7 @@ namespace GameCore
         /*                                     暂停                                     */
         /* -------------------------------------------------------------------------- */
         public PanelIdentity pausePanel;
+        public PanelIdentity pausePanelMask;
 
 
 
@@ -339,7 +340,7 @@ namespace GameCore
 
         public void PauseGame()
         {
-            if (GScene.name != SceneNames.gameScene)
+            if (GScene.name != SceneNames.GameScene)
                 return;
 
             if (!pausePanel)
@@ -363,25 +364,32 @@ namespace GameCore
 
                 ScreenTools.CaptureSquare(GFiles.world.worldImagePath, () =>
                 {
-                    //清除方块防止警告
-                    if (Map.HasInstance())
+                    GameUI.canvas.gameObject.SetActive(true);
+                    GameUI.FadeIn(pausePanelMask.panelImage, true, 1, new(() =>
                     {
-                        Map.instance.RecoverChunks();
-                    }
+                        //清除方块防止警告
+                        if (Map.HasInstance())
+                        {
+                            Map.instance.RecoverChunks();
+                        }
 
-                    ManagerNetwork.instance.StopHost();
+                        ManagerNetwork.instance.StopHost();
+                    }));
                 });
             }
             //如果是单纯的客户端
             else
             {
-                Client.Disconnect();
+                GameUI.FadeIn(pausePanelMask.panelImage, true, 1, new(() =>
+                {
+                    Client.Disconnect();
+                }));
             }
         }
 
         public void Chat()
         {
-            if (GScene.name != SceneNames.gameScene)
+            if (GScene.name != SceneNames.GameScene)
             {
                 Debug.LogWarning("场景不是游戏场景");
                 return;
@@ -417,10 +425,14 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
 
             pausePanel = GameUI.AddPanel("ori:panel.pause", GameUI.canvas.transform, true);
+            pausePanelMask = GameUI.AddPanel("ori:panel.pause.mask", pausePanel, true);
 
             pausePanel.panelImage.SetColorBrightness(0.175f);
             pausePanel.panelImage.SetAlpha(0.65f);
             pausePanel.OnUpdate += x => GameUI.SetUILayerToTop(x);
+
+            pausePanelMask.panelImage.color = new(0, 0, 0, 0);
+            pausePanelMask.OnUpdate += x => GameUI.SetUILayerToTop(x);
 
             ButtonIdentity continueGame = GameUI.AddButton(UPC.middle, "ori:button.pause_continue_game", pausePanel).AddMethod(() =>
             {

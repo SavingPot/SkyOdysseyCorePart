@@ -883,14 +883,11 @@ namespace GameCore
                 #region 添加内置 UI
                 if (newMod.isOri)
                 {
-                    async static void WaitThenAdd(Mod newModToParam)
+                    MethodAgent.RunOnMainThread(() =>
                     {
-                        await UniTask.WaitUntil(() => GScene.name == SceneNames.firstScene);
-
+                        GScene.Next();
                         MethodAgent.QueueOnMainThread(_ => Tools.NewObjectToComponent(typeof(InternalUIAdder)));
-                    }
-
-                    WaitThenAdd(newMod);
+                    });
 
                     Thread.Sleep(longSleepTime);
                 }

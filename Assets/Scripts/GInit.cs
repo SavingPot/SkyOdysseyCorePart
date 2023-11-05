@@ -1,4 +1,5 @@
 using GameCore.High;
+using GameCore.UI;
 using Sirenix.OdinInspector;
 using SP.Tools;
 using SP.Tools.Unity;
@@ -253,8 +254,8 @@ namespace GameCore
             /* --------------------------------- 初始化管理器 --------------------------------- */
 
             //ManagerAudio 是很多管理器需要的, 因此需要先实例化, 很多管理器也依赖于别的管理器, 要注意先后
-            Instantiate(GInit.instance.managerAudioPrefab);
-            Instantiate(GInit.instance.managerNetworkPrefab);
+            Instantiate(instance.managerAudioPrefab);
+            Instantiate(instance.managerNetworkPrefab);
 
 
 
@@ -288,6 +289,7 @@ namespace GameCore
             {
                 Rpc.Init();
                 Entity.EntityTypeInit();
+                //GScene.Next();
             }));
 
             base.Awake();

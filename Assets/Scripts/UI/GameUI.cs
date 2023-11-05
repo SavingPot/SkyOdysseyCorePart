@@ -105,8 +105,14 @@ namespace GameCore.UI
         public static Action<Graphic> BeforeFadeOut = _ => { };
         public static Action<Graphic> AfterFadeOut = _ => { };
 
+        public static Action<UIIdentity> BeforeFadeOutGroup = _ => { };
+        public static Action<UIIdentity> AfterFadeOutGroup = _ => { };
+
         public static Action<Graphic> BeforeFadeIn = _ => { };
         public static Action<Graphic> AfterFadeIn = _ => { };
+
+        public static Action<UIIdentity> BeforeFadeInGroup = _ => { };
+        public static Action<UIIdentity> AfterFadeInGroup = _ => { };
 
 
 
@@ -573,7 +579,7 @@ namespace GameCore.UI
 
         public static (ImageIdentity barBg, ImageIdentity barFull, ImageIdentity mascot, TextIdentity progressText) GenerateLoadingBar(
             Vector4 positionCurrent,
-            string bgId, string fullId,string mascotId, string textId,
+            string bgId, string fullId, string mascotId, string textId,
             string backgroundSprite, string contentSprite, string mascotSprite,
             float mascotYDelta, float textYDelta,
             Vector2 barScale, Vector2 mascotScale,
@@ -636,14 +642,14 @@ namespace GameCore.UI
                     panel.panelImage.SetAlpha(0);
 
                     FadeIn(text.text);
-                    FadeIn(panel.panelImage, true, 0, new(() => afterFadingIn?.Invoke(panel, text)));
+                    FadeIn(panel.panelImage, true, 1.5f, new(() => afterFadingIn?.Invoke(panel, text)));
                 }
                 else if (type == "fade_out")
                 {
                     panel.panelImage.SetAlpha(1);
 
                     FadeOut(text.text);
-                    FadeOut(panel.panelImage, true, 0, new(() => afterFadingOut?.Invoke(panel, text)));
+                    FadeOut(panel.panelImage, true, 1, new(() => afterFadingOut?.Invoke(panel, text)));
                 }
             };
 
@@ -675,52 +681,59 @@ namespace GameCore.UI
         #region 视觉效果
         #region 淡出入
         //TODO: delayTime to duration
-        public static void FadeOut(Graphic target, bool setActiveToFalse = true, float delayTime = 0, UIAnimationAction? fadeAction = null)
-        => InternalFade(target, true, setActiveToFalse, delayTime, fadeAction);
-
-        public static void FadeIn(Graphic target, bool setActiveToTrue = true, float delayTime = 0, UIAnimationAction? fadeAction = null)
-        => InternalFade(target, false, setActiveToTrue, delayTime, fadeAction);
-
-        internal static async void InternalFade(Graphic target, bool isOut, bool setActive, float delayTime, UIAnimationAction? fadeAction = null)
+        public static async void FadeOutGroup(UIIdentity target, bool setActiveToFalse = true, float duration = 1, UIAnimationAction? fadeAction = null)
         {
-            //在开始动画前等待
-            await delayTime;
-
-            //执行 Before 委托
-            if (isOut)
-                BeforeFadeOut(target);
-            else
-                BeforeFadeIn(target);
-
+            BeforeFadeOutGroup(target);
             fadeAction?.beforeAnimation?.Invoke();
 
-            //如果是淡入则先启用
-            if (setActive && !isOut)
+            await target.canvasGroup.DOFade(0, duration);
+
+            if (target && setActiveToFalse)
+                target.gameObject.SetActive(false);
+
+            AfterFadeInGroup(target);
+            fadeAction?.afterAnimation?.Invoke();
+        }
+
+        public static async void FadeOut(Graphic target, bool setActiveToFalse = true, float duration = 1, UIAnimationAction? fadeAction = null)
+        {
+            BeforeFadeOut(target);
+            fadeAction?.beforeAnimation?.Invoke();
+
+            await target.DOFade(0, duration);
+
+            if (target && setActiveToFalse)
+                target.gameObject.SetActive(false);
+
+            AfterFadeIn(target);
+            fadeAction?.afterAnimation?.Invoke();
+        }
+
+        public static async void FadeInGroup(UIIdentity target, bool setActiveToTrue = true, float duration = 1, UIAnimationAction? fadeAction = null)
+        {
+            BeforeFadeInGroup(target);
+            fadeAction?.beforeAnimation?.Invoke();
+
+            if (setActiveToTrue)
                 target.gameObject.SetActive(true);
 
-            //动画核心
-            if (isOut)
-            {
-                await target.DOFade(0, 1);
-            }
-            else
-            {
-                await target.DOFade(1, 1);
-            }
+            await target.canvasGroup.DOFade(1, duration);
 
-            if (target)
-            {
-                //如果是淡出则禁用
-                if (setActive && isOut)
-                    target.gameObject.SetActive(false);
-            }
+            AfterFadeOutGroup(target);
+            fadeAction?.afterAnimation?.Invoke();
+        }
 
-            //执行 After 委托
-            if (isOut)
-                AfterFadeOut(target);
-            else
-                AfterFadeIn(target);
+        public static async void FadeIn(Graphic target, bool setActiveToTrue = true, float duration = 1, UIAnimationAction? fadeAction = null)
+        {
+            BeforeFadeIn(target);
+            fadeAction?.beforeAnimation?.Invoke();
 
+            if (setActiveToTrue)
+                target.gameObject.SetActive(true);
+
+            await target.DOFade(1, duration);
+
+            AfterFadeOut(target);
             fadeAction?.afterAnimation?.Invoke();
         }
         #endregion
@@ -911,15 +924,6 @@ namespace GameCore.UI
 
     public static class UIExtensions
     {
-        public static Button ToButton(this Image image) => image.gameObject.AddComponent<Button>();
-
-        public static TMP_Text FadeIn(this TMP_Text text, bool setActive = true, float delayTime = 0, UIAnimationAction? fadeAction = null)
-        { GameUI.FadeIn(text, setActive, delayTime, fadeAction); return text; }
-
-        public static TMP_Text FadeOut(this TMP_Text text, bool setActive = true, float delayTime = 0, UIAnimationAction? fadeAction = null)
-        { GameUI.FadeOut(text, setActive, delayTime, fadeAction); return text; }
-
-
         public static void ClearColorEffects(this Selectable s)
         {
             s.colors = new()
