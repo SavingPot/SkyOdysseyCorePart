@@ -15,6 +15,8 @@ Expression.Block 封装多个 Expression, 使用 Expression.Lambda 就可以把�
 (类)Activator.CreateInstance(type, params[null])
 Type.GetProperties包含基类(且实际相当于生成一个新的Property)Methods不包含!
 
+通过 Convert.ChangeType() 把 object 转为 Type, 实现反射类型转换
+
 
 
 
