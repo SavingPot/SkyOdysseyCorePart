@@ -25,214 +25,10 @@ using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
 
 namespace GameCore
 {
-#if UNITY_EDITOR
-    [AutoByteConverter]
-    public struct AutoTest0
-    {
-        public string id;
-        public int num;
-        public List<string> testList;
-        public int? testNullable;
-    }
-
-    [AutoByteConverter]
-    public struct AutoTest1
-    {
-        public AutoTest0 t0;
-        public string self;
-        public int index;
-    }
-
-    [AutoByteConverter]
-    public struct AutoTest2
-    {
-        public AutoTest1 t1;
-        public uint uint_index;
-        public long long_index;
-        public byte byte_index;
-    }
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public struct Timer
-    {
-        public float time;
-
-        public readonly bool HasFinished()
-        {
-            return Tools.time >= time;
-        }
-
-        public void Finish()
-        {
-            time = Tools.time;
-        }
-
-        public void Close()
-        {
-            time = float.PositiveInfinity;
-        }
-
-        public void Start(float time)
-        {
-            this.time = Tools.time + time;
-        }
-
-        public void More(float delta)
-        {
-            time += delta;
-        }
-
-        public void Less(float delta)
-        {
-            time -= delta;
-        }
-
-        public readonly float Remainder() => time - Tools.time;
-    }
-
-    public interface IUseRadius
-    {
-        public bool InUseRadius();
-        public bool InUseRadius(Vector2 vec);
-        public bool InUseRadius(Vector2 vec1, Vector2 vec2);
-    }
-
-    public static class PlayerCenter
-    {
-        public static List<Player> all = new();
-        public static List<Player> allReady = new();
-
-        public static void Update()
-        {
-            if (Server.isServer)
-            {
-                lock (allReady)
-                {
-                    NativeArray<bool> isMovingIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> thirstValueIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> thirstValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> hungerValueIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> hungerValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> happinessValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> healthIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> healthOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-
-                    //填入数据
-                    for (int i = 0; i < allReady.Count; i++)
-                    {
-                        var player = allReady[i];
-
-                        isMovingIn[i] = player.isMoving;
-                        thirstValueIn[i] = player.thirstValue;
-                        hungerValueIn[i] = player.hungerValue;
-                        healthIn[i] = player.health;
-                    }
-
-                    int batchCount = allReady.Count / 4;
-                    if (batchCount == 0) batchCount = 1;
-                    new PropertiesComputingJob()
-                    {
-                        isMovingIn = isMovingIn,
-                        thirstValueIn = thirstValueIn,
-                        thirstValueOut = thirstValueOut,
-                        hungerValueIn = hungerValueIn,
-                        hungerValueOut = hungerValueOut,
-                        happinessValueOut = happinessValueOut,
-                        healthIn = healthIn,
-                        healthOut = healthOut,
-                        frameTime = Performance.frameTime
-                    }.ScheduleParallel(allReady.Count, batchCount, default).Complete();  //除以4代表由四个 Job Thread 执行
-
-                    //填入数据
-                    for (int i = 0; i < allReady.Count; i++)
-                    {
-                        var player = allReady[i];
-
-                        player.thirstValue -= thirstValueOut[i];
-                        player.hungerValue -= hungerValueOut[i];
-                        player.happinessValue -= happinessValueOut[i];
-
-                        var healthOutCurrent = healthOut[i];
-                        if (healthOutCurrent != 0) player.health -= healthOutCurrent;
-                    }
-
-                    isMovingIn.Dispose();
-                    thirstValueIn.Dispose();
-                    thirstValueOut.Dispose();
-                    hungerValueIn.Dispose();
-                    hungerValueOut.Dispose();
-                    happinessValueOut.Dispose();
-                    healthIn.Dispose();
-                    healthOut.Dispose();
-                }
-            }
-        }
-
-        [BurstCompile]
-        public struct PropertiesComputingJob : IJobFor
-        {
-            [ReadOnly] public NativeArray<bool> isMovingIn;
-            [ReadOnly] public NativeArray<float> thirstValueIn;
-            [WriteOnly] public NativeArray<float> thirstValueOut;
-            [ReadOnly] public NativeArray<float> hungerValueIn;
-            [WriteOnly] public NativeArray<float> hungerValueOut;
-            [WriteOnly] public NativeArray<float> happinessValueOut;
-            [ReadOnly] public NativeArray<float> healthIn;
-            [WriteOnly] public NativeArray<float> healthOut;
-            [ReadOnly] public float frameTime;
-
-            [BurstCompile]
-            public void Execute(int index)
-            {
-                bool isMovingTemp = isMovingIn[index];
-                float thirstValueTemp = thirstValueIn[index];
-                float hungerValueTemp = hungerValueIn[index];
-
-                float thirstValueDelta = frameTime / 40;
-                if (isMovingTemp) thirstValueDelta += frameTime / 40;
-                thirstValueOut[index] = thirstValueDelta;
-
-                float hungerValueDelta = frameTime / 30;
-                if (isMovingTemp) hungerValueDelta += frameTime / 30;
-                hungerValueOut[index] = hungerValueDelta;
-
-                float happinessValueDelta = frameTime / 25;
-                if (isMovingTemp) happinessValueDelta -= frameTime / 10;
-                if (healthIn[index] <= 10) happinessValueDelta += frameTime / 5;
-                if (thirstValueTemp <= 30) happinessValueDelta += frameTime / 20;
-                if (hungerValueTemp <= 30) happinessValueDelta += frameTime / 20;
-                happinessValueOut[index] = happinessValueDelta;
-
-                if (thirstValueTemp <= 0 || hungerValueTemp <= 0)
-                    healthOut[index] = frameTime * 15;
-                else
-                    healthOut[index] = 0;
-            }
-        }
-    }
-
     /// <summary>
     /// 玩家的逻辑脚本
     /// </summary>
-    [ChineseName("玩家"), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
+    [ChineseName("玩家"), EntityBinding(EntityID.Player), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
     public class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IHumanUsingItemRenderer, IPlayerInteraction, IOnInventoryItemChange, IItemContainer, IInventoryOwner, IUseRadius
     {
         /* -------------------------------------------------------------------------- */
@@ -570,6 +366,9 @@ namespace GameCore
         [ReadOnly]
         public TextIdentity nameText;
 
+        public static byte inventorySlotCount = 32;
+        public static int backpackPanelHeight = 450;
+
 
 
 
@@ -582,6 +381,50 @@ namespace GameCore
         {
             data = null;
             base.Start();
+
+            if (isServer)
+            {
+                inventory = new(inventorySlotCount, this);
+                //ServerCallAttribute.Do(ServerCallTry);
+            }
+
+            if (isClient)
+            {
+                moveSpeed = 6.5f;
+            }
+
+            if (isLocalPlayer)
+            {
+                //设置相机跟随
+                Tools.instance.mainCameraController.lookAt = transform;
+                Debug.Log("本地客户端玩家是: " + gameObject.name);
+
+                //if (!isServer)
+                //    CmdCheckMods();
+
+                managerGame.weatherParticle.transform.SetParent(transform);
+                managerGame.weatherParticle.transform.localPosition = new(0, 40);
+
+
+                //加载数据
+                WhenRegisteredSyncVars(async () =>
+                {
+                    skinHead = PlayerSkin.skinHead;
+                    skinBody = PlayerSkin.skinBody;
+                    skinLeftArm = PlayerSkin.skinLeftArm;
+                    skinRightArm = PlayerSkin.skinRightArm;
+                    skinLeftLeg = PlayerSkin.skinLeftLeg;
+                    skinRightLeg = PlayerSkin.skinRightLeg;
+                    skinLeftFoot = PlayerSkin.skinLeftFoot;
+                    skinRightFoot = PlayerSkin.skinRightFoot;
+
+                    //要等一帧否则 currentSandboxIndex 会被 base:Entity 设为 0
+                    await UniTask.NextFrame();
+
+                    //让服务器加载玩家数据
+                    LoadPlayerDatumFromFile();
+                });
+            }
 
             WhenCorrectedSyncVars(() =>
             {
@@ -1099,62 +942,6 @@ namespace GameCore
 #endif
         #endregion
 
-        #region Mirror 网络回调
-
-        public override void OnStartServer()
-        {
-            base.OnStartServer();
-
-            inventory = new(inventorySlotCount, this);
-            //ServerCallAttribute.Do(ServerCallTry);
-        }
-
-        public override void OnStartClient()
-        {
-            base.OnStartClient();
-
-            moveSpeed = 6.5f;
-        }
-
-        public static byte inventorySlotCount = 32;
-        public static int backpackPanelHeight = 450;
-
-        public override void OnStartLocalPlayer()
-        {
-            base.OnStartLocalPlayer();
-
-            //设置相机跟随
-            Tools.instance.mainCameraController.lookAt = transform;
-            Debug.Log("本地客户端玩家是: " + gameObject.name);
-
-            //if (!isServer)
-            //    CmdCheckMods();
-
-            managerGame.weatherParticle.transform.SetParent(transform);
-            managerGame.weatherParticle.transform.localPosition = new(0, 40);
-
-
-            //加载数据
-            WhenRegisteredSyncVars(async () =>
-            {
-                skinHead = PlayerSkin.skinHead;
-                skinBody = PlayerSkin.skinBody;
-                skinLeftArm = PlayerSkin.skinLeftArm;
-                skinRightArm = PlayerSkin.skinRightArm;
-                skinLeftLeg = PlayerSkin.skinLeftLeg;
-                skinRightLeg = PlayerSkin.skinRightLeg;
-                skinLeftFoot = PlayerSkin.skinLeftFoot;
-                skinRightFoot = PlayerSkin.skinRightFoot;
-
-                //要等一帧否则 currentSandboxIndex 会被 base:Entity 设为 0
-                await UniTask.NextFrame();
-
-                //让服务器加载玩家数据
-                LoadPlayerDatumFromFile();
-            });
-        }
-        #endregion
-
         #region Base 覆写
 
 
@@ -1478,12 +1265,14 @@ namespace GameCore
         }
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
-        [Command]
-        private void ServerGenerateSandboxCore(Vector2Int index, bool isFirstGeneration, string biomeId)
+        [ServerRpc]
+        private void ServerGenerateSandboxCore(Vector2Int index, bool isFirstGeneration, string biomeId, NetworkConnection caller = null)
         {
-            Debug.Log($"Player={netId} 请求生成沙盒 {index}");
+            MethodAgent.TryRun(() =>
+            {
+                Debug.Log($"Player={netId} 请求生成沙盒 {index}");
 
-            List<Vector2Int> indexes = new()
+                List<Vector2Int> indexes = new()
             {
                 //: x
                 //: x
@@ -1507,65 +1296,69 @@ namespace GameCore
                 index + new Vector2Int(1, 1),
             };
 
-            //如果有直接让服务器生成
-            foreach (Vector2Int currentIndex in indexes)
-            {
-                //如果没有则生成新的沙盒
-                MethodAgent.RunThread(() =>
+                //如果有直接让服务器生成
+                foreach (Vector2Int currentIndex in indexes)
                 {
-                    GM.instance.GenerateNewSandbox(currentIndex, biomeId);
-
-                    MethodAgent.RunOnMainThread(() =>
+                    //如果没有则生成新的沙盒
+                    MethodAgent.RunThread(() =>
                     {
-                        //如果 index 是中心, 就是首次生成
-                        bool isGenerationMiddle = currentIndex == index;
-                        bool isFirstGenerationMiddle = isFirstGeneration && isGenerationMiddle;
+                        GM.instance.GenerateNewSandbox(currentIndex, biomeId);
 
-                        if (isGenerationMiddle)
+                        MethodAgent.RunOnMainThread(() =>
                         {
-                            foreach (Sandbox sb in GFiles.world.sandboxData)
-                            {
-                                if (sb.index == currentIndex && sb.generatedAlready)
-                                {
-                                    //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
-                                    if (!isLocalPlayer)
-                                        GM.instance.GenerateExistingSandbox(sb, sbOut => CallerGenerateSandbox(sb, isFirstGenerationMiddle), sbOut => CallerGenerateSandbox(sb, isFirstGenerationMiddle), (ushort)(GFiles.settings.performanceLevel / 2));
-                                    //* 如果是服务器发送的申请: 服务器生成
-                                    else
-                                        CallerGenerateSandbox(sb, isFirstGenerationMiddle);
+                            //如果 index 是中心, 就是首次生成
+                            bool isGenerationMiddle = currentIndex == index;
+                            bool isFirstGenerationMiddle = isFirstGeneration && isGenerationMiddle;
 
-                                    break;
+                            if (isGenerationMiddle)
+                            {
+                                foreach (Sandbox sb in GFiles.world.sandboxData)
+                                {
+                                    if (sb.index == currentIndex && sb.generatedAlready)
+                                    {
+                                        //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
+                                        if (!isLocalPlayer)
+                                            GM.instance.GenerateExistingSandbox(sb, sbOut => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller), sbOut => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller), (ushort)(GFiles.settings.performanceLevel / 2));
+                                        //* 如果是服务器发送的申请: 服务器生成
+                                        else
+                                            ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller);
+
+                                        break;
+                                    }
                                 }
                             }
-                        }
+                        });
                     });
-                });
-            }
+                }
+            }, true);
         }
 
-        [TargetRpc]
-        void CallerGenerateSandbox(Sandbox sandbox, bool isFirstGeneration)
+        [ConnectionRpc]
+        void ConnectionGenerateSandbox(Sandbox sandbox, bool isFirstGeneration, NetworkConnection caller)
         {
-            Debug.Log($"收到服务器回调, 正在生成已有沙盒 {sandbox.index}");
-
-            if (isFirstGeneration)
+            MethodAgent.TryRun(() =>
             {
-                //防止因跑出沙盒导致重复生成
-                transform.position = Sandbox.GetMiddle(sandbox.index);
-            }
+                Debug.Log($"收到服务器回调, 正在生成已有沙盒 {sandbox.index}");
 
-            GM.instance.GenerateExistingSandbox(sandbox, sb =>
-            {
-                //将玩家的位置恢复到出生点
                 if (isFirstGeneration)
                 {
-                    transform.position = sb.spawnPoint.To2();
-                    generatedFirstSandbox = true;
+                    //防止因跑出沙盒导致重复生成
+                    transform.position = Sandbox.GetMiddle(sandbox.index);
                 }
-                //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
-            }, null, (ushort)(GFiles.settings.performanceLevel * (isFirstGeneration ? 3 : 0.8f)));
 
-            askingForGeneratingSandbox = false;
+                GM.instance.GenerateExistingSandbox(sandbox, sb =>
+                {
+                    //将玩家的位置恢复到出生点
+                    if (isFirstGeneration)
+                    {
+                        transform.position = sb.spawnPoint.To2();
+                        generatedFirstSandbox = true;
+                    }
+                    //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
+                }, null, (ushort)(GFiles.settings.performanceLevel * (isFirstGeneration ? 3 : 0.8f)));
+
+                askingForGeneratingSandbox = false;
+            }, true);
         }
 
         #endregion
@@ -2546,6 +2339,210 @@ namespace GameCore
             rightLeg = File.Exists(rightLegPath) ? Tools.LoadSpriteByPath(rightLegPath, FilterMode.Point, 16) : null;
             leftFoot = File.Exists(leftFootPath) ? Tools.LoadSpriteByPath(leftFootPath, FilterMode.Point, 16) : null;
             rightFoot = File.Exists(rightFootPath) ? Tools.LoadSpriteByPath(rightFootPath, FilterMode.Point, 16) : null;
+        }
+    }
+
+#if UNITY_EDITOR
+    [AutoByteConverter]
+    public struct AutoTest0
+    {
+        public string id;
+        public int num;
+        public List<string> testList;
+        public int? testNullable;
+    }
+
+    [AutoByteConverter]
+    public struct AutoTest1
+    {
+        public AutoTest0 t0;
+        public string self;
+        public int index;
+    }
+
+    [AutoByteConverter]
+    public struct AutoTest2
+    {
+        public AutoTest1 t1;
+        public uint uint_index;
+        public long long_index;
+        public byte byte_index;
+    }
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public struct Timer
+    {
+        public float time;
+
+        public readonly bool HasFinished()
+        {
+            return Tools.time >= time;
+        }
+
+        public void Finish()
+        {
+            time = Tools.time;
+        }
+
+        public void Close()
+        {
+            time = float.PositiveInfinity;
+        }
+
+        public void Start(float time)
+        {
+            this.time = Tools.time + time;
+        }
+
+        public void More(float delta)
+        {
+            time += delta;
+        }
+
+        public void Less(float delta)
+        {
+            time -= delta;
+        }
+
+        public readonly float Remainder() => time - Tools.time;
+    }
+
+    public interface IUseRadius
+    {
+        public bool InUseRadius();
+        public bool InUseRadius(Vector2 vec);
+        public bool InUseRadius(Vector2 vec1, Vector2 vec2);
+    }
+
+    public static class PlayerCenter
+    {
+        public static List<Player> all = new();
+        public static List<Player> allReady = new();
+
+        public static void Update()
+        {
+            if (Server.isServer)
+            {
+                lock (allReady)
+                {
+                    NativeArray<bool> isMovingIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> thirstValueIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> thirstValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> hungerValueIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> hungerValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> happinessValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> healthIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> healthOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+                    //填入数据
+                    for (int i = 0; i < allReady.Count; i++)
+                    {
+                        var player = allReady[i];
+
+                        isMovingIn[i] = player.isMoving;
+                        thirstValueIn[i] = player.thirstValue;
+                        hungerValueIn[i] = player.hungerValue;
+                        healthIn[i] = player.health;
+                    }
+
+                    int batchCount = allReady.Count / 4;
+                    if (batchCount == 0) batchCount = 1;
+                    new PropertiesComputingJob()
+                    {
+                        isMovingIn = isMovingIn,
+                        thirstValueIn = thirstValueIn,
+                        thirstValueOut = thirstValueOut,
+                        hungerValueIn = hungerValueIn,
+                        hungerValueOut = hungerValueOut,
+                        happinessValueOut = happinessValueOut,
+                        healthIn = healthIn,
+                        healthOut = healthOut,
+                        frameTime = Performance.frameTime
+                    }.ScheduleParallel(allReady.Count, batchCount, default).Complete();  //除以4代表由四个 Job Thread 执行
+
+                    //填入数据
+                    for (int i = 0; i < allReady.Count; i++)
+                    {
+                        var player = allReady[i];
+
+                        player.thirstValue -= thirstValueOut[i];
+                        player.hungerValue -= hungerValueOut[i];
+                        player.happinessValue -= happinessValueOut[i];
+
+                        var healthOutCurrent = healthOut[i];
+                        if (healthOutCurrent != 0) player.health -= healthOutCurrent;
+                    }
+
+                    isMovingIn.Dispose();
+                    thirstValueIn.Dispose();
+                    thirstValueOut.Dispose();
+                    hungerValueIn.Dispose();
+                    hungerValueOut.Dispose();
+                    happinessValueOut.Dispose();
+                    healthIn.Dispose();
+                    healthOut.Dispose();
+                }
+            }
+        }
+
+        [BurstCompile]
+        public struct PropertiesComputingJob : IJobFor
+        {
+            [ReadOnly] public NativeArray<bool> isMovingIn;
+            [ReadOnly] public NativeArray<float> thirstValueIn;
+            [WriteOnly] public NativeArray<float> thirstValueOut;
+            [ReadOnly] public NativeArray<float> hungerValueIn;
+            [WriteOnly] public NativeArray<float> hungerValueOut;
+            [WriteOnly] public NativeArray<float> happinessValueOut;
+            [ReadOnly] public NativeArray<float> healthIn;
+            [WriteOnly] public NativeArray<float> healthOut;
+            [ReadOnly] public float frameTime;
+
+            [BurstCompile]
+            public void Execute(int index)
+            {
+                bool isMovingTemp = isMovingIn[index];
+                float thirstValueTemp = thirstValueIn[index];
+                float hungerValueTemp = hungerValueIn[index];
+
+                float thirstValueDelta = frameTime / 40;
+                if (isMovingTemp) thirstValueDelta += frameTime / 40;
+                thirstValueOut[index] = thirstValueDelta;
+
+                float hungerValueDelta = frameTime / 30;
+                if (isMovingTemp) hungerValueDelta += frameTime / 30;
+                hungerValueOut[index] = hungerValueDelta;
+
+                float happinessValueDelta = frameTime / 25;
+                if (isMovingTemp) happinessValueDelta -= frameTime / 10;
+                if (healthIn[index] <= 10) happinessValueDelta += frameTime / 5;
+                if (thirstValueTemp <= 30) happinessValueDelta += frameTime / 20;
+                if (hungerValueTemp <= 30) happinessValueDelta += frameTime / 20;
+                happinessValueOut[index] = happinessValueDelta;
+
+                if (thirstValueTemp <= 0 || hungerValueTemp <= 0)
+                    healthOut[index] = frameTime * 15;
+                else
+                    healthOut[index] = 0;
+            }
         }
     }
 }

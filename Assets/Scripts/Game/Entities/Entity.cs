@@ -531,7 +531,7 @@ namespace GameCore
             //遍历每个属性
             StringBuilder sb = new();
 
-            //TODO: Improve readability and perfomance step and step
+            //TODO: Improve readability and performance step and step
             foreach (SyncAttributeData pair in syncVarTemps)
             {
                 string id = SyncPacker.GetInstanceID(sb, pair.propertyPath, varInstanceId);
@@ -540,7 +540,7 @@ namespace GameCore
                 {
                     SyncPacker.OnVarValueChange += OnValueChangeBoth;
 
-                    void OnValueChangeBoth(NMSyncVar i, ByteWriter v)
+                    void OnValueChangeBoth(NMSyncVar i, byte[] v)
                     {
                         if (i.varId == id)
                             pair.hook.Invoke(this, null);
@@ -555,7 +555,7 @@ namespace GameCore
 
                 if (isServer)
                 {
-                    SyncPacker.RegisterVar(id, true, ByteWriter.CreateNull());
+                    SyncPacker.RegisterVar(id, true, null);
 
                     if (pair.includeDefaultValue)
                     {
@@ -565,10 +565,7 @@ namespace GameCore
                         }
                         else
                         {
-                            var writer = ByteWriter.Create();
-                            ByteWriter.TypeWrite(pair.valueType, pair.defaultValueMethod.Invoke(null, null), writer);
-
-                            SyncPacker.SetValue(id, writer);
+                            SyncPacker.SetValue(id, Rpc.ObjectToBytes(pair.defaultValueMethod.Invoke(null, null)));
                         }
                     }
                 }
@@ -786,7 +783,9 @@ namespace GameCore
         #region 死亡
         public void Death()
         {
-            ServerDeath(this, null);
+            //? 防止反复死亡
+            if (this != null && !isDead)
+                ServerDeath(this, null);
         }
 
         [ServerRpc]
@@ -806,8 +805,8 @@ namespace GameCore
 
             //Debug.Log($"服务器: 实体 {name} 已死亡");
 
-            entity.OnDeathServer();
             ClientDeath(entity, caller);
+            entity.OnDeathServer();
         }
 
         [ClientRpc]
@@ -815,7 +814,7 @@ namespace GameCore
         {
             //Debug.Log($"客户端: 实体 {name} 已死亡");
 
-            //? 不要使用 RpcDeath 来回收资源等, 资源回收应该放在 OnDestroy 中, 因为服务器可能会在调用 RpcDeath 前删除物体
+            //? 不要使用 RpcDeath 来回收资源等, 资源回收应该放在 OnDestroy 中, 因为服务器可能会在调用 RpcDeath 前删除物体, ClientDeath 是用来显示死亡动效的
             if (entity)
             {
                 entity.OnDeathClient();
@@ -977,7 +976,7 @@ namespace GameCore
             public string propertyPath;
             public MethodInfo hook;
             public bool includeDefaultValue;
-            public ByteWriter defaultValue;
+            public byte[] defaultValue;
             public MethodInfo defaultValueMethod;
             public string valueType;
         }
@@ -1000,7 +999,7 @@ namespace GameCore
                     string propertyPath = $"{property.DeclaringType.FullName}.{property.Name}";
                     bool includeDefaultValue = false;
                     MethodInfo hookMethod = null;
-                    ByteWriter defaultValue = ByteWriter.CreateNull();
+                    byte[] defaultValue = null;
                     MethodInfo defaultValueMethod = null;
 
                     if (!att.hook.IsNullOrWhiteSpace())
@@ -1019,16 +1018,11 @@ namespace GameCore
                             Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueAtt.defaultValue.GetType().FullName}");
                         else
                         {
-                            var writer = ByteWriter.Create();
+                            byte[] temp = null;
 
-                            //TODO: 检查方法是否实例, 参数列表
-                            if (defaultValueAtt.defaultValue != null)
-                                ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueAtt.defaultValue, writer);
-                            else
-                                writer.WriteNull();
+                            temp = Rpc.ObjectToBytes(defaultValueAtt.defaultValue);
 
-                            ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueAtt.defaultValue, writer);
-                            defaultValue = writer;
+                            defaultValue = temp;
                             includeDefaultValue = true;
                         }
                     }
@@ -1052,13 +1046,15 @@ namespace GameCore
 
                         if (defaultValueFromMethodAtt.getValueUntilRegister)
                         {
-
+                            //? 这会在注册变量时完成
                         }
                         else
                         {
-                            var writer = ByteWriter.Create();
-                            ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueMethod.Invoke(null, null), writer);
-                            defaultValue = writer;
+                            byte[] temp = null;
+
+                            //TODO: 检查方法是否实例, 参数列表
+                            temp = Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null));
+                            defaultValue = temp;
                         }
                     }
 
@@ -1086,13 +1082,10 @@ namespace GameCore
 
         public static T GetEntityByNetId<T>(uint netIdToFind) where T : Entity
         {
-            //uint.MaxValue 是我设定的无效值, 实际上也许不一定无效
-            if (netIdToFind == uint.MaxValue)
-                return null;
-
+            //uint.MaxValue 是我设定的无效值, 如果 netIdToFind 为 uint.MaxValue 是几乎不可能找到合适的 NetworkIdentity 的
             if (!NetworkClient.spawned.TryGetValue(netIdToFind, out NetworkIdentity identity))
             {
-                Debug.LogError($"无法找到 Entity {netIdToFind}");
+                Debug.LogError($"无法找到 {typeof(T).FullName} {netIdToFind}");
                 return null;
             }
 

@@ -10,7 +10,30 @@
 
 
 ----- 反射 <-> 程序集终极解决-----
+
+//这会报错, 只要改成 Expression.Block -> Expression.Condition 就可以了, 是 if else 与条件运算符的区别 (条件运算符就是 a ? b : c)
+Expression.Block(
+    trueParameters[index],
+    Expression.IfThenElse(
+        Expression.Equal(
+            localParam_bytesToObjectTemp,
+            Expression.Constant(null)
+        ),
+        Expression.Constant(
+            null,
+            trueParameters[index]
+        ),
+        Expression.Convert(
+            localParam_bytesToObjectTemp,
+            trueParameters[index]
+        )
+    )
+)
+
+
+
 Expression.Block 封装多个 Expression, 使用 Expression.Lambda 就可以把其封装成 Delegate 式的大块 Lambda
+当block内用到了本地变量时, 必须声明本地变量, 即在 Expression.Block() 的参数中加入 new ParameterExpression[] { variable }
 
 (类)Activator.CreateInstance(type, params[null])
 Type.GetProperties包含基类(且实际相当于生成一个新的Property)Methods不包含!

@@ -30,7 +30,7 @@ namespace GameCore
         [LabelText("Type数据")] public List<ImportType> typeData = new();
         [LabelText("实体")] public List<EntityData> entities = new();
 
-        public ModEntry entryInstance;
+        [NonSerialized] public ModEntry entryInstance;
 
         public bool isOri => info.isOri;
 

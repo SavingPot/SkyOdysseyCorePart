@@ -10,12 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 5149061481135640842}
   - component: {fileID: 5561094199867204083}
+  - component: {fileID: 8823838788546806568}
   - component: {fileID: 267364513}
   - component: {fileID: -836710234299361555}
   - component: {fileID: -5178114958211936635}
-  - component: {fileID: -9156995169716921086}
   m_Layer: 3
-  m_Name: PlayerPrefab
+  m_Name: PlayerPrefab-Backup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28,7 +28,6 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5149061481135640843}
-  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -36,6 +35,7 @@ Transform:
   m_Children:
   - {fileID: 7837169709684863949}
   m_Father: {fileID: 0}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &5561094199867204083
 Rigidbody2D:
@@ -64,6 +64,183 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
+--- !u!114 &8823838788546806568
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5149061481135640843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 727b0c541907d07418234eb7c3bf6f2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  hurtable: 1
+  data:
+    id: 
+    jsonFormat: 
+    jsonFormatWhenLoad: 
+    path: 
+    summon:
+      biome: 
+      defaultProbability: 0
+      timeEarliest: 0
+      timeLatest: 0
+    speed: 0
+    gravity: 0
+    colliderSize: {x: 0, y: 0}
+    maxHealth: 0
+    drops: []
+  renderers: []
+  spriteRenderers: []
+  takeDamageAudioId: ori:get_hurt
+  isPlayer: 0
+  netIdentity: {fileID: 0}
+  registeredSyncVars: 0
+  correctedSyncVars: 0
+  waitingRegisteringVar: 
+  waitingCorrectingVar: 
+  model: {fileID: 0}
+  moveSpeed: 7
+  startingSpeedMultiple: 0.25
+  movementAirResistance: 0.95
+  bodyParts: []
+  jumpTimer: 0
+  experience: 0
+  controllingLayer: 0
+  excavationRadius: 4
+  fallenY: 0
+  gravity: 0
+  deathTimer: 0
+  generatedFirstSandbox: 0
+  inventory:
+    helmet:
+      count: 0
+      data:
+        id: 
+    breastplate:
+      count: 0
+      data:
+        id: 
+    legging:
+      count: 0
+      data:
+        id: 
+    boots:
+      count: 0
+      data:
+        id: 
+    slots: []
+  usingItemIndex: 0
+  useTime: 0
+  _playerCanvas: {fileID: 7837169709684863949}
+  nameText: {fileID: 0}
+  usingBackpackSidebar: 
+  interactionObjectsDetectedTemp:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!114 &267364513
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -150,39 +327,6 @@ MonoBehaviour:
   positionSensitivity: 0.01
   rotationSensitivity: 0.01
   scaleSensitivity: 0.01
---- !u!114 &-9156995169716921086
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5149061481135640843}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d17332c9abeea54b819f928ed7f7e88, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  generationId: 
-  entity: {fileID: 0}
-  data:
-    id: 
-    jsonFormat: 
-    jsonFormatWhenLoad: 
-    path: 
-    summon:
-      biome: 
-      defaultProbability: 0
-      timeEarliest: 0
-      timeLatest: 0
-    speed: 0
-    gravity: 0
-    colliderSize: {x: 0, y: 0}
-    maxHealth: 0
-    drops: []
-  saveId: 
 --- !u!1 &7968213891613026844
 GameObject:
   m_ObjectHideFlags: 0
@@ -215,6 +359,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5149061481135640842}
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}

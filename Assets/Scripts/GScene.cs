@@ -23,8 +23,6 @@ namespace GameCore
 
             Performance.CollectMemory();
 
-
-
             Debug.Log($"场景变为: {name} ({index})");
 
             //遍历所有已加载所有 Type

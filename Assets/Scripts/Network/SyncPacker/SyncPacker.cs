@@ -27,7 +27,7 @@ namespace GameCore
     /// </summary>
     public static class SyncPacker
     {
-        public static Action<NMSyncVar, ByteWriter> OnVarValueChange = (_, _) => { };
+        public static Action<NMSyncVar, byte[]> OnVarValueChange = (_, _) => { };
         public static Action<NMRegisterSyncVar> OnRegisterVar = a => { };
 
         public static readonly Dictionary<string, NMSyncVar> vars = new();
@@ -61,7 +61,7 @@ namespace GameCore
         /// 注册同步变量, 只能在服务端调用
         /// </summary>
         /// <param name="varId"></param>
-        public static void RegisterVar(string varId, bool clientCanSet, ByteWriter defaultValue)
+        public static void RegisterVar(string varId, bool clientCanSet, byte[] defaultValue)
         => RegisterVar(new(varId, clientCanSet, defaultValue));
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace GameCore
             foreach (KeyValuePair<string, NMSyncVar> entry in vars)
             {
                 //如果同步变量的值发生未改变就不同步
-                if (entry.Value.writerLastSync.Equals(entry.Value.writer))
+                if (Equals(entry.Value.valueLastSync, entry.Value.value))
                     continue;
 
                 //将新值发送给所有客户端
@@ -163,7 +163,7 @@ namespace GameCore
             foreach (var set in sets)
             {
                 NMSyncVar temp = vars[set];
-                temp.writerLastSync = temp.writer;
+                temp.valueLastSync = temp.value;
                 vars[set] = temp;
             }
         }
@@ -198,11 +198,12 @@ namespace GameCore
             if (id.IsNullOrEmpty())
                 return false;
 
-            return vars.TryGetValue(id, out var value) && (value.writer.bytes != null || (value.writer.chunks != null && value.writer.chunks.Count != 0));
+            //TODO: May cause error
+            return vars.TryGetValue(id, out var var) && var.value != null;
         }
 
         //TODO: string varId -> uint var;
-        public static bool SetValue(string varId, ByteWriter value)
+        public static bool SetValue(string varId, byte[] value)
         {
             if (varId.IsNullOrEmpty())
             {
@@ -220,11 +221,11 @@ namespace GameCore
                     return false;
                 }
 
-                var oldWriter = var.writer;
+                var oldWriter = var.value;
 
                 //设置值
                 NMSyncVar tempVar = var;
-                tempVar.writer = value;
+                tempVar.value = value;
 
                 //服务器直接赋值
                 if (Server.isServer)
@@ -257,46 +258,33 @@ namespace GameCore
 
         public static Func<string, string> StaticGetId;
         public static Func<string, string> StaticSetId;
-        public static Func<string, string> ReturnType;
 
         public static Action StaticVarsRegister;
 
         public static bool _InstanceSet(IVarInstanceID __instance, object value, MethodBase __originalMethod)
         {
-            //获取写入器
-            ByteWriter writer = ByteWriter.Create();
-
-            //写入数据
-            ByteWriter.TypeWrite(__originalMethod.GetParameters()[0].ParameterType.FullName, value, writer);
-
-            SetValue(InstanceSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", __instance.varInstanceId), writer);
+            SetValue(InstanceSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", __instance.varInstanceId), Rpc.ObjectToBytes(value));
             return false;
         }
 
         public static bool _InstanceGet(IVarInstanceID __instance, ref object __result, MethodBase __originalMethod)
         {
             var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
-            __result = ByteReader.TypeRead(ReturnType(path), GetVar(InstanceGetId(path, __instance.varInstanceId)).writer.chunks[0]);
+            __result = Rpc.BytesToObject(GetVar(InstanceGetId(path, __instance.varInstanceId)).value);
             return false;
         }
 
 
         public static bool _StaticSet(object value, MethodBase __originalMethod)
         {
-            //获取写入器
-            ByteWriter writer = ByteWriter.Create();
-
-            //写入数据
-            ByteWriter.TypeWrite(__originalMethod.GetParameters()[0].ParameterType.FullName, value, writer);
-
-            SetValue(StaticSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}"), writer);
+            SetValue(StaticSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}"), Rpc.ObjectToBytes(value));
             return false;
         }
 
         public static bool _StaticGet(ref object __result, MethodBase __originalMethod)
         {
             var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
-            __result = ByteReader.TypeRead(ReturnType(path), GetVar(StaticGetId(path)).writer.chunks[0]);
+            __result = Rpc.BytesToObject(GetVar(StaticGetId(path)).value);
             return false;
         }
 
@@ -345,7 +333,6 @@ namespace GameCore
 
             List<SwitchCase> staticGetIdCases = new();
             List<SwitchCase> staticSetIdCases = new();
-            List<SwitchCase> returnTypeCases = new();
 
             Action staticVarsRegisterMethods = () => { };
 
@@ -374,13 +361,6 @@ namespace GameCore
                                 continue;
                             }
 
-                            if (ByteReader.GetReader(method.ReturnType.FullName) == null)
-                            {
-                                Debug.LogError($"无法找到类型 {method.ReturnType.FullName} ({methodPath}) 的字节读取器");
-                                continue;
-                            }
-
-                            returnTypeCases.Add(Expression.SwitchCase(Expression.Constant(method.ReturnType.FullName), Expression.Constant(methodPath)));
 
                             /* ---------------------------------- 编辑方法 ---------------------------------- */
                             Harmony harmony = new($"SyncPacker.harmony.getter.{methodPath}");
@@ -413,12 +393,6 @@ namespace GameCore
                                 continue;
                             }
 
-                            if (ByteWriter.GetWriter(method.GetParameters()[0].ParameterType.FullName) == null)
-                            {
-                                Debug.LogError($"无法找到类型 {method.ReturnType.FullName} ({methodPath}) 的字节写入器");
-                                continue;
-                            }
-
 
                             /* ---------------------------------- 编辑方法 ---------------------------------- */
                             Harmony harmony = new($"SyncPacker.harmony.getter.{methodPath}");
@@ -445,7 +419,6 @@ namespace GameCore
 
                     foreach (var property in type.GetAllProperties())
                     {
-                        //获取呼叫类型
                         if (AttributeGetter.TryGetAttribute<SyncAttribute>(property, out var att))
                         {
                             string propertyPath = $"{type.FullName}.{property.Name}";
@@ -454,12 +427,14 @@ namespace GameCore
                             /* ---------------------------------- 编辑方法 ---------------------------------- */
                             Harmony harmony = new($"SyncPacker.harmony.{propertyPath}");
 
+                            //? 非静态的处理在 Entity 中
                             if (!property.GetMethod.IsStatic)
                             {
 
                             }
                             else
                             {
+                                //TODO: 简化此处的代码建构, 使其更易懂
                                 if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(property, out var defaultValueAttribute))
                                 {
                                     if (defaultValueAttribute.defaultValue != null && property.PropertyType.FullName != defaultValueAttribute.defaultValue.GetType().FullName)
@@ -468,10 +443,9 @@ namespace GameCore
                                         continue;
                                     }
 
-                                    var writer = ByteWriter.Create();
-                                    ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueAttribute.defaultValue, writer);
+                                    var value = Rpc.ObjectToBytes(defaultValueAttribute.defaultValue);
 
-                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, writer);
+                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, value);
                                 }
                                 else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(property, out var defaultValueFromMethodAttribute))
                                 {
@@ -493,24 +467,19 @@ namespace GameCore
                                     {
                                         staticVarsRegisterMethods += () =>
                                         {
-                                            var writer = ByteWriter.Create();
-                                            ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueMethod.Invoke(null, null), writer);
-
-                                            SyncPacker.RegisterVar(propertyPath, true, writer);
+                                            SyncPacker.RegisterVar(propertyPath, true, Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null)));
                                         };
                                     }
                                     else
                                     {
-                                        var writer = ByteWriter.Create();
-                                        ByteWriter.TypeWrite(property.PropertyType.FullName, defaultValueMethod.Invoke(null, null), writer);
+                                        var value = Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null));
 
-                                        staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, writer);
+                                        staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, value);
                                     }
                                 }
                                 else
                                 {
-                                    var writer = ByteWriter.Create();
-                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, writer);
+                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, null);
                                 }
 
                                 if (!att.hook.IsNullOrWhiteSpace())
@@ -544,7 +513,6 @@ namespace GameCore
 
             var staticGetIdBody = Expression.Switch(staticGetIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticGetIdParam_getter), staticGetIdCases.ToArray());
             var staticSetIdBody = Expression.Switch(staticSetIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticSetIdParam_setter), staticSetIdCases.ToArray());
-            var staticReturnTypeBody = Expression.Switch(returnTypeParam_path, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetReturnTypeError)), returnTypeParam_path), returnTypeCases.ToArray());
 
             /* ---------------------------------- 编译方法 ---------------------------------- */
             InstanceGetId = Expression.Lambda<Func<string, uint, string>>(instanceGetIdBody, instanceGetIdParam_getter, instanceGetIdParam_instance).Compile();
@@ -552,7 +520,6 @@ namespace GameCore
 
             StaticGetId = Expression.Lambda<Func<string, string>>(staticGetIdBody, staticGetIdParam_getter).Compile();
             StaticSetId = Expression.Lambda<Func<string, string>>(staticSetIdBody, staticSetIdParam_setter).Compile();
-            ReturnType = Expression.Lambda<Func<string, string>>(staticReturnTypeBody, returnTypeParam_path).Compile();
 
             StaticVarsRegister = staticVarsRegisterMethods;
 
@@ -607,7 +574,7 @@ namespace GameCore
                 foreach (KeyValuePair<string, NMSyncVar> entry in vars)
                 {
                     //让指定客户端重新注册同步变量
-                    conn.Send<NMRegisterSyncVar>(new(entry.Value.varId, entry.Value.clientCanSet, entry.Value.writer));
+                    conn.Send<NMRegisterSyncVar>(new(entry.Value.varId, entry.Value.clientCanSet, entry.Value.value));
                 }
             };
 
@@ -641,8 +608,8 @@ namespace GameCore
 
                 if (vars.TryGetValue(nm.varId, out var var))
                 {
-                    var oldValue = var.writer;
-                    var.writer = nm.writer;
+                    var oldValue = var.value;
+                    var.value = nm.value;
                     vars[nm.varId] = var;
                     OnVarValueChange.Invoke(var, oldValue);
 
@@ -657,8 +624,8 @@ namespace GameCore
             {
                 if (vars.TryGetValue(nm.varId, out var var))
                 {
-                    var oldValue = var.writer;
-                    var.writer = nm.writer;
+                    var oldValue = var.value;
+                    var.value = nm.value;
                     vars[nm.varId] = var;
 
                     OnVarValueChange.Invoke(var, oldValue);

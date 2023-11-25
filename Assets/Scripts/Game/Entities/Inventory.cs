@@ -735,12 +735,14 @@ namespace GameCore
         public Item ToExtended() => ModConvert.DatumItemBaseToDatumItem(this);
     }
 
+    [Serializable]
     public class Recipe<T> : ModClass, IJOFormatCore where T : RecipeItem<T>
     {
         [LabelText("物品")] public List<T> items = new();
         [LabelText("结果")] public T result;
     }
 
+    [Serializable]
     public class RecipeItem<T> : ITags where T : RecipeItem<T>
     {
         [LabelText("ID")] public string id;

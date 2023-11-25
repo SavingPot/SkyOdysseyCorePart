@@ -7,14 +7,14 @@ namespace GameCore
     {
         public readonly string methodPath;
         public readonly RpcType callType;
-        public ByteWriter parameters;
+        public byte[][] parameters;
         public uint instance;
 
         public NMRpc(string methodPath, RpcType type)
         {
             this.methodPath = methodPath;
             this.callType = type;
-            this.parameters = default;
+            this.parameters = null;
             this.instance = uint.MaxValue;
         }
     }

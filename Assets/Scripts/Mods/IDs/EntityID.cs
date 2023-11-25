@@ -40,6 +40,7 @@ namespace GameCore
         public const string Savage = "ori:savage";
         public const string Snail = "ori:snail";
         public const string SnowfieldGuard = "ori:snowfield_guard";
+        public const string Player = "ori:player";
         public const string SnowfieldGuardSnowball = "ori:snowfield_guard_snowball";
         public const string SnowfieldSlime = "ori:snowfield_slime";
         public const string Spark = "ori:spark";

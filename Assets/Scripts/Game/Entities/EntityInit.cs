@@ -39,11 +39,11 @@ namespace GameCore
         {
             StartCoroutine(IECallWhenGetGeneratingId(() =>
             {
-                if (!Server.isServer)
-                    data = ModFactory.CompareEntity(generationId);
+                //TODO: 修改代码, 使其同时适配 Player 和 普通实体
+                //TODO: Also change the Drop? Have a look. so that we can combine the logics all into EntityInit
+                data ??= ModFactory.CompareEntity(generationId);
 
-                entity = (Entity)gameObject.AddComponent(data.behaviourType);
-
+                entity = generationId == EntityID.Player ? gameObject.AddComponent<Player>() : (Entity)gameObject.AddComponent(data.behaviourType);
                 entity.Init = this;
                 entity.customData = customData;
                 entity.data = data;

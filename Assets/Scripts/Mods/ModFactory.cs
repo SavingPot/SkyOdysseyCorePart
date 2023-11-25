@@ -959,7 +959,7 @@ namespace GameCore
                 {
                     //如果继承自 EntityBehaviour (包括间接继承) 并绑定了 实体json.id
                     if (type.type.IsSubclassOf(typeof(Entity)) &&
-                        AttributeGetter.TryGetAttribute<EntityBindingAttribute>(type.type, out EntityBindingAttribute attribute) &&
+                        AttributeGetter.TryGetAttribute(type.type, out EntityBindingAttribute attribute) &&
                         attribute.id == entity.id)
                     {
                         entity.behaviourType = type.type;
@@ -1189,6 +1189,7 @@ namespace GameCore
 
 
     //TODO: 解决 ModClass 与 ModClassChild
+    [Serializable]
     public class ModClass : IdClassBase, IJOFormatCore
     {
         [LabelText("Json 格式")] public string jsonFormat;
@@ -1199,6 +1200,7 @@ namespace GameCore
         public JObject jo { get; set; }
     }
 
+    [Serializable]
     public class ModClassChild : IdClassBase, IJOFormatCoreChild
     {
         [LabelText("Json 格式")] public string jsonFormat;

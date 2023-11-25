@@ -188,17 +188,6 @@ namespace GameCore.High
         }
         #endregion
 
-        public void SummonAllPlayers()
-        {
-            if (!isServer)
-                return;
-
-            for (int i = 0; i < NetworkServer.connections.Count; i++)
-            {
-                AddPlayer(NetworkServer.connections.ElementAt(i).Value);
-            }
-        }
-
         #region Start & Stop
 
         /// <summary>
@@ -305,6 +294,9 @@ namespace GameCore.High
         {
             GameObject player = Instantiate(playerPrefab);
             player.name = $"{player.name} [{conn.address}:{conn.connectionId}]";
+            //TODO: Move the player data set to here?
+            var init = player.GetComponent<EntityInit>();
+            init.generationId = EntityID.Player;
             NetworkServer.AddPlayerForConnection(conn, player);
             NetworkCallbacks.CallOnAddPlayer(conn);
         }

@@ -422,6 +422,14 @@ namespace GameCore
             return JObject.Parse(str);
         }
 
+        public static JToken LoadJTokenByString(string str)
+        {
+            if (string.IsNullOrEmpty(str))
+                return null;
+
+            return JToken.Parse(str);
+        }
+
         public static T LoadJson<T>(string jsonFilePath, bool decompress = false)
         {
             if (!File.Exists(jsonFilePath))

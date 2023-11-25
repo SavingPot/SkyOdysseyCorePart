@@ -94,9 +94,9 @@ namespace GameCore.High
     {
         public string varId;
         public bool clientCanSet;
-        public ByteWriter defaultValue;
+        public byte[] defaultValue;
 
-        public NMRegisterSyncVar(string varId, bool clientCanSet, ByteWriter defaultValue)
+        public NMRegisterSyncVar(string varId, bool clientCanSet, byte[] defaultValue)
         {
             this.varId = varId;
             this.clientCanSet = clientCanSet;
@@ -117,15 +117,15 @@ namespace GameCore.High
     public struct NMSyncVar : NetworkMessage
     {
         public string varId;
-        public ByteWriter writer;
-        public ByteWriter writerLastSync;
+        public byte[] value;
+        public byte[] valueLastSync;
         public readonly bool clientCanSet;
 
-        public NMSyncVar(string varId, ByteWriter writer, bool clientCanSet)
+        public NMSyncVar(string varId, byte[] value, bool clientCanSet)
         {
             this.varId = varId;
-            this.writer = writer;
-            this.writerLastSync = ByteWriter.CreateNull();
+            this.value = value;
+            this.valueLastSync = null;
             this.clientCanSet = clientCanSet;
         }
     }

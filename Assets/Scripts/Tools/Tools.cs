@@ -652,6 +652,33 @@ namespace GameCore
             return DOTween.To(() => timed, a => timed = a, 1, time).OnStepComplete(() => action()).SetLoops(-1);
         }
 
+
+
+
+
+        static readonly Regex HighlightedStackTraceRegex = new(@"at\s(.*)\s(\(.*\))\s\[\w+\]\sin\s(.*:\d+)");
+
+        public static string HighlightedStackTrace()
+        {
+            return HighlightedStackTrace(Environment.StackTrace);
+        }
+
+        public static string HighlightedStackTrace(Exception exception)
+        {
+            return HighlightedStackTrace(exception.ToString());
+        }
+
+        public static string HighlightedStackTrace(string stackTrace)
+        {
+            string replacement = @"at <color=#e5c072>$1</color>$2 <color=#4988ff>[$3]</color>";
+
+            return HighlightedStackTraceRegex.Replace(stackTrace, replacement);
+        }
+
+
+
+
+
         /// <summary>
         /// 显示鼠标.
         /// </summary>

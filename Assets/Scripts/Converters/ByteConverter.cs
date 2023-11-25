@@ -94,6 +94,7 @@ namespace GameCore.Converters
             return bytesData;
         }
 
+        //TODO: Change!
         public static byte[] ToBytes(Sprite sprite) => ToBytes(sprite.texture);
 
         public static byte[] ToBytes(Texture2D texture) => texture.EncodeToPNG();

@@ -12,6 +12,10 @@ using System.Reflection.Emit;
 using Mono.Cecil.Cil;
 using System.ComponentModel;
 using GameCore.Converters;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
+using Sirenix.Utilities;
+using System.IO;
 
 namespace GameCore
 {
@@ -19,284 +23,9 @@ namespace GameCore
     //TODO: 自动写入Enum, 支持 sbyte, byte, short, ushort, int, uint, long, ulong
     public static class Rpc
     {
-        public static Func<string, NetworkConnection, ByteWriter, Entity, bool> Remote;
-        public static Action<string, NetworkConnection, ByteWriter, Entity> LocalMethod;
-        public static Func<
-            Type, FieldInfo, MemberExpression, IndexExpression, Type[], ParameterExpression,
-            (bool isSupported, Expression writer, MemberAssignment memberBinding)>
-            GenericTypeSupport =
-                (fieldType, fieldInfo, fieldInstance, writerToRead, genericArguments, writerToWrite) =>
-        {
-            //检测调用时想要的是 是否支持 还是 读写方法
-            bool wantedResultIsSupported = fieldInfo == null;
-            Debug.Log($"{fieldType.FullName} {writerToRead == null}");
-            Expression chunksToRead = Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))); //*== writerToRead.chunks
-
-
-            if (fieldType.GetGenericTypeDefinition() == typeof(List<>))
-            {
-                if (wantedResultIsSupported)
-                    return (true, null, null);
-
-                var write_LoopIndex = Expression.Variable(typeof(int), "i");
-                var write_BreakLabel = Expression.Label("break");
-
-                var read_NewListExpression = Expression.Variable(fieldType, "list");
-                var read_LoopIndex = Expression.Variable(typeof(int), "i");
-                var read_BreakLabel = Expression.Label("break");
-
-                var genericArg = genericArguments[0];
-                var writerMethod = ByteWriter.GetWriter(genericArg.FullName);
-                var readerMethod = ByteReader.GetReader(genericArg.FullName);
-
-                return (
-                    true,
-                    //*== for (int i = 0; i < values.Length ; i++)               values is List<T>
-                    //*== {
-                    //*==   method.Invoke(null, new object[] { values[i], writer });
-                    //*== }
-                    Expression.Block(
-                        typeof(void),
-                        new ParameterExpression[]
-                        {
-                            write_LoopIndex
-                        },
-                        new Expression[]
-                        {
-                            //定义一个类似 for 语句的循环
-                            Expression.Loop(
-                                Expression.IfThenElse(
-                                    //检测是否遍历完成
-                                    Expression.LessThan(
-                                        write_LoopIndex,
-                                        fieldInstance.ListCount()
-                                    ),
-                                    //遍历时执行
-                                    Expression.Block(
-                                        //调用字节写入器
-                                        ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance.ListItem(write_LoopIndex), genericArg),
-                                        //等效于 i++
-                                        Expression.PostIncrementAssign(write_LoopIndex)
-                                    ),
-                                    //如果遍历完了就 break
-                                    Expression.Break(write_BreakLabel)
-                                ),
-                                write_BreakLabel
-                            )
-                        }
-                    ),
-                    //*== 在读取 field 时执行: 
-                    //*== List<T> values = new();
-                    //*==
-                    //*== for (int i = 0; i < writer.chunks.Count; i++)
-                    //*== {
-                    //*==   values.Add(reader(writer.chunks[i]));
-                    //*== }
-                    //*==
-                    //*== return values;
-                    Expression.Bind(
-                        fieldInfo,
-                        Expression.Block(
-                            fieldType,
-                            new ParameterExpression[]
-                            {
-                                read_LoopIndex,
-                                read_NewListExpression
-                            },
-                            new Expression[]
-                            {
-                                Expression.Assign(read_NewListExpression, Expression.New(fieldType)),
-                                //定义一个类似 for 语句的循环
-                                Expression.Loop(
-                                    Expression.IfThenElse(
-                                        //检测是否遍历完成
-                                        Expression.LessThan(
-                                            read_LoopIndex,
-                                            chunksToRead.ListCount()
-                                        ),
-                                        //遍历时执行
-                                        Expression.Block(
-                                            //为列表添加元素
-                                            read_NewListExpression.ListAdd(
-                                                //提供列表的类型以获取对应 Add 方法
-                                                fieldType,
-                                                //把写入器对应的区块投给 T 的字节读取器
-                                                ByteReader.GetExpressionOfReading(chunksToRead.ListItem(read_LoopIndex), genericArg)
-                                            ),
-                                            //等效于 i++
-                                            Expression.PostIncrementAssign(read_LoopIndex)
-                                        ),
-                                        //如果遍历完了就 break
-                                        Expression.Break(read_BreakLabel)
-                                    ),
-                                    read_BreakLabel
-                                ),
-                                read_NewListExpression
-                            }
-                        )
-                    )
-                );
-            }
-            //Complete array part
-            else if (fieldType.IsArray)
-            {
-                if (wantedResultIsSupported)
-                    return (true, null, null);
-
-                var write_LoopIndex = Expression.Variable(typeof(int), "i");
-                var write_BreakLabel = Expression.Label("break");
-
-                var read_NewArrayExpression = Expression.Variable(fieldType, "array");
-                var read_LoopIndex = Expression.Variable(typeof(int), "i");
-                var read_BreakLabel = Expression.Label("break");
-
-                var genericArg = genericArguments[0];
-                var writerMethod = ByteWriter.GetWriter(genericArg.FullName);
-                var readerMethod = ByteReader.GetReader(genericArg.FullName);
-
-                return (true,
-                    //*== for (int i = 0; i < values.Length ; i++)               values is T[]
-                    //*== {
-                    //*==   method.Invoke(null, new object[] { values[i], writer });
-                    //*== }
-                    Expression.Block(
-                        typeof(void),
-                        new ParameterExpression[]
-                        {
-                            write_LoopIndex
-                        },
-                        new Expression[]
-                        {
-                            //定义一个类似 for 语句的循环
-                            Expression.Loop(
-                                Expression.IfThenElse(
-                                    //检测是否遍历完成
-                                    Expression.LessThan(
-                                        write_LoopIndex,
-                                        fieldInstance.ArrayLength()
-                                    ),
-                                    //遍历时执行
-                                    Expression.Block(
-                                        //调用字节写入器
-                                        ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance.ArrayItem(write_LoopIndex), genericArg),
-                                        //等效于 i++
-                                        Expression.PostIncrementAssign(write_LoopIndex)
-                                    ),
-                                    //如果遍历完了就 break
-                                    Expression.Break(write_BreakLabel)
-                                ),
-                                write_BreakLabel
-                            )
-                        }
-                    ),
-                    //*== 在读取 field 时执行: 
-                    //*== T[] values = new T[];
-                    //*==
-                    //*== for (int i = 0; i < writer.chunks.Count; i++)
-                    //*== {
-                    //*==   values[i] = reader(writer.chunks[i]);
-                    //*== }
-                    //*==
-                    //*== return values;
-                    //TODO: Don't bind it here
-                    Expression.Bind(
-                        fieldInfo,
-                        Expression.Block(
-                            fieldType,
-                            new ParameterExpression[]
-                            {
-                                read_LoopIndex,
-                                read_NewArrayExpression
-                            },
-                            new Expression[]
-                            {
-                                Expression.Assign(read_NewArrayExpression, Expression.NewArrayBounds(genericArg, fieldInstance)),
-                                //定义一个类似 for 语句的循环
-                                Expression.Loop(
-                                    Expression.IfThenElse(
-                                        //检测是否遍历完成
-                                        Expression.LessThan(
-                                            read_LoopIndex,
-                                            chunksToRead.ListCount()
-                                        ),
-                                        //遍历时执行
-                                        Expression.Block(
-                                            //被赋值的是数组的元素
-                                            Expression.Assign(
-                                                //访问创建的数组
-                                                read_NewArrayExpression.ArrayItem(read_LoopIndex),
-                                                //把写入器对应的区块投给 T 的字节读取器
-                                                ByteReader.GetExpressionOfReading(chunksToRead.ListItem(read_LoopIndex), genericArg)
-                                            ),
-                                            //等效于 i++
-                                            Expression.PostIncrementAssign(read_LoopIndex)
-                                        ),
-                                        //如果遍历完了就 break
-                                        Expression.Break(read_BreakLabel)
-                                    ),
-                                    read_BreakLabel
-                                ),
-                                read_NewArrayExpression
-                            }
-                        )
-                    )
-                );
-            }
-            //Complete nullable part
-            else if (fieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                if (wantedResultIsSupported)
-                    return (true, null, null);
-
-                var read_Temp = Expression.Variable(fieldType);
-
-                var genericArg = genericArguments[0];
-                var chunkZero = chunksToRead.ListItem(0);
-                var writerMethod = ByteWriter.GetWriter(genericArg.FullName);
-                var readerMethod = ByteReader.GetReader(genericArg.FullName);
-                var doNotReadIdentity = Expression.Constant(Converters.ByteConverter.ToBytes(1025943687), typeof(byte[]));   //要写入随机数据, 检测 writer.bytes 而不是 writer.chunks[0].bytes 是因为如果 genericArg 的写入器在某种情况下直接 WriteNull, 会导致判断失误
-
-                return (true,
-                    //*== if (nullable == null)     nullable is Nullable<T>
-                    //*==   writer.bytes = Converters.ByteConverter.ToBytes(1025943687);
-                    //*== else
-                    //*==   writerMethod((T)nullable);
-                    Expression.IfThenElse(
-                        Expression.Equal(fieldInstance, Expression.Constant(null)),
-                        Expression.Assign(Expression.Field(writerToWrite, typeof(ByteWriter).GetField(nameof(ByteWriter.bytes))), doNotReadIdentity),
-                        ByteWriter.GetExpressionOfWriting(writerToWrite, fieldInstance, genericArg)
-                    ),
-                    //*== 在读取 field 时执行: 
-                    //*== if (writer.bytes != null)
-                    //*==   return new T?;
-                    //*== else
-                    //*==   return reader(writer.chunks[0]);
-                    //TODO: Don't bind it here
-                    Expression.Bind(
-                        fieldInfo,
-                        Expression.Block(
-                            fieldType,
-                            new ParameterExpression[]
-                            {
-                                read_Temp
-                            },
-                            new Expression[]
-                            {
-                                Expression.IfThenElse(
-                                    Expression.NotEqual(Expression.Field(writerToRead, typeof(ByteWriter).GetField(nameof(ByteWriter.bytes))), Expression.Constant(null)),
-                                    Expression.Assign(read_Temp, Expression.New(fieldType)),
-                                    Expression.Assign(read_Temp, Expression.Convert(ByteReader.GetExpressionOfReading(chunkZero, genericArg), fieldType))
-                                ),
-                                read_Temp
-                            }
-                        )
-                    )
-                );
-            }
-
-            return (false, null, null);
-        };
-
+        public static BinaryFormatter binaryFormatter;
+        public static Func<string, NetworkConnection, byte[][], Entity, bool> Remote;
+        public static Action<string, NetworkConnection, byte[][], Entity> LocalMethod;
 
 
         static bool GetNetCallType(MethodInfo mtd, string mtdPath, Type voidType, Type connType, out RpcType type)
@@ -350,9 +79,9 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                   内部反射方法                                   */
         /* -------------------------------------------------------------------------- */
-        public static bool _RemoteCall(NMRpc temp, ref NetworkConnection caller, ByteWriter writer, Entity instance)
+        public static bool _RemoteCall(NMRpc temp, NetworkConnection caller, byte[][] parameters, Entity instance)
         {
-            temp.parameters = writer;
+            temp.parameters = parameters;
             temp.instance = instance ? instance.netId : uint.MaxValue;
 
             //以下 Send 的回调绑定在 ManagerNetwork 中
@@ -408,169 +137,160 @@ namespace GameCore
 
         public static bool _StaticWrite0(NetworkConnection caller, MethodBase __originalMethod)
         {
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, ByteWriter.CreateNull(), null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, null, null);
         }
 
         public static bool _StaticWrite1(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[1][]
+            {
+                ObjectToBytes(__args[0]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
         public static bool _StaticWrite2(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[2][]
+            {
+                ObjectToBytes(__args[0]),
+                ObjectToBytes(__args[1]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-            ByteWriter.TypeWrite(parameters[1].ParameterType.FullName, __args[1], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
         public static bool _StaticWrite3(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[3][]
+            {
+                ObjectToBytes(__args[0]),
+                ObjectToBytes(__args[1]),
+                ObjectToBytes(__args[2]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-            ByteWriter.TypeWrite(parameters[1].ParameterType.FullName, __args[1], writer);
-            ByteWriter.TypeWrite(parameters[2].ParameterType.FullName, __args[2], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
         public static bool _StaticWrite4(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[4][]
+            {
+                ObjectToBytes(__args[0]),
+                ObjectToBytes(__args[1]),
+                ObjectToBytes(__args[2]),
+                ObjectToBytes(__args[3]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-            ByteWriter.TypeWrite(parameters[1].ParameterType.FullName, __args[1], writer);
-            ByteWriter.TypeWrite(parameters[2].ParameterType.FullName, __args[2], writer);
-            ByteWriter.TypeWrite(parameters[3].ParameterType.FullName, __args[3], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
         public static bool _StaticWrite5(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[5][]
+            {
+                ObjectToBytes(__args[0]),
+                ObjectToBytes(__args[1]),
+                ObjectToBytes(__args[2]),
+                ObjectToBytes(__args[3]),
+                ObjectToBytes(__args[4]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-            ByteWriter.TypeWrite(parameters[1].ParameterType.FullName, __args[1], writer);
-            ByteWriter.TypeWrite(parameters[2].ParameterType.FullName, __args[2], writer);
-            ByteWriter.TypeWrite(parameters[3].ParameterType.FullName, __args[3], writer);
-            ByteWriter.TypeWrite(parameters[4].ParameterType.FullName, __args[4], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
         public static bool _InstanceWrite0(NetworkConnection caller, Entity __instance, MethodBase __originalMethod)
         {
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, ByteWriter.CreateNull(), __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, null, __instance);
         }
 
         public static bool _InstanceWrite1(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[1][]
+            {
+                ObjectToBytes(__args[0]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
         public static bool _InstanceWrite2(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[2][]
+            {
+                ObjectToBytes(__args[0]),
+                ObjectToBytes(__args[1]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-            ByteWriter.TypeWrite(parameters[1].ParameterType.FullName, __args[1], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
         public static bool _InstanceWrite3(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[3][]
+            {
+                ObjectToBytes(__args[0]),
+                ObjectToBytes(__args[1]),
+                ObjectToBytes(__args[2]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-            ByteWriter.TypeWrite(parameters[1].ParameterType.FullName, __args[1], writer);
-            ByteWriter.TypeWrite(parameters[2].ParameterType.FullName, __args[2], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
         public static bool _InstanceWrite4(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[4][]
+            {
+                ObjectToBytes(__args[0]),
+                ObjectToBytes(__args[1]),
+                ObjectToBytes(__args[2]),
+                ObjectToBytes(__args[3]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-            ByteWriter.TypeWrite(parameters[1].ParameterType.FullName, __args[1], writer);
-            ByteWriter.TypeWrite(parameters[2].ParameterType.FullName, __args[2], writer);
-            ByteWriter.TypeWrite(parameters[3].ParameterType.FullName, __args[3], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
         public static bool _InstanceWrite5(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            ByteWriter writer = ByteWriter.Create();
-            var parameters = __originalMethod.GetParameters();
+            byte[][] parameters = new byte[5][]
+            {
+                ObjectToBytes(__args[0]),
+                ObjectToBytes(__args[1]),
+                ObjectToBytes(__args[2]),
+                ObjectToBytes(__args[3]),
+                ObjectToBytes(__args[4]),
+            };
 
-            ByteWriter.TypeWrite(parameters[0].ParameterType.FullName, __args[0], writer);
-            ByteWriter.TypeWrite(parameters[1].ParameterType.FullName, __args[1], writer);
-            ByteWriter.TypeWrite(parameters[2].ParameterType.FullName, __args[2], writer);
-            ByteWriter.TypeWrite(parameters[3].ParameterType.FullName, __args[3], writer);
-            ByteWriter.TypeWrite(parameters[4].ParameterType.FullName, __args[4], writer);
-
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, writer, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
 
 
-
-
-
-
-
-
-
-
-
-        //? 最多支持五个参数 (不包含NetworkConnection)
-        public static object _Read0(Type[] parameterTypes, ByteWriter parameters)
+        public static byte[] ObjectToBytes(object obj)
         {
-            return ByteReader.TypeRead(parameterTypes[0].FullName, parameters.chunks[0]);
+            if (obj == null)
+            {
+                return null;
+            }
+
+            using MemoryStream ms = new();
+            binaryFormatter.Serialize(ms, obj);
+            return ms.ToArray();
         }
 
-        public static object _Read1(Type[] parameterTypes, ByteWriter parameters)
+        public static object BytesToObject(byte[] data)
         {
-            return ByteReader.TypeRead(parameterTypes[1].FullName, parameters.chunks[1]);
-        }
+            //TODO: return null 可能有问题? 也许不需要进行检测?
+            if (data == null)
+            {
+                return null;
+            }
 
-        public static object _Read2(Type[] parameterTypes, ByteWriter parameters)
-        {
-            return ByteReader.TypeRead(parameterTypes[2].FullName, parameters.chunks[2]);
-        }
-
-        public static object _Read3(Type[] parameterTypes, ByteWriter parameters)
-        {
-            return ByteReader.TypeRead(parameterTypes[3].FullName, parameters.chunks[3]);
-        }
-
-        public static object _Read4(Type[] parameterTypes, ByteWriter parameters)
-        {
-            return ByteReader.TypeRead(parameterTypes[4].FullName, parameters.chunks[4]);
+            if (data == null)
+                Debug.Log("null");
+            using MemoryStream ms = new(data);
+            return binaryFormatter.Deserialize(ms);
         }
 
 
@@ -619,548 +339,84 @@ namespace GameCore
             var _InstanceWrite4 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceWrite4)}");
             var _InstanceWrite5 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceWrite5)}");
 
-            var _Read0 = typeof(Rpc).GetMethod($"{nameof(Rpc._Read0)}");
-            var _Read1 = typeof(Rpc).GetMethod($"{nameof(Rpc._Read1)}");
-            var _Read2 = typeof(Rpc).GetMethod($"{nameof(Rpc._Read2)}");
-            var _Read3 = typeof(Rpc).GetMethod($"{nameof(Rpc._Read3)}");
-            var _Read4 = typeof(Rpc).GetMethod($"{nameof(Rpc._Read4)}");
-
 
             /* -------------------------------------------------------------------------- */
             /*                         //Step 2: 定义 Expression 参数
             /* -------------------------------------------------------------------------- */
             //Substep 1: 定义传入方法的参数
-            ParameterExpression getWriterParam_type = Expression.Parameter(typeof(string), "type");
-
-            ParameterExpression getReaderParam_type = Expression.Parameter(typeof(string), "type");
-
-            ParameterExpression writeParam_type = Expression.Parameter(typeof(string), "type");
-            ParameterExpression writeParam_obj = Expression.Parameter(typeof(object), "obj");
-            ParameterExpression writeParam_writer = Expression.Parameter(typeof(ByteWriter), "writer");
-
-            ParameterExpression readParam_type = Expression.Parameter(typeof(string), "type");
-            ParameterExpression readParam_parameters = Expression.Parameter(typeof(ByteWriter), "parameters");
-
             ParameterExpression remoteParam_id = Expression.Parameter(typeof(string), "id");
             ParameterExpression remoteParam_caller = Expression.Parameter(typeof(NetworkConnection), "caller");
-            ParameterExpression remoteParam_writer = Expression.Parameter(typeof(ByteWriter), "writer");
+            ParameterExpression remoteParam_writer = Expression.Parameter(typeof(byte[][]), "parameters");
             ParameterExpression remoteParam_instance = Expression.Parameter(typeof(Entity), "instance");
 
+            ParameterExpression localParam_exception = Expression.Parameter(typeof(Exception), "exception");
+            ParameterExpression localParam_bytesToObjectTemp = Expression.Parameter(typeof(object), "bytesToObjectTemp");
             ParameterExpression localParam_id = Expression.Parameter(typeof(string), "id");
             ParameterExpression localParam_caller = Expression.Parameter(typeof(NetworkConnection), "caller");
-            ParameterExpression localParam_parameters = Expression.Parameter(typeof(ByteWriter), "parameters");
+            ParameterExpression localParam_parameters = Expression.Parameter(typeof(byte[][]), "parameters");
             ParameterExpression localParam_instance = Expression.Parameter(typeof(Entity), "instance");
 
             //Substep 2: 定义 Switch Cases
-            List<SwitchCase> getWriterCases = new();
-            List<SwitchCase> getReaderCases = new();
-            List<SwitchCase> writeCases = new();
-            List<SwitchCase> readCases = new();
             List<SwitchCase> remoteCases = new();
             List<SwitchCase> localCases = new();
 
-
-            Dictionary<string, MethodInfo> genericWriterMethodTable = new();
-            Dictionary<string, MethodInfo> genericReaderMethodTable = new();
-
-
-
             /* -------------------------------------------------------------------------- */
-            /*                            //Step 3: 生成明确指定的 ByteConverter
+            /*                              //Step 3: 为 BinaryFormatter 匹配正确的转化器
             /* -------------------------------------------------------------------------- */
+            var surrogateSelector = new SurrogateSelector();
 
-            Expression WriteParamExpression(Type type, Expression ifFalse)
+
+            //? 为所有 Entity 指定代理, 避免反复编写代理
+            //? 先指定实体代理, 再设定通用代理, 是为了方便定制
+            //? 例如: 我有一个 Player, 需要传输 int value 这个值, 就需要把设定通用代理放在后面, 并写一个 PlayerSurrogate
+            ModFactory.assemblies.Foreach(ass =>
             {
-                return Expression.IfThenElse(
-                    Expression.Equal(writeParam_obj, Expression.Constant(null)),                                        //* if (obj == null)
-                    Expression.Empty(),                                                                                 //* { }
-                    ifFalse                                                                                             //* else
-                );
-            }
-
-            Expression ReadParamExpression(Expression ifFalse)
-            {
-                //TODO: Recover;
-                return ifFalse;
-                // return Expression.Block(
-                //     typeof(object), //指定返回类型
-                //     Expression.IfThenElse(
-                //         Expression.Equal(                                                                                                                    //* if (   
-                //             Expression.Field(readParam_parameters, typeof(ByteWriter).GetField(nameof(ByteWriter.bytes))),                                   //*        parameters.bytes ==
-                //             Expression.Constant(null)),                                                                                                      //*        null)
-                //         Expression.Constant(null),                                                                                                           //*    return null;
-                //         ifFalse                                                                                                                              //* else
-                //     ),
-                //     Expression.Constant(null) // return null
-                // );
-            }
-
-            //Substep 1: 原生字节转换器: 遍历每个程序集中的方法
-            ModFactory.EachUserMethod((ass, type, mtd) =>
-            {
-                string mtdPath = $"{type.FullName}.{mtd.Name}";
-
-                //TODO: 将检测 [ByteWriterAttribute]method 改为检测 [ByteConvertersAttribute]type
-                if (AttributeGetter.TryGetAttribute<ByteWriterAttribute>(mtd, out var writerAttr))
+                ass.GetTypes().ForEach(type =>
                 {
-                    foreach (var p in getWriterCases)
+                    if (type.IsSubclassOf(typeof(Entity)))
                     {
-                        if (p.TestValues[0].ToString() == writerAttr.targetType)
-                        {
-                            //TODO: 添加权重设置 (byte)
-                            Debug.LogError($"类型 {p.TestValues[0]} 的 ByteWriter 重复, 将忽略 {mtdPath}");
-                            return;
-                        }
-                    }
-
-                    var tempParameters = mtd.GetParameters();
-
-                    if (tempParameters.Length != 2 || tempParameters[1].ParameterType != typeof(ByteWriter))
-                    {
-                        Debug.LogError($"ByteWriter {mtdPath} 必须含两种参数: xxx, ByteWriter");
-                        return;
-                    }
-
-                    var typeToWrite = tempParameters[0].ParameterType;
-
-                    if (typeToWrite.IsGenericType)
-                    {
-                        genericWriterMethodTable.Add(writerAttr.targetType, mtd);
-                    }
-                    else
-                    {
-                        writeCases.Add(
-                            Expression.SwitchCase(
-                                WriteParamExpression(
-                                    typeToWrite,
-                                    Expression.Call(null, mtd, Expression.Convert(writeParam_obj, typeToWrite), writeParam_writer)   //* mtd((T)obj, writer);
-                                ),
-                            Expression.Constant(writerAttr.targetType))
-                        );
-
-                        getWriterCases.Add(
-                            Expression.SwitchCase(
-                                Expression.Constant(mtd, typeof(MethodInfo)),
-                                Expression.Constant(writerAttr.targetType)
-                            )
-                        );
-                    }
-                    return;
-                }
-                else if (AttributeGetter.TryGetAttribute<ByteReaderAttribute>(mtd, out var readerAttr))
-                {
-                    foreach (var p in getReaderCases)
-                    {
-                        if (p.TestValues[0].ToString() == readerAttr.targetType)
-                        {
-                            Debug.LogError($"类型 {p.TestValues[0]} 的 ByteReader 重复, 将忽略 {mtdPath}");
-                            return;
-                        }
-                    }
-
-                    var tempParameters = mtd.GetParameters();
-
-                    if (tempParameters.Length != 1 || tempParameters[0].ParameterType != typeof(ByteWriter))
-                    {
-                        Debug.LogError($"ByteReader {mtdPath} 必须只含一种参数: ByteWriter");
-                        return;
-                    }
-
-                    //TODO: 不做限制 (这意味着要用Expression手动装箱, 性能可能会变差, 但是方便转换器互相调用, 还可以直接使用 ByteConverterCenterAttribute)
-                    if (mtd.ReturnType != typeof(object))
-                    {
-                        Debug.LogError($"ByteReader {mtdPath} 必须返回 object");
-                        return;
-                    }
-
-                    readCases.Add(
-                        Expression.SwitchCase(
-                            ReadParamExpression(
-                                Expression.Call(null, mtd, readParam_parameters)             //* mtd(parameters);
-                            ),
-                        Expression.Constant(readerAttr.targetType))
-                    );
-                    getReaderCases.Add(
-                        Expression.SwitchCase(
-                            Expression.Constant(mtd, typeof(MethodInfo)),
-                            Expression.Constant(readerAttr.targetType)
-                        )
-                    );
-                    return;
-                }
-            });
-
-            //Substep 2: 编译 Converter 方法
-            void CompileConverterGetMethod()
-            {
-                //定义方法体 (Switch)
-                var getWriterBody = Expression.Switch(getWriterParam_type, Expression.Constant(null, typeof(MethodInfo)), getWriterCases.ToArray());
-                var getReaderBody = Expression.Switch(getReaderParam_type, Expression.Constant(null, typeof(MethodInfo)), getReaderCases.ToArray());
-
-                //编译方法
-                ByteWriter.GetWriter = Expression.Lambda<Func<string, MethodInfo>>(getWriterBody, "GetWriter_Lambda", new ParameterExpression[] { getWriterParam_type }).Compile();
-                ByteReader.GetReader = Expression.Lambda<Func<string, MethodInfo>>(getReaderBody, "GetReader_Lambda", new ParameterExpression[] { getReaderParam_type }).Compile();
-            }
-
-            //* Tips: 第一次编译方法
-            CompileConverterGetMethod();
-
-
-
-
-
-            /* -------------------------------------------------------------------------- */
-            /*                        //Step 4: 自动字节转换器: 生成
-            /* -------------------------------------------------------------------------- */
-
-            List<Type> typesToSolve = new();
-            List<Type> typePaths = new();
-
-
-
-            #region 方法定义
-
-            string GenerateTypePath()
-            {
-                string resultPath = "";
-
-                // 遍历目录
-                for (int i = 0; i < typePaths.Count; i++)
-                {
-                    // 获取当前元素的FullName
-                    string item = typePaths[i]?.FullName;
-
-                    // 如果是第一个元素，直接赋值给typePath，后面的元素需要加上箭头符号
-                    if (i == 0)
-                        resultPath = item;
-                    else
-                        resultPath += $"->{item}";
-                }
-
-                return resultPath;
-            }
-
-            bool AddTypeToSolveList(Type parentType, Type type)
-            {
-                typePaths.Add(parentType);
-                typePaths.Add(type);
-
-                if (!type.IsValueType)
-                {
-                    if (type.IsGenericType || type.IsArray)
-                    {
-                        if (GenericTypeSupport(type, null, null, null, null, null).isSupported)
-                        {
-
-                        }
-                        else
-                        {
-                            Debug.LogError($"类型 {GenerateTypePath()} 无法被自动生成, 因为其不存在泛型读写器");
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        if (type.NoneConstructor())
-                        {
-                            Debug.LogError($"类型 {GenerateTypePath()} 无法被自动生成, 因为其不包含任何构造函数");
-                            return false;
-                        }
-
-                        if (type.NoneDefaultConstructor())
-                        {
-                            Debug.LogError($"类型 {GenerateTypePath()} 无法被自动生成, 因为其不包含默认构造函数");
-                            return false;
-                        }
-                    }
-                }
-
-
-                typesToSolve.Add(type);
-                return true;
-            }
-
-            void RemoveTypeFromSolveList(Type type)
-            {
-                typesToSolve.Remove(type);
-                CompileConverterGetMethod();
-            }
-
-            #endregion
-
-
-
-            //Substep 1: 找到所有需要被自动实现的 ByteConverter
-            ModFactory.EachUserType((ass, type) =>
-            {
-                //找到包含 AutoByteConverterAttribute 的类
-                if (!AttributeGetter.TryGetAttribute<AutoByteConverterAttribute>(type, out var att))
-                    return;
-
-                foreach (var p in getWriterCases)
-                {
-                    if (p.TestValues[0].ToString() == type.FullName)
-                    {
-                        Debug.LogError($"类型 {p.TestValues[0]} 已存在 ByteConverter, 不需要添加 {nameof(AutoByteConverterAttribute)} 属性");
-                        return;
-                    }
-                }
-
-                AddTypeToSolveList(null, type);
-            });
-
-
-
-        //Substep 2: 处理每一个需要的类型
-        ReLoop:
-            typePaths.Clear();
-
-            if (typesToSolve.Count != 0)
-            {
-                //Substep 1 --------------------------- : 处理类型 (每次都从最后一个开始) -------------------------- */
-                var type = typesToSolve[^1];
-
-                //Substep 2 --------------------------- : 遍历每一个成员, 并添加到代办 -------------------------- */
-                var allFields = type.GetFields(ReflectionTools.BindingFlags_All);
-                List<FieldInfo> usefulFields = new();
-
-                //要倒序遍历, 否则会出现异常
-                foreach (var mem in allFields)
-                {
-                    //忽略字段: 静态(包括常量) 附带 NonSerializedAttribute/NonNetworkAttribute 的变量
-                    if (mem.IsStatic || AttributeGetter.TryGetAttribute<NonSerializedAttribute>(mem, out _) || AttributeGetter.TryGetAttribute<NonNetworkAttribute>(mem, out _))
-                        continue;
-
-                    var memberName = mem.Name;
-                    var memberType = mem.FieldType;
-                    var memberTypeName = memberType.FullName;
-
-                    if (memberType.IsGenericType)
-                    {
-                        foreach (var item in memberType.GenericTypeArguments)
-                        {
-                            var memberWriter = ByteWriter.GetWriter(item.FullName);
-                            var memberReader = ByteReader.GetReader(item.FullName);
-
-                            if (memberWriter == null || memberReader == null)
-                            {
-                                //要添加存在判断是有原因的, 例如 Item 和 ItemData 都需要自动实现转换器, 如果不判断, ItemData 的转换器会被多次实现
-                                if (typesToSolve.Exists(p => p.FullName == item.FullName))
-                                    typesToSolve.Remove(item);
-
-                                //先删再加是为了把类型移到最后, 第一个生成转换器
-                                if (AddTypeToSolveList(type, item))
-                                    goto ReLoop;
-                                else
-                                    continue;
-                            }
-                        }
-                    }
-                    //TODO: Combine them
-                    //* <------------------------------------------------------------------------------------------->
-                    //? <------------------------------------------------------------------------------------------->
-                    //!                                     注意要保持上下一致
-                    //? <------------------------------------------------------------------------------------------->
-                    //* <------------------------------------------------------------------------------------------->
-                    else
-                    {
-                        var memberWriter = ByteWriter.GetWriter(memberTypeName);
-                        var memberReader = ByteReader.GetReader(memberTypeName);
-
-                        if (memberWriter == null || memberReader == null)
-                        {
-                            //要添加存在判断是有原因的, 例如 Item 和 ItemData 都需要自动实现转换器, 如果不判断, ItemData 的转换器会被多次实现
-                            if (typesToSolve.Exists(p => p.FullName == memberTypeName))
-                                typesToSolve.Remove(memberType);
-
-                            //先删再加是为了把类型移到最后, 第一个生成转换器
-                            if (AddTypeToSolveList(type, memberType))
-                                goto ReLoop;
-                            else
-                                continue;
-                        }
-                    }
-
-                    usefulFields.Add(mem);
-                }
-
-                //Substep 3 --------------------------- : 如果子类都已经有了读写器, 就开始处理读写器 -------------------------- */
-                //首先, 无论还有没有子对象, 都一定需要生成读写方法
-                Expression writerBody;
-                Expression readerBody;
-                Expression objParam;
-
-
-                //如果没有子字段
-                if (usefulFields.Count == 0)
-                {
-                    writerBody = Expression.Empty();
-                    readerBody = Expression.MemberInit(Expression.New(type));
-                    objParam = writeParam_obj;
-                }
-                //如果有子字段
-                else
-                {
-                    ParameterExpression firstWriter = Expression.Variable(typeof(ByteWriter), "firstWriter");
-                    List<Expression> writers = new() { Expression.Assign(firstWriter, Expression.Call(writeParam_writer, typeof(ByteWriter).GetMethod(nameof(ByteWriter.WriteNull)))) };      //* ByteWriter firstWriter = writer.WriteNull();
-                    List<ParameterExpression> argumentExpressions = new() { firstWriter };
-                    var memberBindings = new List<MemberAssignment>();
-
-                    for (int i = 0; i < usefulFields.Count; i++)
-                    {
-                        var fieldInfo = usefulFields[i];
-                        var fieldType = fieldInfo.FieldType;
-                        var fieldInstance = Expression.Field(Expression.Convert(writeParam_obj, type), fieldInfo);                                                     //* ((T)obj).xx
-
-                        var writerToRead = Expression.Field(readParam_parameters, typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))).ListItem(i);
-
-                        //TODO: Combine Generic and normal
-                        if (fieldType.IsGenericType)
-                        {
-                            ParameterExpression writerToWrite = Expression.Variable(typeof(ByteWriter), "genericWriter");
-                            writers.Add(Expression.Assign(writerToWrite, Expression.Call(firstWriter, typeof(ByteWriter).GetMethod(nameof(ByteWriter.WriteNull)))));      //* ByteWriter genericWriter = firstWriter.WriteNull();
-                            argumentExpressions.Add(writerToWrite);
-
-                            var genericArguments = fieldType.GetGenericArguments();
-
-                            //TODO: Generic List
-                            var (_, writer, memberBinding) = GenericTypeSupport(fieldType, fieldInfo, fieldInstance, writerToRead, genericArguments, writerToWrite);
-                            writers.Add(writer);
-                            memberBindings.Add(memberBinding);
-                        }
-                        else
-                        {
-                            var writerMethod = ByteWriter.GetWriter(fieldType.FullName);
-                            var readerMethod = ByteReader.GetReader(fieldType.FullName);
-
-                            writers.Add(ByteWriter.GetExpressionOfWriting(firstWriter, fieldInstance, fieldType));
-
-                            memberBindings.Add(
-                                Expression.Bind(
-                                    fieldInfo,
-                                    ByteReader.GetExpressionOfReading(writerToRead, fieldType)
-                                )
+                        surrogateSelector.AddSurrogate(
+                                type,
+                                new StreamingContext(StreamingContextStates.All),
+                                (ISerializationSurrogate)Activator.CreateInstance(typeof(SerializationSurrogates.EntitySurrogate))
                             );
-                        }
                     }
+                });
+            });
 
-                    writerBody = Expression.Block(argumentExpressions, writers.ToArray());
-                    readerBody = Expression.Convert(Expression.MemberInit(Expression.New(type), memberBindings), typeof(object));   //* T obj = new() { xx = * , yy = * };;
-                    objParam = Expression.Convert(writeParam_obj, type);
-                }
-
-                //Substep 4 --------------------------- : 编译方法 -------------------------- */
-                /* --------------------------- case type.FullName: -------------------------- */
-
-                var writerLambda = Expression.Lambda(writerBody, "WriterDelegate_Lambda", new ParameterExpression[] { writeParam_obj, writeParam_writer });
-                var readerLambda = Expression.Lambda(readerBody, "ReaderDelegate_Lambda", new ParameterExpression[] { readParam_parameters });
-
-                var writerDelegate = writerLambda.Compile();
-                var readerDelegate = readerLambda.Compile();
-
-                var writerDelegateTarget = Expression.Constant(writerDelegate.Target, typeof(System.Runtime.CompilerServices.Closure));
-                var readerDelegateTarget = Expression.Constant(readerDelegate.Target, typeof(System.Runtime.CompilerServices.Closure));
-
-                ByteWriter.autoWriterExpressions.Add(type.FullName, writerLambda);
-                ByteReader.autoReaderExpressions.Add(type.FullName, readerLambda);
-
-                writeCases.Add(
-                    Expression.SwitchCase(
-                        WriteParamExpression(
-                            type,
-                            writerBody   //* writerDelegate(obj, writer); 或 writerDelegate((T)obj, writer);
-                        ),
-                    Expression.Constant(type.FullName))
-                );
-
-                readCases.Add(
-                    Expression.SwitchCase(
-                        ReadParamExpression(
-                            readerBody                   //* readerDelegate(bytes);
-                        ),
-                    Expression.Constant(type.FullName))
-                );
-
-                //     return writer.Method;
-                getWriterCases.Add(Expression.SwitchCase(Expression.Constant(writerDelegate.Method, typeof(MethodInfo)), Expression.Constant(type.FullName)));
-                //     return reader.Method;
-                getReaderCases.Add(Expression.SwitchCase(Expression.Constant(readerDelegate.Method, typeof(MethodInfo)), Expression.Constant(type.FullName)));
-
-                /* -------------------------------- case end -------------------------------- */
-
-                RemoveTypeFromSolveList(type);
-                goto ReLoop;
-            }
-
-            //Substep 3: 为无法生成的类型报错
-            foreach (var set in typesToSolve)
+            ModFactory.assemblies.Foreach(ass =>
             {
-                Debug.LogError($"无法为类型 {set.FullName} 自动生成字节转换器");
-            }
+                ass.GetTypes().ForEach(type =>
+                {
+                    if (AttributeGetter.TryGetAttribute<SerializationSurrogatesClassAttribute>(type, out _))
+                    {
+                        type.GetNestedTypes(flags).ForEach(nested =>
+                        {
+                            var surrogateInterface = nested.GetInterface(typeof(ISerializationSurrogate<>).FullName);
 
+                            if (surrogateInterface != null)
+                            {
+                                var typePointedTo = surrogateInterface.GetGenericArguments()[0];
 
+                                //删去通用的实体代理
+                                if (typePointedTo != typeof(Entity) && typePointedTo.IsSubclassOf(typeof(Entity)))
+                                    surrogateSelector.RemoveSurrogate(typePointedTo, new StreamingContext(StreamingContextStates.All));
 
+                                surrogateSelector.AddSurrogate(
+                                    typePointedTo,
+                                    new StreamingContext(StreamingContextStates.All),
+                                    (ISerializationSurrogate)Activator.CreateInstance(nested)
+                                );
+                            }
+                        });
+                    }
+                });
+            });
 
-
-
-
-
-
-            /* -------------------------------------------------------------------------- */
-            /*                              //Step 5: 编译读写方法
-            /* -------------------------------------------------------------------------- */
-
-            //定义方法体 (Switch)
-            var writeBody = Expression.Switch(
-                writeParam_type,
-                Expression.Block(
-                    //* void OnWriterError(string type, ByteWriter writer)
-                    typeof(void),
-
-                    //* Debug.LogError($"获取 {type} 的 Writer 失败");
-                    Expression.Call(
-                        typeof(Debug).GetMethod("LogError", new Type[] { typeof(object) }),
-                        Expression.Call(
-                            typeof(string).GetMethod("Format", new Type[] { typeof(string), typeof(object) }),
-                            Expression.Constant("获取 {0} 的 Writer 失败"),
-                            writeParam_type
-                        )
-                    ),
-                    //* writer.WriteNull();
-                    Expression.Call(
-                        writeParam_writer,
-                        typeof(ByteWriter).GetMethod(nameof(ByteWriter.WriteNull)))
-                ),
-                writeCases.ToArray()
-            );
-            var readBody = Expression.Switch(readParam_type,
-                Expression.Block(
-                    //* void OnReaderError(string type)
-                    typeof(object),
-
-                    //* Debug.LogError($"获取 {type} 的 Reader 失败");
-                    Expression.Call(
-                        typeof(Debug).GetMethod("LogError", new Type[] { typeof(object) }),
-                        Expression.Call(
-                            typeof(string).GetMethod("Format", new Type[] { typeof(string), typeof(object) }),
-                            Expression.Constant("获取 {0} 的 Reader 失败"),
-                            readParam_type
-                        )
-                    ),
-                    //* return null;
-                    Expression.Constant(null)
-                ),
-                readCases.ToArray()
-            );
-
-            //编译方法
-            ByteWriter.TypeWrite = Expression.Lambda<Action<string, object, ByteWriter>>(writeBody, "Writer_Lambda", new ParameterExpression[] { writeParam_type, writeParam_obj, writeParam_writer }).Compile();
-            ByteReader.TypeRead = Expression.Lambda<Func<string, ByteWriter, object>>(readBody, "Reader_Lambda", new ParameterExpression[] { readParam_type, readParam_parameters }).Compile();
-
-
-
-
-
+            binaryFormatter = new()
+            {
+                SurrogateSelector = surrogateSelector
+            };
 
             /* -------------------------------------------------------------------------- */
             /*                              //Step 6: 更改带有 RpcBinder 的方法的内容
@@ -1188,30 +444,6 @@ namespace GameCore
                     }
                     var parameterListConst = Expression.Constant(trueParameters.ToArray());
 
-                    /* ---------------------------------- 检查参数 ---------------------------------- */
-                    foreach (var param in trueParameters)
-                    {
-                        var writer = ByteWriter.GetWriter(param.FullName);
-                        var reader = ByteReader.GetReader(param.FullName);
-
-                        //TODO: 如果没有一个类型的字段包含一个泛型, 这个泛型将不会被生成字节转换器
-                        if (writer == null && reader == null)
-                        {
-                            Debug.LogError($"无法找到类型 {param.FullName} ({mtdPath}) 的字节写入器和字节读取器");
-                            return;
-                        }
-                        if (writer == null)
-                        {
-                            Debug.LogError($"无法找到类型 {param.FullName} ({mtdPath}) 的字节写入器");
-                            return;
-                        }
-                        if (reader == null)
-                        {
-                            Debug.LogError($"无法找到类型 {param.FullName} ({mtdPath}) 的字节读取器");
-                            return;
-                        }
-                    }
-
                     /* ---------------------------------- 编辑方法 ---------------------------------- */
                     MethodInfo mtdCopy = CopyMethod(mtd);
                     Harmony harmony = new($"Rpc.harmony.{mtdPath}");
@@ -1219,6 +451,74 @@ namespace GameCore
                     void PatchMethod(MethodInfo patch)
                     {
                         harmony.Patch(mtd, new HarmonyMethod(patch));
+                    }
+
+                    BlockExpression LocalCaseGeneration(int index)
+                    {
+                        //* return ByteReader.TypeRead(parameterTypes[index].FullName, parameters.chunks[index]);
+                        return Expression.Block(
+                                    trueParameters[index],
+                                    new ParameterExpression[] { localParam_bytesToObjectTemp },
+                                    new Expression[]
+                                    {
+                                        Expression.Assign(
+                                            localParam_bytesToObjectTemp,
+                                            Expression.Call(
+                                                typeof(Rpc).GetMethod(nameof(BytesToObject), flags),
+                                                localParam_parameters.ArrayItem(index)
+                                            )
+                                        ),
+                                        Expression.Condition(
+                                            Expression.Equal(
+                                                localParam_bytesToObjectTemp,
+                                                Expression.Constant(null)
+                                            ),
+                                            Expression.Default(trueParameters[index]),
+                                            Expression.Convert(
+                                                localParam_bytesToObjectTemp,
+                                                trueParameters[index]
+                                            )
+                                        )
+                                    }
+                                );
+                    }
+
+                    void AddLocalCase(Expression[] arguments, bool isInstanceMethod)
+                    {
+                        List<Expression> actualArgument = new();
+
+                        if (isInstanceMethod)
+                            actualArgument.Add(Expression.Convert(localParam_instance, mtdCopy.GetParameters()[0].ParameterType));
+
+                        actualArgument.AddRange(arguments);
+                        actualArgument.Add(localParam_caller);
+
+                        localCases.Add(
+                            Expression.SwitchCase(
+                                Expression.TryCatch(
+                                    Expression.Call(
+                                        mtdCopy,
+                                        actualArgument.ToArray()
+                                    ),
+                                    Expression.Catch(
+                                        localParam_exception,
+                                        Expression.Call(
+                                            typeof(Debug).GetMethod("LogError", new Type[] { typeof(object) }),
+                                            Expression.Call(
+                                                null,
+                                                typeof(string).GetMethod(nameof(string.Format), new Type[] { typeof(string), typeof(object) }),
+                                                Expression.Constant("调用本地方法 <color=#e5c072>" + mtdPath + "</color> 时抛出了异常!!!\n具体异常如下! <color=#e5c072>异常源于本地方法或字节转换器的代码!</color>\n异常将被抛出以防止破坏客户端和服务器!\n{0}"),
+                                                Expression.Call(
+                                                    typeof(Tools).GetMethod(nameof(Tools.HighlightedStackTrace), new Type[] { typeof(Exception) }),
+                                                        localParam_exception
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    mtdPathConst
+                                )
+                            );
                     }
 
                     if (mtd.IsStatic)
@@ -1245,86 +545,61 @@ namespace GameCore
                         //*==   break;
                         remoteCases.Add(Expression.SwitchCase(Expression.Call(null, _RemoteCall, mtdInfo, remoteParam_caller, remoteParam_writer, Expression.Constant(null, typeof(Entity))), mtdPathConst));
 
-                        UnaryExpression LocalCaseGeneration(int index)
-                        {
-                            //*== return ByteReader.TypeRead(parameterTypes[index].FullName, parameters.chunks[index]);
-                            return Expression.Convert(
-                                        Expression.Call(
-                                            ByteReader.TypeRead.Method,
-                                            Expression.Constant(ByteReader.TypeRead.Target, typeof(System.Runtime.CompilerServices.Closure)),
-                                            Expression.Constant(trueParameters[index].FullName),
-                                            Expression.Field(
-                                                localParam_parameters,
-                                                typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))
-                                            ).ListItem(index)
-                                        ),
-                                        trueParameters[index]
-                                    );
-                        }
-
                         switch (trueParameters.Count)
                         {
                             case 0:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[0], false);
+
                                 break;
 
                             case 1:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        LocalCaseGeneration(0),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                }, false);
+
                                 break;
 
                             case 2:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        LocalCaseGeneration(0),
-                                        LocalCaseGeneration(1),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                    LocalCaseGeneration(1),
+                                }, false);
+
                                 break;
 
                             case 3:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        LocalCaseGeneration(0),
-                                        LocalCaseGeneration(1),
-                                        LocalCaseGeneration(2),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                    LocalCaseGeneration(1),
+                                    LocalCaseGeneration(2),
+                                }, false);
+
                                 break;
 
                             case 4:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        LocalCaseGeneration(0),
-                                        LocalCaseGeneration(1),
-                                        LocalCaseGeneration(2),
-                                        LocalCaseGeneration(3),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                    LocalCaseGeneration(1),
+                                    LocalCaseGeneration(2),
+                                    LocalCaseGeneration(3),
+                                }, false);
+
                                 break;
 
                             case 5:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        LocalCaseGeneration(0),
-                                        LocalCaseGeneration(1),
-                                        LocalCaseGeneration(2),
-                                        LocalCaseGeneration(3),
-                                        LocalCaseGeneration(4),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                    LocalCaseGeneration(1),
+                                    LocalCaseGeneration(2),
+                                    LocalCaseGeneration(3),
+                                    LocalCaseGeneration(4),
+                                }, false);
+
                                 break;
 
                             default:
@@ -1356,92 +631,61 @@ namespace GameCore
                         //*==   break;
                         remoteCases.Add(Expression.SwitchCase(Expression.Call(null, _RemoteCall, mtdInfo, remoteParam_caller, remoteParam_writer, remoteParam_instance), mtdPathConst));
 
-                        UnaryExpression LocalCaseGeneration(int index)
-                        {
-                            //* return ByteReader.TypeRead(parameterTypes[index].FullName, parameters.chunks[index]);
-                            return Expression.Convert(
-                                        Expression.Call(
-                                            ByteReader.TypeRead.Method,
-                                            Expression.Constant(ByteReader.TypeRead.Target, typeof(System.Runtime.CompilerServices.Closure)),
-                                            Expression.Constant(trueParameters[index].FullName),
-                                            Expression.Field(
-                                                localParam_parameters,
-                                                typeof(ByteWriter).GetField(nameof(ByteWriter.chunks))
-                                            ).ListItem(index)
-                                        ),
-                                        trueParameters[index]
-                                    );
-                        }
-
                         switch (trueParameters.Count)
                         {
                             case 0:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        Expression.Convert(localParam_instance, mtdCopy.GetParameters()[0].ParameterType),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[0], true);
+
                                 break;
 
                             case 1:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        Expression.Convert(localParam_instance, mtdCopy.GetParameters()[0].ParameterType),
-                                        LocalCaseGeneration(0),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                }, true);
+
                                 break;
 
                             case 2:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        Expression.Convert(localParam_instance, mtdCopy.GetParameters()[0].ParameterType),
-                                        LocalCaseGeneration(0),
-                                        LocalCaseGeneration(1),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                    LocalCaseGeneration(1),
+                                }, true);
+
                                 break;
 
                             case 3:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        Expression.Convert(localParam_instance, mtdCopy.GetParameters()[0].ParameterType),
-                                        LocalCaseGeneration(0),
-                                        LocalCaseGeneration(1),
-                                        LocalCaseGeneration(2),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                    LocalCaseGeneration(1),
+                                    LocalCaseGeneration(2),
+                                }, true);
+
                                 break;
 
                             case 4:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        Expression.Convert(localParam_instance, mtdCopy.GetParameters()[0].ParameterType),
-                                        LocalCaseGeneration(0),
-                                        LocalCaseGeneration(1),
-                                        LocalCaseGeneration(2),
-                                        LocalCaseGeneration(3),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                    LocalCaseGeneration(1),
+                                    LocalCaseGeneration(2),
+                                    LocalCaseGeneration(3),
+                                }, true);
+
                                 break;
 
                             case 5:
-                                localCases.Add(Expression.SwitchCase(
-                                    Expression.Call(
-                                        mtdCopy,
-                                        Expression.Convert(localParam_instance, mtdCopy.GetParameters()[0].ParameterType),
-                                        LocalCaseGeneration(0),
-                                        LocalCaseGeneration(1),
-                                        LocalCaseGeneration(2),
-                                        LocalCaseGeneration(3),
-                                        LocalCaseGeneration(4),
-                                        localParam_caller
-                                    ), mtdPathConst));
+                                AddLocalCase(new Expression[]
+                                {
+                                    LocalCaseGeneration(0),
+                                    LocalCaseGeneration(1),
+                                    LocalCaseGeneration(2),
+                                    LocalCaseGeneration(3),
+                                    LocalCaseGeneration(4),
+                                }, true);
+
                                 break;
 
                             default:
@@ -1488,8 +732,8 @@ namespace GameCore
             var localBody = Expression.Switch(localParam_id, localNotFoundError, localCases.ToArray());
 
             //SubStep 3: 编译
-            Remote = Expression.Lambda<Func<string, NetworkConnection, ByteWriter, Entity, bool>>(remoteBody, "Remote_Lambda", new ParameterExpression[] { remoteParam_id, remoteParam_caller, remoteParam_writer, remoteParam_instance }).Compile();
-            LocalMethod = Expression.Lambda<Action<string, NetworkConnection, ByteWriter, Entity>>(localBody, "LocalMethod_Lambda", new ParameterExpression[] { localParam_id, localParam_caller, localParam_parameters, localParam_instance }).Compile();
+            Remote = Expression.Lambda<Func<string, NetworkConnection, byte[][], Entity, bool>>(remoteBody, "Remote_Lambda", new ParameterExpression[] { remoteParam_id, remoteParam_caller, remoteParam_writer, remoteParam_instance }).Compile();
+            LocalMethod = Expression.Lambda<Action<string, NetworkConnection, byte[][], Entity>>(localBody, "LocalMethod_Lambda", new ParameterExpression[] { localParam_id, localParam_caller, localParam_parameters, localParam_instance }).Compile();
 
 
 
@@ -1497,16 +741,9 @@ namespace GameCore
             SyncPacker.Init();
         }
 
-        public static void LocalCall(string mtdPath, NetworkConnection caller, ByteWriter parameters, uint instance)
+        public static void LocalCall(string mtdPath, NetworkConnection caller, byte[][] parameters, uint instance)
         {
-            try
-            {
-                LocalMethod(mtdPath, caller, parameters, Entity.GetEntityByNetId(instance));
-            }
-            catch (Exception ex)
-            {
-                throw new($"\n调用本地方法 {mtdPath} 时发生了异常!!!\n具体异常如下, 其可以是字节转换器的问题, 也可以是被调用的本地方法本身诱发的异常!\n异常将被抛出以防止破坏客户端和服务器!\n{ex}");
-            }
+            LocalMethod(mtdPath, caller, parameters, Entity.GetEntityByNetId(instance));
         }
     }
 
