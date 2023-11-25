@@ -1336,29 +1336,6 @@ namespace GameCore
         [ConnectionRpc]
         void ConnectionGenerateSandbox(Sandbox sandbox, bool isFirstGeneration, NetworkConnection caller)
         {
-            MethodAgent.TryRun(() =>
-            {
-                Debug.Log($"收到服务器回调, 正在生成已有沙盒 {sandbox.index}");
-
-                if (isFirstGeneration)
-                {
-                    //防止因跑出沙盒导致重复生成
-                    transform.position = Sandbox.GetMiddle(sandbox.index);
-                }
-
-                GM.instance.GenerateExistingSandbox(sandbox, sb =>
-                {
-                    //将玩家的位置恢复到出生点
-                    if (isFirstGeneration)
-                    {
-                        transform.position = sb.spawnPoint.To2();
-                        generatedFirstSandbox = true;
-                    }
-                    //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
-                }, null, (ushort)(GFiles.settings.performanceLevel * (isFirstGeneration ? 3 : 0.8f)));
-
-                askingForGeneratingSandbox = false;
-            }, true);
         }
 
         #endregion
