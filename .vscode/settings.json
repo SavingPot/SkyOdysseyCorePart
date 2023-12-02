@@ -60,5 +60,10 @@
         "inital",
         "rwstopwatch"
     ],
-    "dotnet.preferCSharpExtension": true
+    "dotnet.preferCSharpExtension": true,
+    "Codegeex.Comment.LanguagePreference": "中文",
+    "Codegeex.Explanation.LanguagePreference": "中文",
+    "Codegeex.SidebarUI.LanguagePreference": "中文",
+    "Codegeex.CandidateNum": "2 (中)",
+    "Codegeex.CompletionDelay": 0.5
 }

@@ -1318,7 +1318,12 @@ namespace GameCore
                                     {
                                         //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
                                         if (!isLocalPlayer)
-                                            GM.instance.GenerateExistingSandbox(sb, sbOut => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller), sbOut => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller), (ushort)(GFiles.settings.performanceLevel / 2));
+                                            GM.instance.GenerateExistingSandbox(
+                                                sb,
+                                                () => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller),
+                                                () => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller),
+                                                (ushort)(GFiles.settings.performanceLevel / 2)
+                                            );
                                         //* 如果是服务器发送的申请: 服务器生成
                                         else
                                             ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller);
@@ -1336,6 +1341,29 @@ namespace GameCore
         [ConnectionRpc]
         void ConnectionGenerateSandbox(Sandbox sandbox, bool isFirstGeneration, NetworkConnection caller)
         {
+            MethodAgent.TryRun(() =>
+            {
+                Debug.Log($"收到服务器回调, 正在生成已有沙盒 {sandbox.index}");
+
+                if (isFirstGeneration)
+                {
+                    //防止因跑出沙盒导致重复生成
+                    transform.position = Sandbox.GetMiddle(sandbox.index);
+                }
+
+                GM.instance.GenerateExistingSandbox(sandbox, () =>
+                {
+                    //将玩家的位置恢复到出生点
+                    if (isFirstGeneration)
+                    {
+                        transform.position = sandbox.spawnPoint.To2();
+                        generatedFirstSandbox = true;
+                    }
+                    //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
+                }, null, (ushort)(GFiles.settings.performanceLevel * (isFirstGeneration ? 3 : 0.8f)));
+
+                askingForGeneratingSandbox = false;
+            }, true);
         }
 
         #endregion
@@ -1423,7 +1451,7 @@ namespace GameCore
             await UniTask.WaitWhile(() => completedTasks == null);
 
             pui = new(this);
-
+            
             ServerGenerateSandbox(sandboxIndex, true);
         }
 

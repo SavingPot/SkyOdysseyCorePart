@@ -10,6 +10,11 @@ namespace GameCore
         public byte[][] parameters;
         public uint instance;
 
+        public override readonly string ToString()
+        {
+            return $"MethodPath: {methodPath}\nCallType: {callType}\nParameters: {parameters?.Length}\nInstance: {instance}";
+        }
+
         public NMRpc(string methodPath, RpcType type)
         {
             this.methodPath = methodPath;

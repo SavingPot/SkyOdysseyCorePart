@@ -681,12 +681,12 @@ namespace GameCore
                 Debug.LogWarning($"沙盒 {index} 不存在");
         }
 
-        public void GenerateExistingSandbox(Sandbox sandbox, Action<Sandbox> afterGenerating = null, Action<Sandbox> ifGenerated = null, ushort waitScale = 80)
+        public void GenerateExistingSandbox(Sandbox sandbox, Action afterGenerating = null, Action ifGenerated = null, ushort waitScale = 80)
         {
             StartCoroutine(IEGenerateExistingSandbox(sandbox, afterGenerating, ifGenerated, waitScale));
         }
 
-        private IEnumerator IEGenerateExistingSandbox(Sandbox sandbox, Action<Sandbox> afterGenerating, Action<Sandbox> ifGenerated, ushort waitScale)
+        private IEnumerator IEGenerateExistingSandbox(Sandbox sandbox, Action afterGenerating, Action ifGenerated, ushort waitScale)
         {
             /* -------------------------------------------------------------------------- */
             /*                                   检查生成状况                                   */
@@ -694,7 +694,7 @@ namespace GameCore
             if (generatedExistingSandboxes.Any(p => p.index == sandbox.index && p.generatedAlready))
             {
                 Debug.LogWarning($"沙盒 {sandbox.index} 已生成, 请勿频繁生成");
-                ifGenerated?.Invoke(sandbox);
+                ifGenerated?.Invoke();
                 yield break;
             }
 
@@ -753,7 +753,7 @@ namespace GameCore
             /*                                    完成后事项                                   */
             /* -------------------------------------------------------------------------- */
             generatingExistingSandbox = false;
-            afterGenerating?.Invoke(sandbox);
+            afterGenerating?.Invoke();
             generatedExistingSandboxes.Add(sandbox);
             ////Performance.CollectMemory();
             GameCallbacks.CallAfterGeneratingExistingSandbox(sandbox);

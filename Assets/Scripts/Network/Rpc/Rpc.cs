@@ -135,12 +135,12 @@ namespace GameCore
             return false;
         }
 
-        public static bool _StaticWrite0(NetworkConnection caller, MethodBase __originalMethod)
+        public static bool _StaticRemote0(NetworkConnection caller, MethodBase __originalMethod)
         {
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, null, null);
         }
 
-        public static bool _StaticWrite1(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
+        public static bool _StaticRemote1(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[1][]
             {
@@ -150,7 +150,7 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
-        public static bool _StaticWrite2(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
+        public static bool _StaticRemote2(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[2][]
             {
@@ -161,7 +161,7 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
-        public static bool _StaticWrite3(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
+        public static bool _StaticRemote3(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[3][]
             {
@@ -173,7 +173,7 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
-        public static bool _StaticWrite4(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
+        public static bool _StaticRemote4(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[4][]
             {
@@ -186,7 +186,7 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
-        public static bool _StaticWrite5(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
+        public static bool _StaticRemote5(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[5][]
             {
@@ -200,12 +200,12 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
         }
 
-        public static bool _InstanceWrite0(NetworkConnection caller, Entity __instance, MethodBase __originalMethod)
+        public static bool _InstanceRemote0(NetworkConnection caller, Entity __instance, MethodBase __originalMethod)
         {
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, null, __instance);
         }
 
-        public static bool _InstanceWrite1(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
+        public static bool _InstanceRemote1(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[1][]
             {
@@ -215,8 +215,14 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
-        public static bool _InstanceWrite2(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
+        public static bool _InstanceRemote2(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
+            if ($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}" == "GameCore.Player.ConnectionGenerateSandbox")
+            {
+                Debug.Log(__args[0] == null);
+                Debug.Log(__args[0].GetType());
+                Debug.Log(ObjectToBytes(__args[0]).Length);
+            }
             byte[][] parameters = new byte[2][]
             {
                 ObjectToBytes(__args[0]),
@@ -226,7 +232,7 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
-        public static bool _InstanceWrite3(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
+        public static bool _InstanceRemote3(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[3][]
             {
@@ -238,7 +244,7 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
-        public static bool _InstanceWrite4(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
+        public static bool _InstanceRemote4(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[4][]
             {
@@ -251,7 +257,7 @@ namespace GameCore
             return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
         }
 
-        public static bool _InstanceWrite5(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
+        public static bool _InstanceRemote5(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
             byte[][] parameters = new byte[5][]
             {
@@ -289,6 +295,7 @@ namespace GameCore
 
             if (data == null)
                 Debug.Log("null");
+
             using MemoryStream ms = new(data);
             return binaryFormatter.Deserialize(ms);
         }
@@ -314,6 +321,7 @@ namespace GameCore
 
         public static void Init()
         {
+            //TODO: 有一个重要的问题: 若是一个方法有多个重载, 很可能会出现问题
             /* -------------------------------------------------------------------------- */
             /*                              //Step 1: 定义反射参数
             /* -------------------------------------------------------------------------- */
@@ -325,19 +333,19 @@ namespace GameCore
             //Substep2: 获取定义的方法
             var _RemoteCall = typeof(Rpc).GetMethod($"{nameof(Rpc._RemoteCall)}");
 
-            var _StaticWrite0 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticWrite0)}");
-            var _StaticWrite1 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticWrite1)}");
-            var _StaticWrite2 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticWrite2)}");
-            var _StaticWrite3 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticWrite3)}");
-            var _StaticWrite4 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticWrite4)}");
-            var _StaticWrite5 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticWrite5)}");
+            var _StaticRemote0 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticRemote0)}");
+            var _StaticRemote1 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticRemote1)}");
+            var _StaticRemote2 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticRemote2)}");
+            var _StaticRemote3 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticRemote3)}");
+            var _StaticRemote4 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticRemote4)}");
+            var _StaticRemote5 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticRemote5)}");
 
-            var _InstanceWrite0 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceWrite0)}");
-            var _InstanceWrite1 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceWrite1)}");
-            var _InstanceWrite2 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceWrite2)}");
-            var _InstanceWrite3 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceWrite3)}");
-            var _InstanceWrite4 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceWrite4)}");
-            var _InstanceWrite5 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceWrite5)}");
+            var _InstanceRemote0 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceRemote0)}");
+            var _InstanceRemote1 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceRemote1)}");
+            var _InstanceRemote2 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceRemote2)}");
+            var _InstanceRemote3 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceRemote3)}");
+            var _InstanceRemote4 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceRemote4)}");
+            var _InstanceRemote5 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceRemote5)}");
 
 
             /* -------------------------------------------------------------------------- */
@@ -525,12 +533,12 @@ namespace GameCore
                     {
                         PatchMethod(trueParameters.Count switch
                         {
-                            0 => _StaticWrite0,
-                            1 => _StaticWrite1,
-                            2 => _StaticWrite2,
-                            3 => _StaticWrite3,
-                            4 => _StaticWrite4,
-                            5 => _StaticWrite5,
+                            0 => _StaticRemote0,
+                            1 => _StaticRemote1,
+                            2 => _StaticRemote2,
+                            3 => _StaticRemote3,
+                            4 => _StaticRemote4,
+                            5 => _StaticRemote5,
                             _ => null
                         });
 
@@ -611,12 +619,12 @@ namespace GameCore
                     {
                         PatchMethod(trueParameters.Count switch
                         {
-                            0 => _InstanceWrite0,
-                            1 => _InstanceWrite1,
-                            2 => _InstanceWrite2,
-                            3 => _InstanceWrite3,
-                            4 => _InstanceWrite4,
-                            5 => _InstanceWrite5,
+                            0 => _InstanceRemote0,
+                            1 => _InstanceRemote1,
+                            2 => _InstanceRemote2,
+                            3 => _InstanceRemote3,
+                            4 => _InstanceRemote4,
+                            5 => _InstanceRemote5,
                             _ => null
                         });
 
@@ -743,6 +751,15 @@ namespace GameCore
 
         public static void LocalCall(string mtdPath, NetworkConnection caller, byte[][] parameters, uint instance)
         {
+            if (mtdPath == "GameCore.Player.ConnectionGenerateSandbox")
+            {
+                var p = parameters[0];
+                Debug.Log(parameters == null);
+                Debug.Log(p == null);
+                Debug.Log(p.Length);
+                Debug.Log((Sandbox)BytesToObject(parameters[0]));
+                Debug.Log((bool)BytesToObject(parameters[1]));
+            }
             LocalMethod(mtdPath, caller, parameters, Entity.GetEntityByNetId(instance));
         }
     }

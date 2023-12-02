@@ -149,6 +149,14 @@ namespace GameCore.High
 
             static void ClientGet_TypeWithNetCaller_Method(NMRpc m)
             {
+                if (m.methodPath == "GameCore.Player.ConnectionGenerateSandbox")
+                {
+                    Debug.Log(m.ToString());
+                    Debug.Log(m.parameters == null);
+                    Debug.Log(m.parameters[0] == null);
+                    Debug.Log(m.parameters[0].ToString());
+                    Debug.Log(m.parameters[0].Length);
+                }
                 //无论什么 CallType, 只要服务器发送了就执行
                 Rpc.LocalCall(m.methodPath, Client.connection, m.parameters, m.instance);
             }
