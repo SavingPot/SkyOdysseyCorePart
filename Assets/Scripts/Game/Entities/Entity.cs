@@ -713,43 +713,43 @@ namespace GameCore
         [ServerRpc]
         void ServerTakeDamage(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
         {
-                if (isDead || isHurting)
-                    return;
+            if (isDead || isHurting)
+                return;
 
-                damage = Mathf.Floor(damage);
+            damage = Mathf.Floor(damage);
 
-                //扣血刷新无敌时间
-                health -= damage;
-                this.invincibleTime = invincibleTime;
+            //扣血刷新无敌时间
+            health -= damage;
+            this.invincibleTime = invincibleTime;
 
-                OnGetHurtServer();
+            OnGetHurtServer();
 
-                if (!isPlayer)
-                    rb.velocity = impactForce;
+            if (!isPlayer)
+                rb.velocity = impactForce;
 
-                Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}, 新血量为 {health}");
+            Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}, 新血量为 {health}");
 
-                ClientTakeDamage(damage, invincibleTime, damageOriginPos, impactForce, caller);
+            ClientTakeDamage(damage, invincibleTime, damageOriginPos, impactForce, caller);
         }
 
         [ClientRpc]
         void ClientTakeDamage(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
         {
-                if (!Server.isServer)
-                    Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}");
+            if (!Server.isServer)
+                Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}");
 
-                //播放受伤音频
-                if (!takeDamageAudioId.IsNullOrWhiteSpace())
-                    GAudio.Play(takeDamageAudioId);
+            //播放受伤音频
+            if (!takeDamageAudioId.IsNullOrWhiteSpace())
+                GAudio.Play(takeDamageAudioId);
 
-                OnGetHurtClient();
+            OnGetHurtClient();
 
-                //应用击退效果
-                if (isPlayer && isOwned)
-                    rb.velocity = impactForce;
+            //应用击退效果
+            if (isPlayer && isOwned)
+                rb.velocity = impactForce;
 
-                GM.instance.bloodParticlePool.Get(this);
-                GM.instance.damageTextPool.Get(this,damage);
+            GM.instance.bloodParticlePool.Get(this);
+            GM.instance.damageTextPool.Get(this, damage);
         }
 
 
@@ -758,40 +758,37 @@ namespace GameCore
         {
             //? 防止反复死亡
             if (this != null && !isDead)
-                ServerDeath(this, null);
+                ServerDeath(null);
         }
 
         [ServerRpc]
-        protected static void ServerDeath(Entity entity, NetworkConnection caller)
+        protected void ServerDeath(NetworkConnection caller)
         {
             //防止一生成就死亡时导致报错
-            if (entity.registeredSyncVars)
+            if (registeredSyncVars)
             {
-                if (entity.isDead)
+                if (isDead)
                 {
-                    Debug.LogError($"实体 {entity.gameObject.name} 已死亡, 请勿反复执行");
+                    Debug.LogError($"实体 {gameObject.name} 已死亡, 请勿反复执行");
                     return;
                 }
 
-                entity.isDead = true;
+                isDead = true;
             }
 
             //Debug.Log($"服务器: 实体 {name} 已死亡");
 
-            ClientDeath(entity, caller);
-            entity.OnDeathServer();
+            ClientDeath(caller);
+            OnDeathServer();
         }
 
         [ClientRpc]
-        protected static void ClientDeath(Entity entity, NetworkConnection caller)
+        protected void ClientDeath(NetworkConnection caller)
         {
             //Debug.Log($"客户端: 实体 {name} 已死亡");
 
             //? 不要使用 RpcDeath 来回收资源等, 资源回收应该放在 OnDestroy 中, 因为服务器可能会在调用 RpcDeath 前删除物体, ClientDeath 是用来显示死亡动效的
-            if (entity)
-            {
-                entity.OnDeathClient();
-            }
+            OnDeathClient();
         }
         #endregion
 
@@ -799,33 +796,33 @@ namespace GameCore
         #region 重生
         public void Reborn(float newHealth, Vector2? newPos)
         {
-            ServerReborn(this, newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
+            ServerReborn(newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
         }
 
         [ServerRpc]
-        public static void ServerReborn(Entity param0, float param1, Vector2 param2, NetworkConnection caller)
+        public void ServerReborn(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
-            param0.health = param1;
-            param0.isDead = false;
+            health = newHealth;
+            isDead = false;
 
-            param0.OnRebornServer();
+            OnRebornServer();
 
-            if (param2.x == float.PositiveInfinity && param2.y == float.NegativeInfinity)
-                param2 = GFiles.world.GetSandbox(param0.sandboxIndex)?.spawnPoint ?? Vector2Int.zero;
+            if (newPos.x == float.PositiveInfinity && newPos.y == float.NegativeInfinity)
+                newPos = GFiles.world.GetSandbox(sandboxIndex)?.spawnPoint ?? Vector2Int.zero;
 
-            if (!param0.isPlayer)
-                param0.transform.position = (Vector2)param2;
+            if (!isPlayer)
+                transform.position = newPos;
 
-            ClientReborn(param0, param1, param2, caller);
+            ClientReborn(newHealth, newPos, caller);
         }
 
         [ClientRpc]
-        public static void ClientReborn(Entity param0, float param1, Vector2 param2, NetworkConnection caller)
+        public void ClientReborn(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
-            param0.OnRebornClient();
+            OnRebornClient();
 
-            if (param0.isPlayer)
-                param0.transform.position = (Vector2)param2;
+            if (isPlayer)
+                transform.position = newPos;
         }
         #endregion
 

@@ -818,19 +818,19 @@ namespace GameCore
             }
         }
 
-        public static readonly Dictionary<string, (Action, Action)> backpackSidebarTable = new();
+        public static readonly Dictionary<string, (Action Appear, Action Disappear)> backpackSidebarTable = new();
         public string usingBackpackSidebar = string.Empty;
 
         public void SetBackpackSidebar(string id)
         {
-            if (backpackSidebarTable.TryGetValue(usingBackpackSidebar, out (Action, Action) value))
+            if (backpackSidebarTable.TryGetValue(usingBackpackSidebar, out var value))
             {
-                value.Item2();
+                value.Disappear();
             }
 
             if (backpackSidebarTable.TryGetValue(id, out value))
             {
-                value.Item1();
+                value.Appear();
                 usingBackpackSidebar = id;
                 return;
             }
