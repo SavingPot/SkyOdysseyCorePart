@@ -377,8 +377,12 @@ namespace GameCore
         /*                                     动态方法                                    */
         /* -------------------------------------------------------------------------- */
         #region Unity 回调
+        [ServerRpc] static void Mtd1(Creature c, NetworkConnection caller) { Debug.Log("Mtd1"); }
+        [ServerRpc] static void Mtd2(Player c, NetworkConnection caller) { Debug.Log("Mtd2"); }
         protected override void Start()
         {
+            Mtd2(this, null);
+            Mtd1(this, null);
             data = null;
             base.Start();
 
@@ -426,7 +430,7 @@ namespace GameCore
                 });
             }
 
-            WhenCorrectedSyncVars(() =>
+            WhenRegisteredSyncVars(() =>
             {
                 MethodAgent.TryRun(() =>
                 {
@@ -531,7 +535,7 @@ namespace GameCore
 
         protected override void Update()
         {
-            if (correctedSyncVars && !isHurting)
+            if (registeredSyncVars && !isHurting)
                 DeathColor();
 
             base.Update();
@@ -555,7 +559,7 @@ namespace GameCore
             base.ServerUpdate();
 
             //如果需要救的玩家死了那么将 savingPlayer 设为零值
-            if (correctedSyncVars && !isDead && playerSavingMe)
+            if (registeredSyncVars && !isDead && playerSavingMe)
             {
                 playerSavingMe = null;
             }
@@ -653,7 +657,7 @@ namespace GameCore
 
         public static Action<Player> GravitySet = caller =>
         {
-            if (!caller.correctedSyncVars)
+            if (!caller.registeredSyncVars)
             {
                 caller.gravity = 0;
                 return;
@@ -680,7 +684,7 @@ namespace GameCore
             GravitySet(this);
             rb.gravityScale = gravity;
 
-            if (correctedSyncVars)
+            if (registeredSyncVars)
             {
                 if (!isDead)
                 {
@@ -815,7 +819,7 @@ namespace GameCore
         }
 
         public static readonly Dictionary<string, (Action, Action)> backpackSidebarTable = new();
-        public string usingBackpackSidebar;
+        public string usingBackpackSidebar = string.Empty;
 
         public void SetBackpackSidebar(string id)
         {
@@ -1451,7 +1455,7 @@ namespace GameCore
             await UniTask.WaitWhile(() => completedTasks == null);
 
             pui = new(this);
-            
+
             ServerGenerateSandbox(sandboxIndex, true);
         }
 
@@ -1590,7 +1594,7 @@ namespace GameCore
         #region 移动和转向
         public override void Movement()
         {
-            if (!correctedSyncVars)
+            if (!registeredSyncVars)
                 return;
 
             float move;
@@ -1628,7 +1632,7 @@ namespace GameCore
 
         public Action<Player> AutoSetPlayerOrientation = (p) =>
         {
-            if (!p.isLocalPlayer || !p.correctedSyncVars)
+            if (!p.isLocalPlayer || !p.registeredSyncVars)
                 return;
 
             ////诸如 && transform.localScale.x.Sign() == 1 之类的检测是为了减缓服务器压力
@@ -1809,7 +1813,7 @@ namespace GameCore
         #region 救援
         private void SavePlayer()
         {
-            if (!correctedSyncVars || !savingPlayer)
+            if (!registeredSyncVars || !savingPlayer)
                 return;
 
             if (savingPlayer.playerSavingMe != this)

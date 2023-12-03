@@ -20,7 +20,7 @@ namespace GameCore
 
             hurtable = false;
 
-            WhenCorrectedSyncVars(() =>
+            WhenRegisteredSyncVars(() =>
             {
                 try
                 {
@@ -42,7 +42,7 @@ namespace GameCore
         {
             base.Update();
 
-            if (!correctedSyncVars || isDead)
+            if (!registeredSyncVars || isDead)
                 return;
 
             if (isServer)

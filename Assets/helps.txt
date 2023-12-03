@@ -109,6 +109,8 @@ https://blog.csdn.net/qq_38613453/article/details/103284385
 
 SyncVar 的 SyncInterval (syncInterval) 一定要设置为 0, 否则千千万bug找上门！ (尤其体现于初始化时玩家属性时)
 初始化和CD等应在 if (isServer) 语句中修改值
+
+Mirror不支持传输byte[][]
 ------------------
 
 ----- Json.Net -----

@@ -193,15 +193,6 @@ namespace GameCore
             return vars.ContainsKey(varId);
         }
 
-        public static bool IsValueCorrect(string id)
-        {
-            if (id.IsNullOrEmpty())
-                return false;
-
-            //TODO: May cause error
-            return vars.TryGetValue(id, out var var) && var.value != null;
-        }
-
         //TODO: string varId -> uint var;
         public static bool SetValue(string varId, byte[] value)
         {

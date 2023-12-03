@@ -445,7 +445,7 @@ namespace GameCore
 
         protected virtual void Start()
         {
-            WhenCorrectedSyncVars(() => WaitOneFrame(() =>
+            WhenRegisteredSyncVars(() => WaitOneFrame(() =>
             {
                 if (data != null)
                 {
@@ -471,7 +471,7 @@ namespace GameCore
 
         protected virtual void ServerUpdate()
         {
-            if (!isPlayer && correctedSyncVars)
+            if (!isPlayer && registeredSyncVars)
             {
                 sandboxIndex = PosConvert.WorldPosToSandboxIndex(transform.position);
             }
@@ -517,7 +517,6 @@ namespace GameCore
         }
 
         [BoxGroup("变量ID"), LabelText("注册了网络变量")] public bool registeredSyncVars;
-        [BoxGroup("变量ID"), LabelText("校正了网络变量")] public bool correctedSyncVars;
 
 
 
@@ -606,21 +605,6 @@ namespace GameCore
             registeredSyncVars = true;
 
 
-
-            //等待数值修正
-            foreach (var pair in syncVarTemps)
-            {
-                string vn = SyncPacker.GetInstanceID(sb, pair.propertyPath, varInstanceId);
-
-                //等待数值正确
-                waitingCorrectingVar = vn;
-                yield return new WaitUntil(() => SyncPacker.IsValueCorrect(vn));
-            }
-
-            waitingCorrectingVar = string.Empty;
-            correctedSyncVars = true;
-
-
             //准备好了
             OnReady();
         }
@@ -676,11 +660,6 @@ namespace GameCore
             StartCoroutine(IEWaitForCondition(() => !registeredSyncVars, action));
         }
 
-        public void WhenCorrectedSyncVars(Action action)
-        {
-            StartCoroutine(IEWaitForCondition(() => !correctedSyncVars, action));
-        }
-
         public void WaitOneFrame(Action action)
         {
             StartCoroutine(IEWaitOneFrame(action));
@@ -728,55 +707,49 @@ namespace GameCore
         public void TakeDamage(float hurtHealth, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
         {
             if (hurtable)
-                ServerTakeDamage(this, hurtHealth, invincibleTime, hurtPos, impactForce, null);
+                ServerTakeDamage(hurtHealth, invincibleTime, hurtPos, impactForce, null);
         }
 
         [ServerRpc]
-        static void ServerTakeDamage(Entity param0, float param1, float param2, Vector2 param3, Vector2 param4, NetworkConnection caller)
+        void ServerTakeDamage(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
         {
-            if (param0)
-            {
-                if (param0.isDead || param0.isHurting)
+                if (isDead || isHurting)
                     return;
 
-                param1 = Mathf.Floor(param1);
+                damage = Mathf.Floor(damage);
 
                 //扣血刷新无敌时间
-                param0.health -= param1;
-                param0.invincibleTime = param2;
+                health -= damage;
+                this.invincibleTime = invincibleTime;
 
-                param0.OnGetHurtServer();
+                OnGetHurtServer();
 
-                if (!param0.isPlayer)
-                    param0.rb.velocity = param4;
+                if (!isPlayer)
+                    rb.velocity = impactForce;
 
-                Debug.Log($"{param0.transform.GetPath()} 收到伤害, 值为 {param1}, 新血量为 {param0.health}");
+                Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}, 新血量为 {health}");
 
-                ClientTakeDamage(param0, param1, param2, param3, param4, caller);
-            }
+                ClientTakeDamage(damage, invincibleTime, damageOriginPos, impactForce, caller);
         }
 
         [ClientRpc]
-        static void ClientTakeDamage(Entity param0, float param1, float param2, Vector2 param3, Vector2 param4, NetworkConnection caller)
+        void ClientTakeDamage(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
         {
-            if (param0)
-            {
                 if (!Server.isServer)
-                    Debug.Log($"{param0.transform.GetPath()} 收到伤害, 值为 {param1}");
+                    Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}");
 
                 //播放受伤音频
-                if (!param0.takeDamageAudioId.IsNullOrWhiteSpace())
-                    GAudio.Play(param0.takeDamageAudioId);
+                if (!takeDamageAudioId.IsNullOrWhiteSpace())
+                    GAudio.Play(takeDamageAudioId);
 
-                param0.OnGetHurtClient();
+                OnGetHurtClient();
 
                 //应用击退效果
-                if (param0.isPlayer && param0.isOwned)
-                    param0.rb.velocity = param4;
+                if (isPlayer && isOwned)
+                    rb.velocity = impactForce;
 
-                GM.instance.bloodParticlePool.Get(param0);
-                GM.instance.damageTextPool.Get(param0, param1);
-            }
+                GM.instance.bloodParticlePool.Get(this);
+                GM.instance.damageTextPool.Get(this,damage);
         }
 
 
@@ -1018,9 +991,7 @@ namespace GameCore
                             Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueAtt.defaultValue.GetType().FullName}");
                         else
                         {
-                            byte[] temp = null;
-
-                            temp = Rpc.ObjectToBytes(defaultValueAtt.defaultValue);
+                            byte[] temp = Rpc.ObjectToBytes(defaultValueAtt.defaultValue);
 
                             defaultValue = temp;
                             includeDefaultValue = true;

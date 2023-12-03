@@ -25,7 +25,7 @@ namespace GameCore
     {
         public static void EachType(Action<Assembly, Type> action)
         {
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -38,7 +38,7 @@ namespace GameCore
         {
             BindingFlags trueFlags = flags ?? ReflectionTools.BindingFlags_All;
 
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -54,7 +54,7 @@ namespace GameCore
         {
             BindingFlags trueFlags = flags ?? ReflectionTools.BindingFlags_All;
 
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -68,7 +68,7 @@ namespace GameCore
 
         public static void EachUserType(Action<Assembly, Type> action)
         {
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -85,7 +85,7 @@ namespace GameCore
         {
             BindingFlags trueFlags = flags ?? ReflectionTools.BindingFlags_All;
 
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -105,7 +105,7 @@ namespace GameCore
         {
             BindingFlags trueFlags = flags ?? ReflectionTools.BindingFlags_All;
 
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -127,7 +127,7 @@ namespace GameCore
         public static MethodInfo SearchMethod(string targetMethod)
         {
             //遍历每个程序集中的方法
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -148,7 +148,7 @@ namespace GameCore
         public static MethodInfo SearchUserMethod(string targetMethod)
         {
             //遍历每个程序集中的方法
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -175,7 +175,7 @@ namespace GameCore
         public static Type SearchType(string targetType)
         {
             //遍历每个程序集中的方法
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {
@@ -192,7 +192,7 @@ namespace GameCore
         public static Type SearchUserType(string targetType)
         {
             //遍历每个程序集中的方法
-            foreach (var ass in ModFactory.assemblies)
+            foreach (var ass in assemblies)
             {
                 foreach (var type in ass.GetTypes())
                 {

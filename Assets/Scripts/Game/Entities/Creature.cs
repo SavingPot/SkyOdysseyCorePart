@@ -331,7 +331,7 @@ namespace GameCore
         {
             base.Update();
 
-            if (correctedSyncVars)
+            if (registeredSyncVars)
                 RefreshHurtEffect();
 
             //修正位置
@@ -368,21 +368,21 @@ namespace GameCore
 
         public void OnStartMovement()
         {
-            ServerOnStartMovement(this, null);
+            ServerOnStartMovement(null);
         }
 
         [ServerRpc]
-        protected static void ServerOnStartMovement(Creature creature, NetworkConnection caller)
+        protected void ServerOnStartMovement(NetworkConnection caller)
         {
-            Debug.Log($"Started!: {creature.isMoving}");
-            creature.isMoving = true;
-            ConnectionOnStartMovement(creature, caller);
+            Debug.Log($"Started!: {isMoving}");
+            isMoving = true;
+            ConnectionOnStartMovement(caller);
         }
 
         [ConnectionRpc]
-        protected static void ConnectionOnStartMovement(Creature creature, NetworkConnection caller)
+        protected void ConnectionOnStartMovement(NetworkConnection caller)
         {
-            creature.OnStartMovementAction();
+            OnStartMovementAction();
         }
 
         public Action OnStartMovementAction = () => { Debug.Log("STARTED"); };
@@ -397,21 +397,21 @@ namespace GameCore
 
         public void OnStopMovement()
         {
-            ServerOnStopMovement(this, null);
+            ServerOnStopMovement(null);
         }
 
         [ServerRpc]
-        protected static void ServerOnStopMovement(Creature creature, NetworkConnection caller)
+        protected void ServerOnStopMovement(NetworkConnection caller)
         {
-            Debug.Log($"Stopped!: {creature.isMoving}");
-            creature.isMoving = false;
-            ClientOnStopMovement(creature, caller);
+            Debug.Log($"Stopped!: {isMoving}");
+            isMoving = false;
+            ClientOnStopMovement(caller);
         }
 
         [ConnectionRpc]
-        protected static void ClientOnStopMovement(Creature creature, NetworkConnection caller)
+        protected void ClientOnStopMovement(NetworkConnection caller)
         {
-            creature.OnStopMovementAction();
+            OnStopMovementAction();
         }
 
         public Action OnStopMovementAction = () => { };
@@ -422,7 +422,7 @@ namespace GameCore
         {
             base.FixedUpdate();
 
-            if (correctedSyncVars && CanMove(this))
+            if (registeredSyncVars && CanMove(this))
                 Movement();
         }
 
@@ -433,7 +433,7 @@ namespace GameCore
             if (!isPlayer)
             {
                 //等一帧再设置, 否则会被 Entity 覆盖
-                WhenCorrectedSyncVars(() => WaitOneFrame(() =>
+                WhenRegisteredSyncVars(() => WaitOneFrame(() =>
                 {
                     moveSpeed = data.speed;
                 }));

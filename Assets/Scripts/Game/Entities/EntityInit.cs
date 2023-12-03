@@ -41,6 +41,7 @@ namespace GameCore
             {
                 //TODO: 修改代码, 使其同时适配 Player 和 普通实体
                 //TODO: Also change the Drop? Have a look. so that we can combine the logics all into EntityInit
+                //TODO: 使用 EntityInit 而非 Entity 来注册和销毁同步变量
                 data ??= ModFactory.CompareEntity(generationId);
 
                 entity = generationId == EntityID.Player ? gameObject.AddComponent<Player>() : (Entity)gameObject.AddComponent(data.behaviourType);
@@ -49,7 +50,7 @@ namespace GameCore
                 entity.data = data;
 
                 if (health != null)
-                    entity.WhenCorrectedSyncVars(() =>
+                    entity.WhenRegisteredSyncVars(() =>
                     {
                         entity.StartCoroutine(SetEntityHealth(entity, (float)health));
                     });

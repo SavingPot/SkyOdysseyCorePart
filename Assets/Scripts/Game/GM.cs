@@ -392,7 +392,7 @@ namespace GameCore
 
             async void InternalAfterGeneratingExistingSandbox(Sandbox sandbox)
             {
-                await UniTask.WaitUntil(() => Player.local && Player.local.correctedSyncVars);
+                await UniTask.WaitUntil(() => Player.local && Player.local.registeredSyncVars);
 
                 if (sandbox.index == Player.local.sandboxIndex)
                 {
@@ -458,7 +458,7 @@ namespace GameCore
 
                 async void InternalAfterGeneratingExistingSandbox(Sandbox sandbox)
                 {
-                    await UniTask.WaitUntil(() => Player.local && Player.local.correctedSyncVars);
+                    await UniTask.WaitUntil(() => Player.local && Player.local.registeredSyncVars);
 
                     if (sandbox.index == Player.local.sandboxIndex)
                     {

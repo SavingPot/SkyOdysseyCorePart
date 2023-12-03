@@ -133,7 +133,7 @@ namespace GameCore.High
                 {
                     //在服务器上调用: 收到了客户端的调用请求: 直接调用
                     case RpcType.ServerRpc:
-                        Rpc.LocalCall(m.methodPath, conn, m.parameters, m.instance);
+                        Rpc.LocalCall(m.methodPath, conn, m.parameter0, m.parameter1, m.parameter2, m.parameter3, m.parameter4, m.instance);
                         break;
 
                     //发送给全部客户端执行: 收到了客户端的广播请求: 把消息广播给所有客户端 
@@ -152,13 +152,9 @@ namespace GameCore.High
                 if (m.methodPath == "GameCore.Player.ConnectionGenerateSandbox")
                 {
                     Debug.Log(m.ToString());
-                    Debug.Log(m.parameters == null);
-                    Debug.Log(m.parameters[0] == null);
-                    Debug.Log(m.parameters[0].ToString());
-                    Debug.Log(m.parameters[0].Length);
                 }
                 //无论什么 CallType, 只要服务器发送了就执行
-                Rpc.LocalCall(m.methodPath, Client.connection, m.parameters, m.instance);
+                Rpc.LocalCall(m.methodPath, Client.connection, m.parameter0, m.parameter1, m.parameter2, m.parameter3, m.parameter4, m.instance);
             }
 
             NetworkCallbacks.OnTimeToServerCallback += () =>

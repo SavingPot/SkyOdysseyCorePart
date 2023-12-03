@@ -14,7 +14,6 @@ using System.ComponentModel;
 using GameCore.Converters;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
-using Sirenix.Utilities;
 using System.IO;
 
 namespace GameCore
@@ -24,11 +23,11 @@ namespace GameCore
     public static class Rpc
     {
         public static BinaryFormatter binaryFormatter;
-        public static Func<string, NetworkConnection, byte[][], Entity, bool> Remote;
-        public static Action<string, NetworkConnection, byte[][], Entity> LocalMethod;
+        public static Func<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], Entity, bool> Remote;
+        public static Action<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], Entity> LocalMethod;
 
 
-        static bool GetNetCallType(MethodInfo mtd, string mtdPath, Type voidType, Type connType, out RpcType type)
+        static bool CanBeRpc(MethodInfo mtd, string mtdPath, Type voidType, Type connType, out RpcType type)
         {
             RpcAttribute att = null;
             type = RpcType.ServerRpc;
@@ -79,9 +78,13 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                   内部反射方法                                   */
         /* -------------------------------------------------------------------------- */
-        public static bool _RemoteCall(NMRpc temp, NetworkConnection caller, byte[][] parameters, Entity instance)
+        public static bool _RemoteCall(NMRpc temp, NetworkConnection caller, byte[] parameter0, byte[] parameter1, byte[] parameter2, byte[] parameter3, byte[] parameter4, Entity instance)
         {
-            temp.parameters = parameters;
+            temp.parameter0 = parameter0;
+            temp.parameter1 = parameter1;
+            temp.parameter2 = parameter2;
+            temp.parameter3 = parameter3;
+            temp.parameter4 = parameter4;
             temp.instance = instance ? instance.netId : uint.MaxValue;
 
             //以下 Send 的回调绑定在 ManagerNetwork 中
@@ -91,7 +94,7 @@ namespace GameCore
                     {
                         //如果是服务器就直接调用
                         if (Server.isServer)
-                            LocalCall(temp.methodPath, caller ?? Server.localConnection, temp.parameters, temp.instance);
+                            LocalCall(temp.methodPath, caller ?? Server.localConnection, temp.parameter0, temp.parameter1, temp.parameter2, temp.parameter3, temp.parameter4, temp.instance);
                         //如果是客户端就发给服务器
                         else
                             Client.Send(temp);
@@ -137,82 +140,64 @@ namespace GameCore
 
         public static bool _StaticRemote0(NetworkConnection caller, MethodBase __originalMethod)
         {
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, null, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, null, null, null, null, null, null);
         }
 
         public static bool _StaticRemote1(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[1][]
-            {
-                ObjectToBytes(__args[0]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, null, null, null, null, null);
         }
 
         public static bool _StaticRemote2(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[2][]
-            {
-                ObjectToBytes(__args[0]),
-                ObjectToBytes(__args[1]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
+            byte[] parameter1 = ObjectToBytes(__args[1]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, parameter1, null, null, null, null);
         }
 
         public static bool _StaticRemote3(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[3][]
-            {
-                ObjectToBytes(__args[0]),
-                ObjectToBytes(__args[1]),
-                ObjectToBytes(__args[2]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
+            byte[] parameter1 = ObjectToBytes(__args[1]);
+            byte[] parameter2 = ObjectToBytes(__args[2]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, parameter1, parameter2, null, null, null);
         }
 
         public static bool _StaticRemote4(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[4][]
-            {
-                ObjectToBytes(__args[0]),
-                ObjectToBytes(__args[1]),
-                ObjectToBytes(__args[2]),
-                ObjectToBytes(__args[3]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
+            byte[] parameter1 = ObjectToBytes(__args[1]);
+            byte[] parameter2 = ObjectToBytes(__args[2]);
+            byte[] parameter3 = ObjectToBytes(__args[3]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, parameter1, parameter2, parameter3, null, null);
         }
 
         public static bool _StaticRemote5(NetworkConnection caller, object[] __args, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[5][]
-            {
-                ObjectToBytes(__args[0]),
-                ObjectToBytes(__args[1]),
-                ObjectToBytes(__args[2]),
-                ObjectToBytes(__args[3]),
-                ObjectToBytes(__args[4]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
+            byte[] parameter1 = ObjectToBytes(__args[1]);
+            byte[] parameter2 = ObjectToBytes(__args[2]);
+            byte[] parameter3 = ObjectToBytes(__args[3]);
+            byte[] parameter4 = ObjectToBytes(__args[4]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, null);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, parameter1, parameter2, parameter3, parameter4, null);
         }
 
         public static bool _InstanceRemote0(NetworkConnection caller, Entity __instance, MethodBase __originalMethod)
         {
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, null, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, null, null, null, null, null, __instance);
         }
 
         public static bool _InstanceRemote1(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[1][]
-            {
-                ObjectToBytes(__args[0]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, null, null, null, null, __instance);
         }
 
         public static bool _InstanceRemote2(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
@@ -223,52 +208,41 @@ namespace GameCore
                 Debug.Log(__args[0].GetType());
                 Debug.Log(ObjectToBytes(__args[0]).Length);
             }
-            byte[][] parameters = new byte[2][]
-            {
-                ObjectToBytes(__args[0]),
-                ObjectToBytes(__args[1]),
-            };
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
+            byte[] parameter0 = ObjectToBytes(__args[0]);
+            byte[] parameter1 = ObjectToBytes(__args[1]);
+
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, parameter1, null, null, null, __instance);
         }
 
         public static bool _InstanceRemote3(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[3][]
-            {
-                ObjectToBytes(__args[0]),
-                ObjectToBytes(__args[1]),
-                ObjectToBytes(__args[2]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
+            byte[] parameter1 = ObjectToBytes(__args[1]);
+            byte[] parameter2 = ObjectToBytes(__args[2]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, parameter1, parameter2, null, null, __instance);
         }
 
         public static bool _InstanceRemote4(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[4][]
-            {
-                ObjectToBytes(__args[0]),
-                ObjectToBytes(__args[1]),
-                ObjectToBytes(__args[2]),
-                ObjectToBytes(__args[3]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
+            byte[] parameter1 = ObjectToBytes(__args[1]);
+            byte[] parameter2 = ObjectToBytes(__args[2]);
+            byte[] parameter3 = ObjectToBytes(__args[3]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, parameter1, parameter2, parameter3, null, __instance);
         }
 
         public static bool _InstanceRemote5(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            byte[][] parameters = new byte[5][]
-            {
-                ObjectToBytes(__args[0]),
-                ObjectToBytes(__args[1]),
-                ObjectToBytes(__args[2]),
-                ObjectToBytes(__args[3]),
-                ObjectToBytes(__args[4]),
-            };
+            byte[] parameter0 = ObjectToBytes(__args[0]);
+            byte[] parameter1 = ObjectToBytes(__args[1]);
+            byte[] parameter2 = ObjectToBytes(__args[2]);
+            byte[] parameter3 = ObjectToBytes(__args[3]);
+            byte[] parameter4 = ObjectToBytes(__args[4]);
 
-            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameters, __instance);
+            return Remote($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", caller, parameter0, parameter1, parameter2, parameter3, parameter4, __instance);
         }
 
 
@@ -354,14 +328,22 @@ namespace GameCore
             //Substep 1: 定义传入方法的参数
             ParameterExpression remoteParam_id = Expression.Parameter(typeof(string), "id");
             ParameterExpression remoteParam_caller = Expression.Parameter(typeof(NetworkConnection), "caller");
-            ParameterExpression remoteParam_writer = Expression.Parameter(typeof(byte[][]), "parameters");
+            ParameterExpression remoteParam_parameter0 = Expression.Parameter(typeof(byte[]), "parameter0");
+            ParameterExpression remoteParam_parameter1 = Expression.Parameter(typeof(byte[]), "parameter1");
+            ParameterExpression remoteParam_parameter2 = Expression.Parameter(typeof(byte[]), "parameter2");
+            ParameterExpression remoteParam_parameter3 = Expression.Parameter(typeof(byte[]), "parameter3");
+            ParameterExpression remoteParam_parameter4 = Expression.Parameter(typeof(byte[]), "parameter4");
             ParameterExpression remoteParam_instance = Expression.Parameter(typeof(Entity), "instance");
 
             ParameterExpression localParam_exception = Expression.Parameter(typeof(Exception), "exception");
             ParameterExpression localParam_bytesToObjectTemp = Expression.Parameter(typeof(object), "bytesToObjectTemp");
             ParameterExpression localParam_id = Expression.Parameter(typeof(string), "id");
             ParameterExpression localParam_caller = Expression.Parameter(typeof(NetworkConnection), "caller");
-            ParameterExpression localParam_parameters = Expression.Parameter(typeof(byte[][]), "parameters");
+            ParameterExpression localParam_parameter0 = Expression.Parameter(typeof(byte[]), "parameter0");
+            ParameterExpression localParam_parameter1 = Expression.Parameter(typeof(byte[]), "parameter1");
+            ParameterExpression localParam_parameter2 = Expression.Parameter(typeof(byte[]), "parameter2");
+            ParameterExpression localParam_parameter3 = Expression.Parameter(typeof(byte[]), "parameter3");
+            ParameterExpression localParam_parameter4 = Expression.Parameter(typeof(byte[]), "parameter4");
             ParameterExpression localParam_instance = Expression.Parameter(typeof(Entity), "instance");
 
             //Substep 2: 定义 Switch Cases
@@ -379,7 +361,7 @@ namespace GameCore
             //? 例如: 我有一个 Player, 需要传输 int value 这个值, 就需要把设定通用代理放在后面, 并写一个 PlayerSurrogate
             ModFactory.assemblies.Foreach(ass =>
             {
-                ass.GetTypes().ForEach(type =>
+                ass.GetTypes().Foreach(type =>
                 {
                     if (type.IsSubclassOf(typeof(Entity)))
                     {
@@ -394,11 +376,11 @@ namespace GameCore
 
             ModFactory.assemblies.Foreach(ass =>
             {
-                ass.GetTypes().ForEach(type =>
+                ass.GetTypes().Foreach(type =>
                 {
                     if (AttributeGetter.TryGetAttribute<SerializationSurrogatesClassAttribute>(type, out _))
                     {
-                        type.GetNestedTypes(flags).ForEach(nested =>
+                        type.GetNestedTypes(flags).Foreach(nested =>
                         {
                             var surrogateInterface = nested.GetInterface(typeof(ISerializationSurrogate<>).FullName);
 
@@ -436,7 +418,7 @@ namespace GameCore
                 string mtdPath = $"{type.FullName}.{mtd.Name}";
 
                 //获取呼叫类型
-                if (GetNetCallType(mtd, mtdPath, voidType, connType, out RpcType callType))
+                if (CanBeRpc(mtd, mtdPath, voidType, connType, out RpcType callType))
                 {
                     /* ---------------------------------- 生成常量 ---------------------------------- */
                     var mtdPathConst = Expression.Constant(mtdPath);
@@ -458,11 +440,28 @@ namespace GameCore
 
                     void PatchMethod(MethodInfo patch)
                     {
-                        harmony.Patch(mtd, new HarmonyMethod(patch));
+                        try
+                        {
+                            harmony.Patch(mtd, new HarmonyMethod(patch));
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"为 Rpc 方法 {mtdPath} 打补丁时抛出异常!\n\n{ex.Message}\n{Tools.HighlightedStackTrace()}");
+                        }
                     }
 
                     BlockExpression LocalCaseGeneration(int index)
                     {
+                        var parameterToSelect = index switch
+                        {
+                            0 => localParam_parameter0,
+                            1 => localParam_parameter1,
+                            2 => localParam_parameter2,
+                            3 => localParam_parameter3,
+                            4 => localParam_parameter4,
+                            _ => throw new()
+                        };
+
                         //* return ByteReader.TypeRead(parameterTypes[index].FullName, parameters.chunks[index]);
                         return Expression.Block(
                                     trueParameters[index],
@@ -473,7 +472,7 @@ namespace GameCore
                                             localParam_bytesToObjectTemp,
                                             Expression.Call(
                                                 typeof(Rpc).GetMethod(nameof(BytesToObject), flags),
-                                                localParam_parameters.ArrayItem(index)
+                                                parameterToSelect
                                             )
                                         ),
                                         Expression.Condition(
@@ -481,7 +480,7 @@ namespace GameCore
                                                 localParam_bytesToObjectTemp,
                                                 Expression.Constant(null)
                                             ),
-                                            Expression.Default(trueParameters[index]),
+                                            Expression.Default(trueParameters[index]),//TODO: Maybe can't be Default
                                             Expression.Convert(
                                                 localParam_bytesToObjectTemp,
                                                 trueParameters[index]
@@ -551,7 +550,7 @@ namespace GameCore
                         //*== case mtdPath:
                         //*==   _RemoteCall(mtdInfo, caller, writer);
                         //*==   break;
-                        remoteCases.Add(Expression.SwitchCase(Expression.Call(null, _RemoteCall, mtdInfo, remoteParam_caller, remoteParam_writer, Expression.Constant(null, typeof(Entity))), mtdPathConst));
+                        remoteCases.Add(Expression.SwitchCase(Expression.Call(null, _RemoteCall, mtdInfo, remoteParam_caller, remoteParam_parameter0, remoteParam_parameter1, remoteParam_parameter2, remoteParam_parameter3, remoteParam_parameter4, Expression.Constant(null, typeof(Entity))), mtdPathConst));
 
                         switch (trueParameters.Count)
                         {
@@ -637,7 +636,7 @@ namespace GameCore
                         //*== case mtdPath:
                         //*==   _RemoteCall(mtdInfo, caller, writer);
                         //*==   break;
-                        remoteCases.Add(Expression.SwitchCase(Expression.Call(null, _RemoteCall, mtdInfo, remoteParam_caller, remoteParam_writer, remoteParam_instance), mtdPathConst));
+                        remoteCases.Add(Expression.SwitchCase(Expression.Call(null, _RemoteCall, mtdInfo, remoteParam_caller, remoteParam_parameter0, remoteParam_parameter1, remoteParam_parameter2, remoteParam_parameter3, remoteParam_parameter4, remoteParam_instance), mtdPathConst));
 
                         switch (trueParameters.Count)
                         {
@@ -702,7 +701,7 @@ namespace GameCore
                         }
                     }
                 }
-            });
+            }, ReflectionTools.BindingFlags_All | BindingFlags.DeclaredOnly);
 
 
 
@@ -740,8 +739,8 @@ namespace GameCore
             var localBody = Expression.Switch(localParam_id, localNotFoundError, localCases.ToArray());
 
             //SubStep 3: 编译
-            Remote = Expression.Lambda<Func<string, NetworkConnection, byte[][], Entity, bool>>(remoteBody, "Remote_Lambda", new ParameterExpression[] { remoteParam_id, remoteParam_caller, remoteParam_writer, remoteParam_instance }).Compile();
-            LocalMethod = Expression.Lambda<Action<string, NetworkConnection, byte[][], Entity>>(localBody, "LocalMethod_Lambda", new ParameterExpression[] { localParam_id, localParam_caller, localParam_parameters, localParam_instance }).Compile();
+            Remote = Expression.Lambda<Func<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], Entity, bool>>(remoteBody, "Remote_Lambda", new ParameterExpression[] { remoteParam_id, remoteParam_caller, remoteParam_parameter0, remoteParam_parameter1, remoteParam_parameter2, remoteParam_parameter3, remoteParam_parameter4, remoteParam_instance }).Compile();
+            LocalMethod = Expression.Lambda<Action<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], Entity>>(localBody, "LocalMethod_Lambda", new ParameterExpression[] { localParam_id, localParam_caller, localParam_parameter0, localParam_parameter1, localParam_parameter2, localParam_parameter3, localParam_parameter4, localParam_instance }).Compile();
 
 
 
@@ -749,18 +748,9 @@ namespace GameCore
             SyncPacker.Init();
         }
 
-        public static void LocalCall(string mtdPath, NetworkConnection caller, byte[][] parameters, uint instance)
+        public static void LocalCall(string mtdPath, NetworkConnection caller, byte[] parameter0, byte[] parameter1, byte[] parameter2, byte[] parameter3, byte[] parameter4, uint instance)
         {
-            if (mtdPath == "GameCore.Player.ConnectionGenerateSandbox")
-            {
-                var p = parameters[0];
-                Debug.Log(parameters == null);
-                Debug.Log(p == null);
-                Debug.Log(p.Length);
-                Debug.Log((Sandbox)BytesToObject(parameters[0]));
-                Debug.Log((bool)BytesToObject(parameters[1]));
-            }
-            LocalMethod(mtdPath, caller, parameters, Entity.GetEntityByNetId(instance));
+            LocalMethod(mtdPath, caller, parameter0, parameter1, parameter2, parameter3, parameter4, Entity.GetEntityByNetId(instance));
         }
     }
 
