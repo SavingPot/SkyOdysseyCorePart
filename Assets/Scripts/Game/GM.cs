@@ -799,12 +799,13 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             // 遍历每个点
             for (int x = generation.minPoint.x; x < generation.maxPoint.x; x++)
-                for (int y = generation.minPoint.y; y < generation.maxPoint.y; y++)
+            {
+                Parallel.For(generation.minPoint.y, generation.maxPoint.y, y =>
                 {
                     //当前遍历到的点
                     Vector2Int pos = new(x, y);
 
-                    Parallel.ForEach(generation.biome.blocks, g =>
+                    foreach (var g in generation.biome.blocks)
                     {
                         if (g == null || !g.initialized)
                             return;
@@ -822,12 +823,21 @@ namespace GameCore
                                 }
                             }
                         }
-                    });
+                    }
 
 
                     if (y == generation.maxPoint.y - 1)
                     {
-                        generation.sandbox.AddPos(BlockID.CookingPot, new Vector3Int(x, y + (int)(Mathf.PerlinNoise1D(x) * 10), BlockLayerHelp.Parse(BlockLayer.Foreground)), true);
+                        //地图的最大高度
+                        int maxHeight = 10;
+
+                        //决定了采样间隔 值越大 采样间隔越小
+                        float relief = 15.0f;
+
+                        float xSample = (x + generation.actualSeed) / relief;
+
+                        var noise = Mathf.PerlinNoise1D(xSample) * maxHeight;
+                        generation.sandbox.AddPos(BlockID.CookingPot, new Vector3Int(x, (int)noise, BlockLayerHelp.Parse(BlockLayer.Foreground)), true);
                     }
 
 
@@ -835,7 +845,8 @@ namespace GameCore
                     /*                                    生成战利品                                   */
                     /* -------------------------------------------------------------------------- */
                     MapGeneration.LootGeneration(generation, pos);
-                };
+                });
+            }
 
 
 

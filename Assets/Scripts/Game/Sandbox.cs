@@ -126,6 +126,7 @@ namespace GameCore
 
         public void AddPos(string id, Vector3Int pos, bool overwriteIfContains = false, string customData = null)
         {
+            //TODO: 检测 pos 是否超出边界
             Vector2Int pos2 = new(pos.x, pos.y);
             BlockLayer layer = BlockLayerHelp.Parse(pos.z);
 

@@ -373,7 +373,6 @@ namespace GameCore
         [ServerRpc]
         protected void ServerOnStartMovement(NetworkConnection caller)
         {
-            Debug.Log($"Started!: {isMoving}");
             isMoving = true;
             ConnectionOnStartMovement(caller);
         }
@@ -384,7 +383,7 @@ namespace GameCore
             OnStartMovementAction();
         }
 
-        public Action OnStartMovementAction = () => { Debug.Log("STARTED"); };
+        public Action OnStartMovementAction = () => { };
 
 
 
@@ -402,7 +401,6 @@ namespace GameCore
         [ServerRpc]
         protected void ServerOnStopMovement(NetworkConnection caller)
         {
-            Debug.Log($"Stopped!: {isMoving}");
             isMoving = false;
             ClientOnStopMovement(caller);
         }

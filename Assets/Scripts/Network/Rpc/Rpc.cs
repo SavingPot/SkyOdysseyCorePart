@@ -15,6 +15,7 @@ using GameCore.Converters;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.IO;
+using System.IO.Compression;
 
 namespace GameCore
 {
@@ -27,7 +28,7 @@ namespace GameCore
         public static Action<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], Entity> LocalMethod;
 
 
-        static bool CanBeRpc(MethodInfo mtd, string mtdPath, Type voidType, Type connType, out RpcType type)
+        private static bool CanBeRpc(MethodInfo mtd, string mtdPath, Type voidType, Type connType, out RpcType type)
         {
             RpcAttribute att = null;
             type = RpcType.ServerRpc;
@@ -240,6 +241,7 @@ namespace GameCore
 
 
 
+        //TODO: 使用lz4或lz77算法压缩数据包? 不知道mirror会不会进行压缩
         public static byte[] ObjectToBytes(object obj)
         {
             if (obj == null)
@@ -260,10 +262,8 @@ namespace GameCore
                 return null;
             }
 
-            if (data == null)
-                Debug.Log("null");
-
             using MemoryStream ms = new(data);
+
             return binaryFormatter.Deserialize(ms);
         }
 
@@ -443,7 +443,7 @@ namespace GameCore
                         }
                     }
 
-                    BlockExpression LocalCaseGeneration(int index)
+                    BlockExpression LocalCaseParameterGeneration(int index)
                     {
                         var parameterToSelect = index switch
                         {
@@ -555,7 +555,7 @@ namespace GameCore
                             case 1:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
+                                    LocalCaseParameterGeneration(0),
                                 }, false);
 
                                 break;
@@ -563,8 +563,8 @@ namespace GameCore
                             case 2:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
-                                    LocalCaseGeneration(1),
+                                    LocalCaseParameterGeneration(0),
+                                    LocalCaseParameterGeneration(1),
                                 }, false);
 
                                 break;
@@ -572,9 +572,9 @@ namespace GameCore
                             case 3:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
-                                    LocalCaseGeneration(1),
-                                    LocalCaseGeneration(2),
+                                    LocalCaseParameterGeneration(0),
+                                    LocalCaseParameterGeneration(1),
+                                    LocalCaseParameterGeneration(2),
                                 }, false);
 
                                 break;
@@ -582,10 +582,10 @@ namespace GameCore
                             case 4:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
-                                    LocalCaseGeneration(1),
-                                    LocalCaseGeneration(2),
-                                    LocalCaseGeneration(3),
+                                    LocalCaseParameterGeneration(0),
+                                    LocalCaseParameterGeneration(1),
+                                    LocalCaseParameterGeneration(2),
+                                    LocalCaseParameterGeneration(3),
                                 }, false);
 
                                 break;
@@ -593,11 +593,11 @@ namespace GameCore
                             case 5:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
-                                    LocalCaseGeneration(1),
-                                    LocalCaseGeneration(2),
-                                    LocalCaseGeneration(3),
-                                    LocalCaseGeneration(4),
+                                    LocalCaseParameterGeneration(0),
+                                    LocalCaseParameterGeneration(1),
+                                    LocalCaseParameterGeneration(2),
+                                    LocalCaseParameterGeneration(3),
+                                    LocalCaseParameterGeneration(4),
                                 }, false);
 
                                 break;
@@ -641,7 +641,7 @@ namespace GameCore
                             case 1:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
+                                    LocalCaseParameterGeneration(0),
                                 }, true);
 
                                 break;
@@ -649,8 +649,8 @@ namespace GameCore
                             case 2:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
-                                    LocalCaseGeneration(1),
+                                    LocalCaseParameterGeneration(0),
+                                    LocalCaseParameterGeneration(1),
                                 }, true);
 
                                 break;
@@ -658,9 +658,9 @@ namespace GameCore
                             case 3:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
-                                    LocalCaseGeneration(1),
-                                    LocalCaseGeneration(2),
+                                    LocalCaseParameterGeneration(0),
+                                    LocalCaseParameterGeneration(1),
+                                    LocalCaseParameterGeneration(2),
                                 }, true);
 
                                 break;
@@ -668,10 +668,10 @@ namespace GameCore
                             case 4:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
-                                    LocalCaseGeneration(1),
-                                    LocalCaseGeneration(2),
-                                    LocalCaseGeneration(3),
+                                    LocalCaseParameterGeneration(0),
+                                    LocalCaseParameterGeneration(1),
+                                    LocalCaseParameterGeneration(2),
+                                    LocalCaseParameterGeneration(3),
                                 }, true);
 
                                 break;
@@ -679,11 +679,11 @@ namespace GameCore
                             case 5:
                                 AddLocalCase(new Expression[]
                                 {
-                                    LocalCaseGeneration(0),
-                                    LocalCaseGeneration(1),
-                                    LocalCaseGeneration(2),
-                                    LocalCaseGeneration(3),
-                                    LocalCaseGeneration(4),
+                                    LocalCaseParameterGeneration(0),
+                                    LocalCaseParameterGeneration(1),
+                                    LocalCaseParameterGeneration(2),
+                                    LocalCaseParameterGeneration(3),
+                                    LocalCaseParameterGeneration(4),
                                 }, true);
 
                                 break;

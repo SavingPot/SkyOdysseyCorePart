@@ -75,10 +75,38 @@ namespace GameCore
 
         public void KillSequences()
         {
-            for (int i = 0; i < sequences.Count; i++)
+            foreach (var sequence in sequences)
             {
-                sequences[i]?.sequence?.Kill();
+                sequence?.sequence?.Kill();
             }
+        }
+
+        public AnimData GetAnim(string animId)
+        {
+            foreach (var anim in animations)
+            {
+                if (anim.id == animId)
+                {
+                    return anim;
+                }
+            }
+
+            return null;
+        }
+
+        public bool TryGetAnim(string animId, out AnimData result)
+        {
+            foreach (var anim in animations)
+            {
+                if (anim.id == animId)
+                {
+                    result = anim;
+                    return true;
+                }
+            }
+
+            result = null;
+            return false;
         }
 
         public void SetAnim(string animId, bool active = true)
@@ -103,9 +131,9 @@ namespace GameCore
 
         public virtual void ResetSequences()
         {
-            for (int i = 0; i < sequences.Count; i++)
+            foreach (var sequence in sequences)
             {
-                sequences[i].ResetSequence();
+                sequence.ResetSequence();
             }
         }
     }

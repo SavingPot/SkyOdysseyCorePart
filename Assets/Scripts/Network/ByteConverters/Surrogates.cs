@@ -54,7 +54,7 @@ namespace GameCore
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
                 var entity = (Entity)obj;
-                info.AddValue("netId", entity ? entity.netId : uint.MaxValue);
+                info.AddValue("netId", entity.netId);
             }
 
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
@@ -74,7 +74,7 @@ namespace GameCore
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
                 var entity = (Creature)obj;
-                info.AddValue("netId", entity ? entity.netId : uint.MaxValue);
+                info.AddValue("netId", entity.netId);
             }
 
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
@@ -95,13 +95,15 @@ namespace GameCore
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
                 var entity = (Player)obj;
-                info.AddValue("netId", entity ? entity.netId : uint.MaxValue);
+                Debug.Log($"Write {entity?.netId}");
+                info.AddValue("netId", entity.netId);
             }
 
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
             {
                 var netId = info.GetUInt32("netId");
 
+                Debug.Log($"Read {netId}");
                 return Entity.GetEntityByNetId<Player>(netId);
             }
         }
@@ -115,7 +117,7 @@ namespace GameCore
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
                 var entity = (Enemy)obj;
-                info.AddValue("netId", entity ? entity.netId : uint.MaxValue);
+                info.AddValue("netId", entity.netId);
             }
 
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
@@ -135,7 +137,7 @@ namespace GameCore
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
                 var entity = (Drop)obj;
-                info.AddValue("netId", entity ? entity.netId : uint.MaxValue);
+                info.AddValue("netId", entity.netId);
             }
 
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
@@ -155,7 +157,7 @@ namespace GameCore
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
                 var entity = (NPC)obj;
-                info.AddValue("netId", entity ? entity.netId : uint.MaxValue);
+                info.AddValue("netId", entity.netId);
             }
 
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)

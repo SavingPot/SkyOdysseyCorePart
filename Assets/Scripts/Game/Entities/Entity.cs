@@ -810,7 +810,11 @@ namespace GameCore
             //uint.MaxValue 是我设定的无效值, 如果 netIdToFind 为 uint.MaxValue 是几乎不可能找到合适的 NetworkIdentity 的
             if (!NetworkClient.spawned.TryGetValue(netIdToFind, out NetworkIdentity identity))
             {
-                Debug.LogError($"无法找到 {typeof(T).FullName} {netIdToFind}");
+                if (netIdToFind == uint.MaxValue)
+                    Debug.LogError($"无法找到无效 {typeof(T).FullName}");
+                else
+                    Debug.LogError($"无法找到 {typeof(T).FullName} {netIdToFind}");
+                Debug.Log(Tools.HighlightedStackTrace());
                 return null;
             }
 
