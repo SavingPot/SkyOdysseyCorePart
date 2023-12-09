@@ -443,7 +443,6 @@ namespace GameCore
             {
                 if (data != null)
                 {
-                    maxHealth = data.maxHealth;
                     rb.gravityScale = data.gravity;
                     mainCollider.direction = data.colliderSize.x > data.colliderSize.y ? CapsuleDirection2D.Horizontal : CapsuleDirection2D.Vertical;
                     mainCollider.size = data.colliderSize;

@@ -22,10 +22,13 @@ namespace GameCore
     {
         public List<DialogDatum> dialogs;
         public string audioId;
+        public string name;
 
-        public DialogData(string audioId, params DialogDatum[] dialogs)
+        public DialogData(string name, string audioId, params DialogDatum[] dialogs)
         {
             this.dialogs = dialogs.ToList();
+            this.audioId = audioId;
+            this.name = name;
         }
 
 
@@ -38,7 +41,7 @@ namespace GameCore
             public bool continued;
             public Dictionary<int, Action> options;
 
-            public DialogDatum(string text, string head, float waitTime = 0.08f, bool continued = false, Dictionary<int, Action> options = null)
+            public DialogDatum(string text, string head, float waitTime = 0.05f, bool continued = false, Dictionary<int, Action> options = null)
             {
                 this.text = text;
                 this.head = head;
@@ -224,6 +227,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public PanelIdentity dialogPanel;
         public ImageIdentity dialogHead;
+        public TextIdentity dialogNameText;
         public TextIdentity dialogText;
 
         public DialogData displayingDialog;
@@ -258,6 +262,7 @@ namespace GameCore
                 string fullContent = current.text;
                 char[] fullContentChars = fullContent.ToCharArray();
                 dialogHead.image.sprite = ModFactory.CompareTexture(current.head).sprite;
+                dialogNameText.text.text = GameUI.CompareText(displayingDialog.name).text;
 
                 for (int t = 0; t < fullContent.Length;)
                 {
@@ -676,6 +681,10 @@ namespace GameCore
                 dialogHead = GameUI.AddImage(UPC.upperLeft, "ori:image.dialog_head", null, dialogPanel);
                 dialogHead.SetSizeDelta(160, 160);
                 dialogHead.ap = new(dialogHead.sd.x / 2, -dialogHead.sd.y / 2);
+
+                dialogNameText = GameUI.AddText(UPC.down, "ori:text.dialog_name", dialogHead);
+                dialogNameText.SetAPosY(-dialogNameText.sd.y / 2 - 10);
+                dialogNameText.doRefresh = false;
 
                 dialogText = GameUI.AddText(UPC.right, "ori:text.dialog", dialogHead);
                 dialogText.text.SetFontSize(28);

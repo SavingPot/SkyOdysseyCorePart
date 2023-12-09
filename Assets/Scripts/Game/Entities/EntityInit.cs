@@ -35,6 +35,7 @@ namespace GameCore
 
 
         private static readonly Dictionary<Type, SyncAttributeData[]> TotalSyncVarAttributeTemps = new();
+        public static readonly string maxHealthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.maxHealth)}";
         public static readonly string healthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.health)}";
 
 
@@ -121,10 +122,16 @@ namespace GameCore
 
                 if (isServer)
                 {
-                    //TODO: 检查是否会被劫持
-                    if (pair.propertyPath == healthVarId && health != null)
+                    if (pair.propertyPath == healthVarId)
                     {
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes((float)health));
+                        if (health == null)
+                            SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(data.maxHealth));
+                        else
+                            SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes((float)health));
+                    }
+                    else if (pair.propertyPath == maxHealthVarId)
+                    {
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(data.maxHealth));
                     }
                     else
                     {
