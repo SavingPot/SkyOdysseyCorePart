@@ -1355,13 +1355,13 @@ namespace GameCore
             ui.AddTask("ori:get_stone", "ori:task.get_stone", "ori:get_flint", new[] { $"{BlockID.Stone}/=/10/=/null" });
 
             ui.AddTask("ori:get_planks", "ori:task.get_planks", "ori:get_log", new[] { $"{BlockID.OakPlanks}/=/10/=/null" });
-            ui.AddTask("ori:get_stick", "ori:task.get_stick", "ori:get_planks", new[] { $"{ItemID.OakStick}/=/10/=/null" });
+            ui.AddTask("ori:get_stick", "ori:task.get_stick", "ori:get_planks", new[] { $"{ItemID.Stick}/=/10/=/null" });
             ui.AddTask("ori:get_campfire", "ori:task.get_campfire", "ori:get_stick", null);
             ui.AddTask("ori:get_flint_knife", "ori:task.get_flint_knife", "ori:get_stick", null);
             ui.AddTask("ori:get_flint_hoe", "ori:task.get_flint_hoe", "ori:get_stick", null);
             ui.AddTask("ori:get_flint_sword", "ori:task.get_flint_sword", "ori:get_stick", null);
 
-            ui.AddTask("ori:get_bark", "ori:task.get_bark", "ori:get_log", new[] { $"{ItemID.OakBark}/=/1/=/null" });
+            ui.AddTask("ori:get_bark", "ori:task.get_bark", "ori:get_log", new[] { $"{ItemID.Bark}/=/1/=/null" });
             ui.AddTask("ori:get_bark_vest", "ori:task.get_bark_vest", "ori:get_bark", null);
         };
 

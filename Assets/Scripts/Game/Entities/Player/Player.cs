@@ -124,6 +124,18 @@ namespace GameCore
                             pui.CompleteTask("ori:get_flint_sword");
                             break;
 
+                        case ItemID.Bark:
+                            pui.CompleteTask("ori:get_bark");
+                            break;
+
+                        case ItemID.BarkVest:
+                            pui.CompleteTask("ori:get_bark_vest");
+                            break;
+
+                        case ItemID.Stick:
+                            pui.CompleteTask("ori:get_stick");
+                            break;
+
                         default:
                             if (item.data.GetTag("ori:log").hasTag)
                                 pui.CompleteTask("ori:get_log");
@@ -136,15 +148,6 @@ namespace GameCore
 
                             if (item.data.GetTag("ori:planks").hasTag)
                                 pui.CompleteTask("ori:get_planks");
-
-                            if (item.data.GetTag("ori:stick").hasTag)
-                                pui.CompleteTask("ori:get_stick");
-
-                            if (item.data.GetTag("ori:bark").hasTag)
-                                pui.CompleteTask("ori:get_bark");
-
-                            if (item.data.GetTag("ori:bark_vest").hasTag)
-                                pui.CompleteTask("ori:get_bark_vest");
 
                             break;
                     }
