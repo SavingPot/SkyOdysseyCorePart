@@ -17,11 +17,11 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    独留变量                                    */
         /* -------------------------------------------------------------------------- */
-        [BoxGroup("变量ID"), LabelText("注册了网络变量")] public bool registeredSyncVars;
+        [BoxGroup("变量注册"), LabelText("注册了网络变量")] public bool registeredSyncVars;
         [BoxGroup("独留变量"), LabelText("生成ID"), SyncVar] public string generationId;
+        [BoxGroup("变量注册")] public string waitingRegisteringVar;
         public Entity entity;
         public bool hasGotGeneratingId => !generationId.IsNullOrWhiteSpace();
-        public string waitingRegisteringVar;
         public bool hasDestroyed { get; protected set; }
 
         /* -------------------------------------------------------------------------- */

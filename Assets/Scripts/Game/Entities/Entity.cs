@@ -344,6 +344,7 @@ namespace GameCore
         //TODO: Temp them
         public new bool isServer => Server.isServer;
         public new bool isClient => Client.isClient;
+        public new bool isOwned => netIdentity.isOwned;
         public bool isHost => isServer && isClient;
         public new bool isLocalPlayer => Client.localPlayer == this;
 
@@ -595,7 +596,7 @@ namespace GameCore
         }
 
         [ClientRpc]
-        void ClientTakeDamage(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
+        void ClientTakeDamage(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) => MethodAgent.TryRun(() =>
         {
             if (!Server.isServer)
                 Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}");
@@ -612,7 +613,7 @@ namespace GameCore
 
             GM.instance.bloodParticlePool.Get(this);
             GM.instance.damageTextPool.Get(this, damage);
-        }
+        }, true);
 
 
         #region 死亡
