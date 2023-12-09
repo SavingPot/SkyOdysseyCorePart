@@ -178,21 +178,21 @@ namespace GameCore
         #region 皮肤
 
         [SyncGetter] Sprite skinHead_get() => default; [SyncSetter] void skinHead_set(Sprite value) { }
-        [Sync] public Sprite skinHead { get => skinHead_get(); set => skinHead_set(value); }
+        [Sync, SyncDefaultValue(null)] public Sprite skinHead { get => skinHead_get(); set => skinHead_set(value); }
         [SyncGetter] Sprite skinBody_get() => default; [SyncSetter] void skinBody_set(Sprite value) { }
-        [Sync] public Sprite skinBody { get => skinBody_get(); set => skinBody_set(value); }
+        [Sync, SyncDefaultValue(null)] public Sprite skinBody { get => skinBody_get(); set => skinBody_set(value); }
         [SyncGetter] Sprite skinLeftArm_get() => default; [SyncSetter] void skinLeftArm_set(Sprite value) { }
-        [Sync] public Sprite skinLeftArm { get => skinLeftArm_get(); set => skinLeftArm_set(value); }
+        [Sync, SyncDefaultValue(null)] public Sprite skinLeftArm { get => skinLeftArm_get(); set => skinLeftArm_set(value); }
         [SyncGetter] Sprite skinRightArm_get() => default; [SyncSetter] void skinRightArm_set(Sprite value) { }
-        [Sync] public Sprite skinRightArm { get => skinRightArm_get(); set => skinRightArm_set(value); }
+        [Sync, SyncDefaultValue(null)] public Sprite skinRightArm { get => skinRightArm_get(); set => skinRightArm_set(value); }
         [SyncGetter] Sprite skinLeftLeg_get() => default; [SyncSetter] void skinLeftLeg_set(Sprite value) { }
-        [Sync] public Sprite skinLeftLeg { get => skinLeftLeg_get(); set => skinLeftLeg_set(value); }
+        [Sync, SyncDefaultValue(null)] public Sprite skinLeftLeg { get => skinLeftLeg_get(); set => skinLeftLeg_set(value); }
         [SyncGetter] Sprite skinRightLeg_get() => default; [SyncSetter] void skinRightLeg_set(Sprite value) { }
-        [Sync] public Sprite skinRightLeg { get => skinRightLeg_get(); set => skinRightLeg_set(value); }
+        [Sync, SyncDefaultValue(null)] public Sprite skinRightLeg { get => skinRightLeg_get(); set => skinRightLeg_set(value); }
         [SyncGetter] Sprite skinLeftFoot_get() => default; [SyncSetter] void skinLeftFoot_set(Sprite value) { }
-        [Sync] public Sprite skinLeftFoot { get => skinLeftFoot_get(); set => skinLeftFoot_set(value); }
+        [Sync, SyncDefaultValue(null)] public Sprite skinLeftFoot { get => skinLeftFoot_get(); set => skinLeftFoot_set(value); }
         [SyncGetter] Sprite skinRightFoot_get() => default; [SyncSetter] void skinRightFoot_set(Sprite value) { }
-        [Sync] public Sprite skinRightFoot { get => skinRightFoot_get(); set => skinRightFoot_set(value); }
+        [Sync, SyncDefaultValue(null)] public Sprite skinRightFoot { get => skinRightFoot_get(); set => skinRightFoot_set(value); }
 
         #endregion
 
@@ -379,7 +379,7 @@ namespace GameCore
         #region Unity 回调
         [ServerRpc] static void Mtd1(Creature c, NetworkConnection caller) { Debug.Log("Mtd1"); }
         [ServerRpc] static void Mtd2(Player c, NetworkConnection caller) { Debug.Log("Mtd2"); }
-        protected override void Start()
+        protected override async void Start()
         {
             Mtd2(this, null);
             Mtd1(this, null);
@@ -406,31 +406,27 @@ namespace GameCore
                 //if (!isServer)
                 //    CmdCheckMods();
 
+                skinHead = PlayerSkin.skinHead;
+                skinBody = PlayerSkin.skinBody;
+                skinLeftArm = PlayerSkin.skinLeftArm;
+                skinRightArm = PlayerSkin.skinRightArm;
+                skinLeftLeg = PlayerSkin.skinLeftLeg;
+                skinRightLeg = PlayerSkin.skinRightLeg;
+                skinLeftFoot = PlayerSkin.skinLeftFoot;
+                skinRightFoot = PlayerSkin.skinRightFoot;
+
                 managerGame.weatherParticle.transform.SetParent(transform);
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
 
 
-                //加载数据
-                WhenRegisteredSyncVars(async () =>
-                {
-                    skinHead = PlayerSkin.skinHead;
-                    skinBody = PlayerSkin.skinBody;
-                    skinLeftArm = PlayerSkin.skinLeftArm;
-                    skinRightArm = PlayerSkin.skinRightArm;
-                    skinLeftLeg = PlayerSkin.skinLeftLeg;
-                    skinRightLeg = PlayerSkin.skinRightLeg;
-                    skinLeftFoot = PlayerSkin.skinLeftFoot;
-                    skinRightFoot = PlayerSkin.skinRightFoot;
+                //要等一帧否则 currentSandboxIndex 会被 base:Entity 设为 0
+                await UniTask.NextFrame();
 
-                    //要等一帧否则 currentSandboxIndex 会被 base:Entity 设为 0
-                    await UniTask.NextFrame();
-
-                    //让服务器加载玩家数据
-                    LoadPlayerDatumFromFile();
-                });
+                //让服务器加载玩家数据
+                LoadPlayerDatumFromFile();
             }
 
-            WhenRegisteredSyncVars(() =>
+            StartCoroutine(IEWaitForCondition(() => !skinHead || !skinBody || !skinLeftArm || !skinRightArm || !skinLeftLeg || !skinRightLeg || !skinLeftFoot || !skinRightFoot, () =>
             {
                 MethodAgent.TryRun(() =>
                 {
@@ -453,9 +449,9 @@ namespace GameCore
                 }, true);
 
                 BindHumanAnimations(this);
+            }));
 
-                OnNameChange(playerName);
-            });
+            OnNameChange(playerName);
         }
 
         protected override void Awake()
@@ -477,15 +473,7 @@ namespace GameCore
             anim.KillSequences();
 
             PlayerCenter.all.Remove(this);
-            PlayerCenter.allReady.Remove(this);
             backpackSidebarTable.Remove("ori:craft");
-        }
-
-        public override void OnReady()
-        {
-            base.OnReady();
-
-            PlayerCenter.allReady.Add(this);
         }
 
         protected override void FixedUpdate()
@@ -535,7 +523,7 @@ namespace GameCore
 
         protected override void Update()
         {
-            if (registeredSyncVars && !isHurting)
+            if (!isHurting)
                 DeathColor();
 
             base.Update();
@@ -559,7 +547,7 @@ namespace GameCore
             base.ServerUpdate();
 
             //如果需要救的玩家死了那么将 savingPlayer 设为零值
-            if (registeredSyncVars && !isDead && playerSavingMe)
+            if (!isDead && playerSavingMe)
             {
                 playerSavingMe = null;
             }
@@ -657,12 +645,6 @@ namespace GameCore
 
         public static Action<Player> GravitySet = caller =>
         {
-            if (!caller.registeredSyncVars)
-            {
-                caller.gravity = 0;
-                return;
-            }
-
             if (!caller.generatedFirstSandbox ||
                 GM.instance.generatingExistingSandbox ||
                 GM.instance.generatingNewSandboxes.Any(p => p == PosConvert.WorldPosToSandboxIndex(caller.transform.position)))  //获取沙盒序号不用 caller.sandboxIndex 是因为只有沙盒加载成功, caller.sandboxIndex才会正式改编
@@ -684,22 +666,19 @@ namespace GameCore
             GravitySet(this);
             rb.gravityScale = gravity;
 
-            if (registeredSyncVars)
+            if (!isDead)
             {
-                if (!isDead)
-                {
-                    AliveLocalUpdate();
-                }
-                if (!isHurting)
-                {
-                    DeathRotation();
-                }
-
-                AutoGenerateSandbox();
-
-                //刷新状态栏
-                RefreshPropertiesBar();
+                AliveLocalUpdate();
             }
+            if (!isHurting)
+            {
+                DeathRotation();
+            }
+
+            AutoGenerateSandbox();
+
+            //刷新状态栏
+            RefreshPropertiesBar();
 
 
             pui?.Update();
@@ -1391,6 +1370,7 @@ namespace GameCore
         [ServerRpc]
         void ServerLoadOrCreatePlayerDatum(string playerName, NetworkConnection caller = null)
         {
+            //TODO: 也许这些也可以转到Init里?
             if (playerName.IsNullOrWhiteSpace())
             {
                 playerName = defaultName;
@@ -1594,9 +1574,6 @@ namespace GameCore
         #region 移动和转向
         public override void Movement()
         {
-            if (!registeredSyncVars)
-                return;
-
             float move;
 
             if (!CanMove(this) || !PlayerCanControl(this))
@@ -1632,7 +1609,7 @@ namespace GameCore
 
         public Action<Player> AutoSetPlayerOrientation = (p) =>
         {
-            if (!p.isLocalPlayer || !p.registeredSyncVars)
+            if (!p.isLocalPlayer)
                 return;
 
             ////诸如 && transform.localScale.x.Sign() == 1 之类的检测是为了减缓服务器压力
@@ -1813,7 +1790,7 @@ namespace GameCore
         #region 救援
         private void SavePlayer()
         {
-            if (!registeredSyncVars || !savingPlayer)
+            if (!savingPlayer)
                 return;
 
             if (savingPlayer.playerSavingMe != this)
@@ -1878,6 +1855,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    静态方法                                    */
         /* -------------------------------------------------------------------------- */
+
         public static Dictionary<CraftingRecipe, List<Dictionary<int, ushort>>> GetCraftingRecipesThatCanBeCrafted(Item[] items)
         {
             Dictionary<CraftingRecipe, List<Dictionary<int, ushort>>> results = new();
@@ -2352,7 +2330,6 @@ namespace GameCore
     }
 
 #if UNITY_EDITOR
-    [AutoByteConverter]
     public struct AutoTest0
     {
         public string id;
@@ -2361,7 +2338,6 @@ namespace GameCore
         public int? testNullable;
     }
 
-    [AutoByteConverter]
     public struct AutoTest1
     {
         public AutoTest0 t0;
@@ -2369,7 +2345,6 @@ namespace GameCore
         public int index;
     }
 
-    [AutoByteConverter]
     public struct AutoTest2
     {
         public AutoTest1 t1;
@@ -2444,27 +2419,26 @@ namespace GameCore
     public static class PlayerCenter
     {
         public static List<Player> all = new();
-        public static List<Player> allReady = new();
 
         public static void Update()
         {
             if (Server.isServer)
             {
-                lock (allReady)
+                lock (all)
                 {
-                    NativeArray<bool> isMovingIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> thirstValueIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> thirstValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> hungerValueIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> hungerValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> happinessValueOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> healthIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> healthOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<bool> isMovingIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> thirstValueIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> thirstValueOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> hungerValueIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> hungerValueOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> happinessValueOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> healthIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> healthOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
                     //填入数据
-                    for (int i = 0; i < allReady.Count; i++)
+                    for (int i = 0; i < all.Count; i++)
                     {
-                        var player = allReady[i];
+                        var player = all[i];
 
                         isMovingIn[i] = player.isMoving;
                         thirstValueIn[i] = player.thirstValue;
@@ -2472,7 +2446,7 @@ namespace GameCore
                         healthIn[i] = player.health;
                     }
 
-                    int batchCount = allReady.Count / 4;
+                    int batchCount = all.Count / 4;
                     if (batchCount == 0) batchCount = 1;
                     new PropertiesComputingJob()
                     {
@@ -2485,12 +2459,12 @@ namespace GameCore
                         healthIn = healthIn,
                         healthOut = healthOut,
                         frameTime = Performance.frameTime
-                    }.ScheduleParallel(allReady.Count, batchCount, default).Complete();  //除以4代表由四个 Job Thread 执行
+                    }.ScheduleParallel(all.Count, batchCount, default).Complete();  //除以4代表由四个 Job Thread 执行
 
                     //填入数据
-                    for (int i = 0; i < allReady.Count; i++)
+                    for (int i = 0; i < all.Count; i++)
                     {
-                        var player = allReady[i];
+                        var player = all[i];
 
                         player.thirstValue -= thirstValueOut[i];
                         player.hungerValue -= hungerValueOut[i];

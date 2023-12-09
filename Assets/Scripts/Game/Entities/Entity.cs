@@ -41,38 +41,37 @@ namespace GameCore
     public static class EntityCenter
     {
         public static List<Entity> all = new();
-        public static List<Entity> allReady = new();
 
         public static void Update()
         {
             if (Server.isServer)
             {
-                lock (allReady)
+                lock (all)
                 {
-                    NativeArray<float> invincibleTimeIn = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> invincibleTimeOut = new(allReady.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> invincibleTimeIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<float> invincibleTimeOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
                     //填入数据
-                    for (int i = 0; i < allReady.Count; i++)
+                    for (int i = 0; i < all.Count; i++)
                     {
-                        var entity = allReady[i];
+                        var entity = all[i];
 
                         invincibleTimeIn[i] = entity.invincibleTime;
                     }
 
-                    int batchCount = allReady.Count / 4;
+                    int batchCount = all.Count / 4;
                     if (batchCount == 0) batchCount = 1;
                     new PropertiesComputingJob()
                     {
                         invincibleTimeIn = invincibleTimeIn,
                         invincibleTimeOut = invincibleTimeOut,
                         frameTime = Performance.frameTime
-                    }.ScheduleParallel(allReady.Count, batchCount, default).Complete();  //除以4代表由四个 Job Thread 执行
+                    }.ScheduleParallel(all.Count, batchCount, default).Complete();  //除以4代表由四个 Job Thread 执行
 
                     //填入数据
-                    for (int i = 0; i < allReady.Count; i++)
+                    for (int i = 0; i < all.Count; i++)
                     {
-                        var entity = allReady[i];
+                        var entity = all[i];
 
                         var invincibleTime = invincibleTimeOut[i];
                         if (invincibleTime != 0) entity.invincibleTime += invincibleTime;
@@ -183,8 +182,9 @@ namespace GameCore
     }
 
     //TODO: 告别冗长代码
+    //TODO: NetworkBehaviour->MonoBehaviour
     [DisallowMultipleComponent]
-    public class Entity : NetworkBehaviour, IEntity, IRigidbody2D, IHasDestroyed, IVarInstanceID
+    public class Entity : NetworkBehaviour, IEntity, IRigidbody2D, IVarInstanceID
     {
         /* -------------------------------------------------------------------------- */
         /*                                     接口                                     */
@@ -199,7 +199,6 @@ namespace GameCore
         /*                               Static & Const                               */
         /* -------------------------------------------------------------------------- */
         public const string entityVarPrefix = nameof(GameCore) + "." + nameof(Entity) + ".";
-        public static event Action<Entity> OnEntityGetNetworkId = _ => { };
 
 
 
@@ -218,10 +217,9 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     生成属性                                     */
         /* -------------------------------------------------------------------------- */
-        private static readonly Dictionary<Type, SyncAttributeData[]> TotalSyncVarAttributeTemps = new();
         [BoxGroup("生成属性"), LabelText("初始化器")] public EntityInit Init { get; internal set; }
         public JObject customData { get => Init.customData; set => Init.customData = value; }
-        [BoxGroup("变量ID"), LabelText("变量唯一ID")] public uint varInstanceId { get; internal set; } = uint.MaxValue;
+        [BoxGroup("变量ID"), LabelText("变量唯一ID")] public uint varInstanceId => Init.netId;
 
 
 
@@ -230,7 +228,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
-        public bool hasDestroyed { get; protected set; }
         public Rigidbody2D rb { get; set; }
         public CapsuleCollider2D mainCollider { get; set; }
         public bool isHurting => invincibleTime > 0;
@@ -249,7 +246,7 @@ namespace GameCore
         #region 同步变量
         #region 无敌时间
         [SyncGetter] float invincibleTime_get() => default; [SyncSetter] void invincibleTime_set(float value) { }
-        [Sync] public float invincibleTime { get => invincibleTime_get(); set => invincibleTime_set(value); }
+        [Sync, SyncDefaultValue(0f)] public float invincibleTime { get => invincibleTime_get(); set => invincibleTime_set(value); }
         #endregion
 
         #region 最大血量
@@ -277,7 +274,7 @@ namespace GameCore
 
         #region 已死亡
         [SyncGetter] bool isDead_get() => default; [SyncSetter] void isDead_set(bool value) { }
-        [Sync] public bool isDead { get => isDead_get(); set => isDead_set(value); }
+        [Sync, SyncDefaultValue(false)] public bool isDead { get => isDead_get(); set => isDead_set(value); }
         #endregion
 
         #region 当前沙盒指针
@@ -426,36 +423,31 @@ namespace GameCore
             classType = GetType();
             rb = GetComponent<Rigidbody2D>();
             mainCollider = GetComponent<CapsuleCollider2D>();
-
-            WhenGotVarInstanceId(OnGetVarInstanceId);
-            WhenGotNetId(OnGetNetId);
         }
 
         protected virtual void OnDestroy()
         {
-            hasDestroyed = true;
-
+            //TODO: 移动到 EntityInit
             //Debug.Log($"实体 {name} 被删除, Datum Null = {datum == null}", gameObject);
 
             EntityCenter.all.Remove(this);
-            EntityCenter.allReady.Remove(this);
 
             //TODO: Unregister the sync vars here
         }
 
         protected virtual void Start()
         {
-            WhenRegisteredSyncVars(() => WaitOneFrame(() =>
+            //TODO: 移动到 EntityInit
+            WaitOneFrame(() =>
             {
                 if (data != null)
                 {
                     maxHealth = data.maxHealth;
-                    health = maxHealth;
                     rb.gravityScale = data.gravity;
                     mainCollider.direction = data.colliderSize.x > data.colliderSize.y ? CapsuleDirection2D.Horizontal : CapsuleDirection2D.Vertical;
                     mainCollider.size = data.colliderSize;
                 }
-            }));
+            });
         }
 
         protected virtual void Update()
@@ -471,7 +463,7 @@ namespace GameCore
 
         protected virtual void ServerUpdate()
         {
-            if (!isPlayer && registeredSyncVars)
+            if (!isPlayer)
             {
                 sandboxIndex = PosConvert.WorldPosToSandboxIndex(transform.position);
             }
@@ -506,117 +498,6 @@ namespace GameCore
 
         #region 网络变量逻辑
 
-        protected virtual void OnGetNetId()
-        {
-            varInstanceId = netId;
-        }
-
-        protected virtual void OnGetVarInstanceId()
-        {
-            AutoRegisterVars();
-        }
-
-        [BoxGroup("变量ID"), LabelText("注册了网络变量")] public bool registeredSyncVars;
-
-
-
-
-
-
-        public void AutoRegisterVars()
-        {
-            var syncVarTemps = ReadFromSyncAttributeTemps(classType);
-
-            //遍历每个属性
-            StringBuilder sb = new();
-
-            //TODO: Improve readability and performance step and step
-            foreach (SyncAttributeData pair in syncVarTemps)
-            {
-                string id = SyncPacker.GetInstanceID(sb, pair.propertyPath, varInstanceId);
-
-                if (pair.hook != null)
-                {
-                    SyncPacker.OnVarValueChange += OnValueChangeBoth;
-
-                    void OnValueChangeBoth(NMSyncVar i, byte[] v)
-                    {
-                        if (i.varId == id)
-                            pair.hook.Invoke(this, null);
-
-                        if (hasDestroyed)
-                        {
-                            SyncPacker.OnVarValueChange -= OnValueChangeBoth;
-                            return;
-                        }
-                    }
-                }
-
-                if (isServer)
-                {
-                    SyncPacker.RegisterVar(id, true, null);
-
-                    if (pair.includeDefaultValue)
-                    {
-                        if (pair.defaultValueMethod == null)
-                        {
-                            SyncPacker.SetValue(id, pair.defaultValue);
-                        }
-                        else
-                        {
-                            SyncPacker.SetValue(id, Rpc.ObjectToBytes(pair.defaultValueMethod.Invoke(null, null)));
-                        }
-                    }
-                }
-            }
-
-            if (isServer)
-            {
-                maxHealth = 100;
-                if (!isPlayer)
-                {
-                    health = maxHealth;
-                    sandboxIndex = Vector2Int.zero;
-                }
-                invincibleTime = 0;
-                isDead = false;
-            }
-
-            //开始等待注册完毕
-            StartCoroutine(IEWaitRegistering(syncVarTemps));
-        }
-
-        IEnumerator IEWaitRegistering(SyncAttributeData[] syncVarTemps)
-        {
-            StringBuilder sb = new();
-
-
-            //等待注册
-            foreach (var pair in syncVarTemps)
-            {
-                string vn = SyncPacker.GetInstanceID(sb, pair.propertyPath, varInstanceId);
-
-                //等待数值正确
-                waitingRegisteringVar = vn;
-                yield return new WaitUntil(() => SyncPacker.HasVar(vn));
-            }
-
-            waitingRegisteringVar = string.Empty;
-            registeredSyncVars = true;
-
-
-            //准备好了
-            OnReady();
-        }
-
-        public virtual void OnReady()
-        {
-            EntityCenter.allReady.Add(this);
-        }
-
-        public string waitingRegisteringVar;
-        public string waitingCorrectingVar;
-
         #region 等待
 
         public IEnumerator IEWaitOneFrame(Action action)
@@ -639,25 +520,6 @@ namespace GameCore
             yield return new WaitWhile(conditionToWait);
 
             action();
-        }
-
-        public void WhenGotNetId(Action action)
-        {
-            StartCoroutine(IEWaitForCondition(() => netId == 0, () =>
-            {
-                action();
-                MethodAgent.TryRun(() => OnEntityGetNetworkId(this), true);
-            }));
-        }
-
-        public void WhenGotVarInstanceId(Action action)
-        {
-            StartCoroutine(IEWaitForCondition(() => varInstanceId == uint.MaxValue, action));
-        }
-
-        public void WhenRegisteredSyncVars(Action action)
-        {
-            StartCoroutine(IEWaitForCondition(() => !registeredSyncVars, action));
         }
 
         public void WaitOneFrame(Action action)
@@ -702,12 +564,12 @@ namespace GameCore
             }
         }
 
-        public virtual void TakeDamage(float hurtHealth) => TakeDamage(hurtHealth, 0.1f, transform.position, Vector2.zero);
+        public virtual void TakeDamage(float damage) => TakeDamage(damage, 0.1f, transform.position, Vector2.zero);
 
-        public void TakeDamage(float hurtHealth, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
+        public void TakeDamage(float damage, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
         {
             if (hurtable)
-                ServerTakeDamage(hurtHealth, invincibleTime, hurtPos, impactForce, null);
+                ServerTakeDamage(damage, invincibleTime, hurtPos, impactForce, null);
         }
 
         [ServerRpc]
@@ -765,16 +627,13 @@ namespace GameCore
         protected void ServerDeath(NetworkConnection caller)
         {
             //防止一生成就死亡时导致报错
-            if (registeredSyncVars)
+            if (isDead)
             {
-                if (isDead)
-                {
-                    Debug.LogError($"实体 {gameObject.name} 已死亡, 请勿反复执行");
-                    return;
-                }
-
-                isDead = true;
+                Debug.LogError($"实体 {gameObject.name} 已死亡, 请勿反复执行");
+                return;
             }
+
+            isDead = true;
 
             //Debug.Log($"服务器: 实体 {name} 已死亡");
 
@@ -857,6 +716,7 @@ namespace GameCore
                         datum.hungerValue = player.hungerValue;
                         datum.thirstValue = player.thirstValue;
                         datum.happinessValue = player.happinessValue;
+                        //TODO: to Init
                         datum.health = player.health;
 
                         return;
@@ -941,110 +801,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                  Static 方法                                 */
         /* -------------------------------------------------------------------------- */
-        internal class SyncAttributeData
-        {
-            public string propertyPath;
-            public MethodInfo hook;
-            public bool includeDefaultValue;
-            public byte[] defaultValue;
-            public MethodInfo defaultValueMethod;
-            public string valueType;
-        }
-
-        internal static SyncAttributeData[] ReadFromSyncAttributeTemps(Type type)
-        {
-            if (TotalSyncVarAttributeTemps.TryGetValue(type, out SyncAttributeData[] value))
-            {
-                return value;
-            }
-
-            //如果没有就添加
-            List<SyncAttributeData> ts = new();
-
-            foreach (var property in type.GetAllProperties())
-            {
-                //如果存在 SyncAttribute 就添加到列表
-                if (AttributeGetter.TryGetAttribute<SyncAttribute>(property, out var att))
-                {
-                    string propertyPath = $"{property.DeclaringType.FullName}.{property.Name}";
-                    bool includeDefaultValue = false;
-                    MethodInfo hookMethod = null;
-                    byte[] defaultValue = null;
-                    MethodInfo defaultValueMethod = null;
-
-                    if (!att.hook.IsNullOrWhiteSpace())
-                    {
-                        hookMethod = !att.hook.Contains(".") ? type.GetMethodFromAllIncludingBases(att.hook) : ModFactory.SearchUserMethod(att.hook);
-
-                        if (hookMethod == null)
-                        {
-                            Debug.LogError($"无法找到同步变量 {propertyPath} 的钩子: {att.hook}");
-                        }
-                    }
-
-                    if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(property, out var defaultValueAtt))
-                    {
-                        if (defaultValueAtt.defaultValue != null && property.PropertyType.FullName != defaultValueAtt.defaultValue.GetType().FullName)
-                            Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueAtt.defaultValue.GetType().FullName}");
-                        else
-                        {
-                            byte[] temp = Rpc.ObjectToBytes(defaultValueAtt.defaultValue);
-
-                            defaultValue = temp;
-                            includeDefaultValue = true;
-                        }
-                    }
-                    else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(property, out var defaultValueFromMethodAtt))
-                    {
-                        defaultValueMethod = !defaultValueFromMethodAtt.methodName.Contains(".") ? type.GetMethodFromAllIncludingBases(defaultValueFromMethodAtt.methodName) : ModFactory.SearchUserMethod(defaultValueFromMethodAtt.methodName);
-
-                        if (defaultValueMethod == null)
-                        {
-                            Debug.LogError($"无法找到同步变量 {propertyPath} 的默认值获取方法 {defaultValueFromMethodAtt.methodName}");
-                            continue;
-                        }
-
-                        if (property.PropertyType.FullName != defaultValueMethod.ReturnType.FullName)
-                        {
-                            Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueMethod.ReturnType.FullName}");
-                            continue;
-                        }
-
-                        includeDefaultValue = true;
-
-                        if (defaultValueFromMethodAtt.getValueUntilRegister)
-                        {
-                            //? 这会在注册变量时完成
-                        }
-                        else
-                        {
-                            byte[] temp = null;
-
-                            //TODO: 检查方法是否实例, 参数列表
-                            temp = Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null));
-                            defaultValue = temp;
-                        }
-                    }
-
-                    ts.Add(new()
-                    {
-                        propertyPath = propertyPath,
-                        hook = hookMethod,
-                        includeDefaultValue = includeDefaultValue,
-                        defaultValue = defaultValue,
-                        defaultValueMethod = defaultValueMethod,
-                        valueType = property.PropertyType.FullName,
-                    });
-                }
-            }
-
-
-            //将数据写入字典
-            value = ts.ToArray();
-            TotalSyncVarAttributeTemps.Add(type, value);
-
-            return value;
-        }
 
         public static Entity GetEntityByNetId(uint netIdToFind) => GetEntityByNetId<Entity>(netIdToFind);
 

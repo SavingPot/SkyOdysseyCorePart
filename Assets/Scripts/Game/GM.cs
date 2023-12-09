@@ -392,7 +392,7 @@ namespace GameCore
 
             async void InternalAfterGeneratingExistingSandbox(Sandbox sandbox)
             {
-                await UniTask.WaitUntil(() => Player.local && Player.local.registeredSyncVars);
+                await UniTask.WaitUntil(() => Player.local);
 
                 if (sandbox.index == Player.local.sandboxIndex)
                 {
@@ -458,7 +458,7 @@ namespace GameCore
 
                 async void InternalAfterGeneratingExistingSandbox(Sandbox sandbox)
                 {
-                    await UniTask.WaitUntil(() => Player.local && Player.local.registeredSyncVars);
+                    await UniTask.WaitUntil(() => Player.local);
 
                     if (sandbox.index == Player.local.sandboxIndex)
                     {
@@ -825,6 +825,12 @@ namespace GameCore
                     });
 
 
+                    if (y == generation.maxPoint.y - 1)
+                    {
+                        generation.sandbox.AddPos(BlockID.CookingPot, new Vector3Int(x, y + (int)(Mathf.PerlinNoise1D(x) * 10), BlockLayerHelp.Parse(BlockLayer.Foreground)), true);
+                    }
+
+
                     /* -------------------------------------------------------------------------- */
                     /*                                    生成战利品                                   */
                     /* -------------------------------------------------------------------------- */
@@ -910,7 +916,8 @@ namespace GameCore
                 EntitySave nickSave = new()
                 {
                     id = nick.id,
-                    pos = generation.sandbox.spawnPoint + new Vector2Int(10, 0)
+                    pos = generation.sandbox.spawnPoint + new Vector2Int(10, 0),
+                    saveId = Tools.randomGUID
                 };
                 generation.sandbox.entities.Add(nickSave);
             }

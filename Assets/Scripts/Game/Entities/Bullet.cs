@@ -20,29 +20,26 @@ namespace GameCore
 
             hurtable = false;
 
-            WhenRegisteredSyncVars(() =>
+            try
             {
-                try
-                {
-                    ownerId = customData["ori:bullet"]["ownerId"].ToObject<uint>();
-                }
-                catch
-                {
-                    Death();
-                }
+                ownerId = customData["ori:bullet"]["ownerId"].ToObject<uint>();
+            }
+            catch
+            {
+                Death();
+            }
 
-                if (isServer)
-                {
-                    timeToClear = Tools.time + livingTime;
-                }
-            });
+            if (isServer)
+            {
+                timeToClear = Tools.time + livingTime;
+            }
         }
 
         protected override void Update()
         {
             base.Update();
 
-            if (!registeredSyncVars || isDead)
+            if (isDead)
                 return;
 
             if (isServer)

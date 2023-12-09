@@ -144,7 +144,7 @@ namespace GameCore.High
                     {
                         if (Server.isServer)
                         {
-                            List<Player> players = PlayerCenter.allReady;
+                            List<Player> players = PlayerCenter.all;
 
                             foreach (Player player in players)
                             {

@@ -10,7 +10,7 @@ using static GameCore.PlayerUI;
 
 namespace GameCore
 {
-    [Serializable, AutoByteConverterAttribute]
+    [Serializable]
     public class Sandbox
     {
         public Vector2Int index;

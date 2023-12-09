@@ -189,18 +189,18 @@ namespace GameCore.High
                 }
 
                 //在服务器生成并初始化
-                EntityInit com = GameObject.Instantiate(GetEntityPrefab(data), n.pos, Quaternion.identity);
+                EntityInit init = GameObject.Instantiate(GetEntityPrefab(data), n.pos, Quaternion.identity);
 
                 /* ---------------------------------- 执行初始化 --------------------------------- */
-                com.generationId = data.id;
-                com.customData = JsonTools.LoadJObjectByString(n.customData);
-                com.data = data;
-                com.gameObject.name = data.id;
-                com.saveId = n.saveId;
-                com.health = n.health;
+                init.generationId = data.id;
+                init.customData = JsonTools.LoadJObjectByString(n.customData);
+                init.data = data;
+                init.gameObject.name = data.id;
+                init.saveId = n.saveId;
+                init.health = n.health;
 
-                OnServerSummonEntity(com, data, n, conn);
-                NetworkServer.Spawn(com.gameObject);
+                OnServerSummonEntity(init, data, n, conn);
+                NetworkServer.Spawn(init.gameObject);
                 return;
             }
 

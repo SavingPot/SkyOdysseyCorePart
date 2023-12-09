@@ -331,8 +331,7 @@ namespace GameCore
         {
             base.Update();
 
-            if (registeredSyncVars)
-                RefreshHurtEffect();
+            RefreshHurtEffect();
 
             //修正位置
             if (model)
@@ -422,7 +421,7 @@ namespace GameCore
         {
             base.FixedUpdate();
 
-            if (registeredSyncVars && CanMove(this))
+            if (CanMove(this))
                 Movement();
         }
 
@@ -433,10 +432,11 @@ namespace GameCore
             if (!isPlayer)
             {
                 //等一帧再设置, 否则会被 Entity 覆盖
-                WhenRegisteredSyncVars(() => WaitOneFrame(() =>
+                //TODO: 移动到Init
+                WaitOneFrame(() =>
                 {
                     moveSpeed = data.speed;
-                }));
+                });
             }
         }
 

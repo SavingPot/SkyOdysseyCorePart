@@ -193,7 +193,7 @@ namespace GameCore
             return vars.ContainsKey(varId);
         }
 
-        //TODO: string varId -> uint var;
+        //TODO: string varId -> long var;
         public static bool SetValue(string varId, byte[] value)
         {
             if (varId.IsNullOrEmpty())
@@ -251,6 +251,7 @@ namespace GameCore
         public static Func<string, string> StaticSetId;
 
         public static Action StaticVarsRegister;
+        public static Action<IVarInstanceID> InstanceVarsRegister;
 
         public static bool _InstanceSet(IVarInstanceID __instance, object value, MethodBase __originalMethod)
         {
@@ -425,29 +426,61 @@ namespace GameCore
                             }
                             else
                             {
-                                //TODO: 简化此处的代码建构, 使其更易懂
+                                //* 绑定钩子
+                                if (!att.hook.IsNullOrWhiteSpace())
+                                {
+                                    //获取钩子方法
+                                    MethodInfo hookMethod = !att.hook.Contains(".") ? type.GetMethodFromAllIncludingBases(att.hook) : ModFactory.SearchUserMethod(att.hook);
+
+                                    //检查是否找到钩子方法
+                                    if (hookMethod == null)
+                                    {
+                                        Debug.LogError($"无法找到 {propertyPath} 的钩子: {att.hook}");
+                                        continue;
+                                    }
+
+                                    //绑定钩子方法
+                                    OnVarValueChange += (var, value) =>
+                                    {
+                                        if (var.varId == propertyPath)
+                                        {
+                                            hookMethod.Invoke(null, null);
+                                        }
+                                    };
+                                }
+
+
+
+                                //* 如果是 值形式 的默认值
                                 if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(property, out var defaultValueAttribute))
                                 {
+                                    //检查类型错误, 例如属性是 float 类型, 默认值却填写了 123 就会报错, 要写 123f
                                     if (defaultValueAttribute.defaultValue != null && property.PropertyType.FullName != defaultValueAttribute.defaultValue.GetType().FullName)
                                     {
                                         Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueAttribute.defaultValue.GetType().FullName}");
                                         continue;
                                     }
 
+                                    //把默认值转为 byte[] 然后保存
                                     var value = Rpc.ObjectToBytes(defaultValueAttribute.defaultValue);
 
+                                    //绑定注册
                                     staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, value);
                                 }
+                                //* 如果是 方法形式 的默认值
                                 else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(property, out var defaultValueFromMethodAttribute))
                                 {
+                                    //获取默认值方法
                                     MethodInfo defaultValueMethod = ModFactory.SearchUserMethod(defaultValueFromMethodAttribute.methodName);
 
+                                    //检查方法是否为空
                                     if (defaultValueMethod == null)
                                     {
                                         Debug.LogError($"无法找到同步变量 {propertyPath} 的默认值获取方法 {defaultValueFromMethodAttribute.methodName}");
                                         continue;
                                     }
 
+                                    //检查类型错误, 例如属性是 float 类型, 默认值方法却返回 int 就会报错
                                     if (property.PropertyType.FullName != defaultValueMethod.ReturnType.FullName)
                                     {
                                         Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueMethod.ReturnType.FullName}");
@@ -456,6 +489,7 @@ namespace GameCore
 
                                     if (defaultValueFromMethodAttribute.getValueUntilRegister)
                                     {
+                                        //在注册时获取默认值并转为 byte[]
                                         staticVarsRegisterMethods += () =>
                                         {
                                             SyncPacker.RegisterVar(propertyPath, true, Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null)));
@@ -463,34 +497,17 @@ namespace GameCore
                                     }
                                     else
                                     {
+                                        //获取默认值并转为 byte[] 然后保存
                                         var value = Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null));
 
+                                        //绑定注册
                                         staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, value);
                                     }
                                 }
+                                //* 如果是无默认值
                                 else
                                 {
                                     staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, null);
-                                }
-
-                                if (!att.hook.IsNullOrWhiteSpace())
-                                {
-                                    MethodInfo method = !att.hook.Contains(".") ? type.GetMethodFromAllIncludingBases(att.hook) : ModFactory.SearchUserMethod(att.hook);  //.GetMethod(att.hook, flags)
-
-                                    if (method == null)
-                                    {
-                                        Debug.LogError($"无法找到 {propertyPath} 的钩子: {att.hook}");
-                                    }
-                                    else
-                                    {
-                                        OnVarValueChange += (var, value) =>
-                                        {
-                                            if (var.varId == propertyPath)
-                                            {
-                                                method.Invoke(null, null);
-                                            }
-                                        };
-                                    }
                                 }
                             }
                         }

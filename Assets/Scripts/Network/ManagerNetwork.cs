@@ -10,6 +10,7 @@ using Cysharp.Threading.Tasks;
 
 namespace GameCore.High
 {
+    //TODO: 适配ipv6
     public class ManagerNetwork : NetworkManager
     {
         #region 单例实现
@@ -149,10 +150,6 @@ namespace GameCore.High
 
             static void ClientGet_TypeWithNetCaller_Method(NMRpc m)
             {
-                if (m.methodPath == "GameCore.Player.ConnectionGenerateSandbox")
-                {
-                    Debug.Log(m.ToString());
-                }
                 //无论什么 CallType, 只要服务器发送了就执行
                 Rpc.LocalCall(m.methodPath, Client.connection, m.parameter0, m.parameter1, m.parameter2, m.parameter3, m.parameter4, m.instance);
             }
@@ -298,9 +295,12 @@ namespace GameCore.High
         {
             GameObject player = Instantiate(playerPrefab);
             player.name = $"{player.name} [{conn.address}:{conn.connectionId}]";
+            
             //TODO: Move the player data set to here?
             var init = player.GetComponent<EntityInit>();
             init.generationId = EntityID.Player;
+            init.data = ModFactory.CompareEntity(EntityID.Player);
+            
             NetworkServer.AddPlayerForConnection(conn, player);
             NetworkCallbacks.CallOnAddPlayer(conn);
         }

@@ -202,13 +202,6 @@ namespace GameCore
 
         public static bool _InstanceRemote2(NetworkConnection caller, object[] __args, Entity __instance, MethodBase __originalMethod)
         {
-            if ($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}" == "GameCore.Player.ConnectionGenerateSandbox")
-            {
-                Debug.Log(__args[0] == null);
-                Debug.Log(__args[0].GetType());
-                Debug.Log(ObjectToBytes(__args[0]).Length);
-            }
-
             byte[] parameter0 = ObjectToBytes(__args[0]);
             byte[] parameter1 = ObjectToBytes(__args[1]);
 
@@ -446,7 +439,7 @@ namespace GameCore
                         }
                         catch (Exception ex)
                         {
-                            Debug.LogError($"为 Rpc 方法 {mtdPath} 打补丁时抛出异常!\n\n{ex.Message}\n{Tools.HighlightedStackTrace()}");
+                            Debug.LogError($"为 Rpc 方法 {mtdPath} 打补丁时抛出异常!\n\n{ex.GetType().FullName}: {ex.Message}\n{Tools.HighlightedStackTrace()}");
                         }
                     }
 
