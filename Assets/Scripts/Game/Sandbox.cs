@@ -236,11 +236,11 @@ namespace GameCore
 
         }
 
-        public BlockSave_Location(BlockSave block, Vector2Int pos, BlockLayer player, string customData)
+        public BlockSave_Location(BlockSave block, Vector2Int pos, BlockLayer layer, string customData)
         {
             this.block = block;
             this.pos = pos;
-            this.layer = player;
+            this.layer = layer;
             this.customData = customData;
         }
     }
