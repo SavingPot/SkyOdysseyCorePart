@@ -164,7 +164,7 @@ namespace GameCore
 
         public static NMSyncVar GetVar(string varId)
         {
-            if (varId.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(varId))
             {
                 Debug.LogWarning($"寻找的同步变量 ID 为空");
                 return default;
@@ -181,7 +181,7 @@ namespace GameCore
 
         public static bool HasVar(string varId)
         {
-            if (varId.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(varId))
                 return false;
 
             return vars.ContainsKey(varId);
@@ -190,10 +190,9 @@ namespace GameCore
         //TODO: string varId -> long var;
         public static bool SetValue(string varId, byte[] value)
         {
-            if (varId.IsNullOrEmpty())
+            if (string.IsNullOrEmpty(varId))
             {
                 Debug.LogError("设置的同步变量 Id 为空");
-
                 return false;
             }
 
@@ -207,20 +206,19 @@ namespace GameCore
                 }
 
                 //设置值
-                NMSyncVar tempVar = var;
-                tempVar.value = value;
+                var oldValue = var.value;
+                var.value = value;
 
                 //服务器直接赋值
                 if (Server.isServer)
                 {
-                    var oldValue = var.value;
-                    vars[varId] = tempVar;
-                    OnVarValueChange.Invoke(tempVar, oldValue);
+                    vars[varId] = var;
+                    OnVarValueChange.Invoke(var, oldValue);
                 }
                 //客户端发送给服务器赋值
                 else
                 {
-                    Client.Send(tempVar);
+                    Client.Send(var);
                 }
 
                 return true;
