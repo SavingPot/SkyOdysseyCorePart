@@ -116,13 +116,13 @@ namespace GameCore
 
                 case RpcType.ConnectionRpc:
                     {
-                        /* //* 这通常不会触发报错, 在遇到问题时可以取消注释, 以便调试
                         if (caller == null)
                         {
-                            Debug.LogError("调用 ConnectionRpc 时 conn 不能为空, 必须提供参数!");
-                            return;
+                            Debug.LogError("调用 ConnectionRpc 时 caller 不能为空, 必须提供参数!");
+                            break;
                         }
 
+                        /* //* 这通常不会触发报错, 在遇到问题时可以取消注释, 以便调试
                         if (!Server.isServer)
                         {
                             Debug.LogError($"{nameof(NC_Type)}.{nameof(NC_Type.ConnectionRpc)} 方法只能在服务器被调用");

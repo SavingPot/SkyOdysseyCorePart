@@ -11,12 +11,12 @@ namespace GameCore
 {
     public interface IInventoryOwner
     {
-        void OnInventoryItemChange(string index);
+        void OnInventoryItemChange(Inventory newValue, string index);
         Inventory GetInventory();
-        void SetInventory(Inventory value);
+        void SetInventory(Inventory value); //! 需要对传入的 value 参数进行 ResumeFromStream
     }
 
-    [Serializable]//, AutoByteConverterAttribute]
+    [Serializable]
     public class Inventory
     {
         /* ------------------------ 使用 DatumItem 是因为需要储存当前耐久等数据 ------------------------ */
@@ -63,40 +63,58 @@ namespace GameCore
             }
         }
 
-        public void ResumeFromNetwork()
+        public static Inventory ResumeFromStreamTransport(Inventory inventory, IInventoryOwner owner)
         {
-            if (!Item.Null(helmet))
+            if (inventory == null)
             {
-                Item.StreamResume(ref helmet);
-                CreateBehaviour(helmet, helmetVar, out helmetBehaviour);
+                throw new ArgumentNullException(nameof(inventory));
             }
 
-            if (!Item.Null(breastplate))
+            Inventory result = new()
             {
-                Item.StreamResume(ref breastplate);
-                CreateBehaviour(breastplate, breastplateVar, out breastplateBehaviour);
+                helmet = inventory.helmet,
+                breastplate = inventory.breastplate,
+                legging = inventory.legging,
+                boots = inventory.boots,
+                slots = inventory.slots,
+                owner = owner,
+                slotsBehaviours = new ItemBehaviour[inventory.slots.Length]
+            };
+
+            if (!Item.Null(result.helmet))
+            {
+                Item.ResumeFromStreamTransport(ref result.helmet);
+                result.CreateBehaviour(result.helmet, helmetVar, out result.helmetBehaviour);
             }
 
-            if (!Item.Null(legging))
+            if (!Item.Null(result.breastplate))
             {
-                Item.StreamResume(ref legging);
-                CreateBehaviour(legging, leggingVar, out leggingBehaviour);
+                Item.ResumeFromStreamTransport(ref result.breastplate);
+                result.CreateBehaviour(result.breastplate, breastplateVar, out result.breastplateBehaviour);
             }
 
-            if (!Item.Null(boots))
+            if (!Item.Null(result.legging))
             {
-                Item.StreamResume(ref boots);
-                CreateBehaviour(boots, bootsVar, out bootsBehaviour);
+                Item.ResumeFromStreamTransport(ref result.legging);
+                result.CreateBehaviour(result.legging, leggingVar, out result.leggingBehaviour);
             }
 
-            for (int i = 0; i < slots.Length; i++)
+            if (!Item.Null(result.boots))
             {
-                if (!Item.Null(slots[i]))
+                Item.ResumeFromStreamTransport(ref result.boots);
+                result.CreateBehaviour(result.boots, bootsVar, out result.bootsBehaviour);
+            }
+
+            for (int i = 0; i < result.slots.Length; i++)
+            {
+                if (!Item.Null(result.slots[i]))
                 {
-                    Item.StreamResume(ref slots[i]);
-                    CreateBehaviour(slots[i], i.ToString(), out slotsBehaviours[i]);
+                    Item.ResumeFromStreamTransport(ref result.slots[i]);
+                    result.CreateBehaviour(result.slots[i], i.ToString(), out result.slotsBehaviours[i]);
                 }
             }
+
+            return result;
         }
 
 
@@ -234,7 +252,7 @@ namespace GameCore
                     break;
             }
 
-            owner?.OnInventoryItemChange(index);
+            owner?.OnInventoryItemChange(this,index);
         }
 
         public void SetItem(int index, Item value)
@@ -243,7 +261,7 @@ namespace GameCore
             slotsBehaviours[index]?.OnExit();
             CreateBehaviour(value, index.ToString(), out slotsBehaviours[index]);
 
-            owner?.OnInventoryItemChange(index.ToString());
+            owner?.OnInventoryItemChange(this, index.ToString());
         }
 
         public void ReduceItemCount(string index, ushort count) => OperateItemCount(index, count, MathOperator.Reduce);
@@ -305,7 +323,7 @@ namespace GameCore
                     slotsBehaviours[i]?.OnExit();
                     CreateBehaviour(slot, i.ToString(), out slotsBehaviours[i]);
                     slots[i] = slot;
-                    owner?.OnInventoryItemChange(i.ToString());
+                    owner?.OnInventoryItemChange(this, i.ToString());
                     return;
                 }
             }
@@ -317,7 +335,7 @@ namespace GameCore
                 {
                     slots[i] = datumItem;
                     CreateBehaviour(slots[i], i.ToString(), out slotsBehaviours[i]);
-                    owner?.OnInventoryItemChange(i.ToString());
+                    owner?.OnInventoryItemChange(this, i.ToString());
                     return;
                 }
             }
@@ -462,13 +480,6 @@ namespace GameCore
 
 
 
-        public void Init(byte slotCount, IInventoryOwner owner)
-        {
-            SetSlotCount(slotCount);
-
-            this.owner = owner;
-        }
-
 
         public Inventory()
         {
@@ -477,7 +488,9 @@ namespace GameCore
 
         public Inventory(byte slotCount, IInventoryOwner owner) : this()
         {
-            Init(slotCount, owner);
+            SetSlotCount(slotCount);
+
+            this.owner = owner;
         }
 
         public enum MathOperator
@@ -489,7 +502,8 @@ namespace GameCore
 
     public interface IOnInventoryItemChange
     {
-        void OnInventoryItemChange(string index);
+        //* 为什么必须提供一个 newValue? Inventory 明明是引用类型, 我直接访问 Inventory 的变量不就好了吗? 这是受限于网络传输的需要, 详见 Player.OnInventoryItemChange
+        void OnInventoryItemChange(Inventory newValue, string index);
     }
 
     [Serializable]
@@ -514,7 +528,7 @@ namespace GameCore
             return new(item.data.id, item.count, item.data.tags);
         }
 
-        public static void StreamResume(ref Item data)
+        public static void ResumeFromStreamTransport(ref Item data)
         {
             if (!Null(data))
             {

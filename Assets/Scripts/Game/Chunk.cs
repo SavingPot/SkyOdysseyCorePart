@@ -41,7 +41,7 @@ namespace GameCore.High
         public const float blockCountPerAxisReciprocal = 1f / blockCountPerAxis;
         public const float halfBlockCountPerAxis = blockCountPerAxis / 2f;
         public const int blockCountSingleLayer = blockCountPerAxis * blockCountPerAxis;
-        public const int blockCountMultiLayer = blockCountSingleLayer * BlockLayerHelp.TotalCount;
+        public const int blockCountMultiLayer = blockCountSingleLayer * 2;
 
         [LabelText("方块")] public Block[] blocks = new Block[blockCountMultiLayer];
         public Vector2Int chunkIndex { get; internal set; }
@@ -244,11 +244,11 @@ namespace GameCore.High
             chunk.totalRendererEnabled = e;
         };
 
-        public Block GetBlock(Vector2Int mapPos, BlockLayer layer)
+        public Block GetBlock(Vector2Int mapPos, bool isBackground)
         {
             foreach (Block block in blocks)
             {
-                if (block && block.pos == mapPos && block.layer == layer)
+                if (block && block.pos == mapPos && block.isBackground == isBackground)
                 {
                     return block;
                 }
@@ -257,9 +257,9 @@ namespace GameCore.High
             return null;
         }
 
-        public bool TryGetBlock(Vector2Int mapPos, BlockLayer layer, out Block block)
+        public bool TryGetBlock(Vector2Int mapPos, bool isBackground, out Block block)
         {
-            block = GetBlock(mapPos, layer);
+            block = GetBlock(mapPos, isBackground);
 
             return block;
         }
@@ -275,11 +275,11 @@ namespace GameCore.High
             }
         }
 
-        public void RemoveBlock(Vector2Int pos, BlockLayer layer, bool editSandbox)
+        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editSandbox)
         {
             foreach (var block in blocks)
             {
-                if (block && block.pos == pos && block.layer == layer)
+                if (block && block.pos == pos && block.isBackground == isBackground)
                 {
                     if (editSandbox && Server.isServer)
                     {
@@ -287,25 +287,25 @@ namespace GameCore.High
 
                         //在沙盒中删除
                         Sandbox sb = GFiles.world.GetOrAddSandbox(sandboxIndex);
-                        sb.RemovePos(block.data.id, blockChunkPos, block.layer);
+                        sb.RemovePos(block.data.id, blockChunkPos, block.isBackground);
                     }
 
                     map.blockPool.Recover(block);
 
-                    GameCallbacks.CallOnRemoveBlock(pos, layer, editSandbox, true);
+                    GameCallbacks.OnRemoveBlock(pos, isBackground, editSandbox, true);
                     return;
                 }
             }
 
-            GameCallbacks.CallOnRemoveBlock(pos, layer, editSandbox, false);
+            GameCallbacks.OnRemoveBlock(pos, isBackground, editSandbox, false);
         }
 
-        public Block AddBlock(Vector2Int pos, BlockLayer layer, BlockData block, string customData, bool editSandbox)
+        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editSandbox)
         {
             if (block == null)
                 return null;
 
-            Block b = map.blockPool.Get(pos, layer, block, customData);
+            Block b = map.blockPool.Get(pos, isBackground, block, customData);
 
             if (editSandbox && Server.isServer)
             {
@@ -313,10 +313,10 @@ namespace GameCore.High
 
                 //在沙盒中添加
                 Sandbox sb = GFiles.world.GetOrAddSandbox(sandboxIndex);
-                sb.AddPos(block.id, new(blockSBPos.x, blockSBPos.y, BlockLayerHelp.Parse(layer)));
+                sb.AddPos(block.id, new(blockSBPos.x, blockSBPos.y), isBackground);
             }
 
-            GameCallbacks.CallOnAddBlock(pos, layer, b, this);
+            GameCallbacks.OnAddBlock(pos, isBackground, b, this);
             return b;
         }
     }

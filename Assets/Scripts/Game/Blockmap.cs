@@ -20,7 +20,7 @@ namespace GameCore
             public Stack<GameObject> stack = new();
             private readonly Map map;
 
-            public Block Get(Vector2Int pos, BlockLayer layer, BlockData data, string customData)
+            public Block Get(Vector2Int pos, bool isBackground, BlockData data, string customData)
             {
                 GameObject go = stack.Count == 0 ? Instantiate(GInit.instance.GetBlockPrefab()) : stack.Pop();
 
@@ -46,11 +46,11 @@ namespace GameCore
 
                 /* ---------------------------------- 设置位置 ---------------------------------- */
                 block.pos = pos;
-                block.layer = layer;
+                block.isBackground = isBackground;
 
                 /* --------------------------------- 根据层设置参数 -------------------------------- */
-                block.transform.position = new(pos.x, pos.y, layer switch { BlockLayer.Background => 0.02f, BlockLayer.Foreground => -0.02f, _ => 0f });
-                block.sr.color = layer switch { BlockLayer.Background => Block.backgroundColor, BlockLayer.Foreground => Block.foregroundColor, _ => Block.wallColor };
+                block.transform.position = new(pos.x, pos.y, isBackground ? 0.02f : 0f);
+                block.sr.color = isBackground ? Block.backgroundColor : Block.wallColor;
 
 
                 /* --------------------------------- 移动到新的区块 -------------------------------- */
@@ -80,7 +80,7 @@ namespace GameCore
 
                 /* ----------------------------------- 初始化 ---------------------------------- */
                 block.DoStart();
-                map.UpdateAt(block.pos, block.layer);
+                map.UpdateAt(block.pos, block.isBackground);
 
                 return block;
             }
@@ -260,28 +260,28 @@ namespace GameCore
             return chunkPool.Get(chunkIndex);
         }
 
-        public Block GetBlock(Vector2Int pos, BlockLayer layer)
+        public Block GetBlock(Vector2Int pos, bool isBackground)
         {
             Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
 
-            return AddChunk(chunkIndexTo).GetBlock(pos, layer);
+            return AddChunk(chunkIndexTo).GetBlock(pos, isBackground);
         }
 
-        public bool TryGetBlock(Vector2Int pos, BlockLayer layer, out Block b)
+        public bool TryGetBlock(Vector2Int pos, bool isBackground, out Block b)
         {
-            b = GetBlock(pos, layer);
+            b = GetBlock(pos, isBackground);
 
             return b;
         }
 
         public void SetBlockCustomDataOL(Block block)
         {
-            Client.Send<NMSetBlockCustomData>(new(block.pos, block.layer, block.customData.ToString()));
+            Client.Send<NMSetBlockCustomData>(new(block.pos, block.isBackground, block.customData.ToString()));
         }
 
-        public void SetBlockCustomDataOL(Vector2Int pos, BlockLayer layer, string customData)
+        public void SetBlockCustomDataOL(Vector2Int pos, bool isBackground, string customData)
         {
-            Client.Send<NMSetBlockCustomData>(new(pos, layer, customData));
+            Client.Send<NMSetBlockCustomData>(new(pos, isBackground, customData));
         }
 
         public void ClearAllBlocks()
@@ -312,13 +312,13 @@ namespace GameCore
             }
         }
 
-        public bool HasBlock(Vector2Int pos, BlockLayer layer)
+        public bool HasBlock(Vector2Int pos, bool isBackground)
         {
             foreach (Chunk chunk in chunks)
             {
                 foreach (Block block in chunk.blocks)
                 {
-                    if (block && block.pos == pos && block.layer == layer)
+                    if (block && block.pos == pos && block.isBackground == isBackground)
                     {
                         return true;
                     }
@@ -328,62 +328,62 @@ namespace GameCore
             return false;
         }
 
-        public bool HasBlockPlayerCursorPos(Player player, BlockLayer layer)
+        public bool HasBlockPlayerCursorPos(Player player, bool isBackground)
         {
             var pos = GetPlayerCursorMapPos(player);
 
-            return HasBlock(pos, layer);
+            return HasBlock(pos, isBackground);
         }
 
-        public bool GetBlockWorldPos(Vector2 pos, BlockLayer layer)
+        public bool GetBlockWorldPos(Vector2 pos, bool isBackground)
         {
-            return GetBlock(PosConvert.WorldToMapPos(pos), layer);
+            return GetBlock(PosConvert.WorldToMapPos(pos), isBackground);
         }
 
-        public bool HasBlockWorldPos(Vector2 pos, BlockLayer layer)
+        public bool HasBlockWorldPos(Vector2 pos, bool isBackground)
         {
-            return HasBlock(PosConvert.WorldToMapPos(pos), layer);
+            return HasBlock(PosConvert.WorldToMapPos(pos), isBackground);
         }
 
         public Vector2Int GetPlayerCursorMapPos(Player player) => PosConvert.WorldToMapPos(player.cursorWorldPos);
 
-        public void SetBlockNet(Vector2Int pos, BlockLayer layer, string id, string customData) => Client.Send<NMSetBlock>(new(pos, layer, id, customData));
+        public void SetBlockNet(Vector2Int pos, bool isBackground, string id, string customData) => Client.Send<NMSetBlock>(new(pos, isBackground, id, customData));
 
 #if UNITY_EDITOR
-        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, BlockLayer layer, string block, bool editSandbox) => SetBlock(pos, layer, ModFactory.CompareBlockDatum(block), null, editSandbox);
+        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editSandbox) => SetBlock(pos, isBackground, ModFactory.CompareBlockDatum(block), null, editSandbox);
 #endif
 
-        public Block SetBlock(Vector2Int pos, BlockLayer layer, BlockData block, string customData, bool editSandbox)
+        public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editSandbox)
         {
             Chunk chunk = AddChunk(PosConvert.BlockPosToChunkIndex(pos));
 
-            chunk.RemoveBlock(pos, layer, editSandbox);
+            chunk.RemoveBlock(pos, isBackground, editSandbox);
 
-            return chunk.AddBlock(pos, layer, block, customData, editSandbox);
+            return chunk.AddBlock(pos, isBackground, block, customData, editSandbox);
         }
 
-        public void DestroyBlockNet(Vector2Int pos, BlockLayer layer) => SetBlockNet(pos, layer, null, null);
+        public void DestroyBlockNet(Vector2Int pos, bool isBackground) => SetBlockNet(pos, isBackground, null, null);
 
-        public void DestroyBlock(Vector2Int pos, BlockLayer layer, bool editSandbox) => SetBlock(pos, layer, null, null, editSandbox);
+        public void DestroyBlock(Vector2Int pos, bool isBackground, bool editSandbox) => SetBlock(pos, isBackground, null, null, editSandbox);
 
-        public Block AddBlock(Vector2Int pos, BlockLayer layer, BlockData block, string customData, bool editSandbox)
+        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editSandbox)
         {
             if (block == null)
                 return null;
 
             Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
 
-            return AddChunk(chunkIndexTo).AddBlock(pos, layer, block, customData, editSandbox);
+            return AddChunk(chunkIndexTo).AddBlock(pos, isBackground, block, customData, editSandbox);
         }
 
-        public void RemoveBlock(Vector2Int pos, BlockLayer layer, bool editSandbox)
+        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editSandbox)
         {
             Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
 
-            AddChunk(chunkIndexTo).RemoveBlock(pos, layer, editSandbox);
+            AddChunk(chunkIndexTo).RemoveBlock(pos, isBackground, editSandbox);
         }
 
-        public void UpdateAt(Vector2Int pos, BlockLayer layer)
+        public void UpdateAt(Vector2Int pos, bool isBackground)
         {
             Vector2Int[] points = new[]
             {
@@ -400,66 +400,13 @@ namespace GameCore
 
             foreach (Vector2Int p in points)
             {
-                var block = GetBlock(p, layer);
+                var block = GetBlock(p, isBackground);
 
                 if (block)
                 {
                     block.OnUpdate();
                 }
             }
-        }
-    }
-
-    public enum BlockLayer : byte
-    {
-        Wall = 0,
-        Background = 1,
-        Foreground = 2
-    }
-
-    public static class BlockLayerHelp
-    {
-        public static BlockLayer min = Enum.GetValues(typeof(BlockLayer)).Cast<BlockLayer>().Min();
-        public static BlockLayer max = Enum.GetValues(typeof(BlockLayer)).Cast<BlockLayer>().Max();
-        public const int TotalCount = 3;
-
-        public static BlockLayer Parse(float value) => value switch
-        {
-            0 => BlockLayer.Wall,
-            1 => BlockLayer.Background,
-            2 => BlockLayer.Foreground,
-            _ => BlockLayer.Wall
-        };
-
-        public static BlockLayer Parse(int value) => value switch
-        {
-            0 => BlockLayer.Wall,
-            1 => BlockLayer.Background,
-            2 => BlockLayer.Foreground,
-            _ => BlockLayer.Wall
-        };
-
-        public static BlockLayer Parse(byte value) => value switch
-        {
-            0 => BlockLayer.Wall,
-            1 => BlockLayer.Background,
-            2 => BlockLayer.Foreground,
-            _ => BlockLayer.Wall
-        };
-
-        public static byte Parse(BlockLayer value) => value switch
-        {
-            BlockLayer.Wall => 0,
-            BlockLayer.Background => 1,
-            BlockLayer.Foreground => 2,
-            _ => 0
-        };
-
-
-
-        public static bool InRange(BlockLayer value)
-        {
-            return value <= max && value >= min;
         }
     }
 

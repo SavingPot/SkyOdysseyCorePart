@@ -9,6 +9,7 @@ using System;
 using System.Text;
 using System.Reflection;
 using GameCore.High;
+using Cysharp.Threading.Tasks;
 
 namespace GameCore
 {
@@ -20,6 +21,7 @@ namespace GameCore
         [BoxGroup("变量注册"), LabelText("注册了网络变量")] public bool registeredSyncVars;
         [BoxGroup("独留变量"), LabelText("生成ID"), SyncVar] public string generationId;
         [BoxGroup("变量注册")] public string waitingRegisteringVar;
+        public SyncPacker.OnVarValueChangeCallback[] varHooksToUnbind;
         public Entity entity;
         public bool hasGotGeneratingId => !generationId.IsNullOrWhiteSpace();
         public bool hasDestroyed { get; protected set; }
@@ -37,11 +39,44 @@ namespace GameCore
         private static readonly Dictionary<Type, SyncAttributeData[]> TotalSyncVarAttributeTemps = new();
         public static readonly string maxHealthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.maxHealth)}";
         public static readonly string healthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.health)}";
+        public static readonly string inventoryVarId = $"{typeof(Player).FullName}.{nameof(Player.inventory)}";
 
 
         private void OnDestroy()
         {
             hasDestroyed = true;
+
+
+
+
+
+            /* -------------------------------------------------------------------------- */
+            /*                                  注销所有同步变量                                  */
+            /* -------------------------------------------------------------------------- */
+            if (!registeredSyncVars)
+                return;
+
+
+            //注销变量
+            if (isServer)
+            {
+                var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
+
+                StringBuilder sb = new();
+
+                foreach (SyncAttributeData pair in syncVarTemps)
+                {
+                    string id = SyncPacker.GetInstanceID(sb, pair.propertyPath, netId);
+                    SyncPacker.UnregisterVar(id);
+                }
+            }
+
+
+            //取消绑定变量的钩子
+            foreach (var hook in varHooksToUnbind)
+            {
+                SyncPacker.OnVarValueChange -= hook;
+            }
         }
 
         public override void OnStartServer()
@@ -90,6 +125,18 @@ namespace GameCore
 
 
 
+        async void OnValueChangeHook(NMSyncVar nm, byte[] oldValue, MethodInfo hookMethod, string varId)
+        {
+            //* 这是为了防止服务器上进行了赋值, 但是客户端还没创建这个实体
+            if (!entity)
+                await UniTask.WaitUntil(() => entity);
+
+            if (hasDestroyed)
+                return;
+
+            if (nm.varId == varId)
+                hookMethod.Invoke(entity, null);
+        }
 
         public void AutoRegisterVars()
         {
@@ -97,6 +144,7 @@ namespace GameCore
 
             //遍历每个属性
             StringBuilder sb = new();
+            List<SyncPacker.OnVarValueChangeCallback> varHooksToUnbindTemp = new();
 
             //TODO: Improve readability and performance step and step
             foreach (SyncAttributeData pair in syncVarTemps)
@@ -105,19 +153,9 @@ namespace GameCore
 
                 if (pair.hook != null)
                 {
-                    SyncPacker.OnVarValueChange += OnValueChangeBoth;
-
-                    void OnValueChangeBoth(NMSyncVar i, byte[] v)
-                    {
-                        if (i.varId == id)
-                            pair.hook.Invoke(entity, null);
-
-                        if (hasDestroyed)
-                        {
-                            SyncPacker.OnVarValueChange -= OnValueChangeBoth;
-                            return;
-                        }
-                    }
+                    SyncPacker.OnVarValueChangeCallback callback = (nm, oldValue) => OnValueChangeHook(nm, oldValue, pair.hook, id);
+                    varHooksToUnbindTemp.Add(callback);
+                    SyncPacker.OnVarValueChange += callback;
                 }
 
                 if (isServer)
@@ -133,6 +171,10 @@ namespace GameCore
                     {
                         SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(data.maxHealth));
                     }
+                    else if (pair.propertyPath == inventoryVarId)
+                    {
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(new Inventory(Player.inventorySlotCount, null)));
+                    }
                     else
                     {
                         if (!pair.includeDefaultValue)
@@ -144,6 +186,8 @@ namespace GameCore
                     }
                 }
             }
+
+            varHooksToUnbind = varHooksToUnbindTemp.ToArray();
 
             //开始等待注册完毕
             StartCoroutine(IEWaitRegistering(syncVarTemps));

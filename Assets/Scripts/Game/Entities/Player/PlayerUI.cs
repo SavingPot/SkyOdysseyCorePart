@@ -211,8 +211,6 @@ namespace GameCore
         public Joystick cursorJoystick;
         public ImageIdentity cursorImage;
         public ButtonIdentity attackButton;
-        public ButtonIdentity controllingLayerUpButton;
-        public ButtonIdentity controllingLayerDownButton;
         public ButtonIdentity interactionButton;
         public ImageIdentity useItemButtonImage;
         public ButtonIdentity useItemButton;
@@ -648,25 +646,6 @@ namespace GameCore
                 });
             }
 
-            /* -------------------------------------------------------------------------- */
-            /*                                    纵层切换                                    */
-            /* -------------------------------------------------------------------------- */
-            {
-                controllingLayerUpButton = GameUI.AddButton(UPC.upperRight, "ori:button_player_controlling_layer_up", GameUI.canvas.transform, "ori:player_controlling_layer_up_button");
-                controllingLayerDownButton = GameUI.AddButton(UPC.upperRight, "ori:button_player_controlling_layer_down", GameUI.canvas.transform, "ori:player_controlling_layer_down_button");
-
-                SetIt(controllingLayerUpButton, 0, () => Player.ChangeControllingLayer(player, player.controllingLayer + 1));
-                SetIt(controllingLayerDownButton, -50, () => Player.ChangeControllingLayer(player, player.controllingLayer - 1));
-
-                static void SetIt(ButtonIdentity button, int extraY, UnityAction ua)
-                {
-                    button.image.rectTransform.sizeDelta = new(50, 50);
-                    button.rt.anchoredPosition = new(-140, -55 + extraY);
-                    button.buttonText.gameObject.SetActive(false);
-                    button.AddMethod(ua);
-                }
-            }
-
             #endregion
 
             /* -------------------------------------------------------------------------- */
@@ -953,7 +932,7 @@ namespace GameCore
                                 choseCraftRecipe = pair;
 
                                 //制作后刷新合成界面, 原料表与标题
-                                player.OnInventoryItemChange(null);
+                                player.OnInventoryItemChange(player.inventory, null);
                             });
 
                             //图标
@@ -1089,9 +1068,11 @@ namespace GameCore
                 rebornPanelText.SetSizeDelta(500, 120);
                 rebornPanelText.text.SetFontSize(24);
                 rebornPanelText.RefreshUI();
+                rebornPanelText.doRefresh = false;
 
                 rebornButton.SetAPosY(-20);
                 rebornButton.buttonText.RefreshUI();
+                rebornButton.buttonText.doRefresh = false;
                 rebornButton.AddMethod(() =>
                 {
                     rebornButton.button.interactable = false;
@@ -1296,15 +1277,6 @@ namespace GameCore
             if (interactionButton)
             {
                 SetUIHighest(interactionButton);
-            }
-
-            if (controllingLayerUpButton)
-            {
-                SetUIHighest(controllingLayerUpButton);
-            }
-            if (controllingLayerDownButton)
-            {
-                SetUIHighest(controllingLayerDownButton);
             }
 
 
@@ -1591,12 +1563,14 @@ namespace GameCore
 
 
 
+        [Serializable]
         public class TaskStatus
         {
             public bool completed;
             public bool hasGotRewards;
         }
 
+        [Serializable]
         public class TaskStatusForSave : TaskStatus
         {
             public string id;

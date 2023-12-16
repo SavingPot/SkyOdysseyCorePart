@@ -10,10 +10,10 @@ using Cysharp.Threading.Tasks;
 
 namespace GameCore.High
 {
-    //TODO: ÊÊÅäipv6
+    //TODO: é€‚é…ipv6
     public class ManagerNetwork : NetworkManager
     {
-        #region µ¥ÀıÊµÏÖ
+        #region å•ä¾‹å®ç°
         private static ManagerNetwork _instance;
 
         public static ManagerNetwork instance
@@ -29,7 +29,7 @@ namespace GameCore.High
                         return null;
 
                     SummonInstance();
-                    Debug.LogWarning($"²»´æÔÚµ¥ÀıÎïÌå, ÒÑÉú³É ({typeof(ManagerNetwork)})");
+                    Debug.LogWarning($"ä¸å­˜åœ¨å•ä¾‹ç‰©ä½“, å·²ç”Ÿæˆ ({typeof(ManagerNetwork)})");
                 }
 
                 return _instance;
@@ -50,7 +50,7 @@ namespace GameCore.High
         {
             if (action == null)
             {
-                Debug.LogError($"{nameof(action)} ÖµÎª¿Õ");
+                Debug.LogError($"{nameof(action)} å€¼ä¸ºç©º");
                 return;
             }
 
@@ -132,25 +132,25 @@ namespace GameCore.High
             {
                 switch (m.callType)
                 {
-                    //ÔÚ·şÎñÆ÷ÉÏµ÷ÓÃ: ÊÕµ½ÁË¿Í»§¶ËµÄµ÷ÓÃÇëÇó: Ö±½Óµ÷ÓÃ
+                    //åœ¨æœåŠ¡å™¨ä¸Šè°ƒç”¨: æ”¶åˆ°äº†å®¢æˆ·ç«¯çš„è°ƒç”¨è¯·æ±‚: ç›´æ¥è°ƒç”¨
                     case RpcType.ServerRpc:
                         Rpc.LocalCall(m.methodPath, conn, m.parameter0, m.parameter1, m.parameter2, m.parameter3, m.parameter4, m.instance);
                         break;
 
-                    //·¢ËÍ¸øÈ«²¿¿Í»§¶ËÖ´ĞĞ: ÊÕµ½ÁË¿Í»§¶ËµÄ¹ã²¥ÇëÇó: °ÑÏûÏ¢¹ã²¥¸øËùÓĞ¿Í»§¶Ë 
+                    //å‘é€ç»™å…¨éƒ¨å®¢æˆ·ç«¯æ‰§è¡Œ: æ”¶åˆ°äº†å®¢æˆ·ç«¯çš„å¹¿æ’­è¯·æ±‚: æŠŠæ¶ˆæ¯å¹¿æ’­ç»™æ‰€æœ‰å®¢æˆ·ç«¯ 
                     case RpcType.ClientRpc:
                         Server.Send(m);
                         break;
 
                     default:
-                        Debug.LogError($"²ÎÊı´íÎó, ·şÎñÆ÷´íÎóµØÊÕµ½ÁËÀàĞÍÎª {m.callType} µÄ·½·¨");
+                        Debug.LogError($"å‚æ•°é”™è¯¯, æœåŠ¡å™¨é”™è¯¯åœ°æ”¶åˆ°äº†ç±»å‹ä¸º {m.callType} çš„æ–¹æ³•");
                         break;
                 }
             }
 
             static void ClientGet_TypeWithNetCaller_Method(NMRpc m)
             {
-                //ÎŞÂÛÊ²Ã´ CallType, Ö»Òª·şÎñÆ÷·¢ËÍÁË¾ÍÖ´ĞĞ
+                //æ— è®ºä»€ä¹ˆ CallType, åªè¦æœåŠ¡å™¨å‘é€äº†å°±æ‰§è¡Œ
                 Rpc.LocalCall(m.methodPath, Client.connection, m.parameter0, m.parameter1, m.parameter2, m.parameter3, m.parameter4, m.instance);
             }
 
@@ -173,7 +173,7 @@ namespace GameCore.High
         }
 
         /// <summary>
-        /// ÔÚ·şÎñÆ÷ºÍ¿Í»§¶Ë¶¼Ö´ĞĞ
+        /// åœ¨æœåŠ¡å™¨å’Œå®¢æˆ·ç«¯éƒ½æ‰§è¡Œ
         /// </summary>
         public override void LateUpdate()
         {
@@ -181,7 +181,7 @@ namespace GameCore.High
         }
 
         /// <summary>
-        /// ÔÚ·şÎñÆ÷ºÍ¿Í»§¶Ë¶¼Ö´ĞĞ
+        /// åœ¨æœåŠ¡å™¨å’Œå®¢æˆ·ç«¯éƒ½æ‰§è¡Œ
         /// </summary>
         public override void OnDestroy()
         {
@@ -192,7 +192,7 @@ namespace GameCore.High
         #region Start & Stop
 
         /// <summary>
-        /// ÉèÖÃÎŞÍ··şÎñÆ÷µÄÖ¡ËÙÂÊ (¼´ CMD Ä£Ê½)
+        /// è®¾ç½®æ— å¤´æœåŠ¡å™¨çš„å¸§é€Ÿç‡ (å³ CMD æ¨¡å¼)
         /// <para>Override if you wish to disable the behavior or set your own tick rate.</para>
         /// </summary>
         public override void ConfigureHeadlessFrameRate()
@@ -201,7 +201,7 @@ namespace GameCore.High
         }
 
         /// <summary>
-        /// µ±Í¨¹ı¹Ø±Õ´°¿Ú»òµã»÷±à¼­Æ÷ Stop °´Å¥Ê±Ö´ĞĞ
+        /// å½“é€šè¿‡å…³é—­çª—å£æˆ–ç‚¹å‡»ç¼–è¾‘å™¨ Stop æŒ‰é’®æ—¶æ‰§è¡Œ
         /// </summary>
         public override void OnApplicationQuit()
         {
@@ -210,7 +210,7 @@ namespace GameCore.High
 
         #endregion
 
-        #region ³¡¾°»Øµ÷
+        #region åœºæ™¯å›è°ƒ
 
         /// <summary>
         /// This causes the server to switch scenes and sets the networkSceneName.
@@ -255,23 +255,23 @@ namespace GameCore.High
 
         #endregion
 
-        #region ÔÚ·şÎñÆ÷Ö´ĞĞµÄ»Øµ÷
+        #region åœ¨æœåŠ¡å™¨æ‰§è¡Œçš„å›è°ƒ
 
         /// <summary>
-        /// µ±¿Í»§¶ËÁ¬½ÓÊ±ÔÚ·şÎñÆ÷µ÷ÓÃ.
+        /// å½“å®¢æˆ·ç«¯è¿æ¥æ—¶åœ¨æœåŠ¡å™¨è°ƒç”¨.
         /// <para>Unity calls this on the Server when a Client connects to the Server. Use an override to tell the NetworkManager what to do when a client connects to the server.</para>
         /// </summary>
-        /// <param name="conn">¿Í»§¶ËµÄÁ¬½Ó</param>
+        /// <param name="conn">å®¢æˆ·ç«¯çš„è¿æ¥</param>
         public override void OnServerConnect(NetworkConnectionToClient conn)
         {
             NetworkCallbacks.CallOnClientConnect(conn);
         }
 
         /// <summary>
-        /// µ±¿Í»§¶Ë×¼±¸ºÃÊ±ÔÚ·şÎñÆ÷µ÷ÓÃ.
-        /// <para>´Ë·½·¨Ä¬ÈÏÍ¨¹ıµ÷ÓÃ NetworkServer.SetClientReady() À´¼ÌĞøÍøÂçÉèÖÃ¹ı³Ì</para>
+        /// å½“å®¢æˆ·ç«¯å‡†å¤‡å¥½æ—¶åœ¨æœåŠ¡å™¨è°ƒç”¨.
+        /// <para>æ­¤æ–¹æ³•é»˜è®¤é€šè¿‡è°ƒç”¨ NetworkServer.SetClientReady() æ¥ç»§ç»­ç½‘ç»œè®¾ç½®è¿‡ç¨‹</para>
         /// </summary>
-        /// <param name="conn">¿Í»§¶ËµÄÁ¬½Ó</param>
+        /// <param name="conn">å®¢æˆ·ç«¯çš„è¿æ¥</param>
         public override void OnServerReady(NetworkConnectionToClient conn)
         {
             base.OnServerReady(conn);
@@ -282,10 +282,10 @@ namespace GameCore.High
         }
 
         /// <summary>
-        /// µ±¿Í»§¶ËÊ¹ÓÃ ClientScene.AddPlayer Ìí¼ÓĞÂÍæ¼ÒÊ±ÔÚ·şÎñÆ÷ÉÏµ÷ÓÃ
+        /// å½“å®¢æˆ·ç«¯ä½¿ç”¨ ClientScene.AddPlayer æ·»åŠ æ–°ç©å®¶æ—¶åœ¨æœåŠ¡å™¨ä¸Šè°ƒç”¨
         /// <para>The default implementation for this function creates a new player object from the playerPrefab.</para>
         /// </summary>
-        /// <param name="conn">¿Í»§¶ËµÄÁ¬½Ó</param>
+        /// <param name="conn">å®¢æˆ·ç«¯çš„è¿æ¥</param>
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
 
@@ -306,10 +306,10 @@ namespace GameCore.High
         }
 
         /// <summary>
-        /// µ±¿Í»§¶Ë¶Ï¿ªÁ¬½ÓÊ±ÔÚ·şÎñÆ÷µ÷ÓÃ
+        /// å½“å®¢æˆ·ç«¯æ–­å¼€è¿æ¥æ—¶åœ¨æœåŠ¡å™¨è°ƒç”¨
         /// <para>Use an override to decide what should happen when a disconnection is detected.</para>
         /// </summary>
-        /// <param name="conn">¿Í»§¶ËµÄÁ¬½Ó</param>
+        /// <param name="conn">å®¢æˆ·ç«¯çš„è¿æ¥</param>
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
             base.OnServerDisconnect(conn);
@@ -318,20 +318,20 @@ namespace GameCore.High
         }
 
         /// <summary>
-        /// ´«ÊäÒı·¢Òì³£Ê±ÔÚ·şÎñÆ÷ÉÏµ÷ÓÃ
-        /// <para>conn ¿ÉÄÜÎª¿Õ.</para>
+        /// ä¼ è¾“å¼•å‘å¼‚å¸¸æ—¶åœ¨æœåŠ¡å™¨ä¸Šè°ƒç”¨
+        /// <para>conn å¯èƒ½ä¸ºç©º.</para>
         /// </summary>
-        /// <param name="conn">¿Í»§¶ËµÄÁ¬½Ó (¿ÉÄÜÎª¿Õ)</param>
-        /// <param name="exception">´«ÊäÅ×³öµÄÒì³£.</param>
+        /// <param name="conn">å®¢æˆ·ç«¯çš„è¿æ¥ (å¯èƒ½ä¸ºç©º)</param>
+        /// <param name="exception">ä¼ è¾“æŠ›å‡ºçš„å¼‚å¸¸.</param>
         public override void OnServerError(NetworkConnectionToClient conn, TransportError error, string reason)
         {
             NetworkCallbacks.CallOnClientError(conn, error, reason);
         }
         #endregion
 
-        #region ÔÚ¿Í»§¶ËÖ´ĞĞµÄ»Øµ÷
+        #region åœ¨å®¢æˆ·ç«¯æ‰§è¡Œçš„å›è°ƒ
         /// <summary>
-        /// µ±Á¬½Óµ½·şÎñÆ÷Ê±ÔÚ¿Í»§¶ËÉÏµ÷ÓÃ
+        /// å½“è¿æ¥åˆ°æœåŠ¡å™¨æ—¶åœ¨å®¢æˆ·ç«¯ä¸Šè°ƒç”¨
         /// <para>The default implementation of this function sets the client as ready and adds a player. Override the function to dictate what happens when the client connects.</para>
         /// </summary>
         public override void OnClientConnect()
@@ -342,7 +342,7 @@ namespace GameCore.High
         }
 
         /// <summary>
-        /// µ±´Ó·şÎñÆ÷¶Ï¿ªÁ¬½ÓÊ±ÔÚ¿Í»§¶ËÉÏµ÷ÓÃ
+        /// å½“ä»æœåŠ¡å™¨æ–­å¼€è¿æ¥æ—¶åœ¨å®¢æˆ·ç«¯ä¸Šè°ƒç”¨
         /// <para>This is called on the client when it disconnects from the server. Override this function to decide what happens when the client disconnects.</para>
         /// </summary>
         public override void OnClientDisconnect()

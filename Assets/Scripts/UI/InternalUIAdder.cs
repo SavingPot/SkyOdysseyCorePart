@@ -140,7 +140,7 @@ namespace GameCore.UI
                             ModFactory.CompareTexture("ori:loading_house_0").sprite,
                             ModFactory.CompareTexture("ori:loading_house_1").sprite,
                         };
-                        var _ = AnimCenter.PlaySprites(1.5f, sprites, sprite =>
+                        var _ = EasyAnim.PlaySprites(1.5f, sprites, sprite =>
                         {
                             if (houseImage)
                             {

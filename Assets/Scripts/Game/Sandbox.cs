@@ -90,55 +90,43 @@ namespace GameCore
             return y;
         }
 
-        public void AddPos(string id, Vector3Int pos, Vector3Int[] areas, bool overwriteIfContains, string customData = null)
+        public void AddPos(string id, Vector2Int centerPoint, Vector3Int[] areas, bool overwriteIfContains, string customData = null)
         {
             lock (saves)
             {
-                bool addedCore = false;
+                if (!saves.Any(p => p.blockId == id))
+                    saves.Add(new(id));
 
-            add:
-                for (int i = 0; i < saves.Count; i++)
+                foreach (var save in saves)
                 {
-                    BlockSave save = saves[i];
-
                     if (save.blockId == id)
                     {
                         foreach (var area in areas)
                         {
-                            if (addedCore && area == pos)
-                                continue;
+                            Vector2Int targetPos = new(centerPoint.x + area.x, centerPoint.y + area.y);
+                            bool targetIsBackground = area.z < 0;
 
-                            Vector2Int targetPos = new(pos.x + area.x, pos.y + area.y);
-                            BlockLayer targetLayer = BlockLayerHelp.Parse(area.z);
-
-                            save.AddLocation(targetPos, targetLayer, overwriteIfContains);
+                            save.AddLocation(targetPos, targetIsBackground, overwriteIfContains);
                         }
 
                         return;
                     }
                 }
-
-                saves.Add(new(new(pos.x, pos.y), BlockLayerHelp.Parse(pos.z), id, customData));
-                addedCore = true;
-                goto add;
             }
         }
 
-        public void AddPos(string id, Vector3Int pos, bool overwriteIfContains = false, string customData = null)
+        public void AddPos(string id, Vector2Int pos, bool isBackground, bool overwriteIfContains = false, string customData = null)
         {
-            //TODO: 检测 pos 是否超出边界
-            Vector2Int pos2 = new(pos.x, pos.y);
-            BlockLayer layer = BlockLayerHelp.Parse(pos.z);
-
+            //TODO: 检测 pos 是否超出沙盒边界
             lock (saves)
             {
                 if (string.IsNullOrEmpty(id))
                 {
                     foreach (var save in saves)
                     {
-                        if (save.HasLocation(pos2, layer))
+                        if (save.HasLocation(pos, isBackground))
                         {
-                            save.RemoveLocation(pos2, layer);
+                            save.RemoveLocation(pos, isBackground);
                             return;
                         }
                     }
@@ -149,18 +137,18 @@ namespace GameCore
                     {
                         if (save.blockId == id)
                         {
-                            save.AddLocation(pos2, layer, overwriteIfContains, customData);
+                            save.AddLocation(pos, isBackground, overwriteIfContains, customData);
 
                             return;
                         }
                     }
 
-                    saves.Add(new(pos2, layer, id, customData));
+                    saves.Add(new(pos, isBackground, id, customData));
                 }
             }
         }
 
-        public void RemovePos(Vector2Int pos, BlockLayer layer)
+        public void RemovePos(Vector2Int pos, bool isBackground)
         {
             lock (saves)
                 for (int i = 0; i < saves.Count; i++)
@@ -171,7 +159,7 @@ namespace GameCore
                     {
                         BlockSave_Location location = save.locations[b];
 
-                        if (location.pos == pos && location.layer == layer)
+                        if (location.pos == pos && location.isBackground == isBackground)
                         {
                             save.RemovePosAt(b);
                             break;
@@ -180,7 +168,7 @@ namespace GameCore
                 }
         }
 
-        public void RemovePos(string id, Vector2Int pos, BlockLayer layer)
+        public void RemovePos(string id, Vector2Int pos, bool isBackground)
         {
             lock (saves)
                 for (int i = 0; i < saves.Count; i++)
@@ -194,7 +182,7 @@ namespace GameCore
                     {
                         BlockSave_Location location = save.locations[b];
 
-                        if (location.pos == pos && location.layer == layer)
+                        if (location.pos == pos && location.isBackground == isBackground)
                         {
                             save.RemovePosAt(b);
                             return;
@@ -203,21 +191,21 @@ namespace GameCore
                 }
         }
 
-        public bool HasBlock(Vector2Int pos, BlockLayer layer) => GetBlock(pos, layer) != null;
+        public bool HasBlock(Vector2Int pos, bool isBackground) => GetBlock(pos, isBackground) != null;
 
-        public BlockSave_Location GetBlock(Vector2Int pos, BlockLayer layer)
+        public BlockSave_Location GetBlock(Vector2Int pos, bool isBackground)
         {
             lock (saves)
                 foreach (var block in saves)
-                    if (block.TryGetLocation(pos, layer, out var result))
+                    if (block.TryGetLocation(pos, isBackground, out var result))
                         return result;
 
             return null;
         }
 
-        public bool GetBlockOut(Vector2Int pos, BlockLayer player, out BlockSave_Location dbs)
+        public bool GetBlockOut(Vector2Int pos, bool isBackground, out BlockSave_Location dbs)
         {
-            dbs = GetBlock(pos, player);
+            dbs = GetBlock(pos, isBackground);
 
             return dbs != null;
         }
@@ -228,7 +216,7 @@ namespace GameCore
     {
         [NonSerialized] public BlockSave block;
         public Vector2Int pos;
-        public BlockLayer layer;
+        public bool isBackground;
         [LabelText("自定义数据")] public string customData;
 
         public BlockSave_Location()
@@ -236,11 +224,11 @@ namespace GameCore
 
         }
 
-        public BlockSave_Location(BlockSave block, Vector2Int pos, BlockLayer layer, string customData)
+        public BlockSave_Location(BlockSave block, Vector2Int pos, bool isBackground, string customData)
         {
             this.block = block;
             this.pos = pos;
-            this.layer = layer;
+            this.isBackground = isBackground;
             this.customData = customData;
         }
     }
@@ -257,40 +245,46 @@ namespace GameCore
 
         }
 
-        public BlockSave(Vector2Int pos, BlockLayer layer, string blockId, string customData) : this()
+        public BlockSave(string blockId) : this()
         {
-            this.locations = new() { new(this, pos, layer, customData) };
+            this.locations = new() { };
             this.blockId = blockId;
         }
 
-        public bool HasLocation(Vector2Int pos, BlockLayer layer)
+        public BlockSave(Vector2Int pos, bool isBackground, string blockId, string customData) : this()
+        {
+            this.locations = new() { new(this, pos, isBackground, customData) };
+            this.blockId = blockId;
+        }
+
+        public bool HasLocation(Vector2Int pos, bool isBackground)
         {
             lock (locations)
                 foreach (var location in locations)
-                    if (location.pos == pos && location.layer == layer)
+                    if (location.pos == pos && location.isBackground == isBackground)
                         return true;
 
             return false;
         }
 
-        public BlockSave_Location GetLocation(Vector2Int pos, BlockLayer layer)
+        public BlockSave_Location GetLocation(Vector2Int pos, bool isBackground)
         {
             lock (locations)
                 foreach (var location in locations)
-                    if (location.pos == pos && location.layer == layer)
+                    if (location.pos == pos && location.isBackground == isBackground)
                         return location;
 
             return null;
         }
 
-        public bool TryGetLocation(Vector2Int pos, BlockLayer layer, out BlockSave_Location result)
+        public bool TryGetLocation(Vector2Int pos, bool isBackground, out BlockSave_Location result)
         {
-            result = GetLocation(pos, layer);
+            result = GetLocation(pos, isBackground);
 
             return result != null;
         }
 
-        public void AddLocation(Vector2Int pos, BlockLayer layer, bool overwriteIfContains = false, string customData = null)
+        public void AddLocation(Vector2Int pos, bool isBackground, bool overwriteIfContains = false, string customData = null)
         {
             lock (locations)
             {
@@ -298,21 +292,21 @@ namespace GameCore
                 {
                     BlockSave_Location location = locations[i];
 
-                    if (location.pos.x == pos.x && location.pos.y == pos.y && location.layer == layer)
+                    if (location.pos.x == pos.x && location.pos.y == pos.y && location.isBackground == isBackground)
                     {
                         if (overwriteIfContains)
-                            locations[i] = new(this, pos, layer, customData);
+                            locations[i] = new(this, pos, isBackground, customData);
                         else
-                            Debug.LogError($"位置 {pos} [{layer}] 已存在");
+                            Debug.LogError($"位置 {pos} [{isBackground}] 已存在");
                         return;
                     }
                 }
 
-                locations.Add(new(this, pos, layer, customData));
+                locations.Add(new(this, pos, isBackground, customData));
             }
         }
 
-        public void RemoveLocation(Vector2Int pos, BlockLayer layer)
+        public void RemoveLocation(Vector2Int pos, bool isBackground)
         {
             lock (locations)
             {
@@ -320,7 +314,7 @@ namespace GameCore
                 {
                     BlockSave_Location location = locations[i];
 
-                    if (location.pos.x == pos.x && location.pos.y == pos.y && location.layer == layer)
+                    if (location.pos.x == pos.x && location.pos.y == pos.y && location.isBackground == isBackground)
                     {
                         locations.RemoveAt(i);
                         return;

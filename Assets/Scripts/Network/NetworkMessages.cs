@@ -134,27 +134,27 @@ namespace GameCore.High
     {
         public Vector2Int sandbox;
         public Vector2Int pos;
-        public BlockLayer layer;
+        public bool isBackground;
 
-        public NMDestroyBlock(Vector2Int sandbox, Vector2Int pos, BlockLayer layer)
+        public NMDestroyBlock(Vector2Int sandbox, Vector2Int pos, bool isBackground)
         {
             this.sandbox = sandbox;
             this.pos = pos;
-            this.layer = layer;
+            this.isBackground = isBackground;
         }
     }
 
     public struct NMSetBlock : NetworkMessage
     {
         public Vector2Int pos;
-        public BlockLayer layer;
+        public bool isBackground;
         public string block;
         public string customData;
 
-        public NMSetBlock(Vector2Int pos, BlockLayer layer, string block, string customData)
+        public NMSetBlock(Vector2Int pos, bool isBackground, string block, string customData)
         {
             this.pos = pos;
-            this.layer = layer;
+            this.isBackground = isBackground;
             this.block = block;
             this.customData = customData;
         }
@@ -163,13 +163,13 @@ namespace GameCore.High
     public struct NMSetBlockCustomData : NetworkMessage
     {
         public Vector2Int pos;
-        public BlockLayer layer;
+        public bool isBackground;
         public string customData;
 
-        public NMSetBlockCustomData(Vector2Int pos, BlockLayer layer, string customData)
+        public NMSetBlockCustomData(Vector2Int pos, bool isBackground, string customData)
         {
             this.pos = pos;
-            this.layer = layer;
+            this.isBackground = isBackground;
             this.customData = customData;
         }
     }

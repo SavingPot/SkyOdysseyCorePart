@@ -1,4 +1,50 @@
-﻿像素: 高对比度, 描边, 抖动, 高光, 色彩
+﻿------- 极度容易忽视的错误!!!!!!!!! -----------
+
+Action action= () => {};
+for (int i = 0; i < 4; i++)
+{
+    action += () => Debug.Log(i);
+}
+action();
+
+结果:
+4
+4
+4
+4
+
+Action action = () => { };
+for (int i = 0; i < 4; i++)
+{
+    var index = i;
+
+    action += () => Debug.Log(index);
+}
+action();
+
+结果:
+0
+1
+2
+3
+
+
+
+
+
+
+--------------- CodeWhisper ------------------
+想要高效使用它, 请使用对话模式
+此外, 要很详细得为它提供上下文, 同时不要选中任何一段代码, 要让CodeWhisper写一个测试脚本, 而不是在项目里写一个功能
+例如:
+I have a Func[] generation, and I want to achieve such an effect:
+first, call generation0, and play the obtained Tween. After playing the tween, call generation1, and play the obtained Tween.
+This loops infinitely (note that you must wait until you play generationi before calling generation[i], and you cannot call it in advance).
+不要为它提供上下文! 这样它会乱的!
+
+
+
+-------像素: 高对比度, 描边, 抖动, 高光, 色彩-----------
 当质感比较粗糙时, 应该使用抖动
 亮度降低, 饱和度提高, 色调逐渐向深色靠
 描边的暗部一定要有深色, 亮部一定要有亮色

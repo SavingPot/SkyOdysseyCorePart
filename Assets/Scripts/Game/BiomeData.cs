@@ -59,7 +59,6 @@ namespace GameCore
     [Serializable]
     public class BiomeData_Block : ModClassChild
     {
-        public BlockLayer layer;
         public Vector3Int[] areas;
         public BiomeData_Block_Range[] ranges;
         public BiomeData_Block_Rules rules;
@@ -133,13 +132,13 @@ namespace GameCore
     {
         [LabelText("ID")] public string blockId;
         [LabelText("偏移")] public Vector2Int offset;
-        [LabelText("层")] public BlockLayer layer;
+        [LabelText("背景")] public bool isBackground;
 
-        public AttachedBlockDatum(string id, Vector2Int offset, BlockLayer layer)
+        public AttachedBlockDatum(string id, Vector2Int offset, bool isBackground)
         {
             this.blockId = id;
             this.offset = offset;
-            this.layer = layer;
+            this.isBackground = isBackground;
         }
     }
 

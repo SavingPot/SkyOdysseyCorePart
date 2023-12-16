@@ -27,10 +27,9 @@ namespace GameCore
         LeftFoot,
     }
 
-    public class CreatureBodyPart : MonoBehaviour, IAnimSequence, IPart<Creature>, ISpriteRenderer
+    public class CreatureBodyPart : MonoBehaviour, IPart<Creature>, ISpriteRenderer
     {
         public Creature mainBody { get; internal set; }
-        public Sequence sequence { get; protected set; }
         public Vector2 defaultPos;
         //public Vector2 rotatePos;
         private GameObject _child;
@@ -97,16 +96,6 @@ namespace GameCore
 
         public void ResetPos() => transform.localPosition = defaultPos;
         public void ResetRot() => transform.rotation = Quaternion.identity;
-
-        public void ResetSequence(int loops = -1, bool resetPos = true, bool resetRot = true) => MethodAgent.TryRun(() =>
-        {
-            //重初始化动画队列
-            sequence.Kill();
-            sequence = DOTween.Sequence().SetLoops(loops);
-
-            if (resetPos) ResetPos();
-            if (resetRot) ResetRot();
-        }, true);
 
         private void Start()
         {

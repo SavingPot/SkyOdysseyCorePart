@@ -61,8 +61,13 @@ namespace GameCore
 
 
 
-        public void OnInventoryItemChange(string index)
+        public void OnInventoryItemChange(Inventory newValue, string index)
         {
+            //* 不能读取 this.inventory, 因为 this.inventory 返回的是正式应用 inventory 的新数值前的值, 这里的代码就是在正式应用 inventory 的新数值
+            //* 如果是客户端的话, 正常情况下应当是服务器先调用了 OnInventoryItemChange, 然后客户端才调用 OnInventoryItemChange
+            if (isServer)
+                SetInventory(newValue);
+
             var item = inventory.GetItem(index);
 
             if (isLocalPlayer)
@@ -163,7 +168,7 @@ namespace GameCore
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
         [BoxGroup("属性"), LabelText("经验")] public int experience;
-        [LabelText("控制层"), BoxGroup("状态")] public BlockLayer controllingLayer;
+        [LabelText("是否控制背景"), BoxGroup("状态")] public bool isControllingBackground;
         [BoxGroup("属性"), LabelText("挖掘范围")] public float excavationRadius = 2.75f;
         [BoxGroup("属性"), LabelText("掉落的Y位置")] public float fallenY;
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
@@ -172,7 +177,8 @@ namespace GameCore
         public bool askingForGeneratingSandbox { get; private set; }
         public float askingForGeneratingSandboxTime { get; private set; } = float.NegativeInfinity;
         public bool generatedFirstSandbox;
-        [SyncVar] public List<TaskStatusForSave> completedTasks;
+        [SyncGetter] List<TaskStatusForSave> completedTasks_get() => default; [SyncSetter] void completedTasks_set(List<TaskStatusForSave> value) { }
+        [Sync] public List<TaskStatusForSave> completedTasks { get => completedTasks_get(); set => completedTasks_set(value); }
 
 
 
@@ -230,23 +236,16 @@ namespace GameCore
         }
         #region 物品
 
-        [BoxGroup("属性"), SyncVar(hook = nameof(OnServerInventoryChanged)), LabelText("物品")]
-        public Inventory inventory;
+        [SyncGetter] Inventory inventory_get() => default; [SyncSetter] void inventory_set(Inventory value) { }
+        [Sync] public Inventory inventory { get => Inventory.ResumeFromStreamTransport(inventory_get(), this); set => inventory_set(value); }
+
 
         public Inventory GetInventory() => inventory;
+
+        //? 当设置物品栏时, 实际上设置的是 _sync_inventory, 也就是修改同步变量
+        //? 当读取物品栏时, 实际上读取的是 _inventory, 也就是读取缓存
+        //? 当物品栏内的物品被修改时, OnInventoryItemChange 会被调用, 最终会调用 SetInventory 以同步 Inventory 到每一个端
         public void SetInventory(Inventory value) => inventory = value;
-
-        private void OnServerInventoryChanged(Inventory oldValue, Inventory newValue)
-        {
-            inventory.owner = this;
-            inventory.slotsBehaviours = new ItemBehaviour[inventory.slots.Length];
-
-            if (!isServer)
-            {
-                //网络传输 Type 会丢失, 要重新匹配来恢复一些信息
-                inventory.ResumeFromNetwork();
-            }
-        }
 
 
 
@@ -306,7 +305,7 @@ namespace GameCore
         public float excavationStrength => TryGetUsingItem()?.data?.excavationStrength ?? ItemData.defaultExcavationStrength;
 
         [BoxGroup("属性"), LabelText("使用时间")]
-        public float useTime;
+        public float itemUseTime;
 
 
 
@@ -389,21 +388,17 @@ namespace GameCore
             data = null;
             base.Start();
 
-            if (isServer)
-            {
-                inventory = new(inventorySlotCount, this);
-                //ServerCallAttribute.Do(ServerCallTry);
-            }
-
             if (isClient)
             {
-                moveSpeed = 6.5f;
+                //TODO: 别放在这里
+                moveSpeed = 5.5f;
             }
 
             if (isLocalPlayer)
             {
                 //设置相机跟随
                 Tools.instance.mainCameraController.lookAt = transform;
+                Tools.instance.mainCameraController.lookAtDelta = new(0, 2);
                 Debug.Log("本地客户端玩家是: " + gameObject.name);
 
                 //if (!isServer)
@@ -452,6 +447,7 @@ namespace GameCore
                 }, true);
 
                 BindHumanAnimations(this);
+                animWeb.CreateConnectionFromTo("excavate_rightarm", "idle", () => true, 0.15f * 2, 0);
             }));
 
             OnNameChange(playerName);
@@ -463,7 +459,7 @@ namespace GameCore
 
             base.Awake();
 
-            PlayerCenter.all.Add(this);
+            PlayerCenter.AddPlayer(this);
 
             Func<float> oldValue = moveMultiple;
             moveMultiple = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
@@ -473,9 +469,9 @@ namespace GameCore
         {
             base.OnDestroy();
 
-            anim.KillSequences();
+            animWeb.Stop();
 
-            PlayerCenter.all.Remove(this);
+            PlayerCenter.RemovePlayer(this);
             backpackSidebarTable.Remove("ori:craft");
         }
 
@@ -626,15 +622,22 @@ namespace GameCore
                     UseItem(this);
                 }
 
+                //如果按S
+                if (PlayerControls.PlaceBlockUnderPlayer(this))
+                {
+                    var behaviour = TryGetUsingItemBehaviour();
+
+                    if (behaviour != null)
+                    {
+                        var downPoint = mainCollider.DownPoint();
+                        behaviour.UseAsBlock(PosConvert.WorldToMapPos(new(downPoint.x, downPoint.y - 1)), false);
+                    }
+                }
+
                 #region 改变操控层
                 if (nameText)
                 {
-                    BlockLayer value = PlayerControls.SwitchControllingLayer(this);
-
-                    if (value != controllingLayer)
-                    {
-                        ChangeControllingLayer(this, value);
-                    }
+                    isControllingBackground = PlayerControls.IsControllingBackground(this);
                 }
                 #endregion
             }
@@ -843,7 +846,7 @@ namespace GameCore
         public void ShowBackpackMask()
         {
             GameUI.SetPage(pui.inventoryMask);
-            OnInventoryItemChange(null);
+            OnInventoryItemChange(inventory, null);
             GAudio.Play(AudioID.OpenBackpack);
         }
 
@@ -877,7 +880,7 @@ namespace GameCore
 
             //与方块交互
             if (caller.InUseRadius() &&
-                caller.map.TryGetBlock(PosConvert.WorldToMapPos(cursorPos), caller.controllingLayer, out Block block) &&
+                caller.map.TryGetBlock(PosConvert.WorldToMapPos(cursorPos), caller.isControllingBackground, out Block block) &&
                 block.PlayerInteraction(caller))
             {
 
@@ -889,17 +892,6 @@ namespace GameCore
 
                 if (usingItemBehaviour != null) usingItemBehaviour.Use();
             }
-        };
-
-        public static Action<Player, BlockLayer> ChangeControllingLayer = (caller, value) =>
-        {
-            if (!BlockLayerHelp.InRange(value))
-                return;
-
-            caller.controllingLayer = value;
-
-            caller.SetStatusText(GameUI.CompareText("ori:switch_controlling_layer").text.Replace("{layer}", value.ToString()));
-            caller.nameText.RefreshUI();
         };
 
 
@@ -942,7 +934,7 @@ namespace GameCore
                 MethodAgent.CallUntil(() => pui != null, () => pui.ShowRebornPanel());
             }
 
-            anim.KillSequences();
+            animWeb.Stop();
         }
 
         public override void OnRebornServer()
@@ -1021,7 +1013,7 @@ namespace GameCore
             nameText.text.SetFontSize(10);
             nameText.AfterRefreshing += n =>
             {
-                string text = isLocalPlayer ? $"{newValue}:{controllingLayer}" : $"{newValue}";
+                string text = $"{newValue}";
 
                 n.text.text = text;
             };
@@ -1127,13 +1119,13 @@ namespace GameCore
                 return;
 
             //如果还在 攻击CD 就返回
-            if (useTime + (TryGetUsingItem()?.data?.useCD ?? ItemData.defaultUseCD) > Tools.time)
+            if (itemUseTime + (TryGetUsingItem()?.data?.useCD ?? ItemData.defaultUseCD) > Tools.time)
             {
                 return;
             }
 
             //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的
-            if (InUseRadius() && map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), controllingLayer, out Block block) && block.gameObject.activeInHierarchy)
+            if (InUseRadius() && map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) && block.gameObject.activeInHierarchy)
             {
                 ExcavateBlock(block);
             }
@@ -1143,7 +1135,7 @@ namespace GameCore
             }
 
             //设置时间
-            useTime = Tools.time;
+            itemUseTime = Tools.time;
         }
 
         /// <returns>鼠标是否在使用范围内</returns>
@@ -1161,7 +1153,8 @@ namespace GameCore
 
             if (block)
             {
-                anim.SetAnim("excavate_rightarm");
+                if (!animWeb.GetAnim("excavate_rightarm", 0).isPlaying)
+                    animWeb.SwitchPlayingTo("excavate_rightarm");
 
                 block.TakeDamage(excavationStrength);
 
@@ -1171,7 +1164,7 @@ namespace GameCore
                     GControls.GamepadVibrationSlighter(0.1f);
             }
 
-            useTime = Tools.time;
+            itemUseTime = Tools.time;
         }
         #endregion
 
@@ -1365,15 +1358,18 @@ namespace GameCore
             }
 
             //加载玩家在文件中的数据
+            //TODO: 也许这些也可以转到Init里?
             ServerLoadOrCreatePlayerDatum(GFiles.settings.playerName);
         }
 
+        //TODO: say goodbye to alan
         public const string defaultName = "Alan";
 
         [ServerRpc]
         void ServerLoadOrCreatePlayerDatum(string playerName, NetworkConnection caller = null)
         {
-            //TODO: 也许这些也可以转到Init里?
+            Debug.Log($"客户端 {playerName} 申请加载玩家数据");
+
             if (playerName.IsNullOrWhiteSpace())
             {
                 playerName = defaultName;
@@ -1393,10 +1389,9 @@ namespace GameCore
                     string oldInventory = JsonTools.ToJson(data.inventory);
 
                     //恢复物品栏
+                    //这一行代码的意义是如果物品栏栏位数更改了, 可以保证栏位数和预想的一致
+                    data.inventory.SetSlotCount(inventorySlotCount);
                     inventory = data.inventory;
-                    inventory.owner = this;
-                    inventory.SetSlotCount(inventorySlotCount);
-                    inventory.ResumeFromNetwork();
 
                     hungerValue = data.hungerValue;
                     thirstValue = data.thirstValue;
@@ -1428,6 +1423,7 @@ namespace GameCore
 
             MethodAgent.CallNextFrame(() =>
             {
+                Debug.Log("已发送回调");
                 CallerLoadOrCreatePlayerDatum(caller);
             });
         }
@@ -1435,8 +1431,10 @@ namespace GameCore
         [ConnectionRpc]
         async void CallerLoadOrCreatePlayerDatum(NetworkConnection caller)
         {
+            Debug.Log("服务器的回调来了!");
             await UniTask.WaitWhile(() => completedTasks == null);
 
+            Debug.Log("回调完成!");
             pui = new(this);
 
             ServerGenerateSandbox(sandboxIndex, true);
@@ -1517,7 +1515,7 @@ namespace GameCore
         [ClientRpc]
         public void ClientAddItem(Item item, NetworkConnection caller = null)
         {
-            Item.StreamResume(ref item);
+            Item.ResumeFromStreamTransport(ref item);
 
             inventory.AddItem(item);
         }
@@ -1539,7 +1537,7 @@ namespace GameCore
             }
             else
             {
-                Item.StreamResume(ref item);
+                Item.ResumeFromStreamTransport(ref item);
             }
 
             inventory.SetItem(index, item);
@@ -1592,11 +1590,11 @@ namespace GameCore
                 //执行 移动的启停
                 if (move == 0 && moveVecLastFrame != 0)
                 {
-                    OnStopMovement();
+                    ServerOnStopMovement();
                 }
                 else if (move != 0 && moveVecLastFrame == 0)
                 {
-                    OnStartMovement();
+                    ServerOnStartMovement();
                 }
             }
 
@@ -1723,7 +1721,7 @@ namespace GameCore
                 }
             }
 
-            useTime = Tools.time;
+            itemUseTime = Tools.time;
             ServerOnStartAttack(left, right);
         }
 
@@ -1737,11 +1735,9 @@ namespace GameCore
         public void ClientStartAttack(bool leftArm, bool rightArm, NetworkConnection caller = null)
         {
             if (leftArm)
-                anim.SetAnim("attack_leftarm");
+                animWeb.SwitchPlayingTo("attack_leftarm", 0);
             if (rightArm)
-                anim.SetAnim("attack_rightarm");
-
-            GAudio.Play("ori:stick_attack");
+                animWeb.SwitchPlayingTo("attack_rightarm", 0);
         }
 
         #endregion
@@ -2036,7 +2032,7 @@ namespace GameCore
 
                 for (int i = 0; i < container.items.Length; i++)
                 {
-                    Item.StreamResume(ref container.items[i]);
+                    Item.ResumeFromStreamTransport(ref container.items[i]);
                 }
             }
             else
@@ -2091,9 +2087,8 @@ namespace GameCore
             /*                                    读取数据                                    */
             /* -------------------------------------------------------------------------- */
             Inventory inventory = data.ToObject<Inventory>();
-            inventory.Init(slotCount, entity);
-            inventory.ResumeFromNetwork();
-            entity.SetInventory(inventory);
+            inventory.SetSlotCount(slotCount);
+            entity.SetInventory(Inventory.ResumeFromStreamTransport(inventory, entity));
         }
 
         public static void WriteInventoryToCustomData<T>(this T entity) where T : Entity, IInventoryOwner
@@ -2422,6 +2417,20 @@ namespace GameCore
     public static class PlayerCenter
     {
         public static List<Player> all = new();
+        public static Action<Player> OnAddPlayer = _ => { };
+        public static Action<Player> OnRemovePlayer = _ => { };
+
+        public static void AddPlayer(Player player)
+        {
+            all.Add(player);
+            OnAddPlayer(player);
+        }
+
+        public static void RemovePlayer(Player player)
+        {
+            all.Remove(player);
+            OnRemovePlayer(player);
+        }
 
         public static void Update()
         {

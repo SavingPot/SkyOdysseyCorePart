@@ -493,11 +493,11 @@ namespace GameCore
                 return;
 
             //如果服务器上存在该方块
-            if (map.TryGetBlock(n.pos, n.layer, out Block block))
+            if (map.TryGetBlock(n.pos, n.isBackground, out Block block))
             {
                 if (block.data == null)
                 {
-                    Debug.LogWarning($"{MethodGetter.GetCurrentMethodPath()}: 获取位置 {n.pos}({n.layer}) 的方块数据为空");
+                    Debug.LogWarning($"{MethodGetter.GetCurrentMethodPath()}: 获取位置 {n.pos} [{n.isBackground}] 的方块数据为空");
                     return;
                 }
 
@@ -505,12 +505,12 @@ namespace GameCore
                 block.OutputDrops(n.pos.To3());
 
                 //摧毁方块
-                GameCallbacks.CallOnBlockDestroyed(n.pos, n.layer, block.data);
+                GameCallbacks.OnBlockDestroyed(n.pos, n.isBackground, block.data);
             }
             //如果不存在
             else
             {
-                Debug.LogWarning($"{MethodGetter.GetCurrentMethodPath()}: 获取位置 {n.pos}({n.layer}) 的方块失败");
+                Debug.LogWarning($"{MethodGetter.GetCurrentMethodPath()}: 获取位置 {n.pos} [{n.isBackground}] 的方块失败");
             }
 
             //将消息转发给客户端
@@ -544,7 +544,7 @@ namespace GameCore
                 return;
 
             //把指定位置的方块摧毁
-            map.DestroyBlock(n.pos, n.layer, true);
+            map.DestroyBlock(n.pos, n.isBackground, true);
 
             GAudio.Play(AudioID.DestroyBlock);
         }, true);
@@ -555,7 +555,7 @@ namespace GameCore
             if (GScene.name != SceneNames.GameScene)
                 return;
 
-            map.SetBlock(n.pos, n.layer, n.block == null ? null : ModFactory.CompareBlockDatum(n.block), n.customData, true);
+            map.SetBlock(n.pos, n.isBackground, n.block == null ? null : ModFactory.CompareBlockDatum(n.block), n.customData, true);
         }
 
         //当服务器收到 NMPos 消息时的回调
@@ -564,10 +564,11 @@ namespace GameCore
             if (GScene.name != SceneNames.GameScene)
                 return;
 
-            if (map.TryGetBlock(n.pos, n.layer, out Block block))
+            //TODO: 完善这个
+            if (map.TryGetBlock(n.pos, n.isBackground, out Block block))
             {
-                Debug.Log($"n: {n.pos}, {n.layer}");
-                Debug.Log($"b: {block.pos}, {block.layer}");
+                Debug.Log($"n: {n.pos}, {n.isBackground}");
+                Debug.Log($"b: {block.pos}, {block.isBackground}");
                 block.customData = JsonTools.LoadJObjectByString(n.customData);
                 block.OnServerSetCustomData();
             }
@@ -722,7 +723,7 @@ namespace GameCore
                 {
                     BlockSave_Location location = save.locations[i];
 
-                    Map.instance.SetBlock(new(location.pos.x + xDelta, location.pos.y + yDelta), location.layer, block, location.customData, false);
+                    Map.instance.SetBlock(new(location.pos.x + xDelta, location.pos.y + yDelta), location.isBackground, block, location.customData, false);
 
                     //定时 Sleep 防止游戏卡死
                     if (i % waitScale == 0)
@@ -812,13 +813,13 @@ namespace GameCore
 
                         if (Tools.Prob100(g.rules.probability, generation.random))
                         {
-                            if (g.attached.blockId.IsNullOrWhiteSpace() || generation.sandbox.GetBlock(pos + g.attached.offset, g.attached.layer)?.block.blockId == g.attached.blockId)
+                            if (g.attached.blockId.IsNullOrWhiteSpace() || generation.sandbox.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
                             {
                                 foreach (var range in g.ranges)
                                 {
                                     if (range.min.IsNullOrWhiteSpace() || range.max.IsNullOrWhiteSpace() || y.IInRange(range.min.ComputeNum(generation.rules), range.max.ComputeNum(generation.rules)))
                                     {
-                                        generation.sandbox.AddPos(g.id, pos.ToInt3(BlockLayerHelp.Parse(g.layer)), g.areas, true);
+                                        generation.sandbox.AddPos(g.id, pos, g.areas, true);
                                     }
                                 }
                             }
@@ -826,18 +827,22 @@ namespace GameCore
                     }
 
 
-                    if (y == generation.maxPoint.y - 1)
+                    if (y == generation.surface)
                     {
                         //地图的最大高度
-                        int maxHeight = 10;
+                        int contrast = 10;
 
                         //决定了采样间隔 值越大 采样间隔越小
                         float relief = 15.0f;
 
-                        float xSample = (x + generation.actualSeed) / relief;
+                        var xSample = ((x + (float)generation.actualSeed / 1000f) / relief);
 
-                        var noise = Mathf.PerlinNoise1D(xSample) * maxHeight;
-                        generation.sandbox.AddPos(BlockID.CookingPot, new Vector3Int(x, (int)noise, BlockLayerHelp.Parse(BlockLayer.Foreground)), true);
+                        var noise = (int)Mathf.PerlinNoise1D(xSample) * contrast;
+
+                        for (int i = 0; i < noise; i++)
+                        {
+                            generation.sandbox.AddPos(BlockID.Sand, new Vector2Int(x, y + i), true, true);
+                        }
                     }
 
 
@@ -872,7 +877,7 @@ namespace GameCore
                                 {
                                     foreach (var fixedBlock in l.structure.fixedBlocks)
                                     {
-                                        if (generation.sandbox.GetBlock(pos + fixedBlock.offset, fixedBlock.layer) != null)
+                                        if (generation.sandbox.GetBlock(pos + fixedBlock.offset, fixedBlock.isBackground) != null)
                                         {
                                             goto stopGeneration;
                                         }
@@ -882,7 +887,7 @@ namespace GameCore
                                 //检查是否满足所有需求
                                 foreach (var require in l.structure.require)
                                 {
-                                    if (!generation.sandbox.GetBlockOut(pos + require.offset, require.layer, out BlockSave_Location temp) || temp.block.blockId != require.blockId)
+                                    if (!generation.sandbox.GetBlockOut(pos + require.offset, require.isBackground, out BlockSave_Location temp) || temp.block.blockId != require.blockId)
                                     {
                                         goto stopGeneration;
                                     }
@@ -893,7 +898,7 @@ namespace GameCore
                                 {
                                     var tempPos = pos + attached.offset;
 
-                                    generation.sandbox.AddPos(attached.blockId, tempPos.ToInt3(BlockLayerHelp.Parse(attached.layer)), true);
+                                    generation.sandbox.AddPos(attached.blockId, tempPos, attached.isBackground, true);
                                 });
 
                             stopGeneration:
@@ -910,11 +915,11 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    生成传送点                                   */
             /* -------------------------------------------------------------------------- */
-            Vector3Int portalMiddle = new(generation.maxPoint.x / 2, generation.maxPoint.y * 3 / 4, BlockLayerHelp.Parse(BlockLayer.Wall));
-            generation.sandbox.AddPos(BlockID.Portal, portalMiddle, true);
-            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector3Int(0, -1), true);
-            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector3Int(-1, -1), true);
-            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector3Int(1, -1), true);
+            Vector2Int portalMiddle = new(generation.maxPoint.x / 2, generation.maxPoint.y * 3 / 4);
+            generation.sandbox.AddPos(BlockID.Portal, portalMiddle, false, true);
+            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(0, -1), false, true);
+            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-1, -1), false, true);
+            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(1, -1), false, true);
 
 
 
@@ -956,7 +961,7 @@ namespace GameCore
             if (pos.y == generation.surfaceExtra1)
             {
                 /* ----------------------------------- 木桶 ----------------------------------- */
-                if (Tools.Prob100(6, generation.random))
+                if (Tools.Prob100(3, generation.random))
                 {
                     JToken[] group = new JToken[28];
 
@@ -997,7 +1002,7 @@ namespace GameCore
                     jo["ori:container"].AddObject("items");
                     jo["ori:container"]["items"].AddArray("array", group);
 
-                    generation.sandbox.AddPos(BlockID.Barrel, pos.ToInt3(BlockLayerHelp.Parse(BlockLayer.Background)), true, jo.ToString(Formatting.None));
+                    generation.sandbox.AddPos(BlockID.Barrel, pos, true, true, jo.ToString(Formatting.None));
                 }
 
                 /* ----------------------------------- 木箱 ----------------------------------- */
@@ -1095,7 +1100,7 @@ namespace GameCore
                     jo["ori:container"].AddObject("items");
                     jo["ori:container"]["items"].AddArray("array", group);
 
-                    generation.sandbox.AddPos(BlockID.WoodenChest, pos.ToInt3(BlockLayerHelp.Parse(BlockLayer.Background)), true, jo.ToString(Formatting.None));
+                    generation.sandbox.AddPos(BlockID.WoodenChest, pos, true, true, jo.ToString(Formatting.None));
                 }
             }
         };

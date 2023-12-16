@@ -61,6 +61,14 @@ namespace GameCore
                 _ => false
             };
 
+        public static Func<Player, bool> PlaceBlockUnderPlayer = (p) => GControls.mode switch
+            {
+                ControlMode.Touchscreen => throw new NotImplementedException(),
+                ControlMode.KeyboardAndMouse => Keyboard.current != null && Keyboard.current.sKey.wasPressedThisFrame,
+                ControlMode.Gamepad => throw new NotImplementedException(),
+                _ => false
+            };
+
         public static Func<Player, bool> SkipDialog = (p) => GControls.mode switch
         {
             ControlMode.Touchscreen => false,// p.pui != null && p.pui.useItemButton.button.wasPressedThisFrame,
@@ -77,51 +85,19 @@ namespace GameCore
             _ => Vector2Int.zero
         };
 
-        public static Func<Player, BlockLayer> SwitchControllingLayer = (caller) =>
+        public static Func<Player, bool> IsControllingBackground = (caller) =>
         {
             switch (GControls.mode)
             {
                 case ControlMode.KeyboardAndMouse:
-                    if (Keyboard.current != null)
-                    {
-                        if (Keyboard.current.zKey.wasPressedThisFrame)
-                        {
-                            return BlockLayer.Wall;
-                        }
-                        if (Keyboard.current.xKey.wasPressedThisFrame)
-                        {
-                            return BlockLayer.Background;
-                        }
-                        if (Keyboard.current.cKey.wasPressedThisFrame)
-                        {
-                            return BlockLayer.Foreground;
-                        }
-                    }
-                    break;
+                    return Keyboard.current != null && Keyboard.current.fKey.isPressed;
 
                 case ControlMode.Gamepad:
-                    if (Gamepad.current != null)
-                    {
-                        if (Gamepad.current.dpad.up.wasPressedThisFrame)
-                        {
-                            return BlockLayer.Wall;
-                        }
-                        if (Gamepad.current.dpad.left.wasPressedThisFrame)
-                        {
-                            return BlockLayer.Background;
-                        }
-                        if (Gamepad.current.dpad.down.wasPressedThisFrame)
-                        {
-                            return BlockLayer.Foreground;
-                        }
-                    }
-                    break;
+                    return Gamepad.current != null && Gamepad.current.rightStickButton.isPressed;
 
                 default:
-                    break;
+                    return false;
             }
-
-            return caller.controllingLayer;
         };
 
         public static Func<Player, bool> SwitchToItem1 = (p) => Keyboard.current != null && Keyboard.current.digit1Key.wasPressedThisFrame;

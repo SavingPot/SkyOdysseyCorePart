@@ -548,11 +548,11 @@ namespace GameCore
                     if (i["id"] != null)
                     {
                         if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
-                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), BlockLayer.Wall));
+                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
                         if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
-                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), BlockLayerHelp.Parse(i["pos"].ElementAt(2).ToInt())));
+                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
                         else
-                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(), BlockLayer.Wall));
+                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(), false));
                     }
                 });
                 temp.require = requireBlockTemp.ToArray();
@@ -563,11 +563,11 @@ namespace GameCore
                     if (i["id"] != null)
                     {
                         if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
-                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), BlockLayer.Wall));
+                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
                         if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
-                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), BlockLayerHelp.Parse(i["pos"].ElementAt(2).ToInt())));
+                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
                         else
-                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(), BlockLayer.Wall));
+                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(), false));
                     }
                 });
                 temp.fixedBlocks = fixedBlockTemp.ToArray();
@@ -639,7 +639,7 @@ namespace GameCore
                 {
                     probability = ModCreate.Get(jt, "data.biome.blocks.rules.probability", jfToLoad)?.ToFloat() ?? 100,
                 };
-                temp.attached = new(ModCreate.Get(jt, "data.biome.blocks.attached.id", jfToLoad)?.ToString(), ModCreate.Get(jt, "data.biome.blocks.attached.offset", jfToLoad)?.ToVector2Int() ?? new(0, -1), ModCreate.Get(jt, "data.biome.blocks.attached.loc", jfToLoad)?.ToEnum<BlockLayer>() ?? BlockLayer.Wall);
+                temp.attached = new(ModCreate.Get(jt, "data.biome.blocks.attached.id", jfToLoad)?.ToString(), ModCreate.Get(jt, "data.biome.blocks.attached.offset", jfToLoad)?.ToVector2Int() ?? new(0, -1), ModCreate.Get(jt, "data.biome.blocks.attached.offset", jfToLoad)?.ElementAtOrDefault(2)?.ToInt() < 0);
 
 
                 List<BiomeData_Block_Range> rangesTemp = new();

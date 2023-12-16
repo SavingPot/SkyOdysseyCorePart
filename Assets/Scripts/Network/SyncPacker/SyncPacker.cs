@@ -12,22 +12,16 @@ using UnityEngine;
 
 namespace GameCore
 {
-    // public class ByteReader
-    // {
-    //     public byte[] bytes;
-
-    //     public ByteReader(byte[] bytes)
-    //     {
-    //         this.bytes = bytes;
-    //     }
-    // }
-
     /// <summary>
     /// Sync Var Packer
     /// </summary>
+    //!     这个类的性能对游戏性能影响巨大!!!!!!!!!!!!!!!!! 一定要好好优化
+    //TODO: 这个类的性能对游戏性能影响巨大!!!!!!!!!!!!!!!!! 一定要好好优化
     public static class SyncPacker
     {
-        public static Action<NMSyncVar, byte[]> OnVarValueChange = (_, _) => { };
+        public delegate void OnVarValueChangeCallback(NMSyncVar nm, byte[] oldValue);
+
+        public static OnVarValueChangeCallback OnVarValueChange = (_, _) => { };
         public static Action<NMRegisterSyncVar> OnRegisterVar = a => { };
 
         public static readonly Dictionary<string, NMSyncVar> vars = new();
@@ -102,7 +96,7 @@ namespace GameCore
         {
             if (!Server.isServer)
             {
-                Debug.LogWarning("客户端无法取消注册同步变量");
+                Debug.LogWarning("非服务器无法注销同步变量");
                 return;
             }
 
@@ -212,8 +206,6 @@ namespace GameCore
                     return false;
                 }
 
-                var oldWriter = var.value;
-
                 //设置值
                 NMSyncVar tempVar = var;
                 tempVar.value = value;
@@ -221,8 +213,9 @@ namespace GameCore
                 //服务器直接赋值
                 if (Server.isServer)
                 {
+                    var oldValue = var.value;
                     vars[varId] = tempVar;
-                    OnVarValueChange.Invoke(tempVar, oldWriter);
+                    OnVarValueChange.Invoke(tempVar, oldValue);
                 }
                 //客户端发送给服务器赋值
                 else
@@ -233,7 +226,7 @@ namespace GameCore
                 return true;
             }
 
-            Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(SyncPacker.RegisterVar)}(string) 来注册同步变量");
+            Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(RegisterVar)}(string) 来注册同步变量\n注意! 也可能是您修改了同步变量的属性名称, 但没有修改其配套的读取方法和写入方法导致的!");
 
             return false;
         }
@@ -591,6 +584,11 @@ namespace GameCore
                 ClearVars();
             };
 
+            NetworkCallbacks.OnStopClient += () =>
+            {
+                ClearVars();
+            };
+
 
             NetworkCallbacks.OnStopServer += () =>
             {
@@ -632,6 +630,7 @@ namespace GameCore
             {
                 if (vars.TryGetValue(nm.varId, out var var))
                 {
+                    //TODO: 安全检查: if (!nm.clientCanSet&&conn.owned)
                     var oldValue = var.value;
                     var.value = nm.value;
                     vars[nm.varId] = var;

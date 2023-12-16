@@ -195,7 +195,7 @@ namespace GameCore
                     {
                         foreach (var locationTemp in saveTemp.locations)
                         {
-                            sb.AddPos(saveTemp.blockId, locationTemp.pos.ToInt3(BlockLayerHelp.Parse(locationTemp.layer)));
+                            sb.AddPos(saveTemp.blockId, locationTemp.pos, locationTemp.isBackground);
                         }
                     }
 

@@ -1,4 +1,5 @@
 using GameCore.UI;
+using UnityEngine;
 
 namespace GameCore
 {
@@ -18,23 +19,37 @@ namespace GameCore
 
         }
 
-        public virtual bool Use()
+        public void UseAsBlock(Vector2Int pos, bool isBackground)
         {
-            if (owner is Player)
+            if (owner is Player player)
             {
-                Player player = (Player)owner;
+                //检测是否有方块
+                if (player.map.HasBlock(pos, isBackground))
+                    return;
 
                 //放置方块
-                if (instance.data.isBlock && player.InUseRadius() && !player.map.HasBlock(PosConvert.WorldToMapPos(player.cursorWorldPos), player.controllingLayer))
+                player.map.SetBlockNet(pos, isBackground, instance.data.id, instance.customData?.ToString());
+
+                //手柄震动
+                if (GControls.mode == ControlMode.Gamepad)
+                    GControls.GamepadVibrationSlightMedium();
+
+                //减少物品数量
+                player.ServerReduceItemCount(inventoryIndex, 1);
+
+                //播放音效
+                GAudio.Play(AudioID.PlaceBlock);
+            }
+        }
+
+        public virtual bool Use()
+        {
+            if (owner is Player player)
+            {
+                //放置方块
+                if (instance.data.isBlock && player.InUseRadius() && !player.map.HasBlock(PosConvert.WorldToMapPos(player.cursorWorldPos), player.isControllingBackground))
                 {
-                    player.map.SetBlockNet(PosConvert.WorldToMapPos(player.cursorWorldPos), player.controllingLayer, instance.data.id, instance.customData?.ToString());
-
-                    if (GControls.mode == ControlMode.Gamepad)
-                        GControls.GamepadVibrationSlightMedium();
-
-                    player.ServerReduceItemCount(inventoryIndex, 1);
-
-                    GAudio.Play(AudioID.PlaceBlock);
+                    UseAsBlock(PosConvert.WorldToMapPos(player.cursorWorldPos), player.isControllingBackground);
 
                     return true;
                 }

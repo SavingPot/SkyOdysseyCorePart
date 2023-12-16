@@ -1,0 +1,302 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using DG.Tweening;
+using DG.Tweening.Core;
+using UnityEngine;
+
+namespace GameCore
+{
+    public static class AnimCenter
+    {
+        public static TweenerCore<float, float, DG.Tweening.Plugins.Options.FloatOptions> PlaySprites(float time, Sprite[] sprites, Func<Sprite, bool> SetSprite, int loops = -1, Action OnComplete = null)
+        {
+            float timed = 0;
+            var anim = DOTween.To(() => timed, null, 0.999f, time).OnStepComplete(() => OnComplete?.Invoke()).SetLoops(loops).SetEase(Ease.Linear);
+
+            anim.setter = value =>
+            {
+                timed = value;
+
+                Sprite current = sprites[Mathf.FloorToInt(timed * sprites.Length)];
+
+                if (!SetSprite(current))
+                    anim.Kill();
+            };
+
+            return anim;
+        }
+
+    }
+
+
+
+
+
+    /* -------------------------------------------------------------------------- */
+    /*                                     公共类                                    */
+    /* -------------------------------------------------------------------------- */
+    public class AnimObject
+    {
+        public readonly List<AnimData> animations = new();
+        public List<IAnimSequence> sequences = new();
+
+        public void AddAnim(string id, int loops, params AnimFragment[] fragments)
+        {
+            if (animations.Any(p => p.id == id))
+            {
+                Debug.LogWarning($"动画 {id} 已存在, 操作返回");
+                return;
+            }
+
+            animations.Add(new(id, loops, fragment));
+        }
+
+        public void ResetAnimations(string exceptAnimation = null)
+        {
+            foreach (var anim in animations)
+                if (anim.id != exceptAnimation)
+                    anim.isPlaying = false;
+
+            ResetSequences();
+        }
+
+        public void KillSequences()
+        {
+            foreach (var sequence in sequences)
+            {
+                sequence?.sequence?.Kill();
+            }
+        }
+
+        public AnimData GetAnim(string animId)
+        {
+            foreach (var anim in animations)
+            {
+                if (anim.id == animId)
+                {
+                    return anim;
+                }
+            }
+
+            return null;
+        }
+
+        public bool TryGetAnim(string animId, out AnimData result)
+        {
+            foreach (var anim in animations)
+            {
+                if (anim.id == animId)
+                {
+                    result = anim;
+                    return true;
+                }
+            }
+
+            result = null;
+            return false;
+        }
+
+        public void PlayAnim(string animId)
+        {
+            foreach (var anim in animations)
+            {
+                if (anim.id == animId)
+                {
+                    anim.Play();
+                    return;
+                }
+            }
+        }
+
+        public void StopAnim(string animId)
+        {
+            foreach (var anim in animations)
+            {
+                if (anim.id == animId)
+                {
+                    anim.Stop();
+                    return;
+                }
+            }
+        }
+
+        public virtual void ResetSequences()
+        {
+            foreach (var sequence in sequences)
+            {
+                sequence.ResetSequence();
+            }
+        }
+    }
+
+    [Serializable]
+    public class AnimData   //* 模仿的是 UnityEngine.Animator
+    {
+        public AnimData(string id, int loops, AnimFragment[] fragments, Dictionary<float, Aciton> frameCalls = null)
+        {
+            this.id = id;
+            this.loops = loops;
+            this.fragments = fragments;
+
+            //计算动画片段总时长
+            this.totalDuration = 0;
+            foreach (var fragment in fragments)
+            {
+                this.totalDuration += fragment.duration;   
+            }
+
+            //检测帧调用是否符合标准
+            if (frameCalls != null)
+            {
+                foreach (var call in frameCalls)
+                {
+                    if (call.Key > this.totalDuration)
+                    {
+                        Debug.LogError($"动画 {id} 的其中一个帧调用被调用的时刻 {call.Key} 大于动画总时间 {totalDuration}, 该帧调用不会被调用");
+                    }
+                }
+                //检查帧调用的调用时刻是否从小到大
+                if (frameCalls.Length > 1)
+                {
+                    //* 注意: 开始值是 1， 不是 0
+                    for (int i = 1; i < frameCalls; i++)
+                    {
+                        float currentFrameCallTime = frameCalls.GetValue(i).Key;
+                        float lastFrameCallTime = frameCalls.GetValue(i-1).Key;
+
+                        if (currentFrameCallTime < lastFrameCallTime)
+                        {
+                            Debug.LogError($"动画 {id} 的其中一个帧调用被调用的时刻 {currentFrameCallTime} 比其上一个帧调用时刻 {lastFrameCallTime} 小, 该帧调用的调用时间会出异常");
+                        }
+                    }
+                }
+            }
+            this.frameCalls = frameCalls;
+        }
+
+        public string id;
+        public int loops;
+        public bool isPlaying;
+        public float totalDuration;
+        public AnimFragment[] fragments;
+        public Dictionary<float, Aciton> frameCalls;
+        public Tween tweenGenerated;
+
+        public async void Play()
+        {
+            foreach (var fragment in fragments)
+            {
+                if (fragment.duration == 0)
+                {
+                    fragment.setValue(1);
+                }
+                else
+                {
+                    float timeTemp= 0;
+                    
+                    tween = DOTween.To(() => timed, currentTime=>
+                    {
+                        //Mathf.Min 的意义是 DOTween.To 的最大值设定为 1, 但是实际返回值有可能略微大于 1
+                        float progress = Mathf.Min(1f, currentTime) / fragment.duration;
+                        fragment.setValue(progress);
+                    }, fragment.duration).SetEase(fragment.ease);
+
+                    if (tweenGenerated == null)
+                    {
+                        tweenGenerated = tween;
+                    }
+                    else
+                    {
+                        tweenGenerated = tweenGenerated.Append(tween);
+                    }
+                }
+            }
+
+            //TODO: 可能要检测 Tween 是否被杀死
+            if (tweenGenerated != null)
+            {
+                float startTime = Tools.time;
+
+                tweenGenerated.SetLoops(loops);
+                tweenGenerated.Play();
+
+                foreach (var call in frameCalls)
+                {
+                    await UniTask.WaitUntil(() => Tools.time >= startTime + call.Key);
+                    call.Value();
+                }
+            }
+            else
+            {
+                if (frameCalls.TryGetValue(0f, out var result))
+                {
+                    result.Value();
+                }
+            }
+        }
+    }
+
+    public class AnimFragment()
+    {
+        public SetValueDelegate setValue;
+        public float duration;
+        public Ease ease;
+
+        public AnimFragment(SetValueDelegate setValue, float duration, Ease ease = Ease.Linear)
+        {
+            this.setValue = setValue;
+            this.duration = duration;
+            this.ease = ease;
+        }
+
+        public delegate SetValueDelegate(float progress)
+    }
+
+    public class DefaultSpriteAnimSequence : IAnimSequence
+    {
+        public Sequence sequence { get; set; } = DOTween.Sequence().SetLoops(-1);
+
+        public void ResetSequence(int loops = -1, bool resetPos = true, bool resetRot = true)
+        {
+            //重初始化动画队列
+            sequence.Kill();
+            sequence = DOTween.Sequence().SetLoops(loops);
+        }
+    }
+
+    public class DefaultRotationAnimSequence : IAnimSequence
+    {
+        public Sequence sequence { get; set; } = DOTween.Sequence().SetLoops(-1);
+        public Transform owner;
+        public Vector2 defaultPos;
+
+        public void ResetSequence(int loops = -1, bool resetPos = true, bool resetRot = true)
+        {
+            //重初始化动画队列
+            sequence.Kill();
+            sequence = DOTween.Sequence().SetLoops(loops);
+
+            if (resetPos) ResetPos();
+            if (resetRot) ResetRot();
+        }
+
+        public void ResetPos() => owner.localPosition = defaultPos;
+        public void ResetRot() => owner.rotation = Quaternion.identity;
+
+
+
+        public DefaultRotationAnimSequence(Transform owner)
+        {
+            this.owner = owner;
+            defaultPos = this.owner.localPosition;
+        }
+    }
+
+    public interface IAnimSequence
+    {
+        Sequence sequence { get; }
+        void ResetSequence(int loops = -1, bool resetPos = true, bool resetRot = true);
+    }
+}

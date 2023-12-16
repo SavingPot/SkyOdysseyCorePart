@@ -41,6 +41,20 @@ namespace GameCore
     public static class EntityCenter
     {
         public static List<Entity> all = new();
+        public static Action<Entity> OnAddEntity = _ => { };
+        public static Action<Entity> OnRemoveEntity = _ => { };
+
+        public static void AddEntity(Entity entity)
+        {
+            all.Add(entity);
+            OnAddEntity(entity);
+        }
+
+        public static void RemoveEntity(Entity entity)
+        {
+            all.Remove(entity);
+            OnRemoveEntity(entity);
+        }
 
         public static void Update()
         {
@@ -418,7 +432,7 @@ namespace GameCore
         #region Unity/Mirror/Entity 方法
         protected virtual void Awake()
         {
-            EntityCenter.all.Add(this);
+            EntityCenter.AddEntity(this);
             netIdentity = GetComponent<NetworkIdentity>();
             isPlayer = this is Player;
             classType = GetType();
@@ -431,9 +445,7 @@ namespace GameCore
             //TODO: 移动到 EntityInit
             //Debug.Log($"实体 {name} 被删除, Datum Null = {datum == null}", gameObject);
 
-            EntityCenter.all.Remove(this);
-
-            //TODO: Unregister the sync vars here
+            EntityCenter.RemoveEntity(this);
         }
 
         protected virtual void Start()

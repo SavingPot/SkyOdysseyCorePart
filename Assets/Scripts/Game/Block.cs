@@ -19,7 +19,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public static Color backgroundColor = new(0.6f, 0.6f, 0.7f);
         public static Color wallColor = new(1f, 1f, 1f);
-        public static Color foregroundColor = new(1f, 1f, 1f, 0.75f);
         public static Vector3 blockDamageScale = new(1.2f, 1.2f, 1.2f);
         public static Color blockLightDefaultColor = Tools.HexToColor("#FFA578");
 
@@ -56,7 +55,7 @@ namespace GameCore
 
 
         public Vector2Int pos { get; internal set; }
-        public BlockLayer layer { get; internal set; }
+        public bool isBackground { get; internal set; }
         public BoxCollider2D blockCollider { get; internal set; }
         [LabelText("自定义数据")] public JObject customData;
 
@@ -101,7 +100,7 @@ namespace GameCore
         public void WriteCustomDataToSave()
         {
             //写入存档中
-            GFiles.world.GetSandbox(chunk.sandboxIndex).GetBlock(PosConvert.MapToSandboxPos(pos, chunk.sandboxIndex), layer).customData = customData?.ToString(Formatting.None);
+            GFiles.world.GetSandbox(chunk.sandboxIndex).GetBlock(PosConvert.MapToSandboxPos(pos, chunk.sandboxIndex), isBackground).customData = customData?.ToString(Formatting.None);
         }
 
         #region Behaviour
@@ -137,7 +136,7 @@ namespace GameCore
         public virtual void DoStart()
         {
             sr.sprite = data.defaultTexture.sprite;
-            blockCollider.isTrigger = !data.collidible || layer != BlockLayer.Wall;
+            blockCollider.isTrigger = !data.collidible || isBackground;
         }
 
         public virtual void OnUpdate()
@@ -177,7 +176,7 @@ namespace GameCore
 
         public void Death()
         {
-            Client.Send<NMDestroyBlock>(new(chunk.sandboxIndex, pos, layer));
+            Client.Send<NMDestroyBlock>(new(chunk.sandboxIndex, pos, isBackground));
         }
 
         [RuntimeInitializeOnLoadMethod]

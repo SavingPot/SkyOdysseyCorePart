@@ -25,12 +25,16 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("起步速度倍数")] public float startingSpeedMultiple = 0.25f;
         [BoxGroup("属性"), LabelText("坠落空气阻力")] public float movementAirResistance = 0.95f;
         public bool onGround { get; set; }
-        public AnimObject anim = new();
+        public AnimWeb animWeb = new();
 
 
 
         [SyncGetter] bool isMoving_get() => default; [SyncSetter] void isMoving_set(bool value) { }
         [Sync, SyncDefaultValue(false)] public bool isMoving { get => isMoving_get(); set => isMoving_set(value); }
+
+#if UNITY_EDITOR
+        [SerializeField] bool isMoving_for_editor_view;
+#endif
 
 
         [HideInInspector] public CreatureBodyPart head { get; set; }
@@ -82,140 +86,86 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public static void BindHumanAnimations(Creature creature)
         {
+            float attackAnimTime = 0.3f;
+
             #region 静止
             {
-                creature.anim.AddAnim("idle_head", () =>
-                {
-                    creature.anim.ResetAnimations("idle_head");
-                }, () => new Tween[]
-                {
-                    creature.head.transform.DOLocalRotateZ(-4.5f, 1.5f).SetEase(Ease.Linear),
-                    creature.head.transform.DOLocalRotateZ(0f, 1.5f).SetEase(Ease.Linear),
-                    creature.head.transform.DOLocalRotateZ(4.5f, 1.5f).SetEase(Ease.Linear),
-                    creature.head.transform.DOLocalRotateZ(0f, 1.5f).SetEase(Ease.Linear)
-                }, () => creature.head.sequence);
+                float time = 1.5f;
+
+                creature.animWeb.AddAnim("idle_head", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.head.transform, -4.5f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.head.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.head.transform, 4.5f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.head.transform, 0f, time, Ease.InOutSine)
+                });
+
+                creature.animWeb.AddAnim("idle_body", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.body.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.body.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.body.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.body.transform, 0f, time, Ease.InOutSine)
+                });
+
+                creature.animWeb.AddAnim("idle_leftarm", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, time, Ease.InOutSine)
+                });
+
+                creature.animWeb.AddAnim("idle_rightarm", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, time, Ease.InOutSine)
+                });
+
+                creature.animWeb.AddAnim("idle_leftleg", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.leftLeg.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftLeg.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftLeg.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftLeg.transform, 0f, time, Ease.InOutSine)
+                });
+
+                creature.animWeb.AddAnim("idle_rightleg", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.rightLeg.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightLeg.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightLeg.transform, 0f, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightLeg.transform, 0f, time, Ease.InOutSine)
+                });
             }
             #endregion
 
             #region 攻击
             {
-                float time = 0.3f;
                 float rot = 55f;
-                Vector2 move = new(0.085f, 0.05f);
 
-                creature.anim.AddAnim("attack_leftarm", () =>
-                {
-                    creature.leftArm.ResetSequence(1);
+                creature.animWeb.AddAnim("attack_leftarm", 1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, rot, attackAnimTime, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, attackAnimTime, Ease.InOutSine)
+                }, 0);
 
-                    creature.leftArm.sequence
-                        .OnStepComplete(() =>
-                        {
-                            creature.anim.SetAnim("attack_leftarm", false);
-
-                            if (creature.isMoving)
-                            {
-                                //重播放移动动画
-                                creature.OnStartMovement();
-                            }
-                            else
-                            {
-                                //重播放待机动画
-                                creature.OnStopMovement();
-                            }
-                        });
-                }, () => new Tween[]
-                {
-                    creature.leftArm.transform.DOLocalRotateZ(rot, time),
-                    creature.leftArm.transform.DOLocalRotateZ(0, time)
-                }, () => creature.leftArm.sequence);
-
-                creature.anim.AddAnim("attack_rightarm", () =>
-                {
-                    creature.rightArm.ResetSequence(1);
-
-                    creature.rightArm.sequence
-                        .OnStepComplete(() =>
-                        {
-                            creature.anim.SetAnim("attack_rightarm", false);
-                            Debug.Log($"Attacked!: {creature.isMoving}");
-                            if (creature.isMoving)
-                            {
-                                //重播放移动动画
-                                creature.OnStartMovement();
-                            }
-                            else
-                            {
-                                //重播放待机动画
-                                creature.OnStopMovement();
-                            }
-                        });
-                }, () => new Tween[]
-                {
-                    creature.rightArm.transform.DOLocalRotateZ(rot, time),
-                    creature.rightArm.transform.DOLocalRotateZ(0, time)
-                }, () => creature.rightArm.sequence);
+                creature.animWeb.AddAnim("attack_rightarm", 1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, rot, attackAnimTime, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, attackAnimTime, Ease.InOutSine)
+                }, 0);
             }
             #endregion
 
             #region 挖掘
             {
-                float time = 0.15f;
+                float time = 0.15f; //!Player的绑定部分使用到了这个时间
                 float rot = 35f;
-                Vector2 move = new(0.065f, 0.04f);
 
-                creature.anim.AddAnim("excavate_leftarm", () =>
-                {
-                    creature.leftArm.ResetSequence(1);
+                creature.animWeb.AddAnim("excavate_leftarm", 1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, rot, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, time, Ease.InOutSine)
+                }, 0);
 
-                    creature.leftArm.sequence
-                        .OnStepComplete(() =>
-                        {
-                            //停止挖掘动画
-                            creature.anim.SetAnim("excavate_leftarm", false);
-
-                            if (creature.isMoving)
-                            {
-                                //重播放移动动画
-                                creature.OnStartMovement();
-                            }
-                            else
-                            {
-                                //重播放待机动画
-                                creature.OnStopMovement();
-                            }
-                        });
-                }, () => new Tween[]
-                {
-                    creature.leftArm.transform.DOLocalRotateZ(rot, time),
-                    creature.leftArm.transform.DOLocalRotateZ(0, time)
-                }, () => creature.leftArm.sequence);
-
-                creature.anim.AddAnim("excavate_rightarm", () =>
-                {
-                    creature.rightArm.ResetSequence(1);
-
-                    creature.rightArm.sequence
-                        .OnStepComplete(() =>
-                        {
-                            //停止挖掘动画
-                            creature.anim.SetAnim("excavate_rightarm", false);
-
-                            if (creature.isMoving)
-                            {
-                                //重播放移动动画
-                                creature.OnStartMovement();
-                            }
-                            else
-                            {
-                                //重播放待机动画
-                                creature.OnStopMovement();
-                            }
-                        });
-                }, () => new Tween[]
-                {
-                    creature.rightArm.transform.DOLocalRotateZ(rot, time),
-                    creature.rightArm.transform.DOLocalRotateZ(0, time)
-                }, () => creature.rightArm.sequence);
+                creature.animWeb.AddAnim("excavate_rightarm", 1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, rot, time, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, time, Ease.InOutSine)
+                }, 0);
             }
             #endregion
 
@@ -230,87 +180,57 @@ namespace GameCore
                 float bodyRotate = 3.5f;
                 float headRotate = 7;
 
-                creature.anim.AddAnim("run_rightleg", () =>
-                {
-                    creature.rightLeg.ResetSequence();
-                }, () => new Tween[]
-                {
-                    creature.rightLeg.transform.DOLocalRotateZ(-legRotate, legRotateTime),
-                    creature.rightLeg.transform.DOLocalRotateZ(legRotate, legRotateTime),
-                    creature.rightLeg.transform.DOLocalRotateZ(0, legRotateTime / 2)
-                }, () => creature.rightLeg.sequence);
+                creature.animWeb.AddAnim("run_rightleg", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.rightLeg.transform, -legRotate, legRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.rightLeg.transform, legRotate, legRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.rightLeg.transform, 0f, legRotateTime / 2, Ease.Linear),
+                });
 
-                creature.anim.AddAnim("run_leftleg", () =>
-                {
-                    creature.leftLeg.ResetSequence();
-                }, () => new Tween[]
-                {
-                    creature.leftLeg.transform.DOLocalRotateZ(legRotate, legRotateTime),
-                    creature.leftLeg.transform.DOLocalRotateZ(-legRotate, legRotateTime),
-                    creature.leftLeg.transform.DOLocalRotateZ(0, legRotateTime / 2)
-                }, () => creature.leftLeg.sequence);
+                creature.animWeb.AddAnim("run_leftleg", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.leftLeg.transform, legRotate, legRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.leftLeg.transform, -legRotate, legRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.leftLeg.transform, 0f, legRotateTime / 2, Ease.Linear),
+                });
 
-                creature.anim.AddAnim("run_rightarm", () =>
-                {
-                    creature.rightArm.ResetSequence();
-                }, () => new Tween[]
-                {
-                    creature.rightArm.transform.DOLocalRotateZ(-armRotate, armRotateTime),
-                    creature.rightArm.transform.DOLocalRotateZ(armRotate, armRotateTime),
-                    creature.rightArm.transform.DOLocalRotateZ(0, armRotateTime / 2)
-                }, () => creature.rightArm.sequence);
+                creature.animWeb.AddAnim("run_rightarm", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, -armRotate, armRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, armRotate, armRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, armRotateTime / 2, Ease.Linear),
+                });
 
-                creature.anim.AddAnim("run_leftarm", () =>
-                {
-                    creature.leftArm.ResetSequence();
-                }, () => new Tween[]
-                {
-                    creature.leftArm.transform.DOLocalRotateZ(armRotate, armRotateTime),
-                    creature.leftArm.transform.DOLocalRotateZ(-armRotate, armRotateTime),
-                    creature.leftArm.transform.DOLocalRotateZ(0f, armRotateTime / 2)
-                }, () => creature.leftArm.sequence);
+                creature.animWeb.AddAnim("run_leftarm", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, armRotate, armRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, -armRotate, armRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, armRotateTime / 2, Ease.Linear),
+                });
 
-                creature.anim.AddAnim("run_head", () =>
-                {
-                    creature.head.ResetSequence();
-                }, () => new Tween[]
-                {
-                    creature.head.transform.DOLocalRotateZ(-headRotate, headRotateTime),
-                    creature.head.transform.DOLocalRotateZ(headRotate, headRotateTime),
-                    creature.head.transform.DOLocalRotateZ(0f, headRotateTime)
-                }, () => creature.head.sequence);
+                creature.animWeb.AddAnim("run_head", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.head.transform, -headRotate, headRotateTime, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.head.transform, headRotate, headRotateTime, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.head.transform, 0f, headRotateTime / 2, Ease.InOutSine),
+                });
 
-                creature.anim.AddAnim("run_body", () =>
-                {
-                    creature.body.ResetSequence();
-                }, () => new Tween[]
-                {
-                    creature.body.transform.DOLocalRotateZ(-bodyRotate, bodyRotateTime),
-                    creature.body.transform.DOLocalRotateZ(bodyRotate, bodyRotateTime),
-                    creature.body.transform.DOLocalRotateZ(0f, bodyRotateTime)
-                }, () => creature.body.sequence);
+                creature.animWeb.AddAnim("run_body", -1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.head.transform, -bodyRotate, bodyRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.head.transform, bodyRotate, bodyRotateTime, Ease.Linear),
+                    new LocalRotationZAnimFragment(creature.head.transform, 0f, bodyRotateTime / 2, Ease.Linear),
+                });
             }
             #endregion
 
 
-            creature.OnStartMovementAction += () =>
-            {
-                creature.anim.ResetAnimations();
+            creature.animWeb.GroupAnim(0, "idle", "idle_head", "idle_body", "idle_leftarm", "idle_rightarm", "idle_leftleg", "idle_rightleg");
 
-                creature.anim.SetAnim("run_rightarm");
-                creature.anim.SetAnim("run_leftarm");
-                creature.anim.SetAnim("run_rightleg");
-                creature.anim.SetAnim("run_leftleg");
-                creature.anim.SetAnim("run_head");
-                creature.anim.SetAnim("run_body");
-            };
+            creature.animWeb.GroupAnim(0, "run", "run_rightarm", "run_leftarm", "run_rightleg", "run_leftleg", "run_head", "run_body");
+            creature.animWeb.CreateConnectionFromTo("idle", "run", () => creature.isMoving);
+            creature.animWeb.CreateConnectionFromTo("run", "idle", () => !creature.isMoving);
 
-            creature.OnStopMovementAction += () =>
-            {
-                creature.anim.ResetAnimations();
+            creature.animWeb.CreateConnectionFromTo("attack_leftarm", "idle", () => true, attackAnimTime * 2, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
+            creature.animWeb.CreateConnectionFromTo("attack_rightarm", "idle", () => true, attackAnimTime * 2, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
 
-                creature.anim.SetAnim("idle_head");
-            };
+
+
+            creature.animWeb.SwitchPlayingTo("idle", 0);
         }
 
 
@@ -331,6 +251,7 @@ namespace GameCore
         {
             base.Update();
 
+            animWeb?.UpdateWeb();
             RefreshHurtEffect();
 
             //修正位置
@@ -345,6 +266,11 @@ namespace GameCore
                     body.transform.localScale = Vector3.one;
                 }
             }
+
+
+#if UNITY_EDITOR
+            isMoving_for_editor_view = isMoving;
+#endif
         }
 
 
@@ -365,20 +291,16 @@ namespace GameCore
 
 
 
-        public void OnStartMovement()
-        {
-            ServerOnStartMovement(null);
-        }
-
         [ServerRpc]
-        protected void ServerOnStartMovement(NetworkConnection caller)
+        protected void ServerOnStartMovement(NetworkConnection caller = null)
         {
+            Debug.Log("Start");
             isMoving = true;
-            ConnectionOnStartMovement(caller);
+            ClientOnStartMovement();
         }
 
-        [ConnectionRpc]
-        protected void ConnectionOnStartMovement(NetworkConnection caller)
+        [ClientRpc]
+        protected void ClientOnStartMovement(NetworkConnection caller = null)
         {
             OnStartMovementAction();
         }
@@ -393,20 +315,16 @@ namespace GameCore
 
 
 
-        public void OnStopMovement()
-        {
-            ServerOnStopMovement(null);
-        }
-
         [ServerRpc]
-        protected void ServerOnStopMovement(NetworkConnection caller)
+        protected void ServerOnStopMovement(NetworkConnection caller = null)
         {
+            Debug.Log("Stop");
             isMoving = false;
-            ClientOnStopMovement(caller);
+            ClientOnStopMovement();
         }
 
-        [ConnectionRpc]
-        protected void ClientOnStopMovement(NetworkConnection caller)
+        [ClientRpc]
+        protected void ClientOnStopMovement(NetworkConnection caller = null)
         {
             OnStopMovementAction();
         }
@@ -461,12 +379,7 @@ namespace GameCore
             base.OnDestroy();
 
             //Kill 所有的动画防止警告
-            var animationSequences = GetComponentsInChildren<IAnimSequence>();
-
-            for (int i = animationSequences.Length - 1; i >= 0; i--)
-            {
-                animationSequences[i].sequence.Kill();
-            }
+            animWeb?.Stop();
         }
 
         public void Jump()
@@ -574,7 +487,6 @@ namespace GameCore
             part.mainBody = this;
 
             bodyParts.Add(part);
-            anim.sequences.Add(part);
             renderers.Add(part.armorSr);
             renderers.Add(part.sr);
             spriteRenderers.Add(part.armorSr);
