@@ -495,7 +495,8 @@ namespace GameCore
             taskView.scrollRect.horizontal = true;   //允许水平拖拽
             taskView.scrollRect.movementType = ScrollRect.MovementType.Unrestricted;   //不限制拖拽
             taskView.scrollRect.scrollSensitivity = 0;   //不允许滚轮控制
-            taskView.content.localScale = new(0.2f, 0.2f, 1);   //缩小界面
+            taskView.content.localScale = new(0.18f, 0.18f, 1);   //缩小界面
+            taskView.content.anchoredPosition = new(GameUI.canvasScaler.referenceResolution.x / 2, GameUI.canvasScaler.referenceResolution.y / 2);  //将任务居中
             taskView.viewportMask.enabled = false;   //关闭显示剔除
             UnityEngine.Object.Destroy(taskView.gridLayoutGroup);   //删除自动排序器
             UnityEngine.Object.Destroy(taskView.scrollRect.verticalScrollbar.gameObject);   //删除滚动条
@@ -1524,11 +1525,13 @@ namespace GameCore
 
         private bool CompleteTask_Internal(TaskNode current, string id, out bool hasCompletedBefore, out TaskNode nodeCompleted)
         {
-            if (Internal(current, out hasCompletedBefore, out nodeCompleted))
+            //从父节点开始尝试完成
+            if (MakeTheSpecificNodeCompleted(current, out hasCompletedBefore, out nodeCompleted))
             {
                 return true;
             }
 
+            //不是父节点开始尝试完成子节点
             foreach (var node in current.nodes)
             {
                 if (CompleteTask_Internal(node, id, out hasCompletedBefore, out nodeCompleted))
@@ -1541,20 +1544,28 @@ namespace GameCore
 
 
 
-            bool Internal(TaskNode node, out bool hasCompletedBefore, out TaskNode nodeCompleted)
+            bool MakeTheSpecificNodeCompleted(TaskNode node, out bool hasCompletedBefore, out TaskNode nodeCompleted)
             {
                 if (node.data.id == id)
                 {
                     nodeCompleted = node;
                     hasCompletedBefore = node.completed;
-                    if (!player.completedTasks.Any(p => p.id == id)) player.completedTasks.Add(new() { id = id, completed = true, hasGotRewards = node.hasGotRewards });
+
+                    if (!player.completedTasks.Any(p => p.id == id))
+                    {
+                        player.completedTasks.Add(new() { id = id, completed = true, hasGotRewards = node.hasGotRewards });
+                        player.ClientSetCompletedTasks(player.completedTasks);
+                    };
 
                     node.completed = true;
                     return true;
                 }
 
+
+
                 nodeCompleted = null;
                 hasCompletedBefore = false;
+
                 return false;
             }
         }

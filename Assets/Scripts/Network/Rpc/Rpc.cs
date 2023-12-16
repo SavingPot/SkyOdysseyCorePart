@@ -63,9 +63,9 @@ namespace GameCore
             }
 
             var parameters = mtd.GetParameters();
-            if (parameters.Length == 0 || parameters[^1].ParameterType != connType)
+            if (parameters.Length == 0 || parameters[^1].ParameterType != connType|| parameters[^1].Name != "caller")
             {
-                Debug.LogError($"{mtdPath} 使用了 {nameof(RpcAttribute)} 特性, 最后一个参数必须为 NetworkConnection");
+                Debug.LogError($"{mtdPath} 使用了 {nameof(RpcAttribute)} 特性, 最后一个参数必须为 NetworkConnection caller");
                 return false;
             }
 

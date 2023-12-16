@@ -41,7 +41,7 @@ public class VersionBuildPostProcess
             case BuildTarget.StandaloneWindows:
             case BuildTarget.StandaloneWindows64:
                 /* -------------------------------- 删除崩溃处理程序 -------------------------------- */
-                File.Delete(Path.Combine(parent, "UnityCrashHandler64.exe"));
+                //File.Delete(Path.Combine(parent, "UnityCrashHandler64.exe"));
 
                 /* ------------------------------- 删除 Burst 日志 ------------------------------ */
                 string burst = Path.Combine(parent, $"{Application.productName}_BurstDebugInformation_DoNotShip");

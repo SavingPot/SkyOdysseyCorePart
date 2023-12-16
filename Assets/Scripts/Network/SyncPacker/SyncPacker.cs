@@ -164,11 +164,13 @@ namespace GameCore
 
         public static NMSyncVar GetVar(string varId)
         {
+#if DEBUG
             if (string.IsNullOrEmpty(varId))
             {
                 Debug.LogWarning($"寻找的同步变量 ID 为空");
                 return default;
             }
+#endif
 
             if (vars.TryGetValue(varId, out var value))
             {
@@ -181,8 +183,10 @@ namespace GameCore
 
         public static bool HasVar(string varId)
         {
+#if DEBUG
             if (string.IsNullOrEmpty(varId))
                 return false;
+#endif
 
             return vars.ContainsKey(varId);
         }
@@ -190,11 +194,13 @@ namespace GameCore
         //TODO: string varId -> long var;
         public static bool SetValue(string varId, byte[] value)
         {
+#if DEBUG
             if (string.IsNullOrEmpty(varId))
             {
                 Debug.LogError("设置的同步变量 Id 为空");
                 return false;
             }
+#endif
 
             if (vars.TryGetValue(varId, out var var))
             {

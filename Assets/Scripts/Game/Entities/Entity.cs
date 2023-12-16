@@ -730,6 +730,7 @@ namespace GameCore
                         datum.happinessValue = player.happinessValue;
                         //TODO: to Init
                         datum.health = player.health;
+                        datum.completedTasks = player.completedTasks;
 
                         return;
                     }

@@ -30,17 +30,6 @@ namespace GameCore
                 block.blockCollider = block.GetComponent<BoxCollider2D>();
                 block.health = Block.totalMaxHealth;
                 block.customData = JsonTools.LoadJObjectByString(customData);
-                if (data.lightLevel > 0)
-                {
-                    block.blockLight = block.gameObject.AddComponent<Light2D>();
-                    block.blockLight.color = Block.blockLightDefaultColor;
-                    block.blockLight.pointLightOuterRadius = data.lightLevel * 1.5f;
-                    block.blockLight.intensity = data.lightLevel / 10f;
-                }
-                else if (block.blockLight)
-                {
-                    Destroy(block.blockLight);
-                }
 
 
 
@@ -79,6 +68,10 @@ namespace GameCore
                 block.gameObject.name = data.id;
 
                 /* ----------------------------------- 初始化 ---------------------------------- */
+                if (data.lightLevel > 0)
+                {
+                    block.blockLight = map.blockLightPool.Get(block); ;
+                }
                 block.DoStart();
                 map.UpdateAt(block.pos, block.isBackground);
 
@@ -94,6 +87,7 @@ namespace GameCore
             {
                 block.OnRecovered();
                 if (block.crackSr) map.blockCrackPool.Recover(block.crackSr);
+                if (block.blockLight) map.blockLightPool.Recover(block.blockLight);
                 block.transform.SetParent(map.blockPoolTrans);
 
                 if (block.chunk)
@@ -119,7 +113,6 @@ namespace GameCore
         public class BlockCrackPool
         {
             public Stack<SpriteRenderer> stack = new();
-            private Map map;
 
             public SpriteRenderer Get(Block block, byte progress)
             {
@@ -147,6 +140,32 @@ namespace GameCore
                 sr.transform.SetParent(null);
                 sr.gameObject.SetActive(false);
                 stack.Push(sr);
+            }
+        }
+
+        [Serializable]
+        public class BlockLightPool
+        {
+            public Stack<Light2D> stack = new();
+
+            public Light2D Get(Block block)
+            {
+                Light2D light = stack.Count == 0 ? GameObject.Instantiate(GInit.instance.GetBlockLightPrefab()) : stack.Pop();
+
+                light.gameObject.SetActive(true);
+                light.transform.position = block.transform.position;
+
+                light.color = Block.blockLightDefaultColor;
+                light.pointLightOuterRadius = block.data.lightLevel * 1.5f;
+                light.intensity = block.data.lightLevel / 10f;
+
+                return light;
+            }
+
+            public void Recover(Light2D light)
+            {
+                light.gameObject.SetActive(false);
+                stack.Push(light);
             }
         }
 
@@ -213,6 +232,7 @@ namespace GameCore
 
         public BlockPool blockPool;
         public BlockCrackPool blockCrackPool;
+        public BlockLightPool blockLightPool;
         public ChunkPool chunkPool;
         public Transform blockPoolTrans { get; private set; }
 
@@ -230,6 +250,7 @@ namespace GameCore
 
             blockPool = new(this);
             blockCrackPool = new();
+            blockLightPool = new();
             chunkPool = new(this);
 
             gameObject.layer = Block.blockLayer;

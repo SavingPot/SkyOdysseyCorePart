@@ -90,7 +90,7 @@ namespace GameCore
             switch (GControls.mode)
             {
                 case ControlMode.KeyboardAndMouse:
-                    return Keyboard.current != null && Keyboard.current.fKey.isPressed;
+                    return Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
 
                 case ControlMode.Gamepad:
                     return Gamepad.current != null && Gamepad.current.rightStickButton.isPressed;

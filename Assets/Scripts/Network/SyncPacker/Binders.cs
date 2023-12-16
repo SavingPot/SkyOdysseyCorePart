@@ -14,6 +14,7 @@ namespace GameCore
 
     }
 
+    //TODO: 在 GitBook 里注明, Sync不能用于同步一个有不断变化的变量的类, 并解释为什么不行
     [AttributeUsage(AttributeTargets.Property)]
     public class SyncAttribute : Attribute
     {

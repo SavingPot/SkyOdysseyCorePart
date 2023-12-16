@@ -49,6 +49,8 @@ namespace GameCore
         [LabelText("随机实体"), NonSerialized] public List<RandomEntityData> randomEntityData = new();
         [LabelText("结构"), NonSerialized] public BiomeData_Structure[] structures;
         [LabelText("方块")] public BiomeData_Block[] blocks;
+        public float fluctuationFrequency; //起伏频率, 值越大起伏越多
+        public float fluctuationHeight; //起伏高度, 值越大起伏越高
 
         [JsonIgnore, LabelText("标签")] public List<string> tags = new();
         List<string> ITags.tags { get => tags; }

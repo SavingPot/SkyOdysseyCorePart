@@ -9,6 +9,7 @@ using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.Rendering.Universal;
 using Debug = UnityEngine.Debug;
 
 namespace GameCore
@@ -69,7 +70,6 @@ namespace GameCore
         [Required(Tools.requiredErrorMessage)]
         [AssetsOnly]
         [LabelText("实体的预制体")]
-        //TODO: make them public, don't use methods to get the fields
         private EntityInit entityPrefab;
 
         [SerializeField]
@@ -102,12 +102,19 @@ namespace GameCore
         [LabelText("方块的预制体")]
         private GameObject blockPrefab;
 
+        [SerializeField]
+        [Required(Tools.requiredErrorMessage)]
+        [AssetsOnly]
+        [LabelText("方块的预制体")]
+        private Light2D blockLightPrefab;
+
         public EntityInit GetEntityPrefab() => entityPrefab;
         public EntityInit GetItemEntityPrefab() => itemEntityPrefab;
         public EntityInit GetEnemyPrefab() => enemyPrefab;
         public EntityInit GetNPCPrefab() => npcPrefab;
         public EntityInit GetCreaturePrefab() => creaturePrefab;
         public GameObject GetBlockPrefab() => blockPrefab;
+        public Light2D GetBlockLightPrefab() => blockLightPrefab;
 
 
 

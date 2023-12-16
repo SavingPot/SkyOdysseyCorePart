@@ -701,6 +701,8 @@ namespace GameCore
 
                 temp.id = ModCreate.GetStr(temp, "data.biome.id");
                 temp.difficulty = jo["ori:biome"]["difficulty"].ToInt();
+                temp.fluctuationFrequency = jo["ori:biome"]["fluctuation"]?["frequency"]?.ToFloat() ?? 5;
+                temp.fluctuationHeight = jo["ori:biome"]["fluctuation"]?["height"]?.ToFloat() ?? 8;
                 temp.minSize = ModCreate.Get(temp, "data.biome.size_scope.min")?.ToVector2Int() ?? Vector2Int.zero;
                 temp.maxSize = ModCreate.Get(temp, "data.biome.size_scope.max")?.ToVector2Int() ?? Vector2Int.zero;
 

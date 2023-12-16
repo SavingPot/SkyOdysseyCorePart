@@ -227,6 +227,7 @@ MonoBehaviour:
   npcPrefab: {fileID: -6749035963941349616, guid: e8279c53ee688be4fa1af410193aefc8, type: 3}
   creaturePrefab: {fileID: -7392080320599077345, guid: 235a85535f1e97143b87378140bd944c, type: 3}
   blockPrefab: {fileID: 5036970408661540792, guid: 065f75fa8f0c3a747a6547b129480f3e, type: 3}
+  blockLightPrefab: {fileID: 2230981656462515531, guid: 92ec49b1af4434f4da3db544b950de3b, type: 3}
 --- !u!4 &3573521923736553548
 Transform:
   m_ObjectHideFlags: 0

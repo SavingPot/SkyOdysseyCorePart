@@ -829,19 +829,12 @@ namespace GameCore
 
                     if (y == generation.surface)
                     {
-                        //地图的最大高度
-                        int contrast = 10;
-
-                        //决定了采样间隔 值越大 采样间隔越小
-                        float relief = 15.0f;
-
-                        var xSample = ((x + (float)generation.actualSeed / 1000f) / relief);
-
-                        var noise = (int)Mathf.PerlinNoise1D(xSample) * contrast;
+                        var xSample = ((x + (float)generation.actualSeed / 1000f) / generation.biome.fluctuationFrequency);
+                        var noise = (int)(Mathf.PerlinNoise1D(xSample) * generation.biome.fluctuationHeight);
 
                         for (int i = 0; i < noise; i++)
                         {
-                            generation.sandbox.AddPos(BlockID.Sand, new Vector2Int(x, y + i), true, true);
+                            generation.sandbox.AddPos(generation.biome.blocks[0].id, new Vector2Int(x, y + i), false, true);
                         }
                     }
 

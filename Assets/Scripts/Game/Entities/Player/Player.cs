@@ -177,8 +177,12 @@ namespace GameCore
         public bool askingForGeneratingSandbox { get; private set; }
         public float askingForGeneratingSandboxTime { get; private set; } = float.NegativeInfinity;
         public bool generatedFirstSandbox;
-        [SyncGetter] List<TaskStatusForSave> completedTasks_get() => default; [SyncSetter] void completedTasks_set(List<TaskStatusForSave> value) { }
-        [Sync] public List<TaskStatusForSave> completedTasks { get => completedTasks_get(); set => completedTasks_set(value); }
+        public List<TaskStatusForSave> completedTasks = null;
+        [ClientRpc]
+        public void ClientSetCompletedTasks(List<TaskStatusForSave> tasks, NetworkConnection caller = null)
+        {
+            completedTasks = tasks;
+        }
 
 
 
@@ -558,6 +562,8 @@ namespace GameCore
         {
             if (PlayerCanControl(this))
             {
+                Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
+
                 //如果在地面上并且点跳跃
                 if (onGround && PlayerControls.Jump(this))
                     Jump();
@@ -1397,7 +1403,7 @@ namespace GameCore
                     thirstValue = data.thirstValue;
                     happinessValue = data.happinessValue;
                     health = data.health;
-                    completedTasks = data.completedTasks;
+                    ClientSetCompletedTasks(data.completedTasks);
 
                     goto finish;
                 }
@@ -1414,12 +1420,12 @@ namespace GameCore
             thirstValue = defaultThirstValue;
             happinessValue = defaultHappinessValue;
             health = defaultHealth;
-            completedTasks = new();
+            ClientSetCompletedTasks(new());
 
 
         finish:
             //在服务器存档中添加玩家存档
-            ServerSavePlayerDatumToFile();
+            ServerAddPlayerDatumToFile();
 
             MethodAgent.CallNextFrame(() =>
             {
@@ -1444,34 +1450,21 @@ namespace GameCore
         /// 检查玩家数据中有没有指定的玩家名的数据, 如果没有生成一个新的并添加, 否则覆写
         /// </summary>
         [ServerRpc]
-        void ServerSavePlayerDatumToFile(NetworkConnection caller = null)
+        void ServerAddPlayerDatumToFile(NetworkConnection caller = null)
         {
             //初始化新的玩家数据
             PlayerData newPlayerData = new()
             {
-                playerName = this.playerName.IsNullOrWhiteSpace() ? defaultName : this.playerName,
-                currentSandbox = sandboxIndex,
-                inventory = inventory,
-                hungerValue = hungerValue,
-                thirstValue = thirstValue,
-                happinessValue = happinessValue,
-                health = health,
-                completedTasks = completedTasks,
+                playerName = playerName
             };
-
-            //如果检测到已经存在就覆写
-            for (int i = 0; i < GFiles.world.playerData.Count; i++)
-            {
-                if (GFiles.world.playerData[i].playerName == newPlayerData.playerName)
-                {
-                    GFiles.world.playerData[i] = newPlayerData;
-                    return;
-                }
-            }
 
             //如果不存在就添加
             GFiles.world.playerData.Add(newPlayerData);
-            Debug.LogWarning($"未在存档中匹配到玩家 {(this.playerName.IsNullOrWhiteSpace() ? defaultName : this.playerName)} ({this.playerName}), 已自动添加");
+
+            //添加完马上就写入数据
+            WriteDataToSave();
+
+            Debug.LogWarning($"未在存档中匹配到玩家 {playerName} 的数据, 已自动添加");
 
             //保存世界
             GFiles.SaveAllDataToFiles();
