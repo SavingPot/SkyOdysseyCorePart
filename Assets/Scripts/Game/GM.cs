@@ -1187,7 +1187,7 @@ namespace GameCore
                             {
                                 case 0:
                                     item = ModFactory.CompareItem(BlockID.Dirt).DataToItem();
-                                    item.count = 20;
+                                    item.count = 30;
                                     break;
                                 case 1:
 
