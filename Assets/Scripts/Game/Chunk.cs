@@ -89,10 +89,7 @@ namespace GameCore.High
 
         public bool InView()
         {
-            if (tools.IsInView2D(leftUpPoint) || tools.IsInView2D(leftDownPoint) || tools.IsInView2D(rightUpPoint) || tools.IsInView2D(rightDownPoint))
-                return true;
-
-            return false;
+            return tools.IsInView2D(leftUpPoint) || tools.IsInView2D(leftDownPoint) || tools.IsInView2D(rightUpPoint) || tools.IsInView2D(rightDownPoint);
         }
 
         private void Start()
@@ -136,8 +133,8 @@ namespace GameCore.High
                 //执行回收沙盒 (生成沙盒时不回收)
                 if (!managerGame.generatingExistingSandbox)
                 {
-                    int deltaX = (localPlayer.sandboxIndex.x - sandboxIndex.x).IAbs();
-                    int deltaY = (localPlayer.sandboxIndex.y - sandboxIndex.y).IAbs();
+                    int deltaX = Mathf.Abs(localPlayer.sandboxIndex.x - sandboxIndex.x);
+                    int deltaY = Mathf.Abs(localPlayer.sandboxIndex.y - sandboxIndex.y);
                     bool toRecover = true;
 
                     if (deltaX >= 2 || deltaY >= 2)
@@ -151,8 +148,8 @@ namespace GameCore.High
                                 if (player == localPlayer)
                                     continue;
 
-                                deltaX = (player.sandboxIndex.x - sandboxIndex.x).IAbs();
-                                deltaY = (player.sandboxIndex.y - sandboxIndex.y).IAbs();
+                                deltaX = Mathf.Abs(player.sandboxIndex.x - sandboxIndex.x);
+                                deltaY = Mathf.Abs(player.sandboxIndex.y - sandboxIndex.y);
 
                                 if (deltaX <= 1 || deltaY <= 1)
                                 {

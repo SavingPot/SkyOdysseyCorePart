@@ -17,7 +17,7 @@ namespace GameCore
         //[LabelText("设置")] public Dictionary<string, string> config = new();
 
         [LabelText("物品")] public List<ItemData> items = new();
-        [LabelText("物品")] public List<Spell> spells = new();
+        [LabelText("魔咒")] public List<Spell> spells = new();
         [LabelText("合成表")] public List<CraftingRecipe> craftingRecipes = new();
         [LabelText("菜谱")] public List<CookingRecipe> cookingRecipes = new();
         [LabelText("贴图")] public List<TextureData> textures = new();

@@ -49,13 +49,30 @@ namespace GameCore
         [LabelText("随机实体"), NonSerialized] public List<RandomEntityData> randomEntityData = new();
         [LabelText("结构"), NonSerialized] public BiomeData_Structure[] structures;
         [LabelText("方块")] public BiomeData_Block[] blocks;
-        public float fluctuationFrequency; //起伏频率, 值越大起伏越多
-        public float fluctuationHeight; //起伏高度, 值越大起伏越高
+        public BiomeData_Perlin[] perlins;
 
         [JsonIgnore, LabelText("标签")] public List<string> tags = new();
         List<string> ITags.tags { get => tags; }
 
         public ModTag Rich() => this.GetTag("ori:rich");
+    }
+
+    [Serializable]
+    public class BiomeData_Perlin
+    {
+        public float fluctuationFrequency; //起伏频率, 值越大起伏越多
+        public float fluctuationHeight; //起伏高度, 值越大起伏越高
+        public string startYFormula;
+        public BiomeData_Perlin_Block[] blocks;
+    }
+
+    [Serializable]
+    public class BiomeData_Perlin_Block
+    {
+        public string minFormula;
+        public string maxFormula;
+        public string block;
+        public bool isBackground;
     }
 
     [Serializable]
@@ -78,24 +95,8 @@ namespace GameCore
     [Serializable]
     public class BiomeData_Block_Range
     {
-        public string min;
-        public string max;
-
-        public static ComputationRules GetRules(int bottom, int surface, int top)
-        {
-            return new()
-            {
-                {
-                    "@bottom", bottom
-                },
-                {
-                    "@surface", surface
-                },
-                {
-                    "@top", top
-                }
-            };
-        }
+        public string minFormula;
+        public string maxFormula;
     }
 
     [Serializable]

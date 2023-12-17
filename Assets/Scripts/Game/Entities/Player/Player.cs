@@ -1154,10 +1154,10 @@ namespace GameCore
         #region 挖掘方块
         private void ExcavateBlock(Block block)
         {
-            if (!isLocalPlayer || !block)
+            if (!isLocalPlayer || block == null)
                 return;
 
-            if (block)
+            if (block != null)
             {
                 if (!animWeb.GetAnim("excavate_rightarm", 0).isPlaying)
                     animWeb.SwitchPlayingTo("excavate_rightarm");

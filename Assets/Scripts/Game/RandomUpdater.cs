@@ -163,7 +163,7 @@ namespace GameCore
                     //抽取一个方块并检查
                     Block block = chunk.blocks.Extract();
 
-                    if (block && !block.isBackground && !Map.instance.GetBlock(block.pos + Vector2Int.up, false) && !Tools.instance.IsInView2D(block.pos.To2()))
+                    if (block != null && !block.isBackground && !Map.instance.HasBlock(block.pos + Vector2Int.up, false) && !Tools.instance.IsInView2D(block.pos.To2()))
                     {
                         return block.pos + new Vector2Int(0, 2);
                     }

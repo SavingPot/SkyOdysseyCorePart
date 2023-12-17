@@ -817,7 +817,7 @@ namespace GameCore
                             {
                                 foreach (var range in g.ranges)
                                 {
-                                    if (range.min.IsNullOrWhiteSpace() || range.max.IsNullOrWhiteSpace() || y.IInRange(range.min.ComputeNum(generation.rules), range.max.ComputeNum(generation.rules)))
+                                    if (range.minFormula.IsNullOrWhiteSpace() || range.maxFormula.IsNullOrWhiteSpace() || y.IInRange(range.minFormula.ComputeFormula(generation.biomeAlgebra), range.maxFormula.ComputeFormula(generation.biomeAlgebra)))
                                     {
                                         generation.sandbox.AddPos(g.id, pos, g.areas, true);
                                     }
@@ -827,23 +827,58 @@ namespace GameCore
                     }
 
 
-                    if (y == generation.surface)
-                    {
-                        var xSample = ((x + (float)generation.actualSeed / 1000f) / generation.biome.fluctuationFrequency);
-                        var noise = (int)(Mathf.PerlinNoise1D(xSample) * generation.biome.fluctuationHeight);
-
-                        for (int i = 0; i < noise; i++)
-                        {
-                            generation.sandbox.AddPos(generation.biome.blocks[0].id, new Vector2Int(x, y + i), false, true);
-                        }
-                    }
-
-
                     /* -------------------------------------------------------------------------- */
                     /*                                    生成战利品                                   */
                     /* -------------------------------------------------------------------------- */
                     MapGeneration.LootGeneration(generation, pos);
                 });
+            }
+            foreach (var perlin in generation.biome.perlins)
+            {
+                //Key是x轴, Value是对应的噪声值
+                List<Vector2Int> noises = new();
+                int lowestNoise = int.MaxValue;
+                int highestNoise = int.MaxValue;
+
+                for (int x = generation.minPoint.x; x < generation.maxPoint.x; x++)
+                {
+                    var xSample = (x + (float)generation.actualSeed / 1000f) / perlin.fluctuationFrequency;
+                    var noise = (int)(Mathf.PerlinNoise1D(xSample) * perlin.fluctuationHeight);
+
+                    noises.Add(new(x, noise));
+
+                    //最低/最高值为 int.MaxValue 代表的是最低/最高值还未被赋值过     
+                    if (lowestNoise == int.MaxValue || noise < lowestNoise)
+                        lowestNoise = noise;
+                    if (highestNoise == int.MaxValue || noise > highestNoise)
+                        highestNoise = noise;
+                }
+
+                var startY = (int)perlin.startYFormula.ComputeFormula(generation.biomeAlgebra);
+                Debug.Log($"{startY} {noises.Count} {lowestNoise} {highestNoise}");
+                //遍历每一个噪声点
+                foreach (var noise in noises)
+                {
+                    //如果 noise.y == 6, 那就要从 0 开始向上遍历, 把方块一个个放出来, 一共七个方块 (0123456)
+                    for (int i = 0; i < noise.y + 1; i++)
+                    {
+                        /* -------------------------------- 接下来是添加方块 -------------------------------- */
+                        foreach (var item in perlin.blocks)
+                        {
+                            var algebra = GetPerlinFormulaAlgebra(0, noise.y, generation.minPoint.y, generation.surface, generation.maxPoint.y);
+                            var min = (int)item.minFormula.ComputeFormula(algebra);
+                            var max = (int)item.maxFormula.ComputeFormula(algebra);
+                            //Debug.Log($"{min} {max} {i}");
+
+                            if (i >= min && i <= max)
+                            {
+                                Debug.Log($"{item.block} added at ({noise.x}, {startY + i})");
+                                generation.sandbox.AddPos(item.block, new Vector2Int(noise.x, startY + i), item.isBackground, true);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
 
@@ -944,6 +979,44 @@ namespace GameCore
                 generatingNewSandboxes.Remove(index);
             }
             return generation.sandbox;
+        }
+
+        public static FormulaAlgebra GetPerlinFormulaAlgebra(int lowestNoise, int highestNoise, int bottom, int surface, int top)
+        {
+            return new()
+            {
+                {
+                    "@lowest_noise", lowestNoise
+                },
+                {
+                    "@highest_noise", highestNoise
+                },
+                {
+                    "@bottom", bottom
+                },
+                {
+                    "@surface", surface
+                },
+                {
+                    "@top", top
+                }
+            };
+        }
+
+        public static FormulaAlgebra GetBiomeFormulaAlgebra(int bottom, int surface, int top)
+        {
+            return new()
+            {
+                {
+                    "@bottom", bottom
+                },
+                {
+                    "@surface", surface
+                },
+                {
+                    "@top", top
+                }
+            };
         }
     }
 
@@ -1111,7 +1184,7 @@ namespace GameCore
         public Vector2Int maxPoint;
         public Vector2Int minPoint;
         public Sandbox sandbox;
-        public ComputationRules rules;
+        public FormulaAlgebra biomeAlgebra;
         public int yOffset;
         public int surface;
         public int surfaceExtra1;
@@ -1208,7 +1281,7 @@ namespace GameCore
 
 
 
-            rules = BiomeData_Block_Range.GetRules(minPoint.y, surface, maxPoint.y);
+            biomeAlgebra = GM.GetBiomeFormulaAlgebra(minPoint.y, surface, maxPoint.y);
         }
     }
 }

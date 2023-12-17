@@ -7,6 +7,7 @@ using UnityEngine;
 using GameCore.High;
 using Unity.Burst;
 using static GameCore.PlayerUI;
+using System.Threading;
 
 namespace GameCore
 {
@@ -14,6 +15,7 @@ namespace GameCore
     public class Sandbox
     {
         public Vector2Int index;
+        [NonSerialized] ReaderWriterLockSlim savesReaderWriterLock = new(LockRecursionPolicy.NoRecursion);
         public List<BlockSave> saves = new();
         public List<EntitySave> entities = new();
         public string biome;
@@ -92,11 +94,22 @@ namespace GameCore
 
         public void AddPos(string id, Vector2Int centerPoint, Vector3Int[] areas, bool overwriteIfContains, string customData = null)
         {
-            lock (saves)
+            savesReaderWriterLock.EnterWriteLock();
+            try
             {
                 if (!saves.Any(p => p.blockId == id))
                     saves.Add(new(id));
+            }
+            finally
+            {
+                savesReaderWriterLock.ExitWriteLock();
+            }
 
+
+
+            savesReaderWriterLock.EnterReadLock();
+            try
+            {
                 foreach (var save in saves)
                 {
                     if (save.blockId == id)
@@ -113,14 +126,20 @@ namespace GameCore
                     }
                 }
             }
+            finally
+            {
+                savesReaderWriterLock.ExitReadLock();
+            }
         }
 
         public void AddPos(string id, Vector2Int pos, bool isBackground, bool overwriteIfContains = false, string customData = null)
         {
             //TODO: 检测 pos 是否超出沙盒边界
-            lock (saves)
+            //如果 id 为空, 意思就是要删掉这个点
+            if (string.IsNullOrEmpty(id))
             {
-                if (string.IsNullOrEmpty(id))
+                savesReaderWriterLock.EnterReadLock();
+                try
                 {
                     foreach (var save in saves)
                     {
@@ -131,7 +150,15 @@ namespace GameCore
                         }
                     }
                 }
-                else
+                finally
+                {
+                    savesReaderWriterLock.ExitReadLock();
+                }
+            }
+            else
+            {
+                savesReaderWriterLock.EnterUpgradeableReadLock();
+                try
                 {
                     foreach (var save in saves)
                     {
@@ -143,7 +170,13 @@ namespace GameCore
                         }
                     }
 
+                    savesReaderWriterLock.EnterWriteLock();
                     saves.Add(new(pos, isBackground, id, customData));
+                    savesReaderWriterLock.ExitWriteLock();
+                }
+                finally
+                {
+                    savesReaderWriterLock.ExitUpgradeableReadLock();
                 }
             }
         }
@@ -151,43 +184,41 @@ namespace GameCore
         public void RemovePos(Vector2Int pos, bool isBackground)
         {
             lock (saves)
-                for (int i = 0; i < saves.Count; i++)
+                foreach (var save in saves)
                 {
-                    BlockSave save = saves[i];
-
-                    for (int b = 0; b < save.locations.Count; b++)
-                    {
-                        BlockSave_Location location = save.locations[b];
-
-                        if (location.pos == pos && location.isBackground == isBackground)
+                    lock (save.locations)
+                        for (int b = 0; b < save.locations.Count; b++)
                         {
-                            save.RemovePosAt(b);
-                            break;
+                            BlockSave_Location location = save.locations[b];
+
+                            if (location.pos == pos && location.isBackground == isBackground)
+                            {
+                                save.RemovePosAt(b);
+                                break;
+                            }
                         }
-                    }
                 }
         }
 
         public void RemovePos(string id, Vector2Int pos, bool isBackground)
         {
             lock (saves)
-                for (int i = 0; i < saves.Count; i++)
+                foreach (var save in saves)
                 {
-                    BlockSave save = saves[i];
-
                     if (save.blockId != id)
                         continue;
 
-                    for (int b = 0; b < save.locations.Count; b++)
-                    {
-                        BlockSave_Location location = save.locations[b];
-
-                        if (location.pos == pos && location.isBackground == isBackground)
+                    lock (save.locations)
+                        for (int b = 0; b < save.locations.Count; b++)
                         {
-                            save.RemovePosAt(b);
-                            return;
+                            BlockSave_Location location = save.locations[b];
+
+                            if (location.pos == pos && location.isBackground == isBackground)
+                            {
+                                save.RemovePosAt(b);
+                                return;
+                            }
                         }
-                    }
                 }
         }
 
@@ -195,10 +226,17 @@ namespace GameCore
 
         public BlockSave_Location GetBlock(Vector2Int pos, bool isBackground)
         {
-            lock (saves)
+            savesReaderWriterLock.EnterReadLock();
+            try
+            {
                 foreach (var block in saves)
                     if (block.TryGetLocation(pos, isBackground, out var result))
                         return result;
+            }
+            finally
+            {
+                savesReaderWriterLock.ExitReadLock();
+            }
 
             return null;
         }

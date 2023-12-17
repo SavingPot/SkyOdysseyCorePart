@@ -646,24 +646,13 @@ namespace GameCore
                 ModCreate.GetFor(jt, "data.biome.blocks.ranges", jfToLoad, token =>
                 {
                     var tokenStr = token.ToString();
-                    var splitted = tokenStr.Split("=>");
+                    IntervalFormulaToMinMaxFormula(tokenStr, out var minFormula, out var maxFormula);
 
-                    if (splitted.Length == 1)
+                    rangesTemp.Add(new()
                     {
-                        rangesTemp.Add(new()
-                        {
-                            min = splitted[0],
-                            max = splitted[0]
-                        });
-                    }
-                    else if (splitted.Length == 2)
-                    {
-                        rangesTemp.Add(new()
-                        {
-                            min = splitted[0],
-                            max = splitted[1]
-                        });
-                    }
+                        minFormula = minFormula,
+                        maxFormula = maxFormula
+                    });
                 });
                 temp.ranges = rangesTemp.ToArray();
 
@@ -674,6 +663,27 @@ namespace GameCore
             }
 
             return temp;
+        }
+
+        //TODO: Move it to SP.Tools
+        public static void IntervalFormulaToMinMaxFormula(string intervalFormula, out string minFormula, out string maxFormula)
+        {
+            var splitted = intervalFormula.Split("=>");
+
+            if (splitted.Length == 1)
+            {
+                minFormula = splitted[0];
+                maxFormula = minFormula;
+            }
+            else if (splitted.Length == 2)
+            {
+                minFormula = splitted[0];
+                maxFormula = splitted[1];
+            }
+            else
+            {
+                throw new();
+            }
         }
 
         public static BiomeData LoadBiome(JObject jo)
@@ -701,8 +711,33 @@ namespace GameCore
 
                 temp.id = ModCreate.GetStr(temp, "data.biome.id");
                 temp.difficulty = jo["ori:biome"]["difficulty"].ToInt();
-                temp.fluctuationFrequency = jo["ori:biome"]["fluctuation"]?["frequency"]?.ToFloat() ?? 5;
-                temp.fluctuationHeight = jo["ori:biome"]["fluctuation"]?["height"]?.ToFloat() ?? 8;
+                List<BiomeData_Perlin> perlinsTemp = new();
+                jo["ori:biome"]?["perlins"]?.Foreach(t =>
+                {
+                    List<BiomeData_Perlin_Block> blocks = new();
+
+                    t["blocks"]?.Foreach(blockToken =>
+                    {
+                        IntervalFormulaToMinMaxFormula(blockToken["range"]?.ToString(), out var minFormula, out var maxFormula);
+
+                        blocks.Add(new()
+                        {
+                            minFormula = minFormula,
+                            maxFormula = maxFormula,
+                            block = blockToken["block"]?.ToString(),
+                            isBackground = blockToken["isBackground"]?.ToBool() ?? false,
+                        });
+                    });
+
+                    perlinsTemp.Add(new()
+                    {
+                        fluctuationFrequency = t["fluctuation"]?["frequency"]?.ToFloat() ?? 5,
+                        fluctuationHeight = t["fluctuation"]?["height"]?.ToFloat() ?? 8,
+                        startYFormula = t["start_y"]?.ToString(),
+                        blocks = blocks.ToArray()
+                    });
+                });
+                temp.perlins = perlinsTemp.ToArray();
                 temp.minSize = ModCreate.Get(temp, "data.biome.size_scope.min")?.ToVector2Int() ?? Vector2Int.zero;
                 temp.maxSize = ModCreate.Get(temp, "data.biome.size_scope.max")?.ToVector2Int() ?? Vector2Int.zero;
 
