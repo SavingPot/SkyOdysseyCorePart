@@ -157,6 +157,7 @@ namespace GameCore
         public InventorySlotUI helmetUI;
         public InventorySlotUI breastplateUI;
         public InventorySlotUI leggingUI;
+        public InventorySlotUI bootsUI;
 
         /* ----------------------------------- 背包 ----------------------------------- */
         public ScrollViewIdentity backpackItemView;
@@ -771,18 +772,22 @@ namespace GameCore
                 helmetUI = InventorySlotUI.Generate($"ori:button.backpack_item_{Inventory.helmetVar}", $"ori:image.backpack_item_{Inventory.helmetVar}", backpackItemView.gridLayoutGroup.cellSize);
                 breastplateUI = InventorySlotUI.Generate($"ori:button.backpack_item_{Inventory.breastplateVar}", $"ori:image.backpack_item_{Inventory.breastplateVar}", backpackItemView.gridLayoutGroup.cellSize);
                 leggingUI = InventorySlotUI.Generate($"ori:button.backpack_item_{Inventory.leggingVar}", $"ori:image.backpack_item_{Inventory.leggingVar}", backpackItemView.gridLayoutGroup.cellSize);
+                bootsUI = InventorySlotUI.Generate($"ori:button.backpack_item_{Inventory.bootsVar}", $"ori:image.backpack_item_{Inventory.bootsVar}", backpackItemView.gridLayoutGroup.cellSize);
 
                 helmetUI.button.transform.SetParent(backpackItemView.gridLayoutGroup.transform.parent);
                 breastplateUI.button.transform.SetParent(backpackItemView.gridLayoutGroup.transform.parent);
                 leggingUI.button.transform.SetParent(backpackItemView.gridLayoutGroup.transform.parent);
+                bootsUI.button.transform.SetParent(backpackItemView.gridLayoutGroup.transform.parent);
 
                 helmetUI.button.SetAnchorMinMax(UPC.lowerLeft);
                 breastplateUI.button.SetAnchorMinMax(UPC.lowerLeft);
                 leggingUI.button.SetAnchorMinMax(UPC.lowerLeft);
+                bootsUI.button.SetAnchorMinMax(UPC.lowerLeft);
 
                 helmetUI.button.ap = helmetUI.button.sd / 2;
                 breastplateUI.button.SetAPosOnBySizeRight(helmetUI.button, 0);
                 leggingUI.button.SetAPosOnBySizeRight(breastplateUI.button, 0);
+                bootsUI.button.SetAPosOnBySizeRight(leggingUI.button, 0);
 
                 backpackItemView.CustomMethod += (type, param) =>
                 {
@@ -802,6 +807,7 @@ namespace GameCore
                         helmetUI.Refresh(player, Inventory.helmetVar);
                         breastplateUI.Refresh(player, Inventory.breastplateVar);
                         leggingUI.Refresh(player, Inventory.leggingVar);
+                        bootsUI.Refresh(player, Inventory.bootsVar);
                     }
                 };
 
@@ -823,7 +829,7 @@ namespace GameCore
                     }
 
                     var temp = (KeyValuePair<CraftingRecipe, List<Dictionary<int, ushort>>>)choseCraftRecipe;
-                    var itemGot = ModConvert.DatumItemBaseToDatumItem(ModFactory.CompareItem(temp.Key.result.id));
+                    var itemGot = ModConvert.ItemDataToItem(ModFactory.CompareItem(temp.Key.result.id));
                     ct.text.text = GameUI.CompareText(itemGot.data.id)?.text;
                 };
                 choseItemTitleText.gameObject.SetActive(false);
@@ -848,7 +854,7 @@ namespace GameCore
                     });
 
                     //给予玩家物品
-                    var resultItem = ModConvert.DatumItemBaseToDatumItem(ModFactory.CompareItem(temp.Key.result.id));
+                    var resultItem = ModConvert.ItemDataToItem(ModFactory.CompareItem(temp.Key.result.id));
                     for (int i = 0; i < temp.Key.result.count; i++)
                     {
                         player.ServerAddItem(resultItem);
@@ -1398,7 +1404,7 @@ namespace GameCore
                         if (item == null)
                             continue;
 
-                        var extended = item.ToExtended();
+                        var extended = item.DataToItem();
                         extended.count = count;
                         player.ServerAddItem(extended);
                     }

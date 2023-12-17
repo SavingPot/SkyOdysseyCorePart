@@ -16,6 +16,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.IO;
 using System.IO.Compression;
+using GameCore.High;
 
 namespace GameCore
 {
@@ -63,7 +64,7 @@ namespace GameCore
             }
 
             var parameters = mtd.GetParameters();
-            if (parameters.Length == 0 || parameters[^1].ParameterType != connType|| parameters[^1].Name != "caller")
+            if (parameters.Length == 0 || parameters[^1].ParameterType != connType || parameters[^1].Name != "caller")
             {
                 Debug.LogError($"{mtdPath} 使用了 {nameof(RpcAttribute)} 特性, 最后一个参数必须为 NetworkConnection caller");
                 return false;
@@ -251,7 +252,7 @@ namespace GameCore
 
             using MemoryStream ms = new();
             binaryFormatter.Serialize(ms, obj);
-            return ms.ToArray();
+            return LZ4.Compress(ms.ToArray());
         }
 
         public static object BytesToObject(byte[] data)
@@ -262,7 +263,7 @@ namespace GameCore
                 return null;
             }
 
-            using MemoryStream ms = new(data);
+            using MemoryStream ms = new(LZ4.Decompress(data));
 
             return binaryFormatter.Deserialize(ms);
         }

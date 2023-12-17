@@ -532,7 +532,7 @@ namespace GameCore
         {
             if (!Null(data))
             {
-                Item trueItem = ModFactory.CompareItem(data.data.id).ToExtended();
+                Item trueItem = ModFactory.CompareItem(data.data.id).DataToItem();
 
                 trueItem.count = data.count;
                 trueItem.customData = data.customData;
@@ -746,7 +746,7 @@ namespace GameCore
             //texture = block.defaultTextureLoaded;
         }
 
-        public Item ToExtended() => ModConvert.DatumItemBaseToDatumItem(this);
+        public Item DataToItem() => ModConvert.ItemDataToItem(this);
     }
 
     [Serializable]

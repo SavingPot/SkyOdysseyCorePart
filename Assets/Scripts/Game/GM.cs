@@ -798,7 +798,41 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    生成方块                                    */
             /* -------------------------------------------------------------------------- */
-            // 遍历每个点
+            BiomeData_Block[] directBlocks;
+            BiomeData_Block[] perlinBlocks;
+            BiomeData_Block[] postProcessBlocks;
+            BiomeData_Block[] unexpectedBlocks;
+
+            List<BiomeData_Block> directBlocksTemp = new();
+            List<BiomeData_Block> perlinBlocksTemp = new();
+            List<BiomeData_Block> postProcessBlocksTemp = new();
+            List<BiomeData_Block> unexpectedBlocksTemp = new();
+
+            foreach (var g in generation.biome.blocks)
+            {
+                if (g == null || !g.initialized)
+                    continue;
+
+                if (g.type == "direct")
+                    directBlocksTemp.Add(g);
+                else if (g.type == "perlin")
+                    perlinBlocksTemp.Add(g);
+                else if (g.type == "post_process")
+                    postProcessBlocksTemp.Add(g);
+                else
+                    unexpectedBlocksTemp.Add(g);
+            }
+
+            directBlocks = directBlocksTemp.ToArray();
+            perlinBlocks = perlinBlocksTemp.ToArray();
+            postProcessBlocks = postProcessBlocksTemp.ToArray();
+            unexpectedBlocks = unexpectedBlocksTemp.ToArray();
+
+            List<(Vector2Int pos, bool isBackground)> blockAdded = new();
+
+
+            /* ---------------------------------- 生成 Direct --------------------------------- */
+            //遍历每个点
             for (int x = generation.minPoint.x; x < generation.maxPoint.x; x++)
             {
                 Parallel.For(generation.minPoint.y, generation.maxPoint.y, y =>
@@ -806,35 +840,46 @@ namespace GameCore
                     //当前遍历到的点
                     Vector2Int pos = new(x, y);
 
-                    foreach (var g in generation.biome.blocks)
+                    foreach (var g in directBlocks)
                     {
-                        if (g == null || !g.initialized)
-                            return;
-
                         if (Tools.Prob100(g.rules.probability, generation.random))
                         {
                             if (g.attached.blockId.IsNullOrWhiteSpace() || generation.sandbox.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
                             {
                                 foreach (var range in g.ranges)
                                 {
-                                    if (range.minFormula.IsNullOrWhiteSpace() || range.maxFormula.IsNullOrWhiteSpace() || y.IInRange(range.minFormula.ComputeFormula(generation.biomeAlgebra), range.maxFormula.ComputeFormula(generation.biomeAlgebra)))
+                                    if (range.minFormula.IsNullOrWhiteSpace() || range.maxFormula.IsNullOrWhiteSpace() || y.IInRange(range.minFormula.ComputeFormula(generation.biomeDirectBlockAlgebra), range.maxFormula.ComputeFormula(generation.biomeDirectBlockAlgebra)))
                                     {
+                                        foreach (var item in g.areas)
+                                        {
+                                            Vector2Int actualPos = new(pos.x + item.x, pos.y + item.y);
+                                            bool actualIsBackground = item.z < 0;
+
+                                            lock (blockAdded)
+                                            {
+                                                for (int c = 0; c < blockAdded.Count; c++)
+                                                {
+                                                    var p = blockAdded[c];
+                                                    if (p.pos == actualPos && p.isBackground == actualIsBackground)
+                                                        blockAdded.RemoveAt(c);
+                                                }
+                                                blockAdded.Add((actualPos, actualIsBackground));
+                                            }
+                                        }
                                         generation.sandbox.AddPos(g.id, pos, g.areas, true);
                                     }
                                 }
                             }
                         }
                     }
-
-
-                    /* -------------------------------------------------------------------------- */
-                    /*                                    生成战利品                                   */
-                    /* -------------------------------------------------------------------------- */
-                    MapGeneration.LootGeneration(generation, pos);
                 });
             }
-            foreach (var perlin in generation.biome.perlins)
+
+            /* ---------------------------------- 生成 Perlin --------------------------------- */
+            foreach (var perlinBlock in perlinBlocks)
             {
+                var perlin = perlinBlock.perlin;
+
                 //Key是x轴, Value是对应的噪声值
                 List<Vector2Int> noises = new();
                 int lowestNoise = int.MaxValue;
@@ -854,8 +899,8 @@ namespace GameCore
                         highestNoise = noise;
                 }
 
-                var startY = (int)perlin.startYFormula.ComputeFormula(generation.biomeAlgebra);
-                Debug.Log($"{startY} {noises.Count} {lowestNoise} {highestNoise}");
+                var startY = (int)perlin.startYFormula.ComputeFormula(generation.biomeDirectBlockAlgebra);
+
                 //遍历每一个噪声点
                 foreach (var noise in noises)
                 {
@@ -863,23 +908,120 @@ namespace GameCore
                     for (int i = 0; i < noise.y + 1; i++)
                     {
                         /* -------------------------------- 接下来是添加方块 -------------------------------- */
-                        foreach (var item in perlin.blocks)
+                        foreach (var block in perlin.blocks)
                         {
                             var algebra = GetPerlinFormulaAlgebra(0, noise.y, generation.minPoint.y, generation.surface, generation.maxPoint.y);
-                            var min = (int)item.minFormula.ComputeFormula(algebra);
-                            var max = (int)item.maxFormula.ComputeFormula(algebra);
-                            //Debug.Log($"{min} {max} {i}");
+                            var min = (int)block.minFormula.ComputeFormula(algebra);
+                            var max = (int)block.maxFormula.ComputeFormula(algebra);
 
                             if (i >= min && i <= max)
                             {
-                                Debug.Log($"{item.block} added at ({noise.x}, {startY + i})");
-                                generation.sandbox.AddPos(item.block, new Vector2Int(noise.x, startY + i), item.isBackground, true);
+                                var blockPos = new Vector2Int(noise.x, startY + i);
+
+                                lock (blockAdded)
+                                {
+                                    for (int c = 0; c < blockAdded.Count; c++)
+                                    {
+                                        var p = blockAdded[c];
+                                        if (p.pos == blockPos && p.isBackground == block.isBackground)
+                                            blockAdded.RemoveAt(c);
+                                    }
+                                    blockAdded.Add((blockPos, block.isBackground));
+                                }
+
+                                generation.sandbox.AddPos(block.block, blockPos, block.isBackground, true);
                                 break;
                             }
                         }
                     }
                 }
             }
+
+            /* ---------------------------------- 生成 PostProcess --------------------------------- */
+
+            //字典返回的是这个 x 对应的 y 值最高的点 (x 为 Key   y 为 Value)
+            Dictionary<int, int> wallHighestPointFunction = new();
+            Dictionary<int, int> backgroundHighestPointFunction = new();
+
+            foreach (var oneAdded in blockAdded)
+            {
+                var pos = oneAdded.pos;
+                var isBackground = oneAdded.isBackground;
+
+                var dic = isBackground ? backgroundHighestPointFunction : wallHighestPointFunction;
+
+                //如果该 x 值没有被记录过, 那就记录该 x 值
+                if (!dic.ContainsKey(pos.x))
+                    dic.Add(pos.x, pos.y);
+                else if (dic[pos.x] < pos.y)  //如果该 x 值已经被记录过, 但是记录的 y 值比当前 y 值要小, 那就更新记录的 y 值
+                    dic[pos.x] = pos.y;
+            }
+
+            //遍历每个点
+            for (int x = generation.minPoint.x; x < generation.maxPoint.x; x++)
+            {
+                Parallel.For(generation.minPoint.y, generation.maxPoint.y, y =>
+                {
+                    //当前遍历到的点
+                    Vector2Int pos = new(x, y);
+
+                    foreach (var g in postProcessBlocks)
+                    {
+                        if (Tools.Prob100(g.rules.probability, generation.random))
+                        {
+                            if (g.attached.blockId.IsNullOrWhiteSpace() || generation.sandbox.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
+                            {
+                                foreach (var range in g.ranges)
+                                {
+                                    if (!wallHighestPointFunction.TryGetValue(x, out int highestY))
+                                        highestY = 0;
+
+                                    var formulaAlgebra = new FormulaAlgebra()
+                                    {
+                                        {
+                                            "@bottom",generation.minPoint.y
+                                        },
+                                        {
+                                            "@surface", generation.surface
+                                        },
+                                        {
+                                            "@top", generation.maxPoint.y
+                                        },
+                                        {
+                                            "@highest_point", highestY
+                                        }
+                                    };
+
+                                    if (range.minFormula.IsNullOrWhiteSpace() || range.maxFormula.IsNullOrWhiteSpace() || y.IInRange(range.minFormula.ComputeFormula(formulaAlgebra), range.maxFormula.ComputeFormula(formulaAlgebra)))
+                                    {
+                                        foreach (var item in g.areas)
+                                        {
+                                            Vector2Int actualPos = new(pos.x + item.x, pos.y + item.y);
+                                            bool actualIsBackground = item.z < 0;
+
+                                            lock (blockAdded)
+                                            {
+                                                for (int c = 0; c < blockAdded.Count; c++)
+                                                {
+                                                    var p = blockAdded[c];
+                                                    if (p.pos == actualPos && p.isBackground == actualIsBackground)
+                                                        blockAdded.RemoveAt(c);
+                                                }
+                                                blockAdded.Add((actualPos, actualIsBackground));
+                                            }
+                                        }
+                                        generation.sandbox.AddPos(g.id, pos, g.areas, true);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            //生成战利品
+            MapGeneration.LootGeneration(generation, wallHighestPointFunction);
+
 
 
 
@@ -1022,57 +1164,111 @@ namespace GameCore
 
     public class MapGeneration
     {
-        public static Action<MapGeneration, Vector2Int> LootGeneration = (generation, pos) =>
+        public static Action<MapGeneration, Dictionary<int, int>> LootGeneration = (generation, wallHighestPointFunction) =>
         {
-            if (pos.y == generation.surfaceExtra1)
+            foreach (var highest in wallHighestPointFunction)
             {
-                /* ----------------------------------- 木桶 ----------------------------------- */
-                if (Tools.Prob100(3, generation.random))
+                Vector2Int lootBlockPos = new(highest.Key, highest.Value + 1);
+
+                /* ----------------------------------- 木桶 (只有中心空岛有) ----------------------------------- */
+                if (generation.biome.id == BiomeID.Center)
                 {
-                    JToken[] group = new JToken[28];
-
-                    Parallel.For(0, group.Length, i =>
+                    if (lootBlockPos.x == 15)
                     {
-                        //每个格子都有 >=40% 的概率为空
-                        if (Tools.Prob100(40, generation.random))
-                            return;
+                        JToken[] group = new JToken[28];
 
-                        Mod mod = null;
-                        while (mod == null)
+                        //填充每个栏位
+                        for (int i = 0; i < group.Length; i++)
                         {
-                            mod = ModFactory.mods.Extract();
-                            if (mod.items.Count == 0)
-                                mod = null;
+                            /* --------------------------------- 抽取一个物品 --------------------------------- */
+                            Item item = null;
+
+                            switch (i)
+                            {
+                                case 0:
+                                    item = ModFactory.CompareItem(BlockID.Dirt).DataToItem();
+                                    item.count = 20;
+                                    break;
+                                case 1:
+
+                                    item = ModFactory.CompareItem(ItemID.SportsVest).DataToItem();
+                                    break;
+                                case 2:
+
+                                    item = ModFactory.CompareItem(ItemID.SportsShorts).DataToItem();
+                                    break;
+
+                                case 3:
+                                    item = ModFactory.CompareItem(ItemID.Sneakers).DataToItem();
+                                    break;
+
+                                default:
+                                    {
+                                        //每个格子都有 60% 的概率为空
+                                        if (Tools.Prob100(60, generation.random))
+                                            continue;
+
+                                        //抽取模组
+                                        Mod mod = null;
+                                        while (mod == null)
+                                        {
+                                            mod = ModFactory.mods.Extract();
+                                            if (mod.items.Count == 0)
+                                                mod = null;
+                                        }
+
+                                        //从抽取的模组里抽取物品
+                                        ItemData itemData = null;
+                                        for (var inner = 0; inner < mod.items.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的物品
+                                        {
+                                            itemData = mod.items.Extract();
+
+                                            if (itemData == null)
+                                                continue;
+
+                                            //如果是木桶的战利品就通过
+                                            if (itemData.GetTag("ori:loot.barrel").hasTag)
+                                                break;
+                                            else
+                                                itemData = null;
+                                        }
+
+                                        /* ---------------------------------- 填充物品 ---------------------------------- */
+                                        if (itemData != null)  //如果获取失败了, 这个格子也会为空
+                                        {
+                                            //随机一定数量
+                                            ushort maxCount = (ushort)(itemData.maxCount / 4);
+                                            ushort count = (ushort)(generation.random.NextDouble() * maxCount);
+                                            if (count <= 0) count = 1;
+                                            if (count > maxCount) count = maxCount;
+
+                                            item = itemData.DataToItem();
+                                            item.count = count;
+                                        }
+
+                                        break;
+                                    }
+                            }
+
+                            /* ---------------------------------- 填充物品 ---------------------------------- */
+                            if (item != null)  //如果获取失败了, 这个格子也会为空
+                            {
+                                group[i] = JToken.FromObject(item);
+                            }
                         }
-                        ItemData item = null;
-                        for (var inner = 0; inner < mod.items.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的物品
-                        {
-                            item = mod.items.Extract();
 
-                            if (item == null)
-                                continue;
+                        JObject jo = new();
 
-                            //如果是木桶的战利品就通过
-                            if (item.GetTag("ori:loot.barrel").hasTag)
-                                break;
-                            else
-                                item = null;
-                        }
-                        if (item != null)  //如果获取失败了, 这个格子也会为空
-                            group[i] = JToken.FromObject(item.ToExtended());
-                    });
+                        jo.AddObject("ori:container");
+                        jo["ori:container"].AddObject("items");
+                        jo["ori:container"]["items"].AddArray("array", group);
 
-                    JObject jo = new();
-
-                    jo.AddObject("ori:container");
-                    jo["ori:container"].AddObject("items");
-                    jo["ori:container"]["items"].AddArray("array", group);
-
-                    generation.sandbox.AddPos(BlockID.Barrel, pos, true, true, jo.ToString(Formatting.None));
+                        generation.sandbox.AddPos(BlockID.Barrel, lootBlockPos, false, true, jo.ToString(Formatting.None));
+                    }
                 }
 
                 /* ----------------------------------- 木箱 ----------------------------------- */
-                if (Tools.Prob100(2, generation.random))
+                else if (Tools.Prob100(2, generation.random))
                 {
                     JToken[] group = new JToken[21];
 
@@ -1137,7 +1333,7 @@ namespace GameCore
                         }
                         if (item != null)  //如果获取失败了, 这个格子也会为空
                         {
-                            var extendedItem = item.ToExtended();
+                            var extendedItem = item.DataToItem();
 
                             if (item.id == ItemID.ManaStone)
                             {
@@ -1166,7 +1362,7 @@ namespace GameCore
                     jo["ori:container"].AddObject("items");
                     jo["ori:container"]["items"].AddArray("array", group);
 
-                    generation.sandbox.AddPos(BlockID.WoodenChest, pos, true, true, jo.ToString(Formatting.None));
+                    generation.sandbox.AddPos(BlockID.WoodenChest, lootBlockPos, false, true, jo.ToString(Formatting.None));
                 }
             }
         };
@@ -1184,7 +1380,7 @@ namespace GameCore
         public Vector2Int maxPoint;
         public Vector2Int minPoint;
         public Sandbox sandbox;
-        public FormulaAlgebra biomeAlgebra;
+        public FormulaAlgebra biomeDirectBlockAlgebra;
         public int yOffset;
         public int surface;
         public int surfaceExtra1;
@@ -1196,7 +1392,9 @@ namespace GameCore
         public void Finish()
         {
             sandbox.generatedAlready = true;
-            GFiles.world.AddSandbox(sandbox);
+
+            lock (GFiles.world.sandboxData)
+                GFiles.world.AddSandbox(sandbox);
         }
 
 
@@ -1281,7 +1479,7 @@ namespace GameCore
 
 
 
-            biomeAlgebra = GM.GetBiomeFormulaAlgebra(minPoint.y, surface, maxPoint.y);
+            biomeDirectBlockAlgebra = GM.GetBiomeFormulaAlgebra(minPoint.y, surface, maxPoint.y);
         }
     }
 }

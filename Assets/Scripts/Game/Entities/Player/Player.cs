@@ -277,7 +277,7 @@ namespace GameCore
         [Button("设置手中物品")]
         private void EditorSetUsingItem(string id = "ori:", ushort count = 1)
         {
-            var item = ModConvert.DatumItemBaseToDatumItem(ModFactory.CompareItem(id));
+            var item = ModConvert.ItemDataToItem(ModFactory.CompareItem(id));
             item.count = count;
 
             ServerSetItem(usingItemIndex.ToString(), item);
@@ -1289,35 +1289,38 @@ namespace GameCore
                     {
                         GM.instance.GenerateNewSandbox(currentIndex, biomeId);
 
-                        MethodAgent.RunOnMainThread(() =>
-                        {
-                            //如果 index 是中心, 就是首次生成
-                            bool isGenerationMiddle = currentIndex == index;
-                            bool isFirstGenerationMiddle = isFirstGeneration && isGenerationMiddle;
+                        //如果 index 是中心, 就是首次生成
+                        bool isGenerationMiddle = currentIndex == index;
+                        bool isFirstGenerationMiddle = isFirstGeneration && isGenerationMiddle;
 
-                            if (isGenerationMiddle)
+                        if (isGenerationMiddle)
+                        {
+                            lock (GFiles.world.sandboxData)
                             {
                                 foreach (Sandbox sb in GFiles.world.sandboxData)
                                 {
                                     if (sb.index == currentIndex && sb.generatedAlready)
                                     {
-                                        //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
-                                        if (!isLocalPlayer)
-                                            GM.instance.GenerateExistingSandbox(
-                                                sb,
-                                                () => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller),
-                                                () => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller),
-                                                (ushort)(GFiles.settings.performanceLevel / 2)
-                                            );
-                                        //* 如果是服务器发送的申请: 服务器生成
-                                        else
-                                            ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller);
+                                        MethodAgent.RunOnMainThread(() =>
+                                        {
+                                            //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
+                                            if (!isLocalPlayer)
+                                                GM.instance.GenerateExistingSandbox(
+                                                    sb,
+                                                    () => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller),
+                                                    () => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller),
+                                                    (ushort)(GFiles.settings.performanceLevel / 2)
+                                                );
+                                            //* 如果是服务器发送的申请: 服务器生成
+                                            else
+                                                ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller);
+                                        });
 
                                         break;
                                     }
                                 }
                             }
-                        });
+                        }
                     });
                 }
             }, true);

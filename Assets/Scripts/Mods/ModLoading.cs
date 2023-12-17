@@ -631,10 +631,38 @@ namespace GameCore
             string jfToLoad = string.Empty;
             if (GameTools.CompareVersions(format, "0.6.2", Operators.thanOrEqual))
             {
+                temp.type = (jt["type"] ?? "direct").ToString();
+
+                if (temp.type == "perlin")
+                {
+                    List<BiomeData_Block_Perlin_Block> perlinBlocks = new();
+
+                    jt["blocks"]?.Foreach(blockToken =>
+                    {
+                        IntervalFormulaToMinMaxFormula(blockToken["range"]?.ToString(), out var minFormula, out var maxFormula);
+
+                        perlinBlocks.Add(new()
+                        {
+                            minFormula = minFormula,
+                            maxFormula = maxFormula,
+                            block = blockToken["block"]?.ToString(),
+                            isBackground = blockToken["isBackground"]?.ToBool() ?? false,
+                        });
+                    });
+
+                    temp.perlin = new()
+                    {
+                        fluctuationFrequency = jt["fluctuation"]?["frequency"]?.ToFloat() ?? 5,
+                        fluctuationHeight = jt["fluctuation"]?["height"]?.ToFloat() ?? 8,
+                        startYFormula = jt["start_y"]?.ToString(),
+                        blocks = perlinBlocks.ToArray()
+                    };
+                }
+
                 jfToLoad = "0.6.2";
                 temp.jsonFormatWhenLoad = jfToLoad;
 
-                temp.id = ModCreate.Get(jt, "data.biome.blocks.block", jfToLoad).ToString();
+                temp.id = ModCreate.Get(jt, "data.biome.blocks.block", jfToLoad)?.ToString();
                 temp.rules = new()
                 {
                     probability = ModCreate.Get(jt, "data.biome.blocks.rules.probability", jfToLoad)?.ToFloat() ?? 100,
@@ -711,33 +739,6 @@ namespace GameCore
 
                 temp.id = ModCreate.GetStr(temp, "data.biome.id");
                 temp.difficulty = jo["ori:biome"]["difficulty"].ToInt();
-                List<BiomeData_Perlin> perlinsTemp = new();
-                jo["ori:biome"]?["perlins"]?.Foreach(t =>
-                {
-                    List<BiomeData_Perlin_Block> blocks = new();
-
-                    t["blocks"]?.Foreach(blockToken =>
-                    {
-                        IntervalFormulaToMinMaxFormula(blockToken["range"]?.ToString(), out var minFormula, out var maxFormula);
-
-                        blocks.Add(new()
-                        {
-                            minFormula = minFormula,
-                            maxFormula = maxFormula,
-                            block = blockToken["block"]?.ToString(),
-                            isBackground = blockToken["isBackground"]?.ToBool() ?? false,
-                        });
-                    });
-
-                    perlinsTemp.Add(new()
-                    {
-                        fluctuationFrequency = t["fluctuation"]?["frequency"]?.ToFloat() ?? 5,
-                        fluctuationHeight = t["fluctuation"]?["height"]?.ToFloat() ?? 8,
-                        startYFormula = t["start_y"]?.ToString(),
-                        blocks = blocks.ToArray()
-                    });
-                });
-                temp.perlins = perlinsTemp.ToArray();
                 temp.minSize = ModCreate.Get(temp, "data.biome.size_scope.min")?.ToVector2Int() ?? Vector2Int.zero;
                 temp.maxSize = ModCreate.Get(temp, "data.biome.size_scope.max")?.ToVector2Int() ?? Vector2Int.zero;
 

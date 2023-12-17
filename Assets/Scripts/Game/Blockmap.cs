@@ -28,8 +28,6 @@ namespace GameCore
 
                 block.sr = block.GetComponent<SpriteRenderer>();
                 block.blockCollider = block.GetComponent<BoxCollider2D>();
-                block.health = Block.totalMaxHealth;
-                block.customData = JsonTools.LoadJObjectByString(customData);
 
 
 
@@ -64,6 +62,8 @@ namespace GameCore
                 //根据区块设置参数
                 block.sr.enabled = block.chunk.totalRendererEnabled;
                 /* ---------------------------------- 设置数据 ---------------------------------- */
+                block.health = Block.totalMaxHealth;
+                block.customData = JsonTools.LoadJObjectByString(customData);
                 block.data = data;
                 block.gameObject.name = data.id;
 

@@ -8,7 +8,7 @@ namespace GameCore
 {
     public static class ModConvert
     {
-        public static Item DatumItemBaseToDatumItem(ItemData basic)
+        public static Item ItemDataToItem(ItemData basic)
         {
             if (basic == null)
             {

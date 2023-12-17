@@ -43,6 +43,7 @@ namespace GameCore
 
                 _health = value;
                 OnHealthChange(this);
+                OnUpdate();
             }
         }
 
@@ -69,24 +70,9 @@ namespace GameCore
         public static float totalMaxHealth = 100;
         public static Action<Block> OnHealthChange = (block) =>
         {
-            //检查是否在主线程, 并执行同等的代码
-            if (MethodAgent.IsOnMainThread())
-            {
-                Refresh();
-            }
-            else
-            {
-                MethodAgent.QueueOnMainThread(Refresh);
-            }
-
             if (block.health <= 0)
             {
                 block.Death();
-            }
-
-            void Refresh()
-            {
-                block.SetColorByHealth();
             }
         };
 
@@ -141,7 +127,12 @@ namespace GameCore
 
         public virtual void OnUpdate()
         {
+            //生成世界时候这个方法也会被调用, 因此要检查 chunk
+            if (crackSr)
+                chunk.map.blockCrackPool.Recover(crackSr);
 
+            if (health < 100)
+                crackSr = chunk.map.blockCrackPool.Get(this, (byte)Mathf.Min(4, 4 - health / totalMaxHealth * 5));
         }
 
         #endregion
@@ -153,19 +144,6 @@ namespace GameCore
             health -= damage / data.hardness / 2;
             scaleAnimationTween = transform.DOScale(blockDamageScale, 0.1f).OnStepComplete(() => transform.DOScale(Vector3.one, 0.1f));
             shakeRotationTween = transform.DOShakeRotation(0.1f, new Vector3(0, 0, 15));
-        }
-
-        public void SetColorByHealth()
-        {
-            //生成世界时候这个方法也会被调用, 因此要检查 chunk
-            if (chunk)
-            {
-                if (crackSr)
-                    chunk.map.blockCrackPool.Recover(crackSr);
-
-                if (health < 100)
-                    crackSr = chunk.map.blockCrackPool.Get(this, (byte)(Mathf.Min(4, 4 - health / totalMaxHealth * 5)));
-            }
         }
 
         private void OnDestroy()

@@ -49,7 +49,6 @@ namespace GameCore
         [LabelText("随机实体"), NonSerialized] public List<RandomEntityData> randomEntityData = new();
         [LabelText("结构"), NonSerialized] public BiomeData_Structure[] structures;
         [LabelText("方块")] public BiomeData_Block[] blocks;
-        public BiomeData_Perlin[] perlins;
 
         [JsonIgnore, LabelText("标签")] public List<string> tags = new();
         List<string> ITags.tags { get => tags; }
@@ -58,16 +57,16 @@ namespace GameCore
     }
 
     [Serializable]
-    public class BiomeData_Perlin
+    public class BiomeData_Block_Perlin
     {
         public float fluctuationFrequency; //起伏频率, 值越大起伏越多
         public float fluctuationHeight; //起伏高度, 值越大起伏越高
         public string startYFormula;
-        public BiomeData_Perlin_Block[] blocks;
+        public BiomeData_Block_Perlin_Block[] blocks;
     }
 
     [Serializable]
-    public class BiomeData_Perlin_Block
+    public class BiomeData_Block_Perlin_Block
     {
         public string minFormula;
         public string maxFormula;
@@ -78,10 +77,12 @@ namespace GameCore
     [Serializable]
     public class BiomeData_Block : ModClassChild
     {
+        [LabelText("类型")] public string type;
         public Vector3Int[] areas;
         public BiomeData_Block_Range[] ranges;
         public BiomeData_Block_Rules rules;
         public AttachedBlockDatum attached;
+        public BiomeData_Block_Perlin perlin;
         public bool isPrefab;
         public bool initialized = true;
     }

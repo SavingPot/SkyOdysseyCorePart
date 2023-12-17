@@ -11,30 +11,6 @@ using System.Threading.Tasks;
 
 namespace GameCore.High
 {
-    [BurstCompile]
-    public struct BlockUpdateJob : IJobFor
-    {
-        [ReadOnly] public float time;
-        [ReadOnly] public float maxHealth;
-        public NativeArray<float> health;
-        [ReadOnly] public NativeArray<float> lastDamageTimeIn;
-
-        [BurstCompile]
-        public void Execute(int i)
-        {
-            float currentHealth = health[i];
-            float lastDamageTime = lastDamageTimeIn[i];
-
-            if (currentHealth >= maxHealth || lastDamageTime == 0 || time < lastDamageTime + 7.5f)
-            {
-                health[i] = 0;
-                return;
-            }
-
-            health[i] = 0.2f;
-        }
-    }
-
     public class Chunk : MonoBehaviour
     {
         public const int blockCountPerAxis = 17;
@@ -120,6 +96,37 @@ namespace GameCore.High
             }
         }
 
+        private bool ShouldRecoverSandbox(Player localPlayer)
+        {
+            int deltaX = Mathf.Abs(localPlayer.sandboxIndex.x - sandboxIndex.x);
+            int deltaY = Mathf.Abs(localPlayer.sandboxIndex.y - sandboxIndex.y);
+
+            if (deltaX > 1 || deltaY > 1)
+            {
+                //如果是服务器的话, 还要考虑别的玩家离这里禁不禁
+                if (Server.isServer)
+                {
+                    foreach (Player player in PlayerCenter.all)
+                    {
+                        if (player == localPlayer)
+                            continue;
+
+                        deltaX = Mathf.Abs(player.sandboxIndex.x - sandboxIndex.x);
+                        deltaY = Mathf.Abs(player.sandboxIndex.y - sandboxIndex.y);
+
+                        if (deltaX <= 1 || deltaY <= 1)
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
 
         private void FixedUpdate()
         {
@@ -128,94 +135,32 @@ namespace GameCore.High
                 return;
             }
 
+            /* ---------------------------------- 回收沙盒 ---------------------------------- */
             if (localPlayer.sandboxIndex != sandboxIndex)
             {
                 //执行回收沙盒 (生成沙盒时不回收)
                 if (!managerGame.generatingExistingSandbox)
                 {
-                    int deltaX = Mathf.Abs(localPlayer.sandboxIndex.x - sandboxIndex.x);
-                    int deltaY = Mathf.Abs(localPlayer.sandboxIndex.y - sandboxIndex.y);
-                    bool toRecover = true;
-
-                    if (deltaX >= 2 || deltaY >= 2)
+                    if (ShouldRecoverSandbox(localPlayer))
                     {
-                        if (Server.isServer)
-                        {
-                            List<Player> players = PlayerCenter.all;
-
-                            foreach (Player player in players)
-                            {
-                                if (player == localPlayer)
-                                    continue;
-
-                                deltaX = Mathf.Abs(player.sandboxIndex.x - sandboxIndex.x);
-                                deltaY = Mathf.Abs(player.sandboxIndex.y - sandboxIndex.y);
-
-                                if (deltaX <= 1 || deltaY <= 1)
-                                {
-                                    toRecover = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        toRecover = false;
-                    }
-
-                    if (toRecover)
                         RecoverTotalSandbox();
+                    }
                 }
 
                 return;
             }
 
-            NativeArray<float> healthIn = new(blocks.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<float> lastDamageTimeIn = new(blocks.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-
-            for (int i = 0; i < blocks.Length; i++)
+            /* ---------------------------------- 为方块回血 --------------------------------- */
+            foreach (var block in blocks)
             {
-                Block block = blocks[i];
-
-                if (block)
-                {
-                    healthIn[i] = block.health;
-                    lastDamageTimeIn[i] = block.lastDamageTime;
-                }
-                else
-                {
-                    healthIn[i] = -1;
-                    lastDamageTimeIn[i] = -1;
-                }
-            }
-
-            BlockUpdateJob blockUpdateJob = new()
-            {
-                time = Tools.time,
-                maxHealth = Block.totalMaxHealth,
-                health = healthIn,
-                lastDamageTimeIn = lastDamageTimeIn,
-            };
-
-            JobHandle blockUpdateHandle = blockUpdateJob.ScheduleParallel(blocks.Length, 512, default);
-            blockUpdateHandle.Complete();
-
-
-
-            for (int i = 0; i < blocks.Length; i++)
-            {
-                Block block = blocks[i];
-                var h = healthIn[i];
-
-                if (!block || h == 0)
+                if (block == null)
                     continue;
 
-                block.health += h;
+                if (Tools.time >= block.lastDamageTime + 7.5f)
+                {
+                    block.health += 0.2f;
+                }
             }
-
-            healthIn.Dispose();
-            lastDamageTimeIn.Dispose();
         }
 
         public void RecoverTotalSandbox()
