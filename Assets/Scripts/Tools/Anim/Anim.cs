@@ -20,10 +20,18 @@ namespace GameCore
         public Dictionary<float, Action> frameCalls;
         public TweenCallback totalCompleteCallback = () => { };
         public TweenCallback perLoopCompleteCallback = () => { };
+        protected IEnumerator playingCoroutine;
+        protected Tween playingTween;
         protected Action killTweensOnStop;
 
         public void Stop()
         {
+            if (playingCoroutine != null)
+                CoroutineStarter.instance.StopCoroutine(playingCoroutine);
+
+            if (playingTween != null)
+                playingTween.Kill();
+
             killTweensOnStop?.Invoke();
             isPlaying = false;
         }
@@ -55,34 +63,12 @@ namespace GameCore
                 }
             }
 
-
-            //TODO: Improve readability
-            // int index = 0;
-
-            // void LoopGeneration()
-            // {
-            //     var tween = tweensGeneration[index]();
-
-            //     tween.OnComplete(() =>
-            //     {
-            //         index++;
-            //         if (index >= tweensGeneration.Length)
-            //         {
-            //             index = 0;
-            //         }
-
-            //         LoopGeneration();
-            //     });
-
-            //     tween.Play();
-            // }
-
-            // LoopGeneration();
-
             float playTime = Tools.time;
             isPlaying = true;
 
-            CoroutineStarter.Do(PlayTween(fragmentTweensGeneration));
+            var coroutine = PlayTween(fragmentTweensGeneration);
+            playingCoroutine = coroutine;
+            CoroutineStarter.Do(coroutine);
 
             //TODO: 可能要检测 Tween 是否被杀死
             if (frameCalls != null && frameCalls.Count != 0)
@@ -97,9 +83,6 @@ namespace GameCore
 
         public IEnumerator PlayTween(Func<Tween>[] fragmentTweensGeneration)
         {
-            bool forceStopped = false;
-            killTweensOnStop += () => forceStopped = true;
-
             //无限循环
             if (loops < 0)
             {
@@ -111,11 +94,10 @@ namespace GameCore
                         //获取片段的 Tween
                         var tween = item();
 
+                        playingTween = tween;
+
                         //TODO: 支持播放时根据 forceStopped 直接打断
                         yield return tween.WaitForCompletion();
-
-                        if (forceStopped)
-                            yield break;
 
                         //杀死片段的 Tween
                         tween.Kill();
@@ -135,11 +117,10 @@ namespace GameCore
                         //获取片段的 Tween
                         var tween = item();
 
+                        playingTween = tween;
+
                         //TODO: 支持播放时根据 forceStopped 直接打断
                         yield return tween.WaitForCompletion();
-
-                        if (forceStopped)
-                            yield break;
 
                         //杀死片段的 Tween
                         tween.Kill();

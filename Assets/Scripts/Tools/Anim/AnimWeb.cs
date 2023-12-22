@@ -196,10 +196,6 @@ namespace GameCore
 
         public void UpdateWeb()
         {
-            // foreach (var playing in playingAnimOrGroup)
-            // {
-            //     Debug.Log($"{playing.Key} : {playing.Value}");
-            // }
             foreach (var connection in connections)
             {
                 if (playingAnimOrGroup.TryGetValue(connection.layer, out var playing) && playing == connection.from && connection.switchCondition())
