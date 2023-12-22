@@ -212,7 +212,7 @@ namespace GameCore
                 chunk.transform.localPosition = (chunkIndex * Chunk.blockCountPerAxis).To2();
 
                 chunk.chunkIndex = chunkIndex;
-                chunk.sandboxIndex = PosConvert.ChunkToSandboxIndex(chunkIndex);
+                chunk.regionIndex = PosConvert.ChunkToRegionIndex(chunkIndex);
                 chunk.ComputePoints();
 
                 map.chunks.Add(chunk);
@@ -265,7 +265,7 @@ namespace GameCore
             //     for (int y = -80; y < 80; y++)
             //     {
             //         Vector2Int ci = BlockToChunkIndex(new(x, y));
-            //         Vector2Int sbi = ChunkToSandboxIndex(ci);
+            //         Vector2Int sbi = ChunkToRegionIndex(ci);
 
             //         Debug.Log($"({x}, {y}) {ci}, {sbi}");
             //     }
@@ -371,37 +371,37 @@ namespace GameCore
         public void SetBlockNet(Vector2Int pos, bool isBackground, string id, string customData) => Client.Send<NMSetBlock>(new(pos, isBackground, id, customData));
 
 #if UNITY_EDITOR
-        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editSandbox) => SetBlock(pos, isBackground, ModFactory.CompareBlockDatum(block), null, editSandbox);
+        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editRegion) => SetBlock(pos, isBackground, ModFactory.CompareBlockDatum(block), null, editRegion);
 #endif
 
-        public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editSandbox)
+        public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion)
         {
             Chunk chunk = AddChunk(PosConvert.BlockPosToChunkIndex(pos));
 
-            chunk.RemoveBlock(pos, isBackground, editSandbox);
+            chunk.RemoveBlock(pos, isBackground, editRegion);
 
-            return chunk.AddBlock(pos, isBackground, block, customData, editSandbox);
+            return chunk.AddBlock(pos, isBackground, block, customData, editRegion);
         }
 
         public void DestroyBlockNet(Vector2Int pos, bool isBackground) => SetBlockNet(pos, isBackground, null, null);
 
-        public void DestroyBlock(Vector2Int pos, bool isBackground, bool editSandbox) => SetBlock(pos, isBackground, null, null, editSandbox);
+        public void DestroyBlock(Vector2Int pos, bool isBackground, bool editRegion) => SetBlock(pos, isBackground, null, null, editRegion);
 
-        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editSandbox)
+        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion)
         {
             if (block == null)
                 return null;
 
             Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
 
-            return AddChunk(chunkIndexTo).AddBlock(pos, isBackground, block, customData, editSandbox);
+            return AddChunk(chunkIndexTo).AddBlock(pos, isBackground, block, customData, editRegion);
         }
 
-        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editSandbox)
+        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion)
         {
             Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
 
-            AddChunk(chunkIndexTo).RemoveBlock(pos, isBackground, editSandbox);
+            AddChunk(chunkIndexTo).RemoveBlock(pos, isBackground, editRegion);
         }
 
         public void UpdateAt(Vector2Int pos, bool isBackground)
@@ -550,28 +550,28 @@ namespace GameCore
             return new((int)((pos.x + xDelta) * Chunk.blockCountPerAxisReciprocal), (int)((pos.y + yDelta) * Chunk.blockCountPerAxisReciprocal));
         }
 
-        public static Vector2Int ChunkToSandboxIndex(Vector2Int index)
+        public static Vector2Int ChunkToRegionIndex(Vector2Int index)
         {
-            //排除初始沙盒的影响 (初始沙盒只占了一半)
-            float xDelta = index.x > 0 ? Sandbox.halfChunkCountX : -Sandbox.halfChunkCountX;
-            float yDelta = index.y > 0 ? Sandbox.halfChunkCountY : -Sandbox.halfChunkCountY;
+            //排除初始区域的影响 (初始区域只占了一半)
+            float xDelta = index.x > 0 ? Region.halfChunkCountX : -Region.halfChunkCountX;
+            float yDelta = index.y > 0 ? Region.halfChunkCountY : -Region.halfChunkCountY;
 
-            return new((int)((index.x + xDelta) * Sandbox.chunkCountXReciprocal), (int)((index.y + yDelta) * Sandbox.chunkCountYReciprocal));
+            return new((int)((index.x + xDelta) * Region.chunkCountXReciprocal), (int)((index.y + yDelta) * Region.chunkCountYReciprocal));
         }
 
-        public static Vector2Int WorldPosToSandboxIndex(Vector2 pos)
+        public static Vector2Int WorldPosToRegionIndex(Vector2 pos)
         {
-            return ChunkToSandboxIndex(BlockPosToChunkIndex(new((int)pos.x, (int)pos.y)));
+            return ChunkToRegionIndex(BlockPosToChunkIndex(new((int)pos.x, (int)pos.y)));
         }
 
-        public static Vector2Int MapToSandboxPos(this Chunk chunk, Vector2Int mapPos)
+        public static Vector2Int MapToRegionPos(this Chunk chunk, Vector2Int mapPos)
         {
-            return new(mapPos.x - chunk.sandboxMiddleX, mapPos.y - chunk.sandboxMiddleY);
+            return new(mapPos.x - chunk.regionMiddleX, mapPos.y - chunk.regionMiddleY);
         }
 
-        public static Vector2Int MapToSandboxPos(Vector2Int mapPos, Vector2Int sandboxIndex)
+        public static Vector2Int MapToRegionPos(Vector2Int mapPos, Vector2Int regionIndex)
         {
-            return new(mapPos.x - Sandbox.GetMiddleX(sandboxIndex), mapPos.y - Sandbox.GetMiddleY(sandboxIndex));
+            return new(mapPos.x - Region.GetMiddleX(regionIndex), mapPos.y - Region.GetMiddleY(regionIndex));
         }
     }
 }

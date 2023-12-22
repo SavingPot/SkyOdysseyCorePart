@@ -132,13 +132,13 @@ namespace GameCore.High
 
     public struct NMDestroyBlock : NetworkMessage
     {
-        public Vector2Int sandbox;
+        public Vector2Int region;
         public Vector2Int pos;
         public bool isBackground;
 
-        public NMDestroyBlock(Vector2Int sandbox, Vector2Int pos, bool isBackground)
+        public NMDestroyBlock(Vector2Int region, Vector2Int pos, bool isBackground)
         {
-            this.sandbox = sandbox;
+            this.region = region;
             this.pos = pos;
             this.isBackground = isBackground;
         }

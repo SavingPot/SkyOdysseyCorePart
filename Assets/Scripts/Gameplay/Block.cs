@@ -86,7 +86,7 @@ namespace GameCore
         public void WriteCustomDataToSave()
         {
             //写入存档中
-            GFiles.world.GetSandbox(chunk.sandboxIndex).GetBlock(PosConvert.MapToSandboxPos(pos, chunk.sandboxIndex), isBackground).customData = customData?.ToString(Formatting.None);
+            GFiles.world.GetRegion(chunk.regionIndex).GetBlock(PosConvert.MapToRegionPos(pos, chunk.regionIndex), isBackground).customData = customData?.ToString(Formatting.None);
         }
 
         #region Behaviour
@@ -154,7 +154,7 @@ namespace GameCore
 
         public void Death()
         {
-            Client.Send<NMDestroyBlock>(new(chunk.sandboxIndex, pos, isBackground));
+            Client.Send<NMDestroyBlock>(new(chunk.regionIndex, pos, isBackground));
         }
 
         [RuntimeInitializeOnLoadMethod]

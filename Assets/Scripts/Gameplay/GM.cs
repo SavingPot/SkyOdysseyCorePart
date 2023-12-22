@@ -78,12 +78,12 @@ namespace GameCore
         #region 地形生成
         [LabelText("地图")] private static Map map => Map.instance;
 
-        public readonly List<Vector2Int> generatingNewSandboxes = new();
-        public readonly List<Sandbox> generatedExistingSandboxes = new();
-        public bool generatingNewSandbox => generatingNewSandboxes.Count != 0;
-        public bool generatingExistingSandbox { get; private set; }
+        public readonly List<Vector2Int> generatingNewRegions = new();
+        public readonly List<Region> generatedExistingRegions = new();
+        public bool generatingNewRegion => generatingNewRegions.Count != 0;
+        public bool generatingExistingRegion { get; private set; }
 
-        public List<Vector2Int> recoveringSandboxes = new();
+        public List<Vector2Int> recoveringRegions = new();
         #endregion
 
 
@@ -113,7 +113,7 @@ namespace GameCore
         private void FixedUpdate()
         {
             //执行随机更新
-            if (Server.isServer && !generatingNewSandbox && !generatingExistingSandbox)
+            if (Server.isServer && !generatingNewRegion && !generatingExistingRegion)
             {
                 if (Tools.Prob100(RandomUpdater.randomUpdateProbability))
                 {
@@ -293,7 +293,7 @@ namespace GameCore
             ManagerNetwork.instance.StartHostForAddress(port);
 
             bool panelFadeOk = false;
-            var kvp = SandboxGenerationMask((_, _) => panelFadeOk = true, null);
+            var kvp = RegionGenerationMask((_, _) => panelFadeOk = true, null);
             var panel = kvp.Key;
             var text = kvp.Value;
             panel.CustomMethod("fade_in", null);
@@ -374,14 +374,14 @@ namespace GameCore
             ManagerNetwork.instance.discovery.AdvertiseServer();
 
             /* -------------------------------------------------------------------------- */
-            /*                                   等待加载沙盒                                   */
+            /*                                   等待加载区域                                   */
             /* -------------------------------------------------------------------------- */
-            kvp = SandboxGenerationMask((_, _) => panelFadeOk = true, null);
+            kvp = RegionGenerationMask((_, _) => panelFadeOk = true, null);
             panel = kvp.Key;
             text = kvp.Value;
             panel.panelImage.SetAlpha(1);
 
-            GameCallbacks.AfterGeneratingExistingSandbox += InternalAfterGeneratingExistingSandbox;
+            GameCallbacks.AfterGeneratingExistingRegion += InternalAfterGeneratingExistingRegion;
 
             ////ManagerNetwork.instance.SummonAllPlayers();
 
@@ -390,24 +390,24 @@ namespace GameCore
                 GameUI.SetUILayerToTop(pg);
             };
 
-            async void InternalAfterGeneratingExistingSandbox(Sandbox sandbox)
+            async void InternalAfterGeneratingExistingRegion(Region region)
             {
                 await UniTask.WaitUntil(() => Player.local);
 
-                if (sandbox.index == Player.local.sandboxIndex)
+                if (region.index == Player.local.regionIndex)
                 {
                     if (panel)
                         panel.CustomMethod("fade_out", null);
 
-                    GameCallbacks.AfterGeneratingExistingSandbox -= InternalAfterGeneratingExistingSandbox;
+                    GameCallbacks.AfterGeneratingExistingRegion -= InternalAfterGeneratingExistingRegion;
                     callback.Invoke();
                 }
             }
         }
 
-        public static KeyValuePair<PanelIdentity, TextIdentity> SandboxGenerationMask(UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
+        public static KeyValuePair<PanelIdentity, TextIdentity> RegionGenerationMask(UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
         {
-            return GameUI.GenerateMask("ori:panel.wait_generating_the_sandbox", "ori:text.wait_generating_the_sandbox", afterFadingIn, afterFadingOut);
+            return GameUI.GenerateMask("ori:panel.wait_generating_the_region", "ori:text.wait_generating_the_region", afterFadingIn, afterFadingOut);
         }
 
         public static void StartGameClient(string address, ushort port)
@@ -436,7 +436,7 @@ namespace GameCore
                 }
 
                 #region 声明并等待场景加载
-                kvp = SandboxGenerationMask(null, null);
+                kvp = RegionGenerationMask(null, null);
                 panel = kvp.Key;
                 text = kvp.Value;
 
@@ -445,7 +445,7 @@ namespace GameCore
                 await UniTask.WaitUntil(() => GScene.name == nextSceneName);
                 #endregion
 
-                kvp = SandboxGenerationMask(null, null);
+                kvp = RegionGenerationMask(null, null);
                 panel = kvp.Key;
                 text = kvp.Value;
 
@@ -454,18 +454,18 @@ namespace GameCore
                     GameUI.SetUILayerToTop(pg);
                 };
 
-                GameCallbacks.AfterGeneratingExistingSandbox += InternalAfterGeneratingExistingSandbox;
+                GameCallbacks.AfterGeneratingExistingRegion += InternalAfterGeneratingExistingRegion;
 
-                async void InternalAfterGeneratingExistingSandbox(Sandbox sandbox)
+                async void InternalAfterGeneratingExistingRegion(Region region)
                 {
                     await UniTask.WaitUntil(() => Player.local);
 
-                    if (sandbox.index == Player.local.sandboxIndex)
+                    if (region.index == Player.local.regionIndex)
                     {
                         if (panel)
                             panel.CustomMethod("fade_out", null);
 
-                        GameCallbacks.AfterGeneratingExistingSandbox -= InternalAfterGeneratingExistingSandbox;
+                        GameCallbacks.AfterGeneratingExistingRegion -= InternalAfterGeneratingExistingRegion;
                     }
                 }
             }
@@ -597,13 +597,13 @@ namespace GameCore
             SummonEntity(pos, EntityID.Drop, guid, true, null, param.ToString());
         }
 
-        public void SummonEntity(Vector3 pos, string id, string saveId = null, bool intoSandbox = true, float? health = null, string customData = null)
+        public void SummonEntity(Vector3 pos, string id, string saveId = null, bool intoRegion = true, float? health = null, string customData = null)
         {
             saveId ??= Tools.randomGUID;
 
             //TODO: NMSummon 改为 ServerRun
             //发送生成消息给服务器
-            Client.Send<NMSummon>(new(pos, id, saveId, intoSandbox, health, customData));
+            Client.Send<NMSummon>(new(pos, id, saveId, intoRegion, health, customData));
         }
 
         public void SummonEntity(EntitySave save)
@@ -627,14 +627,14 @@ namespace GameCore
                 world.basicData.gameVersion = GInit.gameVersion;
         }
 
-        public void RecoverSandbox(Vector2Int index)
+        public void RecoverRegion(Vector2Int index)
         {
             //如果已经在回收就取消
-            foreach (var item in recoveringSandboxes)
+            foreach (var item in recoveringRegions)
                 if (item == index)
                     return;
 
-            recoveringSandboxes.Add(index);
+            recoveringRegions.Add(index);
 
 
 
@@ -644,15 +644,15 @@ namespace GameCore
             {
                 Chunk chunk = map.chunks[i];
 
-                if (chunk.sandboxIndex == index)
+                if (chunk.regionIndex == index)
                     map.chunkPool.Recover(chunk);
             }
 
             bool did = false;
-            for (int i = generatedExistingSandboxes.Count - 1; i >= 0; i--)
+            for (int i = generatedExistingRegions.Count - 1; i >= 0; i--)
             {
-                Sandbox sb = generatedExistingSandboxes[i];
-                if (sb.index == index)
+                Region region = generatedExistingRegions[i];
+                if (region.index == index)
                 {
                     did = true;
 
@@ -663,47 +663,47 @@ namespace GameCore
                     {
                         Entity entity = entities[e];
 
-                        if (entity.sandboxIndex == sb.index)
+                        if (entity.regionIndex == region.index)
                         {
                             entity.Recover();
                         }
                     }
 
                     //从已生成列表去除
-                    generatedExistingSandboxes.RemoveAt(i);
+                    generatedExistingRegions.RemoveAt(i);
                     break;
-                    ////Debug.Log($"回收了沙盒 {index}");
+                    ////Debug.Log($"回收了区域 {index}");
                 }
             }
 
-            recoveringSandboxes.Remove(index);
+            recoveringRegions.Remove(index);
 
             if (!did)
-                Debug.LogWarning($"沙盒 {index} 不存在");
+                Debug.LogWarning($"区域 {index} 不存在");
         }
 
-        public void GenerateExistingSandbox(Sandbox sandbox, Action afterGenerating = null, Action ifGenerated = null, ushort waitScale = 80)
+        public void GenerateExistingRegion(Region region, Action afterGenerating = null, Action ifGenerated = null, ushort waitScale = 80)
         {
-            StartCoroutine(IEGenerateExistingSandbox(sandbox, afterGenerating, ifGenerated, waitScale));
+            StartCoroutine(IEGenerateExistingRegion(region, afterGenerating, ifGenerated, waitScale));
         }
 
-        private IEnumerator IEGenerateExistingSandbox(Sandbox sandbox, Action afterGenerating, Action ifGenerated, ushort waitScale)
+        private IEnumerator IEGenerateExistingRegion(Region region, Action afterGenerating, Action ifGenerated, ushort waitScale)
         {
             /* -------------------------------------------------------------------------- */
             /*                                   检查生成状况                                   */
             /* -------------------------------------------------------------------------- */
-            if (generatedExistingSandboxes.Any(p => p.index == sandbox.index && p.generatedAlready))
+            if (generatedExistingRegions.Any(p => p.index == region.index && p.generatedAlready))
             {
-                Debug.LogWarning($"沙盒 {sandbox.index} 已生成, 请勿频繁生成");
+                Debug.LogWarning($"区域 {region.index} 已生成, 请勿频繁生成");
                 ifGenerated?.Invoke();
                 yield break;
             }
 
-            Debug.Log($"开始生成已有沙盒 {sandbox.index}");
+            Debug.Log($"开始生成已有区域 {region.index}");
 
-            generatingExistingSandbox = true;
+            generatingExistingRegion = true;
 
-            GameCallbacks.CallBeforeGeneratingExistingSandbox(sandbox);
+            GameCallbacks.CallBeforeGeneratingExistingRegion(region);
 
 
 
@@ -712,10 +712,10 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    正式生成                                    */
             /* -------------------------------------------------------------------------- */
-            int xDelta = Sandbox.GetMiddleX(sandbox.index);
-            int yDelta = Sandbox.GetMiddleY(sandbox.index);
+            int xDelta = Region.GetMiddleX(region.index);
+            int yDelta = Region.GetMiddleY(region.index);
 
-            foreach (var save in sandbox.saves)
+            foreach (var save in region.saves)
             {
                 BlockData block = ModFactory.CompareBlockDatum(save.blockId);
 
@@ -740,9 +740,9 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             if (Server.isServer)
             {
-                for (int i = 0; i < sandbox.entities.Count; i++)
+                for (int i = 0; i < region.entities.Count; i++)
                 {
-                    SummonEntity(sandbox.entities[i]);
+                    SummonEntity(region.entities[i]);
                 }
             }
 
@@ -753,36 +753,36 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    完成后事项                                   */
             /* -------------------------------------------------------------------------- */
-            generatingExistingSandbox = false;
+            generatingExistingRegion = false;
             afterGenerating?.Invoke();
-            generatedExistingSandboxes.Add(sandbox);
+            generatedExistingRegions.Add(region);
             ////Performance.CollectMemory();
-            GameCallbacks.CallAfterGeneratingExistingSandbox(sandbox);
+            GameCallbacks.CallAfterGeneratingExistingRegion(region);
         }
 
-        public Sandbox GenerateNewSandbox(Vector2Int index, string biomeId = null)
+        public Region GenerateNewRegion(Vector2Int index, string biomeId = null)
         {
             /* -------------------------------------------------------------------------- */
             /*                                    生成前检查                                   */
             /* -------------------------------------------------------------------------- */
-            lock (generatingNewSandboxes)
+            lock (generatingNewRegions)
             {
-                if (generatingNewSandboxes.Any(p => p == index))
+                if (generatingNewRegions.Any(p => p == index))
                 {
-                    Debug.LogWarning($"新沙盒 {index} 正在生成, 请勿频繁生成!");
+                    Debug.LogWarning($"新区域 {index} 正在生成, 请勿频繁生成!");
                     return null;
                 }
 
-                foreach (var temp in GFiles.world.sandboxData)
+                foreach (var temp in GFiles.world.regionData)
                 {
                     if (temp.index == index && temp.generatedAlready)
                     {
-                        Debug.LogWarning($"要生成的新沙盒 {index} 已存在于世界, 请勿频繁生成!");
+                        Debug.LogWarning($"要生成的新区域 {index} 已存在于世界, 请勿频繁生成!");
                         return temp;
                     }
                 }
 
-                generatingNewSandboxes.Add(index);
+                generatingNewRegions.Add(index);
             }
 
 
@@ -791,7 +791,7 @@ namespace GameCore
             /*                                    初始化数据                                   */
             /* -------------------------------------------------------------------------- */
             MapGeneration generation = new(GFiles.world.basicData.seed, index, biomeId);
-            GameCallbacks.CallBeforeGeneratingNewSandbox(generation);
+            GameCallbacks.CallBeforeGeneratingNewRegion(generation);
 
 
 
@@ -844,7 +844,7 @@ namespace GameCore
                     {
                         if (Tools.Prob100(g.rules.probability, generation.random))
                         {
-                            if (g.attached.blockId.IsNullOrWhiteSpace() || generation.sandbox.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
+                            if (g.attached.blockId.IsNullOrWhiteSpace() || generation.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
                             {
                                 foreach (var range in g.ranges)
                                 {
@@ -866,7 +866,7 @@ namespace GameCore
                                                 blockAdded.Add((actualPos, actualIsBackground));
                                             }
                                         }
-                                        generation.sandbox.AddPos(g.id, pos, g.areas, true);
+                                        generation.region.AddPos(g.id, pos, g.areas, true);
                                     }
                                 }
                             }
@@ -929,7 +929,7 @@ namespace GameCore
                                     blockAdded.Add((blockPos, block.isBackground));
                                 }
 
-                                generation.sandbox.AddPos(block.block, blockPos, block.isBackground, true);
+                                generation.region.AddPos(block.block, blockPos, block.isBackground, true);
                                 break;
                             }
                         }
@@ -969,7 +969,7 @@ namespace GameCore
                     {
                         if (Tools.Prob100(g.rules.probability, generation.random))
                         {
-                            if (g.attached.blockId.IsNullOrWhiteSpace() || generation.sandbox.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
+                            if (g.attached.blockId.IsNullOrWhiteSpace() || generation.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
                             {
                                 foreach (var range in g.ranges)
                                 {
@@ -1010,7 +1010,7 @@ namespace GameCore
                                                 blockAdded.Add((actualPos, actualIsBackground));
                                             }
                                         }
-                                        generation.sandbox.AddPos(g.id, pos, g.areas, true);
+                                        generation.region.AddPos(g.id, pos, g.areas, true);
                                     }
                                 }
                             }
@@ -1047,7 +1047,7 @@ namespace GameCore
                                 {
                                     foreach (var fixedBlock in l.structure.fixedBlocks)
                                     {
-                                        if (generation.sandbox.GetBlock(pos + fixedBlock.offset, fixedBlock.isBackground) != null)
+                                        if (generation.region.GetBlock(pos + fixedBlock.offset, fixedBlock.isBackground) != null)
                                         {
                                             goto stopGeneration;
                                         }
@@ -1057,7 +1057,7 @@ namespace GameCore
                                 //检查是否满足所有需求
                                 foreach (var require in l.structure.require)
                                 {
-                                    if (!generation.sandbox.GetBlockOut(pos + require.offset, require.isBackground, out BlockSave_Location temp) || temp.block.blockId != require.blockId)
+                                    if (!generation.region.GetBlockOut(pos + require.offset, require.isBackground, out BlockSave_Location temp) || temp.block.blockId != require.blockId)
                                     {
                                         goto stopGeneration;
                                     }
@@ -1068,7 +1068,7 @@ namespace GameCore
                                 {
                                     var tempPos = pos + attached.offset;
 
-                                    generation.sandbox.AddPos(attached.blockId, tempPos, attached.isBackground, true);
+                                    generation.region.AddPos(attached.blockId, tempPos, attached.isBackground, true);
                                 });
 
                             stopGeneration:
@@ -1086,10 +1086,10 @@ namespace GameCore
             /*                                    生成传送点                                   */
             /* -------------------------------------------------------------------------- */
             Vector2Int portalMiddle = new(generation.maxPoint.x / 2, generation.maxPoint.y * 3 / 4);
-            generation.sandbox.AddPos(BlockID.Portal, portalMiddle, false, true);
-            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(0, -1), false, true);
-            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-1, -1), false, true);
-            generation.sandbox.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(1, -1), false, true);
+            generation.region.AddPos(BlockID.Portal, portalMiddle, false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(0, -1), false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-1, -1), false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(1, -1), false, true);
 
 
 
@@ -1097,15 +1097,15 @@ namespace GameCore
 
             if (index == Vector2Int.zero)
             {
-                //如是初始沙盒, 生成 Nick
+                //如是初始区域, 生成 Nick
                 var nick = ModFactory.CompareEntity(EntityID.Nick);
                 EntitySave nickSave = new()
                 {
                     id = nick.id,
-                    pos = generation.sandbox.spawnPoint + new Vector2Int(10, 0),
+                    pos = generation.region.spawnPoint + new Vector2Int(10, 0),
                     saveId = Tools.randomGUID
                 };
-                generation.sandbox.entities.Add(nickSave);
+                generation.region.entities.Add(nickSave);
             }
 
             MethodAgent.RunOnMainThread(() =>
@@ -1113,14 +1113,14 @@ namespace GameCore
                 generation.Finish();
                 GFiles.SaveAllDataToFiles();
                 //Performance.CollectMemory();
-                GameCallbacks.CallAfterGeneratingNewSandbox(generation.sandbox);
+                GameCallbacks.CallAfterGeneratingNewRegion(generation.region);
             });
 
-            lock (generatingNewSandboxes)
+            lock (generatingNewRegions)
             {
-                generatingNewSandboxes.Remove(index);
+                generatingNewRegions.Remove(index);
             }
-            return generation.sandbox;
+            return generation.region;
         }
 
         public static FormulaAlgebra GetPerlinFormulaAlgebra(int lowestNoise, int highestNoise, int bottom, int surface, int top)
@@ -1263,7 +1263,7 @@ namespace GameCore
                         jo["ori:container"].AddObject("items");
                         jo["ori:container"]["items"].AddArray("array", group);
 
-                        generation.sandbox.AddPos(BlockID.Barrel, lootBlockPos, false, true, jo.ToString(Formatting.None));
+                        generation.region.AddPos(BlockID.Barrel, lootBlockPos, false, true, jo.ToString(Formatting.None));
                     }
                 }
 
@@ -1362,7 +1362,7 @@ namespace GameCore
                     jo["ori:container"].AddObject("items");
                     jo["ori:container"]["items"].AddArray("array", group);
 
-                    generation.sandbox.AddPos(BlockID.WoodenChest, lootBlockPos, false, true, jo.ToString(Formatting.None));
+                    generation.region.AddPos(BlockID.WoodenChest, lootBlockPos, false, true, jo.ToString(Formatting.None));
                 }
             }
         };
@@ -1379,7 +1379,7 @@ namespace GameCore
         public BiomeData biome;
         public Vector2Int maxPoint;
         public Vector2Int minPoint;
-        public Sandbox sandbox;
+        public Region region;
         public FormulaAlgebra biomeDirectBlockAlgebra;
         public int yOffset;
         public int surface;
@@ -1391,10 +1391,10 @@ namespace GameCore
 
         public void Finish()
         {
-            sandbox.generatedAlready = true;
+            region.generatedAlready = true;
 
-            lock (GFiles.world.sandboxData)
-                GFiles.world.AddSandbox(sandbox);
+            lock (GFiles.world.regionData)
+                GFiles.world.AddRegion(region);
         }
 
 
@@ -1405,10 +1405,10 @@ namespace GameCore
         {
             this.index = index;
 
-            //乘数是为了增加 index 差, 避免比较靠近的沙盒生成一致
+            //乘数是为了增加 index 差, 避免比较靠近的区域生成一致
             actualSeed = seed + index.x * 2 + index.y * 4;
 
-            //改变随机数种子, 以确保同一种子的地形一致, 不同沙盒地形不一致
+            //改变随机数种子, 以确保同一种子的地形一致, 不同区域地形不一致
             random = new(actualSeed);
 
 
@@ -1434,7 +1434,7 @@ namespace GameCore
                 biomeList = biomeList.Shuffle();
 
 
-                //确定沙盒的群系
+                //确定区域的群系
                 int closest = int.MaxValue;
                 foreach (var currentBiome in biomeList)
                 {
@@ -1451,8 +1451,8 @@ namespace GameCore
 
 
             //确定大小并排除奇数
-            size = new(random.Next(biome.minSize.x, biome.maxSize.x).IRange(10, Sandbox.place.x),
-                                random.Next(biome.minSize.y, biome.maxSize.y).IRange(10, Sandbox.place.y));
+            size = new(random.Next(biome.minSize.x, biome.maxSize.x).IRange(10, Region.place.x),
+                                random.Next(biome.minSize.y, biome.maxSize.y).IRange(10, Region.place.y));
             if (size.x % 2 != 0) size.x++;
             if (size.y % 2 != 0) size.y++;
 
@@ -1469,12 +1469,12 @@ namespace GameCore
             surface = maxPoint.y - yOffset;
             surfaceExtra1 = surface + 1;
 
-            sandbox = new()
+            region = new()
             {
                 biome = biome.id,
                 size = size,
                 index = index,
-                spawnPoint = new(Sandbox.GetMiddleX(index), Sandbox.GetMiddleY(index) + surface + 3)
+                spawnPoint = new(Region.GetMiddleX(index), Region.GetMiddleY(index) + surface + 3)
             };
 
 

@@ -185,7 +185,7 @@ namespace GameCore.High
                         saveId = n.saveId,
                         customData = n.customData
                     };
-                    GFiles.world.GetSandbox(PosConvert.WorldPosToSandboxIndex(saveDatum.pos)).entities.Add(saveDatum);
+                    GFiles.world.GetRegion(PosConvert.WorldPosToRegionIndex(saveDatum.pos)).entities.Add(saveDatum);
                 }
 
                 //在服务器生成并初始化

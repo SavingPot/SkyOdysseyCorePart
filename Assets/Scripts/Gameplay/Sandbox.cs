@@ -12,7 +12,7 @@ using System.Threading;
 namespace GameCore
 {
     [Serializable]
-    public class Sandbox
+    public class Region
     {
         public Vector2Int index;
         [NonSerialized] ReaderWriterLockSlim savesReaderWriterLock = new(LockRecursionPolicy.NoRecursion);
@@ -47,7 +47,7 @@ namespace GameCore
         [BurstCompile]
         public static int GetMiddleX(Vector2Int index)
         {
-            int x = Sandbox.place.x * index.x;
+            int x = Region.place.x * index.x;
 
             return x;
         }
@@ -55,7 +55,7 @@ namespace GameCore
         [BurstCompile]
         public static int GetMiddleY(Vector2Int index)
         {
-            int y = Sandbox.place.y * index.y;
+            int y = Region.place.y * index.y;
 
             return y;
         }
@@ -63,7 +63,7 @@ namespace GameCore
         [BurstCompile]
         public static float GetRightX(Vector2Int index)
         {
-            float x = GetMiddleX(index) + Sandbox.halfPlace.x;
+            float x = GetMiddleX(index) + Region.halfPlace.x;
 
             return x;
         }
@@ -71,7 +71,7 @@ namespace GameCore
         [BurstCompile]
         public static float GetLeftX(Vector2Int index)
         {
-            float x = GetMiddleX(index) - Sandbox.halfPlace.x;
+            float x = GetMiddleX(index) - Region.halfPlace.x;
 
             return x;
         }
@@ -79,7 +79,7 @@ namespace GameCore
         [BurstCompile]
         public static float GetUpY(Vector2Int index)
         {
-            float y = GetMiddleY(index) + Sandbox.halfPlace.y;
+            float y = GetMiddleY(index) + Region.halfPlace.y;
 
             return y;
         }
@@ -87,7 +87,7 @@ namespace GameCore
         [BurstCompile]
         public static float GetDownY(Vector2Int index)
         {
-            float y = GetMiddleY(index) - Sandbox.halfPlace.y;
+            float y = GetMiddleY(index) - Region.halfPlace.y;
 
             return y;
         }
@@ -134,7 +134,7 @@ namespace GameCore
 
         public void AddPos(string id, Vector2Int pos, bool isBackground, bool overwriteIfContains = false, string customData = null)
         {
-            //TODO: 检测 pos 是否超出沙盒边界
+            //TODO: 检测 pos 是否超出区域边界
             //如果 id 为空, 意思就是要删掉这个点
             if (string.IsNullOrEmpty(id))
             {
@@ -405,11 +405,12 @@ namespace GameCore
         }
     }
 
+    //TODO: 继承自 EntityData?
     [Serializable]
     public class PlayerData
     {
         public string playerName;
-        public Vector2Int currentSandbox;
+        public Vector2Int currentRegion;
         public float hungerValue;
         public float thirstValue;
         public float happinessValue;

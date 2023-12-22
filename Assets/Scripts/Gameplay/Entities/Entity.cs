@@ -291,24 +291,24 @@ namespace GameCore
         [Sync, SyncDefaultValue(false)] public bool isDead { get => isDead_get(); set => isDead_set(value); }
         #endregion
 
-        #region 当前沙盒指针
-        [SyncGetter] Vector2Int sandboxIndex_get() => default; [SyncSetter] void sandboxIndex_set(Vector2Int value) { }
-        static Vector2Int sandboxIndex_default() => Vector2Int.zero;
-        [Sync(nameof(OnSandboxIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(sandboxIndex_default), false)] public Vector2Int sandboxIndex { get => sandboxIndex_get(); set => sandboxIndex_set(value); }
+        #region 当前区域指针
+        [SyncGetter] Vector2Int regionIndex_get() => default; [SyncSetter] void regionIndex_set(Vector2Int value) { }
+        static Vector2Int regionIndex_default() => Vector2Int.zero;
+        [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex { get => regionIndex_get(); set => regionIndex_set(value); }
 
-        private void OnSandboxIndexChangeMethod()
+        private void OnRegionIndexChangeMethod()
         {
-            OnSandboxIndexChange(this);
+            OnRegionIndexChange(this);
         }
 
-        public bool TryGetSandbox(out Sandbox sandbox)
+        public bool TryGetRegion(out Region region)
         {
             if (GFiles.world == null)
                 goto fail;
 
             try
             {
-                GFiles.world.TryGetSandbox(sandboxIndex, out sandbox);
+                GFiles.world.TryGetRegion(regionIndex, out region);
 
                 return true;
             }
@@ -318,17 +318,17 @@ namespace GameCore
             }
 
         fail:
-            sandbox = null;
+            region = null;
 
             return false;
         }
-        public Sandbox sandbox => GFiles.world.GetSandbox(sandboxIndex);
+        public Region region => GFiles.world.GetRegion(regionIndex);
 
-        public static Action<Entity> OnSandboxIndexChange = (entity) => MethodAgent.TryRun(() =>
+        public static Action<Entity> OnRegionIndexChange = (entity) => MethodAgent.TryRun(() =>
         {
             if (entity.isPlayer)
             {
-                Debug.Log($"玩家 {entity.netId} 的沙盒改变为了 {entity.sandboxIndex}");
+                Debug.Log($"玩家 {entity.netId} 的区域改变为了 {entity.regionIndex}");
             }
         }, true);
 
@@ -477,7 +477,7 @@ namespace GameCore
         {
             if (!isPlayer)
             {
-                sandboxIndex = PosConvert.WorldPosToSandboxIndex(transform.position);
+                regionIndex = PosConvert.WorldPosToRegionIndex(transform.position);
             }
         }
 
@@ -679,7 +679,7 @@ namespace GameCore
             OnRebornServer();
 
             if (newPos.x == float.PositiveInfinity && newPos.y == float.NegativeInfinity)
-                newPos = GFiles.world.GetSandbox(sandboxIndex)?.spawnPoint ?? Vector2Int.zero;
+                newPos = GFiles.world.GetRegion(regionIndex)?.spawnPoint ?? Vector2Int.zero;
 
             if (!isPlayer)
                 transform.position = newPos;
@@ -723,7 +723,7 @@ namespace GameCore
                     if (datum.playerName == player.playerName)
                     {
                         datum.playerName = player.playerName;
-                        datum.currentSandbox = player.sandboxIndex;
+                        datum.currentRegion = player.regionIndex;
                         datum.inventory = player.inventory;
                         datum.hungerValue = player.hungerValue;
                         datum.thirstValue = player.thirstValue;
@@ -739,9 +739,9 @@ namespace GameCore
             else
             {
                 //将实体数据写入
-                foreach (Sandbox sb in GFiles.world.sandboxData)
+                foreach (Region region in GFiles.world.regionData)
                 {
-                    foreach (EntitySave save in sb.entities)
+                    foreach (EntitySave save in region.entities)
                     {
                         //如果匹配到自己
                         if (save.saveId == Init.saveId)
@@ -772,13 +772,13 @@ namespace GameCore
                 return;
             }
 
-            foreach (Sandbox sb in GFiles.world.sandboxData)
+            foreach (Region region in GFiles.world.regionData)
             {
-                foreach (EntitySave save in sb.entities)
+                foreach (EntitySave save in region.entities)
                 {
                     if (save.saveId == Init.saveId)
                     {
-                        sb.entities.Remove(save);
+                        region.entities.Remove(save);
                         return;
                     }
                 }

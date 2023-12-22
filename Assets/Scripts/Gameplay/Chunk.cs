@@ -23,7 +23,7 @@ namespace GameCore.High
         public Vector2Int chunkIndex { get; internal set; }
         public bool totalRendererEnabled = true;
         //public bool collidersEnabled = true;
-        public Vector2Int sandboxIndex;
+        public Vector2Int regionIndex;
         public Map map => Map.instance;
 
         public float left { get; private set; }
@@ -37,8 +37,8 @@ namespace GameCore.High
         public Vector3 rightUpPoint { get; private set; }
         public Vector3 rightDownPoint { get; private set; }
 
-        public int sandboxMiddleX;
-        public int sandboxMiddleY;
+        public int regionMiddleX;
+        public int regionMiddleY;
 
         public bool inView { get; private set; }
 
@@ -59,8 +59,8 @@ namespace GameCore.High
             rightUpPoint = new(right, up);
             rightDownPoint = new(right, down);
 
-            sandboxMiddleX = Sandbox.GetMiddleX(sandboxIndex);
-            sandboxMiddleY = Sandbox.GetMiddleY(sandboxIndex);
+            regionMiddleX = Region.GetMiddleX(regionIndex);
+            regionMiddleY = Region.GetMiddleY(regionIndex);
         }
 
         public bool InView()
@@ -96,10 +96,10 @@ namespace GameCore.High
             }
         }
 
-        private bool ShouldRecoverSandbox(Player localPlayer)
+        private bool ShouldRecoverRegion(Player localPlayer)
         {
-            int deltaX = Mathf.Abs(localPlayer.sandboxIndex.x - sandboxIndex.x);
-            int deltaY = Mathf.Abs(localPlayer.sandboxIndex.y - sandboxIndex.y);
+            int deltaX = Mathf.Abs(localPlayer.regionIndex.x - regionIndex.x);
+            int deltaY = Mathf.Abs(localPlayer.regionIndex.y - regionIndex.y);
 
             if (deltaX > 1 || deltaY > 1)
             {
@@ -111,8 +111,8 @@ namespace GameCore.High
                         if (player == localPlayer)
                             continue;
 
-                        deltaX = Mathf.Abs(player.sandboxIndex.x - sandboxIndex.x);
-                        deltaY = Mathf.Abs(player.sandboxIndex.y - sandboxIndex.y);
+                        deltaX = Mathf.Abs(player.regionIndex.x - regionIndex.x);
+                        deltaY = Mathf.Abs(player.regionIndex.y - regionIndex.y);
 
                         if (deltaX <= 1 || deltaY <= 1)
                         {
@@ -130,20 +130,20 @@ namespace GameCore.High
 
         private void FixedUpdate()
         {
-            if (!Player.GetLocal(out Player localPlayer) || SyncPacker.vars.Count == 0 || !localPlayer.TryGetSandbox(out Sandbox sb))
+            if (!Player.GetLocal(out Player localPlayer) || SyncPacker.vars.Count == 0 || !localPlayer.TryGetRegion(out _))
             {
                 return;
             }
 
-            /* ---------------------------------- 回收沙盒 ---------------------------------- */
-            if (localPlayer.sandboxIndex != sandboxIndex)
+            /* ---------------------------------- 回收区域 ---------------------------------- */
+            if (localPlayer.regionIndex != regionIndex)
             {
-                //执行回收沙盒 (生成沙盒时不回收)
-                if (!managerGame.generatingExistingSandbox)
+                //执行回收区域 (生成区域时不回收)
+                if (!managerGame.generatingExistingRegion)
                 {
-                    if (ShouldRecoverSandbox(localPlayer))
+                    if (ShouldRecoverRegion(localPlayer))
                     {
-                        RecoverTotalSandbox();
+                        RecoverTotalRegion();
                     }
                 }
 
@@ -163,10 +163,10 @@ namespace GameCore.High
             }
         }
 
-        public void RecoverTotalSandbox()
+        public void RecoverTotalRegion()
         {
-            //删除区块所属的沙盒
-            GM.instance.RecoverSandbox(sandboxIndex);
+            //删除区块所属的区域
+            GM.instance.RecoverRegion(regionIndex);
         }
 
         [Button("关闭所有渲染器")] public void DisableRenderers() => SetRenderersEnabled(this, false);
@@ -217,45 +217,45 @@ namespace GameCore.High
             }
         }
 
-        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editSandbox)
+        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion)
         {
             foreach (var block in blocks)
             {
                 if (block && block.pos == pos && block.isBackground == isBackground)
                 {
-                    if (editSandbox && Server.isServer)
+                    if (editRegion && Server.isServer)
                     {
-                        Vector2Int blockChunkPos = this.MapToSandboxPos(block.pos);
+                        Vector2Int blockChunkPos = this.MapToRegionPos(block.pos);
 
-                        //在沙盒中删除
-                        Sandbox sb = GFiles.world.GetOrAddSandbox(sandboxIndex);
-                        sb.RemovePos(block.data.id, blockChunkPos, block.isBackground);
+                        //在区域中删除
+                        Region region = GFiles.world.GetOrAddRegion(regionIndex);
+                        region.RemovePos(block.data.id, blockChunkPos, block.isBackground);
                     }
 
                     map.blockPool.Recover(block);
 
-                    GameCallbacks.OnRemoveBlock(pos, isBackground, editSandbox, true);
+                    GameCallbacks.OnRemoveBlock(pos, isBackground, editRegion, true);
                     return;
                 }
             }
 
-            GameCallbacks.OnRemoveBlock(pos, isBackground, editSandbox, false);
+            GameCallbacks.OnRemoveBlock(pos, isBackground, editRegion, false);
         }
 
-        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editSandbox)
+        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion)
         {
             if (block == null)
                 return null;
 
             Block b = map.blockPool.Get(pos, isBackground, block, customData);
 
-            if (editSandbox && Server.isServer)
+            if (editRegion && Server.isServer)
             {
-                Vector2Int blockSBPos = this.MapToSandboxPos(pos);
+                Vector2Int blockSBPos = this.MapToRegionPos(pos);
 
-                //在沙盒中添加
-                Sandbox sb = GFiles.world.GetOrAddSandbox(sandboxIndex);
-                sb.AddPos(block.id, new(blockSBPos.x, blockSBPos.y), isBackground);
+                //在区域中添加
+                Region region = GFiles.world.GetOrAddRegion(regionIndex);
+                region.AddPos(block.id, new(blockSBPos.x, blockSBPos.y), isBackground);
             }
 
             GameCallbacks.OnAddBlock(pos, isBackground, b, this);

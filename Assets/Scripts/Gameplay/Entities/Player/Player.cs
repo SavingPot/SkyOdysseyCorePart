@@ -174,9 +174,9 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
         [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
 
-        public bool askingForGeneratingSandbox { get; private set; }
-        public float askingForGeneratingSandboxTime { get; private set; } = float.NegativeInfinity;
-        public bool generatedFirstSandbox;
+        public bool askingForGeneratingRegion { get; private set; }
+        public float askingForGeneratingRegionTime { get; private set; } = float.NegativeInfinity;
+        public bool generatedFirstRegion;
         public List<TaskStatusForSave> completedTasks = null;
         [ClientRpc]
         public void ClientSetCompletedTasks(List<TaskStatusForSave> tasks, NetworkConnection caller = null)
@@ -263,7 +263,7 @@ namespace GameCore
 #if UNITY_EDITOR
         [Button("输出玩家名称")] private void EditorOutputPlayerName() => Debug.Log($"玩家名: {playerName}");
         [Button("输出玩家血量")] private void EditorOutputHealth() => Debug.Log($"血量: {health}");
-        [Button("输出沙盒序号")] private void EditorOutputSandboxIndex() => Debug.Log($"沙盒序号: {sandboxIndex}");
+        [Button("输出区域序号")] private void EditorOutputRegionIndex() => Debug.Log($"区域序号: {regionIndex}");
         [Button("AutoTest0 传输测试"), ServerRpc] private void EditorAutoTest0TransportationServer(NetworkConnection caller) { EditorAutoTest0TransportationCaller(new() { id = null, num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() }, /*testArray = new float[] { UnityEngine.Random.Range(-10000f, 100000f), UnityEngine.Random.Range(-10000f, 100000f), UnityEngine.Random.Range(-10000f, 100000f) },*/ testNullable = Tools.randomBool ? UnityEngine.Random.Range(-10000, 100000) : null }, caller); }
         [ConnectionRpc] private void EditorAutoTest0TransportationCaller(AutoTest0 param0, NetworkConnection caller) { Debug.Log($"id:{param0.id}, num:{param0.num}, testList:{param0.testList[0]}-{param0.testList[1]}-{param0.testList[2]}, nullable:{param0.testNullable}"); }
         [Button("AutoTest1 传输测试"), ServerRpc] private void EditorAutoTest1TransportationServer(NetworkConnection caller) { EditorAutoTest1TransportationCaller(new() { index = UnityEngine.Random.Range(0, 10000), self = Path.GetRandomFileName(), t0 = new() { id = Path.GetRandomFileName(), num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } } }, caller); }
@@ -421,7 +421,7 @@ namespace GameCore
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
 
 
-                //要等一帧否则 currentSandboxIndex 会被 base:Entity 设为 0
+                //等一帧
                 await UniTask.NextFrame();
 
                 //让服务器加载玩家数据
@@ -506,8 +506,8 @@ namespace GameCore
                 float delta = oldValue - caller.fallenY;
                 float damageValue = (delta - fallenDamageHeight) * 0.75f;
 
-                //generatedFirstSandbox 是防止初始沙盒 y<0 导致直接摔死
-                if (damageValue >= 2 && caller.generatedFirstSandbox)
+                //generatedFirstRegion 是防止初始区域 y<0 导致直接摔死
+                if (damageValue >= 2 && caller.generatedFirstRegion)
                 {
                     caller.TakeDamage(damageValue);
                 }
@@ -657,9 +657,9 @@ namespace GameCore
 
         public static Action<Player> GravitySet = caller =>
         {
-            if (!caller.generatedFirstSandbox ||
-                GM.instance.generatingExistingSandbox ||
-                GM.instance.generatingNewSandboxes.Any(p => p == PosConvert.WorldPosToSandboxIndex(caller.transform.position)))  //获取沙盒序号不用 caller.sandboxIndex 是因为只有沙盒加载成功, caller.sandboxIndex才会正式改编
+            if (!caller.generatedFirstRegion ||
+                GM.instance.generatingExistingRegion ||
+                GM.instance.generatingNewRegions.Any(p => p == PosConvert.WorldPosToRegionIndex(caller.transform.position)))  //获取区域序号不用 caller.regionIndex 是因为只有区域加载成功, caller.regionIndex才会正式改编
             {
                 caller.gravity = 0;
                 return;
@@ -667,7 +667,7 @@ namespace GameCore
 
             caller.gravity = playerDefaultGravity;
 
-            if (!caller.managerGame.generatedExistingSandboxes.Any(p => p.index == caller.sandboxIndex) || caller.isDead)
+            if (!caller.managerGame.generatedExistingRegions.Any(p => p.index == caller.regionIndex) || caller.isDead)
             {
                 caller.gravity *= 0.05f;
             }
@@ -687,7 +687,7 @@ namespace GameCore
                 DeathRotation();
             }
 
-            AutoGenerateSandbox();
+            AutoGenerateRegion();
 
             //刷新状态栏
             RefreshPropertiesBar();
@@ -784,26 +784,26 @@ namespace GameCore
             pui.preparingToFadeOutStatusText = false;
         }
 
-        public void AutoGenerateSandbox()
+        public void AutoGenerateRegion()
         {
             //缓存优化性能
-            Vector2Int currentIndex = sandboxIndex;
+            Vector2Int currentIndex = regionIndex;
 
-            if (generatedFirstSandbox && !askingForGeneratingSandbox && askingForGeneratingSandboxTime + 5 <= Tools.time && !GM.instance.generatingExistingSandbox && !GM.instance.generatingNewSandbox)// && TryGetSandbox(out Sandbox sb))
+            if (generatedFirstRegion && !askingForGeneratingRegion && askingForGeneratingRegionTime + 5 <= Tools.time && !GM.instance.generatingExistingRegion && !GM.instance.generatingNewRegion)// && TryGetRegion(out Region region))
             {
-                Vector2Int newIndex = PosConvert.WorldPosToSandboxIndex(transform.position);
+                Vector2Int newIndex = PosConvert.WorldPosToRegionIndex(transform.position);
 
                 //如果变了
                 if (currentIndex != newIndex)
                 {
-                    //生成沙盒并刷新时间
-                    ServerGenerateSandbox(newIndex, false);
-                    askingForGeneratingSandboxTime = Tools.time;
+                    //生成区域并刷新时间
+                    ServerGenerateRegion(newIndex, false);
+                    askingForGeneratingRegionTime = Tools.time;
 
-                    //生成完后正式切换沙盒序号
-                    if (managerGame.generatedExistingSandboxes.Any(p => p.index == newIndex))
+                    //生成完后正式切换区域序号
+                    if (managerGame.generatedExistingRegions.Any(p => p.index == newIndex))
                     {
-                        sandboxIndex = newIndex;
+                        regionIndex = newIndex;
                     }
                 }
             }
@@ -1238,24 +1238,24 @@ namespace GameCore
         #endregion
 
 
-        #region 生成沙盒
+        #region 生成区域
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         [Button]
-        public void ServerGenerateSandbox(Vector2Int index, bool isFirstGeneration, string biomeId = null)
+        public void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string biomeId = null)
         {
-            askingForGeneratingSandbox = true;
+            askingForGeneratingRegion = true;
 
-            ServerGenerateSandboxCore(index, isFirstGeneration, biomeId);
+            ServerGenerateRegionCore(index, isFirstGeneration, biomeId);
         }
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         [ServerRpc]
-        private void ServerGenerateSandboxCore(Vector2Int index, bool isFirstGeneration, string biomeId, NetworkConnection caller = null)
+        private void ServerGenerateRegionCore(Vector2Int index, bool isFirstGeneration, string biomeId, NetworkConnection caller = null)
         {
             MethodAgent.TryRun(() =>
             {
-                Debug.Log($"Player={netId} 请求生成沙盒 {index}");
+                Debug.Log($"Player={netId} 请求生成区域 {index}");
 
                 List<Vector2Int> indexes = new()
             {
@@ -1284,10 +1284,10 @@ namespace GameCore
                 //如果有直接让服务器生成
                 foreach (Vector2Int currentIndex in indexes)
                 {
-                    //如果没有则生成新的沙盒
+                    //如果没有则生成新的区域
                     MethodAgent.RunThread(() =>
                     {
-                        GM.instance.GenerateNewSandbox(currentIndex, biomeId);
+                        GM.instance.GenerateNewRegion(currentIndex, biomeId);
 
                         //如果 index 是中心, 就是首次生成
                         bool isGenerationMiddle = currentIndex == index;
@@ -1295,25 +1295,25 @@ namespace GameCore
 
                         if (isGenerationMiddle)
                         {
-                            lock (GFiles.world.sandboxData)
+                            lock (GFiles.world.regionData)
                             {
-                                foreach (Sandbox sb in GFiles.world.sandboxData)
+                                foreach (Region region in GFiles.world.regionData)
                                 {
-                                    if (sb.index == currentIndex && sb.generatedAlready)
+                                    if (region.index == currentIndex && region.generatedAlready)
                                     {
                                         MethodAgent.RunOnMainThread(() =>
                                         {
                                             //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
                                             if (!isLocalPlayer)
-                                                GM.instance.GenerateExistingSandbox(
-                                                    sb,
-                                                    () => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller),
-                                                    () => ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller),
+                                                GM.instance.GenerateExistingRegion(
+                                                    region,
+                                                    () => ConnectionGenerateRegion(region, isFirstGenerationMiddle, caller),
+                                                    () => ConnectionGenerateRegion(region, isFirstGenerationMiddle, caller),
                                                     (ushort)(GFiles.settings.performanceLevel / 2)
                                                 );
                                             //* 如果是服务器发送的申请: 服务器生成
                                             else
-                                                ConnectionGenerateSandbox(sb, isFirstGenerationMiddle, caller);
+                                                ConnectionGenerateRegion(region, isFirstGenerationMiddle, caller);
                                         });
 
                                         break;
@@ -1327,30 +1327,30 @@ namespace GameCore
         }
 
         [ConnectionRpc]
-        void ConnectionGenerateSandbox(Sandbox sandbox, bool isFirstGeneration, NetworkConnection caller)
+        void ConnectionGenerateRegion(Region region, bool isFirstGeneration, NetworkConnection caller)
         {
             MethodAgent.TryRun(() =>
             {
-                Debug.Log($"收到服务器回调, 正在生成已有沙盒 {sandbox.index}");
+                Debug.Log($"收到服务器回调, 正在生成已有区域 {region.index}");
 
                 if (isFirstGeneration)
                 {
-                    //防止因跑出沙盒导致重复生成
-                    transform.position = Sandbox.GetMiddle(sandbox.index);
+                    //防止因跑出区域导致重复生成
+                    transform.position = Region.GetMiddle(region.index);
                 }
 
-                GM.instance.GenerateExistingSandbox(sandbox, () =>
+                GM.instance.GenerateExistingRegion(region, () =>
                 {
                     //将玩家的位置恢复到出生点
                     if (isFirstGeneration)
                     {
-                        transform.position = sandbox.spawnPoint.To2();
-                        generatedFirstSandbox = true;
+                        transform.position = region.spawnPoint.To2();
+                        generatedFirstRegion = true;
                     }
                     //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
                 }, null, (ushort)(GFiles.settings.performanceLevel * (isFirstGeneration ? 3 : 0.8f)));
 
-                askingForGeneratingSandbox = false;
+                askingForGeneratingRegion = false;
             }, true);
         }
 
@@ -1393,7 +1393,7 @@ namespace GameCore
                 {
                     //加载服务器存档中的数据
                     this.playerName = playerName;
-                    sandboxIndex = data.currentSandbox;
+                    regionIndex = data.currentRegion;
 
                     string oldInventory = JsonTools.ToJson(data.inventory);
 
@@ -1417,7 +1417,7 @@ namespace GameCore
 
             //初始化新的临时数据
             this.playerName = playerName;
-            sandboxIndex = Vector2Int.zero;
+            regionIndex = Vector2Int.zero;
             inventory = new(inventorySlotCount, this);
             hungerValue = defaultHungerValue;
             thirstValue = defaultThirstValue;
@@ -1446,7 +1446,7 @@ namespace GameCore
             Debug.Log("回调完成!");
             pui = new(this);
 
-            ServerGenerateSandbox(sandboxIndex, true);
+            ServerGenerateRegion(regionIndex, true);
         }
 
         /// <summary>

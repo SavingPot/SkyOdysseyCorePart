@@ -152,7 +152,7 @@ namespace GameCore
                 //抽取一个区块
                 Chunk chunk = Map.instance.chunks.Extract();
 
-                if (!string.IsNullOrEmpty(e.summon.biome) && GFiles.world.TryGetSandbox(chunk.sandboxIndex, out Sandbox sb) && e.summon.biome != sb.biome)
+                if (!string.IsNullOrEmpty(e.summon.biome) && GFiles.world.TryGetRegion(chunk.regionIndex, out Region region) && e.summon.biome != region.biome)
                 {
                     continue;
                 }

@@ -8,23 +8,23 @@ namespace GameCore
 {
     public static class GameCallbacks
     {
-        public static event Action<Sandbox> BeforeGeneratingExistingSandbox = sandbox =>
+        public static event Action<Region> BeforeGeneratingExistingRegion = region =>
         {
             if (GFiles.world == null)
-                Debug.Log($"尝试生成原有沙盒, index={sandbox.index}");
+                Debug.Log($"尝试生成原有区域, index={region.index}");
             else
-                Debug.Log($"尝试在世界 {GFiles.world.basicData.worldName} 生成原有沙盒 {sandbox.index}, 生物群系为 {sandbox.biome}, 尺寸 {sandbox.size}");
+                Debug.Log($"尝试在世界 {GFiles.world.basicData.worldName} 生成原有区域 {region.index}, 生物群系为 {region.biome}, 尺寸 {region.size}");
         };
-        public static event Action<Sandbox> AfterGeneratingExistingSandbox = _ => { };
+        public static event Action<Region> AfterGeneratingExistingRegion = _ => { };
 
-        public static event Action<MapGeneration> BeforeGeneratingNewSandbox = (generation) =>
+        public static event Action<MapGeneration> BeforeGeneratingNewRegion = (generation) =>
         {
             Debug.Log($"开始尝试以种子 {generation.actualSeed} ({generation.originalSeed} + {generation.index.x} * 2 + {generation.index.y} * 4)  在世界 {GFiles.world.basicData.worldName} 生成新地形 {generation.biome.id} {generation.index}");
         };
-        public static event Action<Sandbox> AfterGeneratingNewSandbox = _ => { };
+        public static event Action<Region> AfterGeneratingNewRegion = _ => { };
 
         public static Action<Vector2Int, bool, BlockData> OnBlockDestroyed = (_, _, _) => { };
-        public static Action<Vector2Int, bool, bool, bool> OnRemoveBlock = (pos, layer, editSandbox, successful) =>
+        public static Action<Vector2Int, bool, bool, bool> OnRemoveBlock = (pos, layer, editRegion, successful) =>
         {
             Map.instance.UpdateAt(pos, layer);
         };
@@ -36,11 +36,11 @@ namespace GameCore
 
         public static event Action OnSaveAllDataToFiles = () => { Debug.Log("保存了所有数据至文件"); };
 
-        internal static void CallBeforeGeneratingExistingSandbox(Sandbox sandbox) => BeforeGeneratingExistingSandbox(sandbox);
-        internal static void CallAfterGeneratingExistingSandbox(Sandbox sandbox) => AfterGeneratingExistingSandbox(sandbox);
+        internal static void CallBeforeGeneratingExistingRegion(Region region) => BeforeGeneratingExistingRegion(region);
+        internal static void CallAfterGeneratingExistingRegion(Region region) => AfterGeneratingExistingRegion(region);
 
-        internal static void CallBeforeGeneratingNewSandbox(MapGeneration generation) => BeforeGeneratingNewSandbox(generation);
-        internal static void CallAfterGeneratingNewSandbox(Sandbox sandbox) => AfterGeneratingNewSandbox(sandbox);
+        internal static void CallBeforeGeneratingNewRegion(MapGeneration generation) => BeforeGeneratingNewRegion(generation);
+        internal static void CallAfterGeneratingNewRegion(Region region) => AfterGeneratingNewRegion(region);
 
         internal static void CallOnSaveAllDataToFiles() => OnSaveAllDataToFiles();
     }

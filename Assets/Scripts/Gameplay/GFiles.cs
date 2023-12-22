@@ -94,7 +94,7 @@ namespace GameCore
                 //将世界数据写入文件
                 IOTools.CreateDirsIfNone(World.GetCachePath(world.worldPath), World.GetDisplayCachePath(world.worldPath));
                 SaveFileJson(World.GetBasicDataPath(world.worldPath), world.basicData, false, true);
-                SaveFileJson(World.GetSandboxDataPath(world.worldPath), world.sandboxData, false, false);
+                SaveFileJson(World.GetRegionDataPath(world.worldPath), world.regionData, false, false);
                 SaveFileJson(World.GetPlayerDataPath(world.worldPath), world.playerData, false, true);
             }
 
@@ -136,7 +136,7 @@ namespace GameCore
     {
         public static string GetImagePath(string worldPath) => Path.Combine(GetDisplayCachePath(worldPath), "image.png");
         public static string GetBasicDataPath(string worldPath) => Path.Combine(worldPath, "basic_data.json");
-        public static string GetSandboxDataPath(string worldPath) => Path.Combine(worldPath, "sandbox_data.json");
+        public static string GetRegionDataPath(string worldPath) => Path.Combine(worldPath, "region_data.json");
         public static string GetPlayerDataPath(string worldPath) => Path.Combine(worldPath, "player_data.json");
         public static string GetCachePath(string worldPath) => Path.Combine(worldPath, "caches");
         public static string GetDisplayCachePath(string worldPath) => Path.Combine(GetCachePath(worldPath), "display");
@@ -145,12 +145,12 @@ namespace GameCore
 
         public string worldPath => basicData.worldPath;
         public string worldImagePath => GetImagePath(worldPath);
-        public string worldSandboxDataPath => GetSandboxDataPath(worldPath);
+        public string worldRegionDataPath => GetRegionDataPath(worldPath);
 
 
 
         public WorldBasicData basicData = new();
-        public List<Sandbox> sandboxData = new();
+        public List<Region> regionData = new();
         public List<PlayerData> playerData = new();
 
 
@@ -158,10 +158,10 @@ namespace GameCore
         public static World Load(string dirPath)
         {
             WorldBasicData basicData = JsonTools.LoadJson<WorldBasicData>(GetBasicDataPath(dirPath));
-            List<Sandbox> sandboxData = JsonTools.LoadJson<List<Sandbox>>(GetSandboxDataPath(dirPath));
+            List<Region> regionData = JsonTools.LoadJson<List<Region>>(GetRegionDataPath(dirPath));
             List<PlayerData> playerData = JsonTools.LoadJson<List<PlayerData>>(GetPlayerDataPath(dirPath));
 
-            return new(basicData, sandboxData, playerData);
+            return new(basicData, regionData, playerData);
         }
 
 
@@ -173,71 +173,71 @@ namespace GameCore
             this.basicData.worldName = worldName;
         }
 
-        public World(WorldBasicData basicData, List<Sandbox> sandboxData, List<PlayerData> playerData)
+        public World(WorldBasicData basicData, List<Region> regionData, List<PlayerData> playerData)
         {
             this.basicData = basicData;
-            this.sandboxData = sandboxData;
+            this.regionData = regionData;
             this.playerData = playerData;
         }
 
-        public void AddSandbox(Sandbox sb)
+        public void AddRegion(Region region)
         {
-            //检查重复沙盒
-            for (int i = 0; i < sandboxData.Count; i++)
+            //检查重复区域
+            for (int i = 0; i < regionData.Count; i++)
             {
-                var temp = sandboxData[i];
+                var temp = regionData[i];
 
-                //如果有就合并数据 (以 传入的沙盒sb 为主)
-                if (temp.index == sb.index)
+                //如果有就合并数据 (以 传入的区域sb 为主)
+                if (temp.index == region.index)
                 {
                     //遍历每一个方块并添加
                     foreach (var saveTemp in temp.saves)
                     {
                         foreach (var locationTemp in saveTemp.locations)
                         {
-                            sb.AddPos(saveTemp.blockId, locationTemp.pos, locationTemp.isBackground);
+                            region.AddPos(saveTemp.blockId, locationTemp.pos, locationTemp.isBackground);
                         }
                     }
 
-                    //添加后把对应沙盒去掉
-                    sandboxData[i] = null;
-                    sandboxData.RemoveAt(i);
+                    //添加后把对应区域去掉
+                    regionData[i] = null;
+                    regionData.RemoveAt(i);
                     break;
                 }
             }
 
-            sandboxData.Add(sb);
+            regionData.Add(region);
         }
 
-        public Sandbox GetOrAddSandbox(Vector2Int index)
+        public Region GetOrAddRegion(Vector2Int index)
         {
-            if (TryGetSandbox(index, out Sandbox sandbox))
+            if (TryGetRegion(index, out Region region))
             {
-                return sandbox;
+                return region;
             }
 
-            AddSandbox(new() { index = index });
-            return sandboxData[^1];
+            AddRegion(new() { index = index });
+            return regionData[^1];
         }
 
-        public bool TryGetSandbox(Vector2Int index, out Sandbox sandbox)
+        public bool TryGetRegion(Vector2Int index, out Region region)
         {
-            foreach (var sb in sandboxData)
+            foreach (var sb in regionData)
             {
                 if (sb.index == index)
                 {
-                    sandbox = sb;
+                    region = sb;
                     return true;
                 }
             }
 
-            sandbox = null;
+            region = null;
             return false;
         }
 
-        public Sandbox GetSandbox(Vector2Int index)
+        public Region GetRegion(Vector2Int index)
         {
-            foreach (var sb in sandboxData)
+            foreach (var sb in regionData)
                 if (sb.index == index)
                     return sb;
 
