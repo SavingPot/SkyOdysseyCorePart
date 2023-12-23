@@ -67,6 +67,7 @@ namespace GameCore
         /*                                    临时数据                                    */
         /* -------------------------------------------------------------------------- */
         [BoxGroup("属性"), LabelText("跳跃计时器"), ReadOnly] public float jumpTimer;
+        [BoxGroup("属性"), LabelText("跳跃CD"), ReadOnly] public float jumpCD = 0.3f;
 
 
 
@@ -392,7 +393,7 @@ namespace GameCore
             if (Tools.time < jumpTimer)
                 return rb.velocity.y;
 
-            jumpTimer = Tools.time + 0.3f;
+            jumpTimer = Tools.time + jumpCD;
 
             return jumpVelocity;   //设置 Y 速度
         }

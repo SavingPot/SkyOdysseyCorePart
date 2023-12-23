@@ -135,7 +135,7 @@ namespace GameCore
 
         public void StopAnim(string id, short layer = 0)
         {
-            Debug.Log($"Stop {id}");
+            ////Debug.Log($"Stop {id}");
             foreach (var anim in animations)
             {
                 if (anim.layer == layer && anim.id == id)
@@ -159,7 +159,7 @@ namespace GameCore
 
         public void SwitchPlayingTo(string id, short layer = 0)
         {
-            Debug.Log($"play {id}");
+            ////Debug.Log($"play {id}");
             //获取层数与 id 匹配的 anim
             foreach (var anim in animations)
             {

@@ -13,13 +13,13 @@ namespace GameCore
             if (GFiles.world == null)
                 Debug.Log($"尝试生成原有区域, index={region.index}");
             else
-                Debug.Log($"尝试在世界 {GFiles.world.basicData.worldName} 生成原有区域 {region.index}, 生物群系为 {region.biome}, 尺寸 {region.size}");
+                Debug.Log($"尝试在世界 {GFiles.world.basicData.worldName} 生成原有区域 {region.index}, 群系主题为 {region.regionTheme}, 尺寸 {region.size}");
         };
         public static event Action<Region> AfterGeneratingExistingRegion = _ => { };
 
-        public static event Action<MapGeneration> BeforeGeneratingNewRegion = (generation) =>
+        public static event Action<RegionGeneration> BeforeGeneratingNewRegion = (generation) =>
         {
-            Debug.Log($"开始尝试以种子 {generation.actualSeed} ({generation.originalSeed} + {generation.index.x} * 2 + {generation.index.y} * 4)  在世界 {GFiles.world.basicData.worldName} 生成新地形 {generation.biome.id} {generation.index}");
+            Debug.Log($"开始尝试以种子 {generation.actualSeed} ({generation.originalSeed} + {generation.index.x} * 2 + {generation.index.y} * 4)  在世界 {GFiles.world.basicData.worldName} 生成新地形");
         };
         public static event Action<Region> AfterGeneratingNewRegion = _ => { };
 
@@ -39,7 +39,7 @@ namespace GameCore
         internal static void CallBeforeGeneratingExistingRegion(Region region) => BeforeGeneratingExistingRegion(region);
         internal static void CallAfterGeneratingExistingRegion(Region region) => AfterGeneratingExistingRegion(region);
 
-        internal static void CallBeforeGeneratingNewRegion(MapGeneration generation) => BeforeGeneratingNewRegion(generation);
+        internal static void CallBeforeGeneratingNewRegion(RegionGeneration generation) => BeforeGeneratingNewRegion(generation);
         internal static void CallAfterGeneratingNewRegion(Region region) => AfterGeneratingNewRegion(region);
 
         internal static void CallOnSaveAllDataToFiles() => OnSaveAllDataToFiles();

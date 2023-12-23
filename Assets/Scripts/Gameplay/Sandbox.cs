@@ -18,7 +18,7 @@ namespace GameCore
         [NonSerialized] ReaderWriterLockSlim savesReaderWriterLock = new(LockRecursionPolicy.NoRecursion);
         public List<BlockSave> saves = new();
         public List<EntitySave> entities = new();
-        public string biome;
+        public string regionTheme;
         public Vector2Int size;
         public Vector2Int spawnPoint;
         public bool generatedAlready;

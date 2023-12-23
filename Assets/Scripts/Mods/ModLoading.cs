@@ -220,7 +220,7 @@ namespace GameCore
                 entity.colliderSize = jo["ori:entity"]?["physics"]?["collider"]?["size"]?.ToVector2() ?? Vector2.one;
                 entity.gravity = jo["ori:entity"]?["physics"]?["gravity"]?.ToFloat() ?? 7;
                 entity.maxHealth = jo["ori:entity"]?["max_health"]?.ToFloat() ?? Player.defaultHealth;
-                entity.summon.biome = jo["ori:entity"]?["summon"]?["biome"]?.ToString();
+                entity.summon.region = jo["ori:entity"]?["summon"]?["region"]?.ToString();
                 entity.summon.defaultProbability = jo["ori:entity"]?["summon"]?["default_probability"]?.ToString().ToFloat() ?? 100;
                 entity.summon.timeEarliest = jo["ori:entity"]?["summon"]?["time_earliest"]?.ToString().ToFloat() ?? 0;
                 entity.summon.timeLatest = jo["ori:entity"]?["summon"]?["time_latest"]?.ToString().ToFloat() ?? 0;

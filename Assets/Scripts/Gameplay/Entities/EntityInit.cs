@@ -195,26 +195,27 @@ namespace GameCore
 
         IEnumerator IEWaitRegistering(SyncAttributeData[] syncVarTemps)
         {
-            StringBuilder sb = new();
-
-            //等待注册
-            foreach (var pair in syncVarTemps)
+            //* 如果不是服务器, 就需要等待服务器注册
+            //! 如果不等待的话会疯狂报错
+            if(!isServer)
             {
-                string vn = SyncPacker.GetInstanceID(sb, pair.propertyPath, netId);
+                StringBuilder sb = new();
 
-                //等待数值正确
-                waitingRegisteringVar = vn;
-                yield return new WaitUntil(() => SyncPacker.HasVar(vn));
+                //等待注册
+                foreach (var pair in syncVarTemps)
+                {
+                    string vn = SyncPacker.GetInstanceID(sb, pair.propertyPath, netId);
+
+                    //等待数值正确
+                    waitingRegisteringVar = vn;
+                    yield return new WaitUntil(() => SyncPacker.HasVar(vn));
+                }
             }
 
             waitingRegisteringVar = string.Empty;
             registeredSyncVars = true;
 
 
-
-
-
-            //!TODO: 等待 -------=-==-=--==-r1290-349120-490-12940-
             entity = generationId == EntityID.Player ? gameObject.AddComponent<Player>() : (Entity)gameObject.AddComponent(data.behaviourType);
             entity.Init = this;
             entity.customData = customData;

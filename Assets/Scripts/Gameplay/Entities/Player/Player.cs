@@ -387,6 +387,7 @@ namespace GameCore
         [ServerRpc] static void Mtd2(Player c, NetworkConnection caller) { Debug.Log("Mtd2"); }
         protected override async void Start()
         {
+            Debug.Log(this == null);
             Mtd2(this, null);
             Mtd1(this, null);
             data = null;
@@ -1242,87 +1243,53 @@ namespace GameCore
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         [Button]
-        public void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string biomeId = null)
+        public void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string[] specificBiomes = null)
         {
             askingForGeneratingRegion = true;
 
-            ServerGenerateRegionCore(index, isFirstGeneration, biomeId);
+            ServerGenerateRegionCore(index, isFirstGeneration, specificBiomes);
         }
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         [ServerRpc]
-        private void ServerGenerateRegionCore(Vector2Int index, bool isFirstGeneration, string biomeId, NetworkConnection caller = null)
+        private void ServerGenerateRegionCore(Vector2Int index, bool isFirstGeneration, string[] specificBiomes, NetworkConnection caller = null)
         {
             MethodAgent.TryRun(() =>
             {
                 Debug.Log($"Player={netId} 请求生成区域 {index}");
 
-                List<Vector2Int> indexes = new()
-            {
-                //: x
-                //: x
-                //: x 
-                index + new Vector2Int(-1, -1),
-                index + new Vector2Int(0, -1),
-                index + new Vector2Int(1, -1),
-
-                //:   x
-                //:   x
-                //:   x
-                index + new Vector2Int(-1, 0),
-                index,
-                index + new Vector2Int(1, 0),
-
-                //:     x
-                //:     x
-                //:     x
-                index + new Vector2Int(-1, 1),
-                index + new Vector2Int(0, 1),
-                index + new Vector2Int(1, 1),
-            };
-
-                //如果有直接让服务器生成
-                foreach (Vector2Int currentIndex in indexes)
+                MethodAgent.RunThread(() =>
                 {
                     //如果没有则生成新的区域
-                    MethodAgent.RunThread(() =>
+                    GM.instance.GenerateNewRegion(index, specificBiomes);
+
+                    //如果有直接让服务器生成
+                    lock (GFiles.world.regionData)
                     {
-                        GM.instance.GenerateNewRegion(currentIndex, biomeId);
-
-                        //如果 index 是中心, 就是首次生成
-                        bool isGenerationMiddle = currentIndex == index;
-                        bool isFirstGenerationMiddle = isFirstGeneration && isGenerationMiddle;
-
-                        if (isGenerationMiddle)
+                        foreach (Region region in GFiles.world.regionData)
                         {
-                            lock (GFiles.world.regionData)
+                            if (region.index == index && region.generatedAlready)
                             {
-                                foreach (Region region in GFiles.world.regionData)
+                                MethodAgent.RunOnMainThread(() =>
                                 {
-                                    if (region.index == currentIndex && region.generatedAlready)
-                                    {
-                                        MethodAgent.RunOnMainThread(() =>
-                                        {
-                                            //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
-                                            if (!isLocalPlayer)
-                                                GM.instance.GenerateExistingRegion(
-                                                    region,
-                                                    () => ConnectionGenerateRegion(region, isFirstGenerationMiddle, caller),
-                                                    () => ConnectionGenerateRegion(region, isFirstGenerationMiddle, caller),
-                                                    (ushort)(GFiles.settings.performanceLevel / 2)
-                                                );
-                                            //* 如果是服务器发送的申请: 服务器生成
-                                            else
-                                                ConnectionGenerateRegion(region, isFirstGenerationMiddle, caller);
-                                        });
+                                    //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
+                                    if (!isLocalPlayer)
+                                        GM.instance.GenerateExistingRegion(
+                                            region,
+                                            () => ConnectionGenerateRegion(region, isFirstGeneration, caller),
+                                            () => ConnectionGenerateRegion(region, isFirstGeneration, caller),
+                                            (ushort)(GFiles.settings.performanceLevel / 2)
+                                        );
+                                    //* 如果是服务器发送的申请: 服务器生成
+                                    else
+                                        ConnectionGenerateRegion(region, isFirstGeneration, caller);
+                                });
 
-                                        break;
-                                    }
-                                }
+                                break;
                             }
                         }
-                    });
-                }
+                    }
+                });
             }, true);
         }
 
@@ -1375,24 +1342,26 @@ namespace GameCore
         public const string defaultName = "Alan";
 
         [ServerRpc]
-        void ServerLoadOrCreatePlayerDatum(string playerName, NetworkConnection caller = null)
+        void ServerLoadOrCreatePlayerDatum(string clientPlayerName, NetworkConnection caller = null)
         {
-            Debug.Log($"客户端 {playerName} 申请加载玩家数据");
+            Debug.Log($"客户端 {clientPlayerName} 申请加载玩家数据");
 
-            if (playerName.IsNullOrWhiteSpace())
+            if (clientPlayerName.IsNullOrWhiteSpace())
             {
-                playerName = defaultName;
-                Debug.Log($"{nameof(playerName)} 为空, 改为了 {defaultName}");
+                clientPlayerName = defaultName;
+                Debug.Log($"{nameof(clientPlayerName)} 为空, 改为了 {defaultName}");
             }
+
+            Debug.Log(this == null);
+            playerName = clientPlayerName;
 
             for (int i = 0; i < GFiles.world.playerData.Count; i++)
             {
                 PlayerData data = GFiles.world.playerData[i];
 
-                if (data.playerName == playerName)
+                if (data.playerName == clientPlayerName)
                 {
                     //加载服务器存档中的数据
-                    this.playerName = playerName;
                     regionIndex = data.currentRegion;
 
                     string oldInventory = JsonTools.ToJson(data.inventory);
@@ -1406,17 +1375,16 @@ namespace GameCore
                     thirstValue = data.thirstValue;
                     happinessValue = data.happinessValue;
                     health = data.health;
-                    ClientSetCompletedTasks(data.completedTasks);
+                    ClientSetCompletedTasks(data.completedTasks ?? new());
 
                     goto finish;
                 }
             }
 
             //如果没找到就新建
-            Debug.LogWarning($"未找到匹配的玩家信息 ({playerName})");
+            Debug.LogWarning($"未找到匹配的玩家信息 ({clientPlayerName})");
 
             //初始化新的临时数据
-            this.playerName = playerName;
             regionIndex = Vector2Int.zero;
             inventory = new(inventorySlotCount, this);
             hungerValue = defaultHungerValue;

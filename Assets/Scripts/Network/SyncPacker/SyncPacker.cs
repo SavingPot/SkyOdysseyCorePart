@@ -252,14 +252,46 @@ namespace GameCore
 
         public static bool _InstanceSet(IVarInstanceID __instance, object value, MethodBase __originalMethod)
         {
+#if DEBUG
+            try
+            {
+                var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
+                if (__instance == null)
+                    Debug.LogError($"调用实例同步变量赋值器 {path} 时出错! 实例为空");
+                var varInstanceId = __instance.varInstanceId;
+                var bytes = Rpc.ObjectToBytes(value);
+                SetValue(InstanceSetId(path, varInstanceId), bytes);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                throw;
+            }
+#else
             SetValue(InstanceSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", __instance.varInstanceId), Rpc.ObjectToBytes(value));
+#endif
             return false;
         }
 
         public static bool _InstanceGet(IVarInstanceID __instance, ref object __result, MethodBase __originalMethod)
         {
-            var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
-            __result = Rpc.BytesToObject(GetVar(InstanceGetId(path, __instance.varInstanceId)).value);
+#if DEBUG
+            try
+            {
+                var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
+                if (__instance == null)
+                    Debug.LogError($"调用实例同步变量赋值器 {path} 时出错! 实例为空");
+                var varInstanceId = __instance.varInstanceId;
+                __result = Rpc.BytesToObject(GetVar(InstanceGetId(path, varInstanceId)).value);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                throw;
+            }
+#else
+            __result = Rpc.BytesToObject(GetVar(InstanceGetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", __instance.varInstanceId)).value);
+#endif
             return false;
         }
 
@@ -272,8 +304,7 @@ namespace GameCore
 
         public static bool _StaticGet(ref object __result, MethodBase __originalMethod)
         {
-            var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
-            __result = Rpc.BytesToObject(GetVar(StaticGetId(path)).value);
+            __result = Rpc.BytesToObject(GetVar(StaticGetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}")).value);
             return false;
         }
 
@@ -363,12 +394,18 @@ namespace GameCore
 
                             if (!method.IsStatic)
                             {
-                                instanceGetIdCases.Add(Expression.SwitchCase(Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceGetIdParam_instance), Expression.Constant(methodPath)));
+                                instanceGetIdCases.Add(Expression.SwitchCase(
+                                    Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceGetIdParam_instance),
+                                    Expression.Constant(methodPath)
+                                ));
                                 harmony.Patch(method, new HarmonyMethod(_InstanceGet));
                             }
                             else
                             {
-                                staticGetIdCases.Add(Expression.SwitchCase(Expression.Constant(splitted[0]), Expression.Constant(methodPath)));
+                                staticGetIdCases.Add(Expression.SwitchCase(
+                                    Expression.Constant(splitted[0]),
+                                    Expression.Constant(methodPath)
+                                ));
                                 harmony.Patch(method, new HarmonyMethod(_StaticGet));
                             }
                         }
@@ -395,12 +432,18 @@ namespace GameCore
 
                             if (!method.IsStatic)
                             {
-                                instanceSetIdCases.Add(Expression.SwitchCase(Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceSetIdParam_instance), Expression.Constant(methodPath)));
+                                instanceSetIdCases.Add(Expression.SwitchCase(
+                                    Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceSetIdParam_instance),
+                                    Expression.Constant(methodPath)
+                                ));
                                 harmony.Patch(method, new HarmonyMethod(_InstanceSet));
                             }
                             else
                             {
-                                staticSetIdCases.Add(Expression.SwitchCase(Expression.Constant(splitted[0]), Expression.Constant(methodPath)));
+                                staticSetIdCases.Add(Expression.SwitchCase(
+                                    Expression.Constant(splitted[0]),
+                                    Expression.Constant(methodPath)
+                                ));
                                 harmony.Patch(method, new HarmonyMethod(_StaticSet));
                             }
                         }

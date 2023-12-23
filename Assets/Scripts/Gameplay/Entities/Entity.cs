@@ -12,7 +12,6 @@ using SP.Tools.Unity;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using TMPro;
 using Unity.Burst;
@@ -312,7 +311,7 @@ namespace GameCore
 
                 return true;
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 goto fail;
             }
@@ -898,7 +897,7 @@ namespace GameCore
     [Serializable]
     public class EntityData_Summon
     {
-        [LabelText("群系")] public string biome;
+        [LabelText("区域")] public string region;
         [LabelText("默认几率")] public float defaultProbability;
         [LabelText("最早时间")] public float timeEarliest;
         [LabelText("最晚时间")] public float timeLatest;
