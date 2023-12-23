@@ -24,8 +24,8 @@ namespace GameCore
         public bool generatedAlready;
 
         //单数!
-        public const int chunkCountX = 9;
-        public const int chunkCountY = 7;
+        public const int chunkCountX = 8 + 1;
+        public const int chunkCountY = 8 + 1;
         public const float chunkCountXReciprocal = 1f / chunkCountX;
         public const float chunkCountYReciprocal = 1f / chunkCountY;
         public const float halfChunkCountX = chunkCountX / 2f;
@@ -252,7 +252,7 @@ namespace GameCore
     [Serializable]
     public class BlockSave_Location
     {
-        [NonSerialized] public BlockSave block;
+        [NonSerialized] public BlockSave blockSave;
         public Vector2Int pos;
         public bool isBackground;
         [LabelText("自定义数据")] public string customData;
@@ -262,9 +262,9 @@ namespace GameCore
 
         }
 
-        public BlockSave_Location(BlockSave block, Vector2Int pos, bool isBackground, string customData)
+        public BlockSave_Location(BlockSave blockSave, Vector2Int pos, bool isBackground, string customData)
         {
-            this.block = block;
+            this.blockSave = blockSave;
             this.pos = pos;
             this.isBackground = isBackground;
             this.customData = customData;

@@ -559,6 +559,11 @@ namespace GameCore
             return new((int)((index.x + xDelta) * Region.chunkCountXReciprocal), (int)((index.y + yDelta) * Region.chunkCountYReciprocal));
         }
 
+        public static Vector2Int WorldPosToChunkIndex(Vector2 pos)
+        {
+            return BlockPosToChunkIndex(new((int)pos.x, (int)pos.y));
+        }
+
         public static Vector2Int WorldPosToRegionIndex(Vector2 pos)
         {
             return ChunkToRegionIndex(BlockPosToChunkIndex(new((int)pos.x, (int)pos.y)));

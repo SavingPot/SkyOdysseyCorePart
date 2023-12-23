@@ -796,18 +796,21 @@ namespace GameCore
 
 
             /* -------------------------------------------------------------------------- */
-            /*                                    生成方块                                    */
+            /*                                    生成浮岛                                    */
             /* -------------------------------------------------------------------------- */
             List<Vector2Int> islandCentersTemp = new()
             {
-                Vector2Int.zero
+                Vector2Int.zero,
+                new(40, 0),
+                new(-40, 0),
+                new(0, 40),
+                new(0, -40)
             };
 
 
-            Vector2Int[] islandCenters = islandCentersTemp.ToArray();
+            Vector2Int[] islandCenterPoints = islandCentersTemp.ToArray();
 
-            //TODO: 多线程生成每个岛屿
-            foreach (var island in islandCenters)
+            Parallel.ForEach(islandCenterPoints, islandCenterPoint =>
             {
                 IslandGeneration islandGeneration = generation.NewIsland();
                 BiomeData_Block[] directBlocks;
@@ -845,6 +848,7 @@ namespace GameCore
 
                 void AddBlockInTheIsland(string blockId, Vector2Int pos, bool isBackground)
                 {
+                    pos += islandCenterPoint;
                     blockAdded.Add((pos, isBackground));
 
                     islandGeneration.regionGeneration.region.AddPos(blockId, pos, isBackground, true);
@@ -852,6 +856,7 @@ namespace GameCore
 
                 void AddBlockInTheIslandForAreas(string blockId, Vector2Int pos, Vector3Int[] areas)
                 {
+                    pos += islandCenterPoint;
                     foreach (var item in areas)
                     {
                         Vector2Int actualPos = new(pos.x + item.x, pos.y + item.y);
@@ -887,7 +892,7 @@ namespace GameCore
                             if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
                             {
                                 if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
+                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.blockSave.blockId == g.attached.blockId)
                                 {
                                     foreach (var range in g.ranges)
                                     {
@@ -989,7 +994,7 @@ namespace GameCore
                         dic[pos.x] = pos.y;
                 }
 
-                if (island == Vector2Int.zero)
+                if (islandCenterPoint == Vector2Int.zero)
                 {
                     var middleX = Region.GetMiddleX(generation.index);
                     generation.region.spawnPoint = new(middleX, wallHighestPointFunction[middleX] + 3);
@@ -1008,7 +1013,7 @@ namespace GameCore
                             if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
                             {
                                 if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.block.blockId == g.attached.blockId)
+                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.blockSave.blockId == g.attached.blockId)
                                 {
                                     foreach (var range in g.ranges)
                                     {
@@ -1017,18 +1022,18 @@ namespace GameCore
 
                                         var formulaAlgebra = new FormulaAlgebra()
                                         {
-                                        {
-                                            "@bottom",islandGeneration.minPoint.y
-                                        },
-                                        {
-                                            "@surface", islandGeneration.surface
-                                        },
-                                        {
-                                            "@top", islandGeneration.maxPoint.y
-                                        },
-                                        {
-                                            "@highest_point", highestY
-                                        }
+                                            {
+                                                "@bottom", islandGeneration.minPoint.y
+                                            },
+                                            {
+                                                "@surface", islandGeneration.surface
+                                            },
+                                            {
+                                                "@top", islandGeneration.maxPoint.y
+                                            },
+                                            {
+                                                "@highest_point", highestY
+                                            }
                                         };
 
                                         if (string.IsNullOrWhiteSpace(range.minFormula) ||
@@ -1085,7 +1090,7 @@ namespace GameCore
                                     //检查是否满足所有需求
                                     foreach (var require in l.structure.require)
                                     {
-                                        if (!islandGeneration.regionGeneration.region.GetBlockOut(pos + require.offset, require.isBackground, out BlockSave_Location temp) || temp.block.blockId != require.blockId)
+                                        if (!islandGeneration.regionGeneration.region.GetBlockOut(pos + require.offset, require.isBackground, out BlockSave_Location temp) || temp.blockSave.blockId != require.blockId)
                                         {
                                             goto stopGeneration;
                                         }
@@ -1105,7 +1110,7 @@ namespace GameCore
                             });
                         };
                 }
-            }
+            });
 
 
 
@@ -1119,6 +1124,31 @@ namespace GameCore
             generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(0, -1), false, true);
             generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-1, -1), false, true);
             generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(1, -1), false, true);
+
+
+
+
+
+            /* -------------------------------------------------------------------------- */
+            /*                                   加上区域边界                                   */
+            /* -------------------------------------------------------------------------- */
+            for (int x = generation.minPoint.x; x < generation.maxPoint.x; x++)
+            {
+                for (int y = generation.minPoint.y; y < generation.maxPoint.y; y++)
+                {
+                    if (x == generation.minPoint.x || y == generation.minPoint.x || x == generation.maxPoint.x || y == generation.maxPoint.y)
+                    {
+                        Vector2Int pos = new(x, y);
+
+                        //删除边界上的任何方块
+                        generation.region.RemovePos(pos, false);
+                        generation.region.RemovePos(pos, true);
+                        
+                        //添加边界方块
+                        generation.region.AddPos(BlockID.Boundary, portalMiddle, false, true);
+                    }
+                }
+            }
 
 
 

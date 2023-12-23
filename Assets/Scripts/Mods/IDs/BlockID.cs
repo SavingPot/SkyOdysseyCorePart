@@ -4,6 +4,7 @@ namespace GameCore
     {
         public const string Barrel = "ori:barrel";
         public const string BerryBush = "ori:berry_bush";
+        public const string Boundary = "ori:boundary";
         public const string Bush = "ori:bush";
         public const string Cactus = "ori:cactus";
         public const string Campfire = "ori:campfire";

@@ -49,6 +49,10 @@ namespace GameCore
                     _mainCameraController = Camera.main.gameObject.GetOrAddComponent<CameraController>(); return _mainCameraController;
             }
         }
+        public float viewLeftSideWorldPos;
+        public float viewRightSideWorldPos;
+        public float viewUpSideWorldPos;
+        public float viewDownSideWorldPos;
         private static StreamWriter logStreamWriter;
         public const ushort defaultPort = 24442;
 
@@ -197,6 +201,14 @@ namespace GameCore
 
             screenWidthLastFrame = Screen.width;
             screenHeightLastFrame = Screen.height;
+
+            if (mainCamera)
+            {
+                viewLeftSideWorldPos = mainCamera.ViewportToWorldPoint(new(0f, 0.5f)).x;
+                viewRightSideWorldPos = mainCamera.ViewportToWorldPoint(new(1f, 0.5f)).x;
+                viewUpSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 1f)).y;
+                viewDownSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 0f)).y;
+            }
         }
 
         [FixedUpdateChineseName]

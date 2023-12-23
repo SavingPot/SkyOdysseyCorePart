@@ -13,7 +13,7 @@ namespace GameCore.High
 {
     public class Chunk : MonoBehaviour
     {
-        public const int blockCountPerAxis = 17;
+        public const int blockCountPerAxis = 24 + 1;
         public const float blockCountPerAxisReciprocal = 1f / blockCountPerAxis;
         public const float halfBlockCountPerAxis = blockCountPerAxis / 2f;
         public const int blockCountSingleLayer = blockCountPerAxis * blockCountPerAxis;
@@ -32,15 +32,10 @@ namespace GameCore.High
         public float up { get; private set; }
         public float down { get; private set; }
 
-        public Vector3 leftUpPoint { get; private set; }
-        public Vector3 leftDownPoint { get; private set; }
-        public Vector3 rightUpPoint { get; private set; }
-        public Vector3 rightDownPoint { get; private set; }
-
         public int regionMiddleX;
         public int regionMiddleY;
 
-        public bool inView { get; private set; }
+        public bool outOfView { get; private set; }
 
         #region 实现接口
         public Tools tools => Tools.instance;
@@ -54,18 +49,14 @@ namespace GameCore.High
             up = transform.position.y + halfBlockCountPerAxis + 0.5f;
             down = transform.position.y - halfBlockCountPerAxis - 0.5f;
 
-            leftUpPoint = new(left, up);
-            leftDownPoint = new(left, down);
-            rightUpPoint = new(right, up);
-            rightDownPoint = new(right, down);
-
             regionMiddleX = Region.GetMiddleX(regionIndex);
             regionMiddleY = Region.GetMiddleY(regionIndex);
         }
 
-        public bool InView()
+        public bool OutOfView()
         {
-            return tools.IsInView2D(leftUpPoint) || tools.IsInView2D(leftDownPoint) || tools.IsInView2D(rightUpPoint) || tools.IsInView2D(rightDownPoint);
+            return left > tools.viewRightSideWorldPos || right < tools.viewLeftSideWorldPos || down > tools.viewUpSideWorldPos || up < tools.viewDownSideWorldPos;
+            //return tools.IsInView2D(leftUpPoint) || tools.IsInView2D(leftDownPoint) || tools.IsInView2D(rightUpPoint) || tools.IsInView2D(rightDownPoint);
         }
 
         private void Start()
@@ -78,9 +69,9 @@ namespace GameCore.High
             if (!tools.mainCamera)
                 return;
 
-            inView = InView();
+            outOfView = OutOfView();
 
-            if (!inView)
+            if (outOfView)
             {
                 if (totalRendererEnabled)
                 {
@@ -96,57 +87,11 @@ namespace GameCore.High
             }
         }
 
-        private bool ShouldRecoverRegion(Player localPlayer)
-        {
-            int deltaX = Mathf.Abs(localPlayer.regionIndex.x - regionIndex.x);
-            int deltaY = Mathf.Abs(localPlayer.regionIndex.y - regionIndex.y);
-
-            if (deltaX > 1 || deltaY > 1)
-            {
-                //如果是服务器的话, 还要考虑别的玩家离这里禁不禁
-                if (Server.isServer)
-                {
-                    foreach (Player player in PlayerCenter.all)
-                    {
-                        if (player == localPlayer)
-                            continue;
-
-                        deltaX = Mathf.Abs(player.regionIndex.x - regionIndex.x);
-                        deltaY = Mathf.Abs(player.regionIndex.y - regionIndex.y);
-
-                        if (deltaX <= 1 || deltaY <= 1)
-                        {
-                            return false;
-                        }
-                    }
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
 
         private void FixedUpdate()
         {
             if (!Player.GetLocal(out Player localPlayer) || SyncPacker.vars.Count == 0 || !localPlayer.TryGetRegion(out _))
             {
-                return;
-            }
-
-            /* ---------------------------------- 回收区域 ---------------------------------- */
-            if (localPlayer.regionIndex != regionIndex)
-            {
-                //执行回收区域 (生成区域时不回收)
-                if (!managerGame.generatingExistingRegion)
-                {
-                    if (ShouldRecoverRegion(localPlayer))
-                    {
-                        RecoverTotalRegion();
-                    }
-                }
-
                 return;
             }
 

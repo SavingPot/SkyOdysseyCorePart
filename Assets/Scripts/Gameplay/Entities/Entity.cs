@@ -294,6 +294,7 @@ namespace GameCore
         [SyncGetter] Vector2Int regionIndex_get() => default; [SyncSetter] void regionIndex_set(Vector2Int value) { }
         static Vector2Int regionIndex_default() => Vector2Int.zero;
         [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex { get => regionIndex_get(); set => regionIndex_set(value); }
+        public Vector2Int chunkIndex;
 
         private void OnRegionIndexChangeMethod()
         {
@@ -463,6 +464,8 @@ namespace GameCore
 
         protected virtual void Update()
         {
+            chunkIndex = PosConvert.WorldPosToChunkIndex(transform.position);
+
             if (isServer)
                 ServerUpdate();
         }

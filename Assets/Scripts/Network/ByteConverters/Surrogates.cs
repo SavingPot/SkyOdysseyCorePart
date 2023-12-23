@@ -272,6 +272,32 @@ namespace GameCore
 
 
 
+        public class BlockSave_LocationSurrogate : ISerializationSurrogate<BlockSave_Location>
+        {
+            public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
+            {
+                BlockSave_Location location = (BlockSave_Location)obj;
+                info.AddValue("x", location.pos.x);
+                info.AddValue("y", location.pos.y);
+                info.AddValue("bg", location.isBackground);
+                info.AddValue("cd", location.customData == null ? null : ByteConverter.ToBytes(location.customData.ToString()));
+            }
+
+            public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
+            {
+                var x = (int)info.GetValue("x", typeof(int));
+                var y = (int)info.GetValue("y", typeof(int));
+                var bg = (bool)info.GetValue("bg", typeof(bool));
+                var cd = (byte[])info.GetValue("cd", typeof(byte[]));
+
+                return new BlockSave_Location(null, new(x, y), bg, cd == null ? null : ByteConverter.ToString(cd));
+            }
+        }
+
+
+
+
+
         public class AudioClipSurrogate : ISerializationSurrogate<AudioClip>
         {
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
