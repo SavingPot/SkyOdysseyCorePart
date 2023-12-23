@@ -576,6 +576,41 @@ namespace GameCore
             return temp;
         }
 
+        public static RegionTheme LoadRegionTheme(JObject jo)
+        {
+            if (jo == null)
+            {
+                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
+                return null;
+            }
+
+            var format = GetCorrectJsonFormatByJObject(jo);
+
+            RegionTheme temp = new()
+            {
+                jo = jo,
+                jsonFormat = format,
+            };
+
+            //0.4.5 -> 0.
+            string jfToLoad = string.Empty;
+            if (GameTools.CompareVersions(format, "0.7.8", Operators.thanOrEqual))
+            {
+                jfToLoad = "0.7.8";
+            }
+
+            temp.jsonFormatWhenLoad = jfToLoad;
+
+            if (jfToLoad == "0.7.8")
+            {
+                temp.id = jo["ori:region_theme"]?["id"]?.ToString();
+                temp.distribution = jo["ori:region_theme"]?["distribution"]?.ToString()?.ToInt() ?? 0;
+                temp.biomes = jo["ori:region_theme"]?["biomes"]?.ToObject<string[]>() ?? new string[] { BiomeID.Center };
+            }
+
+            return temp;
+        }
+
         public static BiomeBlockPrefab LoadBiomeBlockPrefab(JObject jo)
         {
             if (jo == null)
@@ -738,7 +773,6 @@ namespace GameCore
                 temp.jsonFormatWhenLoad = jfToLoad;
 
                 temp.id = ModCreate.GetStr(temp, "data.biome.id");
-                temp.difficulty = jo["ori:biome"]["difficulty"].ToInt();
                 temp.minSize = ModCreate.Get(temp, "data.biome.size_scope.min")?.ToVector2Int() ?? Vector2Int.zero;
                 temp.maxSize = ModCreate.Get(temp, "data.biome.size_scope.max")?.ToVector2Int() ?? Vector2Int.zero;
 

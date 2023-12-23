@@ -141,7 +141,7 @@ namespace GameCore
         public void TakeDamage(float damage)
         {
             lastDamageTime = Time.time;
-            health -= damage / data.hardness / 2;
+            health -= damage / data.hardness;
             scaleAnimationTween = transform.DOScale(blockDamageScale, 0.1f).OnStepComplete(() => transform.DOScale(Vector3.one, 0.1f));
             shakeRotationTween = transform.DOShakeRotation(0.1f, new Vector3(0, 0, 15));
         }

@@ -260,6 +260,12 @@ namespace GameCore
         [ChineseName("在指定的模组中匹配结构")] public static StructureData CompareStructure(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.structures, new() { id = id });
 
 
+        [ChineseName("在已加载的全局模组中匹配区域主题")] public static RegionTheme CompareRegionTheme(string id) => CompareRegionTheme(id, mods);
+
+        [ChineseName("在指定的模组中匹配区域主题")] public static RegionTheme CompareRegionTheme(string id, Mod targetMod) => CompareRegionTheme(id, new[] { targetMod });
+
+        [ChineseName("在指定的模组中匹配区域主题")] public static RegionTheme CompareRegionTheme(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.regionThemes, null);
+
         [ChineseName("在已加载的全局模组中匹配群系方块预置")] public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id) => CompareBiomeBlockPrefab(id, mods);
 
         [ChineseName("在指定的模组中匹配群系方块预置")] public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id, Mod targetMod) => CompareBiomeBlockPrefab(id, new[] { targetMod });
@@ -349,6 +355,7 @@ namespace GameCore
         public static string GetBlocksPath(string modPath) => Path.Combine(modPath, "blocks");
         public static string GetTerrainBlocksPath(string modPath) => Path.Combine(GetBlocksPath(modPath), "terrains");
         public static string GetWallBlocksPath(string modPath) => Path.Combine(GetBlocksPath(modPath), "walls");
+        public static string GetRegionThemesPath(string modPath) => Path.Combine(modPath, "region_themes");
         public static string GetBiomePath(string modPath) => Path.Combine(modPath, "biomes");
         public static string GetBiomePrefabPath(string modPath) => Path.Combine(GetBiomePath(modPath), "prefabs");
         public static string GetBiomeBlockPrefabPath(string modPath) => Path.Combine(GetBiomePrefabPath(modPath), "blocks");
@@ -522,6 +529,7 @@ namespace GameCore
             string blocksPath = GetBlocksPath(modPath);
             //string terrainBlocksPath = GetTerrainBlocksPath(modPath);
             //string wallBlocksPath = GetWallBlocksPath(modPath);
+            string regionThemesPath = GetRegionThemesPath(modPath);
             string biomesPath = GetBiomePath(modPath);
             string biomePrefabPath = GetBiomePrefabPath(modPath);
             string biomeBlockPrefabPath = GetBiomeBlockPrefabPath(modPath);
@@ -535,9 +543,6 @@ namespace GameCore
             string itemsPath = GetItemsPath(modPath);
 
             string spellsPath = GetSpellsPath(modPath);
-
-            int longSleepTime = 0;//75;
-            int shortSleepTime = 0;//8;
 
             //Debug.Log("尝试加载新模组");
 
@@ -578,8 +583,6 @@ namespace GameCore
                     }
                     #endregion
                 }
-
-                Thread.Sleep(longSleepTime);
                 #endregion
 
                 #region 加载方块
@@ -595,7 +598,6 @@ namespace GameCore
 
                         newMod.blocks.Add(bI.Key);
                         newMod.items.Add(bI.Value);
-                        Thread.Sleep(shortSleepTime);
                     }, true);
 
                     //if (Directory.Exists(terrainTilesPath)) MethodAgent.RunInTry(() =>
@@ -669,8 +671,6 @@ namespace GameCore
                     //    }, true);
                     //}
                 }
-
-                Thread.Sleep(longSleepTime);
                 #endregion
 
                 #region 加载结构
@@ -685,7 +685,21 @@ namespace GameCore
                         var temp = ModLoading.LoadStructure(jo);
 
                         newMod.structures.Add(temp);
-                        Thread.Sleep(shortSleepTime);
+                    }, true);
+                }
+                #endregion
+
+                #region 加载区域主题
+                if (Directory.Exists(regionThemesPath))
+                {
+                    string[] regionThemesPaths = IOTools.GetFilesInFolder(regionThemesPath, true, "json");
+
+                    for (int b = 0; b < regionThemesPaths.Length; b++) MethodAgent.TryRun(() =>
+                    {
+                        JObject jo = JsonTools.LoadJObjectByPath(regionThemesPaths[b]);
+                        var temp = ModLoading.LoadRegionTheme(jo);
+
+                        newMod.regionThemes.Add(temp);
                     }, true);
                 }
                 #endregion
@@ -703,10 +717,7 @@ namespace GameCore
                             var temp = ModLoading.LoadBiomeBlockPrefab(jo);
 
                             newMod.biomeBlockPrefabs.Add(temp);
-                            Thread.Sleep(shortSleepTime);
                         }, true);
-
-                        Thread.Sleep(longSleepTime);
                     }
                 }
 
@@ -720,10 +731,7 @@ namespace GameCore
                         var temp = ModLoading.LoadBiome(jo);
 
                         newMod.biomes.Add(temp);
-                        Thread.Sleep(shortSleepTime);
                     }, true);
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 
@@ -740,11 +748,7 @@ namespace GameCore
                         GameLang newText = ModLoading.LoadText(jo);
                         AddToFinalText(newText);
                         newMod.langs.Add(newText);
-
-                        Thread.Sleep(shortSleepTime);
                     }, true);
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 
@@ -755,8 +759,6 @@ namespace GameCore
                     JObject jo = JsonTools.LoadJObjectByPath(audioSettingsPath);
 
                     newMod.audios = ModLoading.LoadFromAudioSettings(jo, modPath);
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 
@@ -771,10 +773,7 @@ namespace GameCore
                         ItemData newItem = ModLoading.LoadItem(jo);
 
                         newMod.items.Add(newItem);
-                        Thread.Sleep(shortSleepTime);
                     }, true));
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 
@@ -789,10 +788,7 @@ namespace GameCore
                         Spell spell = ModLoading.LoadSpell(jo);
 
                         newMod.spells.Add(spell);
-                        Thread.Sleep(shortSleepTime);
                     }, true));
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 
@@ -807,10 +803,7 @@ namespace GameCore
                         CraftingRecipe newCR = ModLoading.LoadCraftingRecipe(jo);
 
                         newMod.craftingRecipes.Add(newCR);
-                        Thread.Sleep(shortSleepTime);
                     }, true));
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 
@@ -825,10 +818,7 @@ namespace GameCore
                         CookingRecipe newCR = ModLoading.LoadCookingRecipe(jo);
 
                         newMod.cookingRecipes.Add(newCR);
-                        Thread.Sleep(shortSleepTime);
                     }, true));
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 
@@ -852,8 +842,6 @@ namespace GameCore
                         assemblies.Add(Tools.coreAssembly);
                         LoadDLLInternal(Tools.coreAssembly.GetTypes(), string.Empty, newMod);
                     }
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 
@@ -869,14 +857,9 @@ namespace GameCore
                         EntityData newEntity = ModLoading.LoadEntity(jo, p);
 
                         newMod.entities.Add(newEntity);
-                        Thread.Sleep(shortSleepTime);
                     }, true));
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
-
-                Thread.Sleep(longSleepTime);
 
 
                 mods.Add(newMod);
@@ -889,8 +872,6 @@ namespace GameCore
                         GScene.Next();
                         MethodAgent.QueueOnMainThread(_ => Tools.NewObjectToComponent(typeof(InternalUIAdder)));
                     });
-
-                    Thread.Sleep(longSleepTime);
                 }
                 #endregion
 

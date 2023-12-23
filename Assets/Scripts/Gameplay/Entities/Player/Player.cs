@@ -632,9 +632,10 @@ namespace GameCore
                 //如果按S
                 if (PlayerControls.PlaceBlockUnderPlayer(this))
                 {
+                    var usingItem = TryGetUsingItem();
                     var behaviour = TryGetUsingItemBehaviour();
 
-                    if (behaviour != null)
+                    if (usingItem != null && behaviour != null && usingItem.data.isBlock)
                     {
                         var downPoint = mainCollider.DownPoint();
                         behaviour.UseAsBlock(PosConvert.WorldToMapPos(new(downPoint.x, downPoint.y - 1)), false);
@@ -1243,16 +1244,16 @@ namespace GameCore
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         [Button]
-        public void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string[] specificBiomes = null)
+        public void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme = null)
         {
             askingForGeneratingRegion = true;
 
-            ServerGenerateRegionCore(index, isFirstGeneration, specificBiomes);
+            ServerGenerateRegionCore(index, isFirstGeneration, specificTheme);
         }
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         [ServerRpc]
-        private void ServerGenerateRegionCore(Vector2Int index, bool isFirstGeneration, string[] specificBiomes, NetworkConnection caller = null)
+        private void ServerGenerateRegionCore(Vector2Int index, bool isFirstGeneration, string specificTheme, NetworkConnection caller = null)
         {
             MethodAgent.TryRun(() =>
             {
@@ -1261,7 +1262,7 @@ namespace GameCore
                 MethodAgent.RunThread(() =>
                 {
                     //如果没有则生成新的区域
-                    GM.instance.GenerateNewRegion(index, specificBiomes);
+                    GM.instance.GenerateNewRegion(index, specificTheme);
 
                     //如果有直接让服务器生成
                     lock (GFiles.world.regionData)

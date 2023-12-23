@@ -13,7 +13,6 @@ namespace GameCore
     [Serializable]
     public class BiomeData : ModClass, ITags
     {
-        [LabelText("难度")] public int difficulty;
         [LabelText("最小尺寸")] public Vector2Int minSize;
         [LabelText("最大尺寸")] public Vector2Int maxSize;
         [LabelText("随机实体"), NonSerialized] public List<RandomEntityData> randomEntityData = new();
