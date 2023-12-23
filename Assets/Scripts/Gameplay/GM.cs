@@ -801,10 +801,10 @@ namespace GameCore
             List<Vector2Int> islandCentersTemp = new()
             {
                 Vector2Int.zero,
-                new(40, 0),
-                new(-40, 0),
-                new(0, 40),
-                new(0, -40)
+                new(60, 0),
+                new(-60, 0),
+                new(0, 60),
+                new(0, -60)
             };
 
 
@@ -955,18 +955,7 @@ namespace GameCore
                                 {
                                     var blockPos = new Vector2Int(noise.x, startY + i);
 
-                                    lock (blockAdded)
-                                    {
-                                        for (int c = 0; c < blockAdded.Count; c++)
-                                        {
-                                            var p = blockAdded[c];
-                                            if (p.pos == blockPos && p.isBackground == block.isBackground)
-                                                blockAdded.RemoveAt(c);
-                                        }
-                                        blockAdded.Add((blockPos, block.isBackground));
-                                    }
-
-                                    islandGeneration.regionGeneration.region.AddPos(block.block, blockPos, block.isBackground, true);
+                                    AddBlockInTheIsland(block.block, blockPos, block.isBackground);
                                     break;
                                 }
                             }
@@ -992,12 +981,6 @@ namespace GameCore
                         dic.Add(pos.x, pos.y);
                     else if (dic[pos.x] < pos.y)  //如果该 x 值已经被记录过, 但是记录的 y 值比当前 y 值要小, 那就更新记录的 y 值
                         dic[pos.x] = pos.y;
-                }
-
-                if (islandCenterPoint == Vector2Int.zero)
-                {
-                    var middleX = Region.GetMiddleX(generation.index);
-                    generation.region.spawnPoint = new(middleX, wallHighestPointFunction[middleX] + 3);
                 }
 
                 //遍历每个点
@@ -1050,6 +1033,12 @@ namespace GameCore
                             }
                         }
                     });
+                }
+
+                if (islandCenterPoint == Vector2Int.zero)
+                {
+                    var middleX = Region.GetMiddleX(generation.index);
+                    generation.region.spawnPoint = new(middleX, wallHighestPointFunction[middleX] + 3);
                 }
 
                 //生成战利品
@@ -1143,7 +1132,7 @@ namespace GameCore
                         //删除边界上的任何方块
                         generation.region.RemovePos(pos, false);
                         generation.region.RemovePos(pos, true);
-                        
+
                         //添加边界方块
                         generation.region.AddPos(BlockID.Boundary, portalMiddle, false, true);
                     }

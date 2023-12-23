@@ -24,8 +24,8 @@ namespace GameCore
         public bool generatedAlready;
 
         //单数!
-        public const int chunkCountX = 8 + 1;
-        public const int chunkCountY = 8 + 1;
+        public const int chunkCountX = 12 + 1;
+        public const int chunkCountY = 12 + 1;
         public const float chunkCountXReciprocal = 1f / chunkCountX;
         public const float chunkCountYReciprocal = 1f / chunkCountY;
         public const float halfChunkCountX = chunkCountX / 2f;

@@ -10,36 +10,6 @@ using SP.Tools;
 
 namespace GameCore
 {
-    public interface IJsonFormat
-    {
-        string jsonFormat { get; set; }
-    }
-
-    public interface IJsonFormatWhenLoad
-    {
-        string jsonFormatWhenLoad { get; set; }
-    }
-
-    public interface IJObject
-    {
-        JObject jo { get; set; }
-    }
-
-    public interface IJToken
-    {
-        JToken jt { get; set; }
-    }
-
-    public interface IJOFormatCore : IJsonFormat, IJsonFormatWhenLoad, IJObject
-    {
-
-    }
-
-    public interface IJOFormatCoreChild : IJsonFormat, IJsonFormatWhenLoad, IJToken
-    {
-
-    }
-
     [Serializable]
     public class BiomeData : ModClass, ITags
     {
