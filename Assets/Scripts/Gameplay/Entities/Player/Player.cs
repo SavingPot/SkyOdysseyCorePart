@@ -122,8 +122,24 @@ namespace GameCore
                             pui.CompleteTask("ori:get_flint_knife");
                             break;
 
+                        case ItemID.FlintHoe:
+                            pui.CompleteTask("ori:get_flint_hoe");
+                            break;
+
                         case ItemID.FlintSword:
                             pui.CompleteTask("ori:get_flint_sword");
+                            break;
+
+                        case ItemID.IronKnife:
+                            pui.CompleteTask("ori:get_iron_knife");
+                            break;
+
+                        case ItemID.IronHoe:
+                            pui.CompleteTask("ori:get_iron_hoe");
+                            break;
+
+                        case ItemID.IronSword:
+                            pui.CompleteTask("ori:get_iron_sword");
                             break;
 
                         case ItemID.Bark:
