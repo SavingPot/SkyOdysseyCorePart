@@ -17,6 +17,14 @@ namespace GameCore.High
         };
         public static event Action<NetworkConnectionToClient> OnClientConnect = conn =>
         {
+            //如果是 Host 模式, 且客户端不是 Host 连接, 就检查服务器是否还未添加玩家或是未加载第一区域, 如果是就断开连接
+            if (Client.isClient && conn != Server.localConnection && (!Player.TryGetLocal(out Player player) || !player.generatedFirstRegion))
+            {
+                Debug.LogWarning($"客户端 {conn.address} (id={conn.connectionId}) 加入服务器时, 服务器正在加载第一区域, 请稍等");
+                conn.Disconnect();
+                return;
+            }
+
             Debug.Log($"新客户端接入, 地址为 {conn.address}, 目前共有 {NetworkServer.connections.Count} 名玩家");
         };
         public static event Action<NetworkConnectionToClient> OnClientDisconnect = conn =>
@@ -176,16 +184,25 @@ namespace GameCore.High
             if (data != null)
             {
                 //生成并添加实体数据
+                EntitySave saveDatum = new()
+                {
+                    id = n.entityId,
+                    pos = n.pos,
+                    saveId = n.saveId,
+                    customData = n.customData,
+                    health = n.health
+                };
+
                 if (n.autoDatum)
                 {
-                    EntitySave saveDatum = new()
+                    if (GFiles.world.TryGetRegion(PosConvert.WorldPosToRegionIndex(saveDatum.pos), out var region))
                     {
-                        id = n.entityId,
-                        pos = n.pos,
-                        saveId = n.saveId,
-                        customData = n.customData
-                    };
-                    GFiles.world.GetRegion(PosConvert.WorldPosToRegionIndex(saveDatum.pos)).entities.Add(saveDatum);
+                        region.entities.Add(saveDatum);
+                    }
+                    else
+                    {
+                        Debug.LogError($"尝试把实体存档添加到世界时失败! 位置: {n.pos}");
+                    }
                 }
 
                 //在服务器生成并初始化
@@ -193,11 +210,9 @@ namespace GameCore.High
 
                 /* ---------------------------------- 执行初始化 --------------------------------- */
                 init.generationId = data.id;
-                init.customData = JsonTools.LoadJObjectByString(n.customData);
                 init.data = data;
+                init.save = saveDatum;
                 init.gameObject.name = data.id;
-                init.saveId = n.saveId;
-                init.health = n.health;
 
                 OnServerSummonEntity(init, data, n, conn);
                 NetworkServer.Spawn(init.gameObject);

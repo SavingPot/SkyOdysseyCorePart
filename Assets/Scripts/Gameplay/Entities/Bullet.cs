@@ -9,8 +9,6 @@ namespace GameCore
     {
         public bool destroyOnHit = true;
         public float damage;
-        public float livingTime = 10;
-        public float timeToClear;
         public uint ownerId;
         [HideInInspector] public Collider2D[] besideObjectsDetected = new Collider2D[15];
 
@@ -28,46 +26,33 @@ namespace GameCore
             {
                 Death();
             }
-
-            if (isServer)
-            {
-                timeToClear = Tools.time + livingTime;
-            }
         }
 
-        protected override void Update()
+        protected override void ServerUpdate()
         {
-            base.Update();
+            base.ServerUpdate();
 
             if (isDead)
                 return;
 
-            if (isServer)
+            Physics2D.OverlapCircleNonAlloc(transform.position, 0.3f, besideObjectsDetected);
+            foreach (var obj in besideObjectsDetected)
             {
-                if (Tools.time >= timeToClear)
+                if (!obj)
                 {
-                    Death();
+                    break;
                 }
 
-                Physics2D.OverlapCircleNonAlloc(transform.position, 0.3f, besideObjectsDetected);
-                foreach (var obj in besideObjectsDetected)
+                if (obj.gameObject.TryGetComponent<Creature>(out var hit) && hit.netId != ownerId)
                 {
-                    if (!obj)
-                    {
-                        break;
-                    }
+                    hit.TakeDamage(damage, 0.2f, transform.position, Vector2.zero);
 
-                    if (obj.gameObject.TryGetComponent<Creature>(out var hit) && hit.netId != ownerId)
-                    {
-                        hit.TakeDamage(damage, 0.2f, transform.position, Vector2.zero);
-
-                        if (destroyOnHit)
-                            Death();
-                    }
-                    else if (obj.gameObject.TryGetComponent<Block>(out var block) && !block.blockCollider.isTrigger)
-                    {
-                        BlockCollision(block);
-                    }
+                    if (destroyOnHit)
+                        Death();
+                }
+                else if (obj.gameObject.TryGetComponent<Block>(out var block) && !block.blockCollider.isTrigger)
+                {
+                    BlockCollision(block);
                 }
             }
         }

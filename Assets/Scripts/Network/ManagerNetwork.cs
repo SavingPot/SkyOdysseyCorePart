@@ -156,6 +156,129 @@ namespace GameCore.High
 
             NetworkCallbacks.OnTimeToServerCallback += () =>
             {
+                Server.Callback<NMAddPlayer>((conn, nm) =>
+                {
+                    //TODO: 告诉客户端为什么被踢了, 并等待客户端的回复, 客户端自行断开连接, 如果客户端长时间不回复就直接断连
+                    /* --------------------------------- 检查游戏版本 --------------------------------- */
+                    if (nm.gameVersion != GInit.gameVersion)
+                    {
+                        Debug.LogWarning($"客户端 {conn.address} (id={conn.connectionId}) 与服务器游戏版本不一致, 不允许共同游玩");
+                        conn.Disconnect();
+                        return;
+                    }
+
+                    /* --------------------------------- 检查玩家名称 --------------------------------- */
+                    if (nm.playerName.IsNullOrWhiteSpace())
+                    {
+                        Debug.LogWarning($"客户端 {conn.address} (id={conn.connectionId}) 的玩家名为空");
+                        conn.Disconnect();
+                        return;
+                    }
+
+                    /* ---------------------------------- 检查模组 ---------------------------------- */
+                    List<(string modId, string modVersion)> unexpectedMods = new();
+                    //检查客户端是否不包含服务器的模组
+                    foreach (var serverMod in ModFactory.mods)
+                    {
+                        for (int clientModIndex = 0; clientModIndex < nm.modIds.Count; clientModIndex++)
+                        {
+                            var clientModId = nm.modIds[clientModIndex];
+                            var clientModVersion = nm.modVersions[clientModIndex];
+
+                            if (serverMod.info.id == clientModId && serverMod.info.version == clientModVersion)
+                            {
+                                goto thisModIsOkay;
+                            }
+                        }
+
+                        unexpectedMods.Add((serverMod.info.id, serverMod.info.version));
+
+                    thisModIsOkay: { }
+                    }
+                    //检查服务器是否不包含客户端的模组
+                    for (int clientModIndex = 0; clientModIndex < nm.modIds.Count; clientModIndex++)
+                    {
+                        var clientModId = nm.modIds[clientModIndex];
+                        var clientModVersion = nm.modVersions[clientModIndex];
+
+                        foreach (var serverMod in ModFactory.mods)
+                        {
+                            if (serverMod.info.id == clientModId && serverMod.info.version == clientModVersion)
+                            {
+                                goto thisModIsOkay;
+                            }
+                        }
+
+                        unexpectedMods.Add((clientModId, clientModVersion));
+
+                    thisModIsOkay: { }
+                    }
+
+                    if (unexpectedMods.Count != 0)
+                    {
+                        string errorMessage = $"客户端 {conn.address} (id={conn.connectionId}) 的模组列表与服务器不一致!";
+                        foreach (var item in unexpectedMods)
+                        {
+                            errorMessage += $"{item}\n";
+                        }
+                        return;
+                    }
+
+                    /* --------------------------------- 检查玩家皮肤 --------------------------------- */
+                    if (nm.skinHead == null || nm.skinBody == null || nm.skinLeftArm == null || nm.skinRightArm == null || nm.skinLeftLeg == null || nm.skinRightLeg == null || nm.skinLeftFoot == null || nm.skinRightFoot == null)
+                    {
+                        Debug.LogWarning($"客户端 {conn.address} (id={conn.connectionId}) 的一个或多个皮肤部位精灵为空");
+                        conn.Disconnect();
+                        return;
+                    }
+
+                    /* ------------------------------- 检查完毕, 创建玩家 ------------------------------- */
+                    GameObject player = Instantiate(playerPrefab);
+                    player.name = $"Player {nm.playerName} [{conn.address}, id={conn.connectionId}]";
+
+                    //TODO: Move the player data set to here?
+                    var init = player.GetComponent<EntityInit>();
+                    init.generationId = EntityID.Player;
+                    init.data = ModFactory.CompareEntity(EntityID.Player);
+
+                    PlayerSave playerSaveTemp = null;
+                    foreach (var save in GFiles.world.playerSaves)
+                    {
+                        if (save.id == nm.playerName)
+                        {
+                            playerSaveTemp = save;
+                        }
+                    }
+                    if (playerSaveTemp == null)
+                    {
+                        playerSaveTemp = new PlayerSave()
+                        {
+                            id = nm.playerName,
+                            inventory = new(Player.inventorySlotCount, null),
+                            hungerValue = Player.defaultHungerValue,
+                            thirstValue = Player.defaultThirstValue,
+                            happinessValue = Player.defaultHappinessValue,
+                            completedTasks = new()
+                        };
+
+                        GFiles.world.playerSaves.Add(playerSaveTemp);
+                        Debug.LogWarning($"未在存档中匹配到玩家 {nm.playerName} 的数据, 已自动添加");
+                    }
+
+                    playerSaveTemp.skinHead = nm.skinHead;
+                    playerSaveTemp.skinBody = nm.skinBody;
+                    playerSaveTemp.skinLeftArm = nm.skinLeftArm;
+                    playerSaveTemp.skinRightArm = nm.skinRightArm;
+                    playerSaveTemp.skinLeftLeg = nm.skinLeftLeg;
+                    playerSaveTemp.skinRightLeg = nm.skinRightLeg;
+                    playerSaveTemp.skinLeftFoot = nm.skinLeftFoot;
+                    playerSaveTemp.skinRightFoot = nm.skinRightFoot;
+
+                    init.save = playerSaveTemp;
+
+                    NetworkServer.AddPlayerForConnection(conn, player);
+                    NetworkCallbacks.CallOnAddPlayer(conn);
+                });
                 Server.Callback<NMSummon>(NetworkCallbacks.SummonEntity);
                 Server.Callback<NMClientChangeScene>(OnServerGetNMClientChangeScene);
                 Server.Callback<NMRpc>(SrvGet_TypeWithNetCaller_Method);
@@ -289,20 +412,6 @@ namespace GameCore.High
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
 
-        }
-
-        public void AddPlayer(NetworkConnectionToClient conn)
-        {
-            GameObject player = Instantiate(playerPrefab);
-            player.name = $"{player.name} [{conn.address}:{conn.connectionId}]";
-            
-            //TODO: Move the player data set to here?
-            var init = player.GetComponent<EntityInit>();
-            init.generationId = EntityID.Player;
-            init.data = ModFactory.CompareEntity(EntityID.Player);
-            
-            NetworkServer.AddPlayerForConnection(conn, player);
-            NetworkCallbacks.CallOnAddPlayer(conn);
         }
 
         /// <summary>

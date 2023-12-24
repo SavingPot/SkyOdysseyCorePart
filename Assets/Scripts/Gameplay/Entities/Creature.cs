@@ -178,7 +178,7 @@ namespace GameCore
                 float bodyRotateTime = 0.75f;
                 float armRotate = 17.5f;
                 float legRotate = 25f;
-                float bodyRotate = 3.5f;
+                float bodyRotate = -5f;
                 float headRotate = 7;
 
                 creature.animWeb.AddAnim("run_rightleg", -1, new AnimFragment[] {
@@ -212,9 +212,7 @@ namespace GameCore
                 });
 
                 creature.animWeb.AddAnim("run_body", -1, new AnimFragment[] {
-                    new LocalRotationZAnimFragment(creature.head.transform, -bodyRotate, bodyRotateTime, Ease.Linear),
                     new LocalRotationZAnimFragment(creature.head.transform, bodyRotate, bodyRotateTime, Ease.Linear),
-                    new LocalRotationZAnimFragment(creature.head.transform, 0f, bodyRotateTime / 2, Ease.Linear),
                 });
             }
             #endregion
@@ -246,6 +244,17 @@ namespace GameCore
             model.transform.SetParent(transform);
 
             base.Awake();
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+
+            if (data != null)
+            {
+                //等一帧再设置, 否则会被 Entity 覆盖
+                moveSpeed = data.speed;
+            }
         }
 
         protected override void Update()
@@ -340,21 +349,6 @@ namespace GameCore
 
             if (CanMove(this))
                 Movement();
-        }
-
-        protected override void Start()
-        {
-            base.Start();
-
-            if (!isPlayer)
-            {
-                //等一帧再设置, 否则会被 Entity 覆盖
-                //TODO: 移动到Init
-                WaitOneFrame(() =>
-                {
-                    moveSpeed = data.speed;
-                });
-            }
         }
 
 

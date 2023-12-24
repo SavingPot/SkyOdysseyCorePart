@@ -67,7 +67,7 @@ namespace GameCore
         {
             if (inventory == null)
             {
-                throw new ArgumentNullException(nameof(inventory));
+                return null;
             }
 
             Inventory result = new()

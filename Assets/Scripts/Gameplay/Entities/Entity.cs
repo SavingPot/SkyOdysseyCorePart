@@ -59,59 +59,13 @@ namespace GameCore
         {
             if (Server.isServer)
             {
-                lock (all)
+                foreach (var entity in all)
                 {
-                    NativeArray<float> invincibleTimeIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> invincibleTimeOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    var invincibleTime = entity.invincibleTime;
 
-                    //填入数据
-                    for (int i = 0; i < all.Count; i++)
-                    {
-                        var entity = all[i];
-
-                        invincibleTimeIn[i] = entity.invincibleTime;
-                    }
-
-                    int batchCount = all.Count / 4;
-                    if (batchCount == 0) batchCount = 1;
-                    new PropertiesComputingJob()
-                    {
-                        invincibleTimeIn = invincibleTimeIn,
-                        invincibleTimeOut = invincibleTimeOut,
-                        frameTime = Performance.frameTime
-                    }.ScheduleParallel(all.Count, batchCount, default).Complete();  //除以4代表由四个 Job Thread 执行
-
-                    //填入数据
-                    for (int i = 0; i < all.Count; i++)
-                    {
-                        var entity = all[i];
-
-                        var invincibleTime = invincibleTimeOut[i];
-                        if (invincibleTime != 0) entity.invincibleTime += invincibleTime;
-                    }
-
-                    invincibleTimeIn.Dispose();
-                    invincibleTimeOut.Dispose();
+                    if (invincibleTime > 0)
+                        entity.invincibleTime = invincibleTime - Mathf.Min(Performance.frameTime, invincibleTime);
                 }
-            }
-        }
-
-        [BurstCompile]
-        public struct PropertiesComputingJob : IJobFor
-        {
-            [ReadOnly] public NativeArray<float> invincibleTimeIn;
-            [WriteOnly] public NativeArray<float> invincibleTimeOut;
-            [ReadOnly] public float frameTime;
-
-            [BurstCompile]
-            public void Execute(int index)
-            {
-                var invincibleTime = invincibleTimeIn[index];
-
-                if (invincibleTime > 0)
-                    invincibleTimeOut[index] = -Mathf.Min(frameTime, invincibleTime);
-                else
-                    invincibleTimeOut[index] = 0;
             }
         }
     }
@@ -197,7 +151,7 @@ namespace GameCore
     //TODO: 告别冗长代码
     //TODO: NetworkBehaviour->MonoBehaviour
     [DisallowMultipleComponent]
-    public class Entity : NetworkBehaviour, IEntity, IRigidbody2D, IVarInstanceID
+    public class Entity : MonoBehaviour, IEntity, IRigidbody2D, IVarInstanceID
     {
         /* -------------------------------------------------------------------------- */
         /*                                     接口                                     */
@@ -231,7 +185,7 @@ namespace GameCore
         /*                                     生成属性                                     */
         /* -------------------------------------------------------------------------- */
         [BoxGroup("生成属性"), LabelText("初始化器")] public EntityInit Init { get; internal set; }
-        public JObject customData { get => Init.customData; set => Init.customData = value; }
+        public JObject customData;
         [BoxGroup("变量ID"), LabelText("变量唯一ID")] public uint varInstanceId => Init.netId;
 
 
@@ -242,7 +196,7 @@ namespace GameCore
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
         public Rigidbody2D rb { get; set; }
-        public CapsuleCollider2D mainCollider { get; set; }
+        public BoxCollider2D mainCollider { get; set; }
         public bool isHurting => invincibleTime > 0;
         public bool hurtable = true;
         [BoxGroup("属性"), LabelText("数据"), HideInInspector] public EntityData data = null;
@@ -324,15 +278,11 @@ namespace GameCore
         }
         public Region region => GFiles.world.GetRegion(regionIndex);
 
-        public static Action<Entity> OnRegionIndexChange = (entity) => MethodAgent.TryRun(() =>
-        {
-            if (entity.isPlayer)
-            {
-                Debug.Log($"玩家 {entity.netId} 的区域改变为了 {entity.regionIndex}");
-            }
-        }, true);
+        public static Action<Entity> OnRegionIndexChange = (entity) => { };
 
         [HideInInspector] public bool isPlayer;
+        [HideInInspector] public bool isNotPlayer;
+        [HideInInspector] public float timeToAutoDestroy;
         Type classType;
 
         #endregion
@@ -352,15 +302,15 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                   Base 覆写                                  */
         /* -------------------------------------------------------------------------- */
-        public new NetworkIdentity netIdentity;
+        public NetworkIdentity netIdentity;
 
-        public new uint netId => netIdentity.netId;
+        public uint netId => netIdentity.netId;
         //TODO: Temp them
-        public new bool isServer => Server.isServer;
-        public new bool isClient => Client.isClient;
-        public new bool isOwned => netIdentity.isOwned;
+        public bool isServer => Server.isServer;
+        public bool isClient => Client.isClient;
+        public bool isOwned => netIdentity.isOwned;
         public bool isHost => isServer && isClient;
-        public new bool isLocalPlayer => Client.localPlayer == this;
+        public bool isLocalPlayer => Client.localPlayer == this;
 
 
 
@@ -435,9 +385,10 @@ namespace GameCore
             EntityCenter.AddEntity(this);
             netIdentity = GetComponent<NetworkIdentity>();
             isPlayer = this is Player;
+            isNotPlayer = !isPlayer;
             classType = GetType();
             rb = GetComponent<Rigidbody2D>();
-            mainCollider = GetComponent<CapsuleCollider2D>();
+            mainCollider = GetComponent<BoxCollider2D>();
         }
 
         protected virtual void OnDestroy()
@@ -450,16 +401,14 @@ namespace GameCore
 
         protected virtual void Start()
         {
-            //TODO: 移动到 EntityInit
-            WaitOneFrame(() =>
+            if (data != null)
             {
-                if (data != null)
-                {
-                    rb.gravityScale = data.gravity;
-                    mainCollider.direction = data.colliderSize.x > data.colliderSize.y ? CapsuleDirection2D.Horizontal : CapsuleDirection2D.Vertical;
-                    mainCollider.size = data.colliderSize;
-                }
-            });
+                rb.gravityScale = data.gravity;
+                mainCollider.size = data.colliderSize;
+                mainCollider.offset = data.colliderOffset;
+            }
+
+            SetAutoDestroyTime();
         }
 
         protected virtual void Update()
@@ -477,9 +426,12 @@ namespace GameCore
 
         protected virtual void ServerUpdate()
         {
-            if (!isPlayer)
+            regionIndex = PosConvert.WorldPosToRegionIndex(transform.position);
+
+            //自动销毁
+            if (isNotPlayer && timeToAutoDestroy >= Tools.time)
             {
-                regionIndex = PosConvert.WorldPosToRegionIndex(transform.position);
+                Death();
             }
         }
 
@@ -509,6 +461,18 @@ namespace GameCore
         }
 #endif
         #endregion
+
+        public void SetAutoDestroyTime()
+        {
+            if (data != null)
+            {
+                timeToAutoDestroy = Tools.time + data.lifetime;
+            }
+            else
+            {
+                timeToAutoDestroy = Tools.time + EntityData.defaultLifetime;
+            }
+        }
 
         #region 网络变量逻辑
 
@@ -600,8 +564,11 @@ namespace GameCore
 
             OnGetHurtServer();
 
-            if (!isPlayer)
+            if (isNotPlayer)
+            {
                 rb.velocity = impactForce;
+                SetAutoDestroyTime();
+            }
 
             Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}, 新血量为 {health}");
 
@@ -683,7 +650,7 @@ namespace GameCore
             if (newPos.x == float.PositiveInfinity && newPos.y == float.NegativeInfinity)
                 newPos = GFiles.world.GetRegion(regionIndex)?.spawnPoint ?? Vector2Int.zero;
 
-            if (!isPlayer)
+            if (isNotPlayer)
                 transform.position = newPos;
 
             ClientReborn(newHealth, newPos, caller);
@@ -715,24 +682,24 @@ namespace GameCore
                 return;
             }
 
+            //TODO: 统一!
             if (isPlayer)
             {
                 Player player = (Player)this;
 
                 //将玩家数据写入
-                foreach (PlayerData datum in GFiles.world.playerData)
+                foreach (PlayerSave save in GFiles.world.playerSaves)
                 {
-                    if (datum.playerName == player.playerName)
+                    if (save.id == player.playerName)
                     {
-                        datum.playerName = player.playerName;
-                        datum.currentRegion = player.regionIndex;
-                        datum.inventory = player.inventory;
-                        datum.hungerValue = player.hungerValue;
-                        datum.thirstValue = player.thirstValue;
-                        datum.happinessValue = player.happinessValue;
-                        //TODO: to Init
-                        datum.health = player.health;
-                        datum.completedTasks = player.completedTasks;
+                        save.pos = player.transform.position;
+                        save.inventory = player.inventory;
+                        save.hungerValue = player.hungerValue;
+                        save.thirstValue = player.thirstValue;
+                        save.happinessValue = player.happinessValue;
+                        save.health = player.health;
+                        save.completedTasks = player.completedTasks;
+                        save.customData = player.customData?.ToString(Formatting.None);
 
                         return;
                     }
@@ -746,12 +713,12 @@ namespace GameCore
                     foreach (EntitySave save in region.entities)
                     {
                         //如果匹配到自己
-                        if (save.saveId == Init.saveId)
+                        if (save.saveId == Init.save.saveId)
                         {
                             //写入数据
                             save.pos = transform.position;
                             save.health = health;
-                            save.customData = customData.ToString(Formatting.None);
+                            save.customData = customData?.ToString(Formatting.None);
 
                             return;
                         }
@@ -760,10 +727,7 @@ namespace GameCore
             }
 
 
-
-
-
-            Debug.LogWarning($"未在存档中找到实体 {Init.saveId}, 保存失败");
+            Debug.LogWarning($"未在存档中找到实体 {Init.save.saveId}, 保存失败");
         }
 
         public void ClearSaveDatum()
@@ -778,7 +742,7 @@ namespace GameCore
             {
                 foreach (EntitySave save in region.entities)
                 {
-                    if (save.saveId == Init.saveId)
+                    if (save.saveId == Init.save.saveId)
                     {
                         region.entities.Remove(save);
                         return;
@@ -786,7 +750,7 @@ namespace GameCore
                 }
             }
 
-            Debug.LogWarning($"未在存档中找到实体 {Init.saveId}, 清除失败");
+            Debug.LogWarning($"未在存档中找到实体 {Init.save.saveId}, 清除失败");
         }
 
         public void DestroyEntityOnServer()
@@ -892,7 +856,10 @@ namespace GameCore
         [LabelText("速度")] public float speed;
         [LabelText("重力")] public float gravity;
         [LabelText("碰撞箱大小")] public Vector2 colliderSize;
+        [LabelText("碰撞箱偏移")] public Vector2 colliderOffset;
         [LabelText("最大血量")] public float maxHealth;
+        [LabelText("自动清除周期")] public float lifetime = defaultLifetime;
+        public static float defaultLifetime = 60 * 3;
         public Type behaviourType;
         [LabelText("掉落的物品")] public List<DropData> drops;
     }

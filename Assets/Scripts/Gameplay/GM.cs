@@ -122,6 +122,7 @@ namespace GameCore
             }
         }
 
+        //TODO: 降低 Update 开销
         private void Update()
         {
             OnUpdate();
@@ -271,17 +272,6 @@ namespace GameCore
                 Client.Callback<NMDestroyBlock>(OnClientGetNMDestroyBlockMessage);
                 Client.Callback<NMSetBlock>(OnClientGetNMSetBlockMessage);
                 Client.Callback<NMSetBlockCustomData>(OnClientGetNMSetBlockCustomData);
-            };
-
-            /* -------------------------------------------------------------------------- */
-            /*                                   添加场景回调                                   */
-            /* -------------------------------------------------------------------------- */
-            NetworkCallbacks.OnClientChangeScene += (conn, n) =>
-            {
-                if (n.newSceneName == SceneNames.GameScene)
-                {
-                    ManagerNetwork.instance.AddPlayer(conn);
-                }
             };
         }
 
@@ -1125,7 +1115,7 @@ namespace GameCore
             {
                 for (int y = generation.minPoint.y; y < generation.maxPoint.y; y++)
                 {
-                    if (x == generation.minPoint.x || y == generation.minPoint.x || x == generation.maxPoint.x || y == generation.maxPoint.y)
+                    if (x == generation.minPoint.x || y == generation.minPoint.y || x == generation.maxPoint.x - 1 || y == generation.maxPoint.y - 1)
                     {
                         Vector2Int pos = new(x, y);
 
@@ -1134,7 +1124,7 @@ namespace GameCore
                         generation.region.RemovePos(pos, true);
 
                         //添加边界方块
-                        generation.region.AddPos(BlockID.Boundary, portalMiddle, false, true);
+                        generation.region.AddPos(BlockID.Boundary, pos, false, true);
                     }
                 }
             }
@@ -1203,7 +1193,6 @@ namespace GameCore
         public Vector2Int minPoint;
         public Region region;
         public BiomeData[] biomes;
-        public RegionTheme theme;
 
 
 
@@ -1237,6 +1226,7 @@ namespace GameCore
             random = new(actualSeed);
 
             /* --------------------------------- 获取区域主题 -------------------------------- */
+            RegionTheme theme = null;
             if (specificTheme == null)
             {
                 foreach (var mod in ModFactory.mods)
@@ -1284,7 +1274,7 @@ namespace GameCore
             size = new(Region.chunkCountX * Chunk.blockCountPerAxis, Region.chunkCountX * Chunk.blockCountPerAxis);
 
             //边际 (左下右上)
-            maxPoint = new(size.x / 2, size.y / 2);
+            maxPoint = new((int)Math.Floor(size.x / 2f), (int)Math.Floor(size.y / 2f));
             minPoint = -maxPoint;
 
 
@@ -1293,6 +1283,7 @@ namespace GameCore
             {
                 size = size,
                 index = index,
+                regionTheme = theme.id,
             };
         }
     }

@@ -6,7 +6,6 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using GameCore.High;
 using Unity.Burst;
-using static GameCore.PlayerUI;
 using System.Threading;
 
 namespace GameCore
@@ -403,19 +402,5 @@ namespace GameCore
         {
             return new(vec.x, vec.y, vec.z);
         }
-    }
-
-    //TODO: 继承自 EntityData?
-    [Serializable]
-    public class PlayerData
-    {
-        public string playerName;
-        public Vector2Int currentRegion;
-        public float hungerValue;
-        public float thirstValue;
-        public float happinessValue;
-        public float health;
-        public Inventory inventory;// = new();
-        public List<TaskStatusForSave> completedTasks = new();
     }
 }

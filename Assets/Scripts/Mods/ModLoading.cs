@@ -218,8 +218,10 @@ namespace GameCore
                 entity.path = entityPath;
                 entity.speed = jo["ori:entity"]?["speed"]?.ToFloat() ?? 3;
                 entity.colliderSize = jo["ori:entity"]?["physics"]?["collider"]?["size"]?.ToVector2() ?? Vector2.one;
+                entity.colliderOffset = jo["ori:entity"]?["physics"]?["collider"]?["offset"]?.ToVector2() ?? Vector2.zero;
                 entity.gravity = jo["ori:entity"]?["physics"]?["gravity"]?.ToFloat() ?? 7;
                 entity.maxHealth = jo["ori:entity"]?["max_health"]?.ToFloat() ?? Player.defaultHealth;
+                entity.lifetime = jo["ori:entity"]?["lifetime"]?.ToFloat() ?? EntityData.defaultLifetime;
                 entity.summon.region = jo["ori:entity"]?["summon"]?["region"]?.ToString();
                 entity.summon.defaultProbability = jo["ori:entity"]?["summon"]?["default_probability"]?.ToString().ToFloat() ?? 100;
                 entity.summon.timeEarliest = jo["ori:entity"]?["summon"]?["time_earliest"]?.ToString().ToFloat() ?? 0;

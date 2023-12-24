@@ -70,10 +70,23 @@ namespace GameCore
         public static float totalMaxHealth = 100;
         public static Action<Block> OnHealthChange = (block) =>
         {
+            //(-∞,0]
             if (block.health <= 0)
             {
                 block.Death();
             }
+            //(0,100)
+            else if (block.health != 100)
+            {
+                if (!block.chunk.map.blocksToCheckHealths.Contains(block))
+                    block.chunk.map.blocksToCheckHealths.Add(block);
+            }
+            //100
+            else if (block.chunk.map.blocksToCheckHealths.Contains(block))
+            {
+                block.chunk.map.blocksToCheckHealths.Remove(block);
+            }
+
         };
 
         public static int blockLayer { get; private set; }
@@ -131,7 +144,7 @@ namespace GameCore
             if (crackSr)
                 chunk.map.blockCrackPool.Recover(crackSr);
 
-            if (health < 100)
+            if (health != 100)
                 crackSr = chunk.map.blockCrackPool.Get(this, (byte)Mathf.Min(4, 4 - health / totalMaxHealth * 5));
         }
 
@@ -148,6 +161,9 @@ namespace GameCore
 
         private void OnDestroy()
         {
+            if (chunk.map.blocksToCheckHealths.Contains(this))
+                chunk.map.blocksToCheckHealths.Remove(this);
+
             scaleAnimationTween?.Kill();
             shakeRotationTween?.Kill();
         }

@@ -20,6 +20,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         [BoxGroup("变量注册"), LabelText("注册了网络变量")] public bool registeredSyncVars;
         [BoxGroup("独留变量"), LabelText("生成ID"), SyncVar] public string generationId;
+        [BoxGroup("独留变量"), LabelText("服务器是否完全准备好"), SyncVar] public bool isServerCompletelyReady;
         [BoxGroup("变量注册")] public string waitingRegisteringVar;
         public SyncPacker.OnVarValueChangeCallback[] varHooksToUnbind;
         public Entity entity;
@@ -29,17 +30,28 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    传出变量                                    */
         /* -------------------------------------------------------------------------- */
-        [BoxGroup("生成属性"), LabelText("自定义数据"), SyncVar] public JObject customData;
         [BoxGroup("生成属性"), LabelText("数据")] public EntityData data = null;
-        [BoxGroup("生成属性"), LabelText("保存ID")] public string saveId;
-        public float? health;
+        public EntitySave save = null;
 
 
 
         private static readonly Dictionary<Type, SyncAttributeData[]> TotalSyncVarAttributeTemps = new();
         public static readonly string maxHealthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.maxHealth)}";
         public static readonly string healthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.health)}";
+        public static readonly string hungerValueVarId = $"{typeof(Player).FullName}.{nameof(Player.hungerValue)}";
+        public static readonly string thirstValueVarId = $"{typeof(Player).FullName}.{nameof(Player.thirstValue)}";
+        public static readonly string happinessValueVarId = $"{typeof(Player).FullName}.{nameof(Player.happinessValue)}";
         public static readonly string inventoryVarId = $"{typeof(Player).FullName}.{nameof(Player.inventory)}";
+        public static readonly string completedTasksVarId = $"{typeof(Player).FullName}.{nameof(Player.completedTasks)}";
+        public static readonly string playerNameVarId = $"{typeof(Player).FullName}.{nameof(Player.playerName)}";
+        public static readonly string skinHeadVarId = $"{typeof(Player).FullName}.{nameof(Player.skinHead)}";
+        public static readonly string skinBodyVarId = $"{typeof(Player).FullName}.{nameof(Player.skinBody)}";
+        public static readonly string skinLeftArmVarId = $"{typeof(Player).FullName}.{nameof(Player.skinLeftArm)}";
+        public static readonly string skinRightArmVarId = $"{typeof(Player).FullName}.{nameof(Player.skinRightArm)}";
+        public static readonly string skinLeftLegVarId = $"{typeof(Player).FullName}.{nameof(Player.skinLeftLeg)}";
+        public static readonly string skinRightLegVarId = $"{typeof(Player).FullName}.{nameof(Player.skinRightLeg)}";
+        public static readonly string skinLeftFootVarId = $"{typeof(Player).FullName}.{nameof(Player.skinLeftFoot)}";
+        public static readonly string skinRightFootVarId = $"{typeof(Player).FullName}.{nameof(Player.skinRightFoot)}";
 
 
         private void OnDestroy()
@@ -160,20 +172,106 @@ namespace GameCore
 
                 if (isServer)
                 {
-                    if (pair.propertyPath == healthVarId)
-                    {
-                        if (health == null)
-                            SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(data.maxHealth));
-                        else
-                            SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes((float)health));
-                    }
-                    else if (pair.propertyPath == maxHealthVarId)
+                    if (pair.propertyPath == maxHealthVarId)
                     {
                         SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(data.maxHealth));
                     }
+                    else if (pair.propertyPath == healthVarId)
+                    {
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : (float)save.health));
+                    }
+                    else if (pair.propertyPath == hungerValueVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.hungerValue));
+                    }
+                    else if (pair.propertyPath == thirstValueVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.thirstValue));
+                    }
+                    else if (pair.propertyPath == happinessValueVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.happinessValue));
+                    }
                     else if (pair.propertyPath == inventoryVarId)
                     {
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(new Inventory(Player.inventorySlotCount, null)));
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        if (saveAsPlayer.inventory == null)
+                        {
+                            SyncPacker.RegisterVar(id, true, null);
+                        }
+                        else
+                        {
+                            //恢复物品栏
+                            //这一行代码的意义是如果物品栏栏位数更改了, 可以保证栏位数和预想的一致
+                            saveAsPlayer.inventory.SetSlotCount(Player.inventorySlotCount);
+
+                            SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.inventory));
+                        }
+                    }
+                    else if (pair.propertyPath == completedTasksVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.completedTasks));
+                    }
+                    else if (pair.propertyPath == playerNameVarId)
+                    {
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(save.id));
+                    }
+                    else if (pair.propertyPath == skinHeadVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinHead);
+                    }
+                    else if (pair.propertyPath == skinBodyVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinBody);
+                    }
+                    else if (pair.propertyPath == skinLeftArmVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinLeftArm);
+                    }
+                    else if (pair.propertyPath == skinRightArmVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinRightArm);
+                    }
+                    else if (pair.propertyPath == skinLeftLegVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinLeftLeg);
+                    }
+                    else if (pair.propertyPath == skinRightLegVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinRightLeg);
+                    }
+                    else if (pair.propertyPath == skinLeftFootVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinLeftFoot);
+                    }
+                    else if (pair.propertyPath == skinRightFootVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinRightFoot);
                     }
                     else
                     {
@@ -197,7 +295,7 @@ namespace GameCore
         {
             //* 如果不是服务器, 就需要等待服务器注册
             //! 如果不等待的话会疯狂报错
-            if(!isServer)
+            if (!isServer)
             {
                 StringBuilder sb = new();
 
@@ -210,6 +308,8 @@ namespace GameCore
                     waitingRegisteringVar = vn;
                     yield return new WaitUntil(() => SyncPacker.HasVar(vn));
                 }
+
+                yield return new WaitUntil(() => isServerCompletelyReady);
             }
 
             waitingRegisteringVar = string.Empty;
@@ -218,8 +318,9 @@ namespace GameCore
 
             entity = generationId == EntityID.Player ? gameObject.AddComponent<Player>() : (Entity)gameObject.AddComponent(data.behaviourType);
             entity.Init = this;
-            entity.customData = customData;
             entity.data = data;
+            entity.customData = JsonTools.LoadJObjectByString(save.customData);
+            isServerCompletelyReady = true;
         }
         internal class SyncAttributeData
         {

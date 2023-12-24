@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using SP.Tools.Unity;
+using static GameCore.PlayerUI;
 
 namespace GameCore
 {
@@ -95,7 +96,7 @@ namespace GameCore
                 IOTools.CreateDirsIfNone(World.GetCachePath(world.worldPath), World.GetDisplayCachePath(world.worldPath));
                 SaveFileJson(World.GetBasicDataPath(world.worldPath), world.basicData, false, true);
                 SaveFileJson(World.GetRegionDataPath(world.worldPath), world.regionData, false, false);
-                SaveFileJson(World.GetPlayerDataPath(world.worldPath), world.playerData, false, true);
+                SaveFileJson(World.GetPlayerDataPath(world.worldPath), world.playerSaves, false, true);
             }
 
             //保存设置文件
@@ -151,7 +152,7 @@ namespace GameCore
 
         public WorldBasicData basicData = new();
         public List<Region> regionData = new();
-        public List<PlayerData> playerData = new();
+        public List<PlayerSave> playerSaves = new();
 
 
 
@@ -159,7 +160,7 @@ namespace GameCore
         {
             WorldBasicData basicData = JsonTools.LoadJson<WorldBasicData>(GetBasicDataPath(dirPath));
             List<Region> regionData = JsonTools.LoadJson<List<Region>>(GetRegionDataPath(dirPath));
-            List<PlayerData> playerData = JsonTools.LoadJson<List<PlayerData>>(GetPlayerDataPath(dirPath));
+            List<PlayerSave> playerData = JsonTools.LoadJson<List<PlayerSave>>(GetPlayerDataPath(dirPath));
 
             return new(basicData, regionData, playerData);
         }
@@ -173,11 +174,11 @@ namespace GameCore
             this.basicData.worldName = worldName;
         }
 
-        public World(WorldBasicData basicData, List<Region> regionData, List<PlayerData> playerData)
+        public World(WorldBasicData basicData, List<Region> regionData, List<PlayerSave> playerData)
         {
             this.basicData = basicData;
             this.regionData = regionData;
-            this.playerData = playerData;
+            this.playerSaves = playerData;
         }
 
         public void AddRegion(Region region)
@@ -237,9 +238,9 @@ namespace GameCore
 
         public Region GetRegion(Vector2Int index)
         {
-            foreach (var sb in regionData)
-                if (sb.index == index)
-                    return sb;
+            foreach (var region in regionData)
+                if (region.index == index)
+                    return region;
 
             return null;
         }
@@ -267,6 +268,27 @@ namespace GameCore
         public Vector2 pos;
         public float? health;
         public string saveId;
+    }
+
+    //TODO: 继承自 EntityData?
+    [Serializable]
+    //该类只在 ManagerNetwork 的 AddPlayer 环节中创建
+    public class PlayerSave : EntitySave
+    {
+        public float hungerValue;
+        public float thirstValue;
+        public float happinessValue;
+        public Inventory inventory;// = new();
+        public List<TaskStatusForSave> completedTasks = new();
+
+        [NonSerialized] public byte[] skinHead;
+        [NonSerialized] public byte[] skinBody;
+        [NonSerialized] public byte[] skinLeftArm;
+        [NonSerialized] public byte[] skinRightArm;
+        [NonSerialized] public byte[] skinLeftLeg;
+        [NonSerialized] public byte[] skinRightLeg;
+        [NonSerialized] public byte[] skinLeftFoot;
+        [NonSerialized] public byte[] skinRightFoot;
     }
 
     [Serializable]

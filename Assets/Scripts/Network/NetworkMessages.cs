@@ -31,6 +31,40 @@ namespace GameCore.High
         }
     }
 
+    public struct NMAddPlayer : NetworkMessage
+    {
+        public string playerName;
+        public string gameVersion;
+        public List<string> modIds;
+        public List<string> modVersions;
+        public byte[] skinHead;
+        public byte[] skinBody;
+        public byte[] skinLeftArm;
+        public byte[] skinRightArm;
+        public byte[] skinLeftLeg;
+        public byte[] skinRightLeg;
+        public byte[] skinLeftFoot;
+        public byte[] skinRightFoot;
+
+        public NMAddPlayer(string playerName, string gameVersion, List<string> modIds, List<string> modVersions)
+        {
+            this.playerName = playerName;
+            this.gameVersion = gameVersion;
+            this.modIds = modIds;
+            this.modVersions = modVersions;
+
+            PlayerSkin.SetSkinByName(GFiles.settings.playerSkinName);
+            this.skinHead = Rpc.ObjectToBytes(PlayerSkin.skinHead);
+            this.skinBody = Rpc.ObjectToBytes(PlayerSkin.skinBody);
+            this.skinLeftArm = Rpc.ObjectToBytes(PlayerSkin.skinLeftArm);
+            this.skinRightArm = Rpc.ObjectToBytes(PlayerSkin.skinRightArm);
+            this.skinLeftLeg = Rpc.ObjectToBytes(PlayerSkin.skinLeftLeg);
+            this.skinRightLeg = Rpc.ObjectToBytes(PlayerSkin.skinRightLeg);
+            this.skinLeftFoot = Rpc.ObjectToBytes(PlayerSkin.skinLeftFoot);
+            this.skinRightFoot = Rpc.ObjectToBytes(PlayerSkin.skinRightFoot);
+        }
+    }
+
     public struct NMSummon : NetworkMessage
     {
         public Vector3 pos;

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -1133016935887393870}
   - component: {fileID: 4921494399727718331}
   - component: {fileID: -6749035963941349616}
-  - component: {fileID: -499478620078102049}
+  - component: {fileID: -5584403391073953275}
   m_Layer: 11
   m_Name: NPCPrefab
   m_TagString: Untagged
@@ -28,13 +28,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5688412443235167145}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 10, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1305947736986821791
 MonoBehaviour:
@@ -129,7 +129,10 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+  registeredSyncVars: 0
   generationId: 
+  isServerCompletelyReady: 0
+  waitingRegisteringVar: 
   entity: {fileID: 0}
   data:
     id: 
@@ -137,7 +140,7 @@ MonoBehaviour:
     jsonFormatWhenLoad: 
     path: 
     summon:
-      biome: 
+      region: 
       defaultProbability: 0
       timeEarliest: 0
       timeLatest: 0
@@ -147,8 +150,9 @@ MonoBehaviour:
     maxHealth: 0
     drops: []
   saveId: 
---- !u!70 &-499478620078102049
-CapsuleCollider2D:
+  playerName: 
+--- !u!61 &-5584403391073953275
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -180,5 +184,15 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
   m_Size: {x: 1, y: 1}
-  m_Direction: 0
+  m_EdgeRadius: 0.02

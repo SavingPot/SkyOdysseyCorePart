@@ -404,7 +404,7 @@ namespace GameCore.UI
                         }
 
                         StringBuilder sb = Tools.stringBuilderPool.Get().Append(playerNameField.field.text);
-                        StringTools.ModifySpecialPath(sb, Player.defaultName, "x");
+                        StringTools.ModifySpecialPath(sb, "", "x");
                         playerNameField.field.text = sb.ToString();
                         Tools.stringBuilderPool.Recover(sb);
 

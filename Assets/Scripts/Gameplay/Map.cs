@@ -155,7 +155,7 @@ namespace GameCore
 
                 light.color = Block.blockLightDefaultColor;
                 light.pointLightOuterRadius = block.data.lightLevel * 1.5f;
-                light.intensity = block.data.lightLevel / 10f;
+                light.intensity = block.data.lightLevel / 7f;
 
                 return light;
             }
@@ -237,6 +237,7 @@ namespace GameCore
 
 
         public List<Chunk> chunks = new();
+        public List<Block> blocksToCheckHealths = new();
 
         protected override void Awake()
         {
@@ -268,6 +269,25 @@ namespace GameCore
             //         Debug.Log($"({x}, {y}) {ci}, {sbi}");
             //     }
             // }
+        }
+
+        private void Update()
+        {
+            /* ---------------------------------- 为方块回血 --------------------------------- */
+            if (Player.TryGetLocal(out Player localPlayer) && SyncPacker.vars.Count != 0 && localPlayer.TryGetRegion(out _))
+            {
+                var deltaHealth = 20f * Performance.frameTime;
+
+                for (int i = blocksToCheckHealths.Count - 1; i >= 0; i--)
+                {
+                    var block = blocksToCheckHealths[i];
+
+                    if (Tools.time >= block.lastDamageTime + 7.5f)
+                    {
+                        block.health += deltaHealth;
+                    }
+                }
+            }
         }
 
         public Chunk AddChunk(Vector2Int chunkIndex)

@@ -146,6 +146,7 @@ namespace GameCore
 
         public static Func<EntityData, Vector2> EntitySummonPos = e =>
         {
+            //TODO: 优化性能
             //最多尝试 24 个区块
             for (byte cTime = 0; cTime < 24; cTime++)
             {
@@ -163,7 +164,12 @@ namespace GameCore
                     //抽取一个方块并检查
                     Block block = chunk.blocks.Extract();
 
-                    if (block != null && !block.isBackground && !Map.instance.HasBlock(block.pos + Vector2Int.up, false) && !Tools.instance.IsInView2D(block.pos.To2()))
+                    if (block != null &&
+                        !block.isBackground &&
+                        !Map.instance.HasBlock(block.pos + Vector2Int.up, false) &&
+                        Math.Abs(block.pos.x - Region.GetMiddleX(chunk.regionIndex)) < Region.chunkCountX * Chunk.blockCountPerAxis &&
+                        Math.Abs(block.pos.y - Region.GetMiddleY(chunk.regionIndex)) < Region.chunkCountY * Chunk.blockCountPerAxis &&
+                        !Tools.instance.IsInView2D(block.pos.To2()))
                     {
                         return block.pos + new Vector2Int(0, 2);
                     }

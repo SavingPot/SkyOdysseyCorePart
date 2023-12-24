@@ -14,9 +14,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -73,12 +70,12 @@ namespace GameCore
             if (isLocalPlayer)
             {
                 //刷新背包物品显示
-                pui.backpackItemView.CustomMethod("refresh", null);
+                pui.inventoryItemView.CustomMethod("refresh", null);
 
                 //刷新制造界面
                 pui.craftingResultView.CustomMethod(null, null);
                 pui.craftingStuffView.CustomMethod(null, null);
-                pui.choseItemTitleText.RefreshUI();
+                pui.craftingSelectedItemTitleText.RefreshUI();
 
                 //完成成就
                 if (!Item.Null(item))
@@ -177,11 +174,15 @@ namespace GameCore
         public bool askingForGeneratingRegion { get; private set; }
         public float askingForGeneratingRegionTime { get; private set; } = float.NegativeInfinity;
         public bool generatedFirstRegion;
-        public List<TaskStatusForSave> completedTasks = null;
-        [ClientRpc]
-        public void ClientSetCompletedTasks(List<TaskStatusForSave> tasks, NetworkConnection caller = null)
+        private bool hasSetPosBySave;
+        [SyncGetter] List<TaskStatusForSave> completedTasks_get() => default; [SyncSetter] void completedTasks_set(List<TaskStatusForSave> value) { }
+        [Sync] public List<TaskStatusForSave> completedTasks { get => completedTasks_get(); set => completedTasks_set(value); }
+
+        public void AddCompletedTasks(TaskStatusForSave task)
         {
-            completedTasks = tasks;
+            var tasksTemp = completedTasks;
+            tasksTemp.Add(task);
+            completedTasks = tasksTemp;
         }
 
 
@@ -385,22 +386,32 @@ namespace GameCore
         #region Unity 回调
         [ServerRpc] static void Mtd1(Creature c, NetworkConnection caller) { Debug.Log("Mtd1"); }
         [ServerRpc] static void Mtd2(Player c, NetworkConnection caller) { Debug.Log("Mtd2"); }
-        protected override async void Start()
+        protected override void Start()
         {
+            //加载服务器存档中的位置
+            if (isServer)
+            {
+                if (Init.save.pos != Vector2.zero)
+                {
+                    transform.position = Init.save.pos;
+                    hasSetPosBySave = true;
+                }
+
+                //这一行不是必要的, inventory 通常不会为空, 但是我们要保证代码 100% 正常运行
+                inventory ??= new(inventorySlotCount, this);
+            }
+
             Debug.Log(this == null);
             Mtd2(this, null);
             Mtd1(this, null);
-            data = null;
-            base.Start();
 
-            if (isClient)
-            {
-                //TODO: 别放在这里
-                moveSpeed = 5.5f;
-            }
+            base.Start();
 
             if (isLocalPlayer)
             {
+                //初始化玩家的 UI 界面
+                pui = new(this);
+
                 //设置相机跟随
                 Tools.instance.mainCameraController.lookAt = transform;
                 Tools.instance.mainCameraController.lookAtDelta = new(0, 2);
@@ -409,24 +420,10 @@ namespace GameCore
                 //if (!isServer)
                 //    CmdCheckMods();
 
-                skinHead = PlayerSkin.skinHead;
-                skinBody = PlayerSkin.skinBody;
-                skinLeftArm = PlayerSkin.skinLeftArm;
-                skinRightArm = PlayerSkin.skinRightArm;
-                skinLeftLeg = PlayerSkin.skinLeftLeg;
-                skinRightLeg = PlayerSkin.skinRightLeg;
-                skinLeftFoot = PlayerSkin.skinLeftFoot;
-                skinRightFoot = PlayerSkin.skinRightFoot;
-
                 managerGame.weatherParticle.transform.SetParent(transform);
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
 
-
-                //等一帧
-                await UniTask.NextFrame();
-
-                //让服务器加载玩家数据
-                LoadPlayerDatumFromFile();
+                ServerGenerateRegion(regionIndex, true);
             }
 
             StartCoroutine(IEWaitForCondition(() => !skinHead || !skinBody || !skinLeftArm || !skinRightArm || !skinLeftLeg || !skinRightLeg || !skinLeftFoot || !skinRightFoot, () =>
@@ -460,8 +457,6 @@ namespace GameCore
 
         protected override void Awake()
         {
-            PlayerSkin.SetSkinByName(GFiles.settings.playerSkinName);
-
             base.Awake();
 
             PlayerCenter.AddPlayer(this);
@@ -477,7 +472,6 @@ namespace GameCore
             animWeb.Stop();
 
             PlayerCenter.RemovePlayer(this);
-            backpackSidebarTable.Remove("ori:craft");
         }
 
         protected override void FixedUpdate()
@@ -525,6 +519,7 @@ namespace GameCore
 
 
 
+        //TODO: 降低 Update 开销
         protected override void Update()
         {
             if (!isHurting)
@@ -537,7 +532,7 @@ namespace GameCore
 
             inventory?.DoBehaviours();
 
-            if (pui != null && pui.useItemButtonImage && pui.useItemButtonImage.gameObject.activeInHierarchy)
+            if (pui != null)
             {
                 pui.useItemButtonImage.image.sprite = TryGetUsingItem()?.data?.texture?.sprite;
                 pui.useItemButtonImage.image.color = pui.useItemButtonImage.image.sprite ? Color.white : Color.clear;
@@ -689,7 +684,7 @@ namespace GameCore
                 DeathRotation();
             }
 
-            AutoGenerateRegion();
+            ////AutoGenerateRegion();
 
             //刷新状态栏
             RefreshPropertiesBar();
@@ -702,9 +697,12 @@ namespace GameCore
 
 
             #region 背包
-            if (pui != null && pui.inventoryMask && PlayerControls.Backpack(this))
+            if (PlayerControls.Backpack(this))
             {
-                ShowHideBackpackMaskAndCraft();
+                if (pui != null)
+                {
+                    ShowOrHideBackpackAndSetSidebarToCrafting();
+                }
             }
             #endregion
         }
@@ -786,32 +784,32 @@ namespace GameCore
             pui.preparingToFadeOutStatusText = false;
         }
 
-        public void AutoGenerateRegion()
-        {
-            //缓存优化性能
-            Vector2Int currentIndex = regionIndex;
+        //// public void AutoGenerateRegion()
+        //// {
+        ////     //缓存优化性能
+        ////     Vector2Int currentIndex = regionIndex;
+        //
+        ////     if (generatedFirstRegion && !askingForGeneratingRegion && askingForGeneratingRegionTime + 5 <= Tools.time && !GM.instance.generatingExistingRegion && !GM.instance.generatingNewRegion)// && TryGetRegion(out Region region))
+        ////     {
+        ////         Vector2Int newIndex = PosConvert.WorldPosToRegionIndex(transform.position);
+        //
+        ////         //如果变了
+        ////         if (currentIndex != newIndex)
+        ////         {
+        ////             //生成区域并刷新时间
+        ////             ServerGenerateRegion(newIndex, false);
+        ////             askingForGeneratingRegionTime = Tools.time;
+        //
+        ////             //生成完后正式切换区域序号
+        ////             if (managerGame.generatedExistingRegions.Any(p => p.index == newIndex))
+        ////             {
+        ////                 regionIndex = newIndex;
+        ////             }
+        ////         }
+        ////     }
+        //// }
 
-            if (generatedFirstRegion && !askingForGeneratingRegion && askingForGeneratingRegionTime + 5 <= Tools.time && !GM.instance.generatingExistingRegion && !GM.instance.generatingNewRegion)// && TryGetRegion(out Region region))
-            {
-                Vector2Int newIndex = PosConvert.WorldPosToRegionIndex(transform.position);
-
-                //如果变了
-                if (currentIndex != newIndex)
-                {
-                    //生成区域并刷新时间
-                    ServerGenerateRegion(newIndex, false);
-                    askingForGeneratingRegionTime = Tools.time;
-
-                    //生成完后正式切换区域序号
-                    if (managerGame.generatedExistingRegions.Any(p => p.index == newIndex))
-                    {
-                        regionIndex = newIndex;
-                    }
-                }
-            }
-        }
-
-        public static readonly Dictionary<string, (Action Appear, Action Disappear)> backpackSidebarTable = new();
+        public readonly Dictionary<string, (Action Appear, Action Disappear)> backpackSidebarTable = new();
         public string usingBackpackSidebar = string.Empty;
 
         public void SetBackpackSidebar(string id)
@@ -832,38 +830,40 @@ namespace GameCore
             Debug.LogError($"未找到侧边栏 {id}");
         }
 
-        public void ShowHideBackpackMaskAndCraft()
+        public void ShowOrHideBackpackAndSetSidebarToCrafting()
         {
-            SetBackpackSidebar("ori:craft");
+            //Backpack 是整个界面
+            //Inventory 是中间的所有物品
+            //QuickInventory 是不打开背包时看到的几格物品栏
 
-            ShowHideBackpackMask();
+            ShowOrHideBackpackAndSetSideBarTo("ori:craft");
         }
 
-        public void ShowHideBackpackMask()
+        public void ShowOrHideBackpackAndSetSideBarTo(string sidebarId)
         {
-            if (pui.inventoryMask.gameObject.activeSelf)
+            if (!pui.backpackMask.gameObject.activeSelf)
+                SetBackpackSidebar(sidebarId);
+
+            ShowOrHideBackpack();
+        }
+
+        public void ShowOrHideBackpack()
+        {
+            //启用状态 -> 禁用
+            if (pui.backpackMask.gameObject.activeSelf)
             {
-                HideBackpackMask();
+                ItemInfoShower.Hide();
+                ItemDragger.Hide();
+                GameUI.SetPage(null);
+                GAudio.Play(AudioID.CloseBackpack);
             }
+            //禁用状态 -> 启用
             else
             {
-                ShowBackpackMask();
+                GameUI.SetPage(pui.backpackMask);
+                OnInventoryItemChange(inventory, null);
+                GAudio.Play(AudioID.OpenBackpack);
             }
-        }
-
-        public void ShowBackpackMask()
-        {
-            GameUI.SetPage(pui.inventoryMask);
-            OnInventoryItemChange(inventory, null);
-            GAudio.Play(AudioID.OpenBackpack);
-        }
-
-        public void HideBackpackMask()
-        {
-            ItemInfoShower.Hide();
-            ItemDragger.Hide();
-            GameUI.SetPage(null);
-            GAudio.Play(AudioID.CloseBackpack);
         }
 
         public static Action<Player> UseItem = caller =>
@@ -966,21 +966,6 @@ namespace GameCore
                 GControls.GamepadVibrationMediumStrong();
         }
 
-
-        /*[ClientRpc]*/
-        public /*protected*/ override void /*Rpc*/SetOrientation(bool right)
-        {
-            base./*Rpc*/SetOrientation(right);
-
-            if (nameText)
-            {
-                if (right)
-                    nameText.transform.SetScaleXAbs();
-                else
-                    nameText.transform.SetScaleXNegativeAbs();
-            }
-        }
-
         #endregion
 
 
@@ -1016,8 +1001,9 @@ namespace GameCore
                 Destroy(nameText.gameObject);
 
             //初始化新的 nameText
+            //TODO: nameText改为世界Canvas, 并适应联机
             nameText = GameUI.AddText(UPC.middle, "ori:player_name_" + newValue, playerCanvas);
-            nameText.rectTransform.AddLocalPosY(35);
+            nameText.rectTransform.AddLocalPosY(-10f);
             nameText.text.SetFontSize(10);
             nameText.AfterRefreshing += n =>
             {
@@ -1089,10 +1075,10 @@ namespace GameCore
         public void RefreshMainInventorySlots()
         {
             //只有本地玩家有物品栏
-            if (!isLocalPlayer || pui == null)
+            if (!isLocalPlayer)
                 return;
 
-            Internal_RefreshInventorySlot(pui.mainInventorySlots);
+            Internal_RefreshInventorySlot(pui.quickInventorySlots);
         }
 
         void Internal_RefreshInventorySlot(InventorySlotUI[] slots)
@@ -1301,18 +1287,14 @@ namespace GameCore
             {
                 Debug.Log($"收到服务器回调, 正在生成已有区域 {region.index}");
 
-                if (isFirstGeneration)
-                {
-                    //防止因跑出区域导致重复生成
-                    transform.position = Region.GetMiddle(region.index);
-                }
-
                 GM.instance.GenerateExistingRegion(region, () =>
                 {
-                    //将玩家的位置恢复到出生点
                     if (isFirstGeneration)
                     {
-                        transform.position = region.spawnPoint.To2();
+                        //如果先前没获取过位置, 则将玩家的位置设置到该区域出生点
+                        if (!hasSetPosBySave)
+                            transform.position = region.spawnPoint.To2();
+
                         generatedFirstRegion = true;
                     }
                     //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
@@ -1322,125 +1304,6 @@ namespace GameCore
             }, true);
         }
 
-        #endregion
-
-
-        #region 玩家数据加载
-        void LoadPlayerDatumFromFile()
-        {
-            if (!isLocalPlayer)
-            {
-                Debug.LogError("必须由客户端申请加载数据");
-                return;
-            }
-
-            //加载玩家在文件中的数据
-            //TODO: 也许这些也可以转到Init里?
-            ServerLoadOrCreatePlayerDatum(GFiles.settings.playerName);
-        }
-
-        //TODO: say goodbye to alan
-        public const string defaultName = "Alan";
-
-        [ServerRpc]
-        void ServerLoadOrCreatePlayerDatum(string clientPlayerName, NetworkConnection caller = null)
-        {
-            Debug.Log($"客户端 {clientPlayerName} 申请加载玩家数据");
-
-            if (clientPlayerName.IsNullOrWhiteSpace())
-            {
-                clientPlayerName = defaultName;
-                Debug.Log($"{nameof(clientPlayerName)} 为空, 改为了 {defaultName}");
-            }
-
-            Debug.Log(this == null);
-            playerName = clientPlayerName;
-
-            for (int i = 0; i < GFiles.world.playerData.Count; i++)
-            {
-                PlayerData data = GFiles.world.playerData[i];
-
-                if (data.playerName == clientPlayerName)
-                {
-                    //加载服务器存档中的数据
-                    regionIndex = data.currentRegion;
-
-                    string oldInventory = JsonTools.ToJson(data.inventory);
-
-                    //恢复物品栏
-                    //这一行代码的意义是如果物品栏栏位数更改了, 可以保证栏位数和预想的一致
-                    data.inventory.SetSlotCount(inventorySlotCount);
-                    inventory = data.inventory;
-
-                    hungerValue = data.hungerValue;
-                    thirstValue = data.thirstValue;
-                    happinessValue = data.happinessValue;
-                    health = data.health;
-                    ClientSetCompletedTasks(data.completedTasks ?? new());
-
-                    goto finish;
-                }
-            }
-
-            //如果没找到就新建
-            Debug.LogWarning($"未找到匹配的玩家信息 ({clientPlayerName})");
-
-            //初始化新的临时数据
-            regionIndex = Vector2Int.zero;
-            inventory = new(inventorySlotCount, this);
-            hungerValue = defaultHungerValue;
-            thirstValue = defaultThirstValue;
-            happinessValue = defaultHappinessValue;
-            health = defaultHealth;
-            ClientSetCompletedTasks(new());
-
-
-        finish:
-            //在服务器存档中添加玩家存档
-            ServerAddPlayerDatumToFile();
-
-            MethodAgent.CallNextFrame(() =>
-            {
-                Debug.Log("已发送回调");
-                CallerLoadOrCreatePlayerDatum(caller);
-            });
-        }
-
-        [ConnectionRpc]
-        async void CallerLoadOrCreatePlayerDatum(NetworkConnection caller)
-        {
-            Debug.Log("服务器的回调来了!");
-            await UniTask.WaitWhile(() => completedTasks == null);
-
-            Debug.Log("回调完成!");
-            pui = new(this);
-
-            ServerGenerateRegion(regionIndex, true);
-        }
-
-        /// <summary>
-        /// 检查玩家数据中有没有指定的玩家名的数据, 如果没有生成一个新的并添加, 否则覆写
-        /// </summary>
-        [ServerRpc]
-        void ServerAddPlayerDatumToFile(NetworkConnection caller = null)
-        {
-            //初始化新的玩家数据
-            PlayerData newPlayerData = new()
-            {
-                playerName = playerName
-            };
-
-            //如果不存在就添加
-            GFiles.world.playerData.Add(newPlayerData);
-
-            //添加完马上就写入数据
-            WriteDataToSave();
-
-            Debug.LogWarning($"未在存档中匹配到玩家 {playerName} 的数据, 已自动添加");
-
-            //保存世界
-            GFiles.SaveAllDataToFiles();
-        }
         #endregion
 
         [HideInInspector] public Collider2D[] interactionObjectsDetectedTemp = new Collider2D[100];
@@ -1600,7 +1463,7 @@ namespace GameCore
 
                 //* 如果是触摸屏, 则检测光标和玩家的相对位置
                 case ControlMode.Touchscreen:
-                    if (p.pui != null && p.pui.moveJoystick && p.pui.cursorJoystick)
+                    if (p.pui.moveJoystick && p.pui.cursorJoystick)
                     {
                         if (p.pui.cursorImage.rt.localPosition.x < p.transform.position.x)
                             p.SetOrientation(false);
@@ -1796,17 +1659,10 @@ namespace GameCore
             if (pui == null)
                 return;
 
-            if (pui.thirstBarFull)
-                pui.thirstBarFull.image.fillAmount = thirstValue / maxThirstValue;
-
-            if (pui.hungerBarFull)
-                pui.hungerBarFull.image.fillAmount = hungerValue / maxHungerValue;
-
-            if (pui.happinessBarFull)
-                pui.happinessBarFull.image.fillAmount = happinessValue / maxHappinessValue;
-
-            if (pui.healthBarFull)
-                pui.healthBarFull.image.fillAmount = health / maxHealth;
+            pui.thirstBarFull.image.fillAmount = thirstValue / maxThirstValue;
+            pui.hungerBarFull.image.fillAmount = hungerValue / maxHungerValue;
+            pui.happinessBarFull.image.fillAmount = happinessValue / maxHappinessValue;
+            pui.healthBarFull.image.fillAmount = health / maxHealth;
         }
 
         #endregion
@@ -1933,7 +1789,7 @@ namespace GameCore
 
         public static Player local => ManagerNetwork.instance.localPlayer;
 
-        public static bool GetLocal(out Player p)
+        public static bool TryGetLocal(out Player p)
         {
             p = local;
 
@@ -2401,107 +2257,30 @@ namespace GameCore
         {
             if (Server.isServer)
             {
-                lock (all)
+                foreach (var player in all)
                 {
-                    NativeArray<bool> isMovingIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> thirstValueIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> thirstValueOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> hungerValueIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> hungerValueOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> happinessValueOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> healthIn = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeArray<float> healthOut = new(all.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    bool isMoving = player.isMoving;
+                    float thirstValue = player.thirstValue;
+                    float hungerValue = player.hungerValue;
+                    float happinessValue = player.happinessValue;
 
-                    //填入数据
-                    for (int i = 0; i < all.Count; i++)
-                    {
-                        var player = all[i];
+                    float thirstValueDelta = Performance.frameTime / 40;
+                    if (isMoving) thirstValueDelta += Performance.frameTime / 40;
+                    player.thirstValue = thirstValue - thirstValueDelta;
 
-                        isMovingIn[i] = player.isMoving;
-                        thirstValueIn[i] = player.thirstValue;
-                        hungerValueIn[i] = player.hungerValue;
-                        healthIn[i] = player.health;
-                    }
+                    float hungerValueDelta = Performance.frameTime / 30;
+                    if (isMoving) hungerValueDelta += Performance.frameTime / 40;
+                    player.hungerValue = hungerValue - hungerValueDelta;
 
-                    int batchCount = all.Count / 4;
-                    if (batchCount == 0) batchCount = 1;
-                    new PropertiesComputingJob()
-                    {
-                        isMovingIn = isMovingIn,
-                        thirstValueIn = thirstValueIn,
-                        thirstValueOut = thirstValueOut,
-                        hungerValueIn = hungerValueIn,
-                        hungerValueOut = hungerValueOut,
-                        happinessValueOut = happinessValueOut,
-                        healthIn = healthIn,
-                        healthOut = healthOut,
-                        frameTime = Performance.frameTime
-                    }.ScheduleParallel(all.Count, batchCount, default).Complete();  //除以4代表由四个 Job Thread 执行
+                    float happinessValueDelta = Performance.frameTime / 25;
+                    if (isMoving) happinessValueDelta += Performance.frameTime / 10;
+                    if (thirstValue <= 30) happinessValueDelta += Performance.frameTime / 30;
+                    if (hungerValue <= 30) happinessValueDelta += Performance.frameTime / 20;
+                    player.happinessValue = happinessValue - happinessValueDelta;
 
-                    //填入数据
-                    for (int i = 0; i < all.Count; i++)
-                    {
-                        var player = all[i];
-
-                        player.thirstValue -= thirstValueOut[i];
-                        player.hungerValue -= hungerValueOut[i];
-                        player.happinessValue -= happinessValueOut[i];
-
-                        var healthOutCurrent = healthOut[i];
-                        if (healthOutCurrent != 0) player.health -= healthOutCurrent;
-                    }
-
-                    isMovingIn.Dispose();
-                    thirstValueIn.Dispose();
-                    thirstValueOut.Dispose();
-                    hungerValueIn.Dispose();
-                    hungerValueOut.Dispose();
-                    happinessValueOut.Dispose();
-                    healthIn.Dispose();
-                    healthOut.Dispose();
+                    if (thirstValue <= 0 || hungerValue <= 0)
+                        player.health -= Performance.frameTime * 15;
                 }
-            }
-        }
-
-        [BurstCompile]
-        public struct PropertiesComputingJob : IJobFor
-        {
-            [ReadOnly] public NativeArray<bool> isMovingIn;
-            [ReadOnly] public NativeArray<float> thirstValueIn;
-            [WriteOnly] public NativeArray<float> thirstValueOut;
-            [ReadOnly] public NativeArray<float> hungerValueIn;
-            [WriteOnly] public NativeArray<float> hungerValueOut;
-            [WriteOnly] public NativeArray<float> happinessValueOut;
-            [ReadOnly] public NativeArray<float> healthIn;
-            [WriteOnly] public NativeArray<float> healthOut;
-            [ReadOnly] public float frameTime;
-
-            [BurstCompile]
-            public void Execute(int index)
-            {
-                bool isMovingTemp = isMovingIn[index];
-                float thirstValueTemp = thirstValueIn[index];
-                float hungerValueTemp = hungerValueIn[index];
-
-                float thirstValueDelta = frameTime / 40;
-                if (isMovingTemp) thirstValueDelta += frameTime / 40;
-                thirstValueOut[index] = thirstValueDelta;
-
-                float hungerValueDelta = frameTime / 30;
-                if (isMovingTemp) hungerValueDelta += frameTime / 30;
-                hungerValueOut[index] = hungerValueDelta;
-
-                float happinessValueDelta = frameTime / 25;
-                if (isMovingTemp) happinessValueDelta -= frameTime / 10;
-                if (healthIn[index] <= 10) happinessValueDelta += frameTime / 5;
-                if (thirstValueTemp <= 30) happinessValueDelta += frameTime / 20;
-                if (hungerValueTemp <= 30) happinessValueDelta += frameTime / 20;
-                happinessValueOut[index] = happinessValueDelta;
-
-                if (thirstValueTemp <= 0 || hungerValueTemp <= 0)
-                    healthOut[index] = frameTime * 15;
-                else
-                    healthOut[index] = 0;
             }
         }
     }

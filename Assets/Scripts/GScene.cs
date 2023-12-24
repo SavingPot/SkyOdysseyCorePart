@@ -40,7 +40,21 @@ namespace GameCore
                 Client.WhenIsConnected(() =>
                 {
                     if (Client.connection != null)
+                    {
                         Client.Send<NMClientChangeScene>(new(name));
+
+                        if (name == SceneNames.GameScene)
+                        {
+                            List<string> modIds = new();
+                            List<string> modVersions = new();
+                            foreach (var mod in ModFactory.mods)
+                            {
+                                modIds.Add(mod.info.id);
+                                modVersions.Add(mod.info.version);
+                            }
+                            Client.Send<NMAddPlayer>(new(GFiles.settings.playerName, GInit.gameVersion, modIds, modVersions));
+                        }
+                    }
                 });
             }
         };

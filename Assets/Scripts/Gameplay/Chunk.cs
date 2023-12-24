@@ -87,27 +87,6 @@ namespace GameCore.High
             }
         }
 
-
-        private void FixedUpdate()
-        {
-            if (!Player.GetLocal(out Player localPlayer) || SyncPacker.vars.Count == 0 || !localPlayer.TryGetRegion(out _))
-            {
-                return;
-            }
-
-            /* ---------------------------------- 为方块回血 --------------------------------- */
-            foreach (var block in blocks)
-            {
-                if (block == null)
-                    continue;
-
-                if (Tools.time >= block.lastDamageTime + 7.5f)
-                {
-                    block.health += 0.2f;
-                }
-            }
-        }
-
         public void RecoverTotalRegion()
         {
             //删除区块所属的区域
