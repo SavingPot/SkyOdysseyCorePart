@@ -19,6 +19,7 @@ using Random = System.Random;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using GameCore.High;
+using System.Threading;
 
 namespace GameCore
 {
@@ -571,12 +572,12 @@ namespace GameCore
         #endregion
 
         /// <summary>
-        /// 让服务器生成物品实体
+        /// 让服务器生成凋落物
         /// </summary>
         /// <param name="pos"></param>
         /// <param name="itemId"></param>
-        [ChineseName("生成物品")]
-        public void SummonItem(Vector3 pos, string itemId, ushort count = 1, string customData = null)
+        [ChineseName("生成掉落物")]
+        public void SummonDrop(Vector3 pos, string itemId, ushort count = 1, string customData = null)
         {
             string guid = Tools.randomGUID;
             StringBuilder sb = Tools.stringBuilderPool.Get();
@@ -587,13 +588,12 @@ namespace GameCore
             SummonEntity(pos, EntityID.Drop, guid, true, null, param.ToString());
         }
 
-        public void SummonEntity(Vector3 pos, string id, string saveId = null, bool intoRegion = true, float? health = null, string customData = null)
+        public void SummonEntity(Vector3 pos, string id, string saveId = null, bool saveIntoRegion = true, float? health = null, string customData = null)
         {
             saveId ??= Tools.randomGUID;
 
-            //TODO: NMSummon 改为 ServerRun
             //发送生成消息给服务器
-            Client.Send<NMSummon>(new(pos, id, saveId, intoRegion, health, customData));
+            Client.Send<NMSummon>(new(pos, id, saveId, saveIntoRegion, health, customData));
         }
 
         public void SummonEntity(EntitySave save)
@@ -800,200 +800,206 @@ namespace GameCore
 
             Vector2Int[] islandCenterPoints = islandCentersTemp.ToArray();
 
-            Parallel.ForEach(islandCenterPoints, islandCenterPoint =>
+            Task[] tasks = new Task[islandCenterPoints.Length];
+
+            for (int i = 0; i < islandCenterPoints.Length; i++)
             {
-                IslandGeneration islandGeneration = generation.NewIsland(islandCenterPoint == Vector2Int.zero);
-                BiomeData_Block[] directBlocks;
-                BiomeData_Block[] perlinBlocks;
-                BiomeData_Block[] postProcessBlocks;
-                BiomeData_Block[] unexpectedBlocks;
+                var centerPoint = islandCenterPoints[i];
 
-                List<BiomeData_Block> directBlocksTemp = new();
-                List<BiomeData_Block> perlinBlocksTemp = new();
-                List<BiomeData_Block> postProcessBlocksTemp = new();
-                List<BiomeData_Block> unexpectedBlocksTemp = new();
-
-                List<(Vector2Int pos, bool isBackground)> blockAdded = new();
-
-                foreach (var g in islandGeneration.biome.blocks)
+                var task = new Task(() =>
                 {
-                    if (g == null || !g.initialized)
-                        continue;
+                    IslandGeneration islandGeneration = generation.NewIsland(centerPoint == Vector2Int.zero);
+                    BiomeData_Block[] directBlocks;
+                    BiomeData_Block[] perlinBlocks;
+                    BiomeData_Block[] postProcessBlocks;
+                    BiomeData_Block[] unexpectedBlocks;
 
-                    if (g.type == "direct")
-                        directBlocksTemp.Add(g);
-                    else if (g.type == "perlin")
-                        perlinBlocksTemp.Add(g);
-                    else if (g.type == "post_process")
-                        postProcessBlocksTemp.Add(g);
-                    else
-                        unexpectedBlocksTemp.Add(g);
-                }
+                    List<BiomeData_Block> directBlocksTemp = new();
+                    List<BiomeData_Block> perlinBlocksTemp = new();
+                    List<BiomeData_Block> postProcessBlocksTemp = new();
+                    List<BiomeData_Block> unexpectedBlocksTemp = new();
 
-                directBlocks = directBlocksTemp.ToArray();
-                perlinBlocks = perlinBlocksTemp.ToArray();
-                postProcessBlocks = postProcessBlocksTemp.ToArray();
-                unexpectedBlocks = unexpectedBlocksTemp.ToArray();
+                    List<(Vector2Int pos, bool isBackground)> blockAdded = new();
 
-
-                void AddBlockInTheIsland(string blockId, Vector2Int pos, bool isBackground)
-                {
-                    pos += islandCenterPoint;
-                    blockAdded.Add((pos, isBackground));
-
-                    islandGeneration.regionGeneration.region.AddPos(blockId, pos, isBackground, true);
-                }
-
-                void AddBlockInTheIslandForAreas(string blockId, Vector2Int pos, Vector3Int[] areas)
-                {
-                    pos += islandCenterPoint;
-                    foreach (var item in areas)
+                    foreach (var g in islandGeneration.biome.blocks)
                     {
-                        Vector2Int actualPos = new(pos.x + item.x, pos.y + item.y);
-                        bool actualIsBackground = item.z < 0;
+                        if (g == null || !g.initialized)
+                            continue;
 
-                        lock (blockAdded)
-                        {
-                            for (int c = 0; c < blockAdded.Count; c++)
-                            {
-                                var p = blockAdded[c];
-                                if (p.pos == actualPos && p.isBackground == actualIsBackground)
-                                    blockAdded.RemoveAt(c);
-                            }
-                            blockAdded.Add((actualPos, actualIsBackground));
-                        }
+                        if (g.type == "direct")
+                            directBlocksTemp.Add(g);
+                        else if (g.type == "perlin")
+                            perlinBlocksTemp.Add(g);
+                        else if (g.type == "post_process")
+                            postProcessBlocksTemp.Add(g);
+                        else
+                            unexpectedBlocksTemp.Add(g);
                     }
 
-                    islandGeneration.regionGeneration.region.AddPos(blockId, pos, areas, true);
-                }
+                    directBlocks = directBlocksTemp.ToArray();
+                    perlinBlocks = perlinBlocksTemp.ToArray();
+                    postProcessBlocks = postProcessBlocksTemp.ToArray();
+                    unexpectedBlocks = unexpectedBlocksTemp.ToArray();
 
 
-                /* ---------------------------------- 生成 Direct --------------------------------- */
-                //遍历每个点
-                for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
-                {
-                    for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
+                    void AddBlockInTheIsland(string blockId, Vector2Int pos, bool isBackground)
                     {
-                        //当前遍历到的点
-                        Vector2Int pos = new(x, y);
+                        pos += centerPoint;
+                        blockAdded.Add((pos, isBackground));
 
-                        foreach (var g in directBlocks)
+                        islandGeneration.regionGeneration.region.AddPos(blockId, pos, isBackground, true);
+                    }
+
+                    void AddBlockInTheIslandForAreas(string blockId, Vector2Int pos, Vector3Int[] areas)
+                    {
+                        pos += centerPoint;
+                        foreach (var item in areas)
                         {
-                            if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
+                            Vector2Int actualPos = new(pos.x + item.x, pos.y + item.y);
+                            bool actualIsBackground = item.z < 0;
+
+                            lock (blockAdded)
                             {
-                                if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.blockSave.blockId == g.attached.blockId)
+                                for (int c = 0; c < blockAdded.Count; c++)
                                 {
-                                    foreach (var range in g.ranges)
+                                    var p = blockAdded[c];
+                                    if (p.pos == actualPos && p.isBackground == actualIsBackground)
+                                        blockAdded.RemoveAt(c);
+                                }
+                                blockAdded.Add((actualPos, actualIsBackground));
+                            }
+                        }
+
+                        islandGeneration.regionGeneration.region.AddPos(blockId, pos, areas, true);
+                    }
+
+
+                    /* ---------------------------------- 生成 Direct --------------------------------- */
+                    //遍历每个点
+                    for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
+                    {
+                        for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
+                        {
+                            //当前遍历到的点
+                            Vector2Int pos = new(x, y);
+
+                            foreach (var g in directBlocks)
+                            {
+                                if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
+                                {
+                                    if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
+                                        islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.blockSave.blockId == g.attached.blockId)
                                     {
-                                        if (string.IsNullOrWhiteSpace(range.minFormula) ||
-                                            string.IsNullOrWhiteSpace(range.maxFormula) ||
-                                            y.IInRange(
-                                                range.minFormula.ComputeFormula(islandGeneration.directBlockComputationAlgebra),
-                                                range.maxFormula.ComputeFormula(islandGeneration.directBlockComputationAlgebra)
-                                            ))
+                                        foreach (var range in g.ranges)
                                         {
-                                            AddBlockInTheIslandForAreas(g.id, pos, g.areas);
+                                            if (string.IsNullOrWhiteSpace(range.minFormula) ||
+                                                string.IsNullOrWhiteSpace(range.maxFormula) ||
+                                                y.IInRange(
+                                                    range.minFormula.ComputeFormula(islandGeneration.directBlockComputationAlgebra),
+                                                    range.maxFormula.ComputeFormula(islandGeneration.directBlockComputationAlgebra)
+                                                ))
+                                            {
+                                                AddBlockInTheIslandForAreas(g.id, pos, g.areas);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                /* ---------------------------------- 生成 Perlin --------------------------------- */
-                foreach (var perlinBlock in perlinBlocks)
-                {
-                    var perlin = perlinBlock.perlin;
-
-                    //Key是x轴, Value是对应的噪声值
-                    List<Vector2Int> noises = new();
-                    int lowestNoise = int.MaxValue;
-                    int highestNoise = int.MaxValue;
-
-                    for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
+                    /* ---------------------------------- 生成 Perlin --------------------------------- */
+                    foreach (var perlinBlock in perlinBlocks)
                     {
-                        var xSample = (x + (float)islandGeneration.regionGeneration.actualSeed / 1000f) / perlin.fluctuationFrequency;
-                        var noise = (int)(Mathf.PerlinNoise1D(xSample) * perlin.fluctuationHeight);
+                        var perlin = perlinBlock.perlin;
 
-                        noises.Add(new(x, noise));
+                        //Key是x轴, Value是对应的噪声值
+                        List<Vector2Int> noises = new();
+                        int lowestNoise = int.MaxValue;
+                        int highestNoise = int.MaxValue;
 
-                        //最低/最高值为 int.MaxValue 代表的是最低/最高值还未被赋值过     
-                        if (lowestNoise == int.MaxValue || noise < lowestNoise)
-                            lowestNoise = noise;
-                        if (highestNoise == int.MaxValue || noise > highestNoise)
-                            highestNoise = noise;
-                    }
-
-                    var startY = (int)perlin.startYFormula.ComputeFormula(islandGeneration.directBlockComputationAlgebra);
-
-                    //遍历每一个噪声点
-                    foreach (var noise in noises)
-                    {
-                        //如果 noise.y == 6, 那就要从 0 开始向上遍历, 把方块一个个放出来, 一共七个方块 (0123456)
-                        for (int i = 0; i < noise.y + 1; i++)
+                        for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
                         {
-                            /* -------------------------------- 接下来是添加方块 -------------------------------- */
-                            foreach (var block in perlin.blocks)
+                            var xSample = (x + (float)islandGeneration.regionGeneration.actualSeed / 1000f) / perlin.fluctuationFrequency;
+                            var noise = (int)(Mathf.PerlinNoise1D(xSample) * perlin.fluctuationHeight);
+
+                            noises.Add(new(x, noise));
+
+                            //最低/最高值为 int.MaxValue 代表的是最低/最高值还未被赋值过     
+                            if (lowestNoise == int.MaxValue || noise < lowestNoise)
+                                lowestNoise = noise;
+                            if (highestNoise == int.MaxValue || noise > highestNoise)
+                                highestNoise = noise;
+                        }
+
+                        var startY = (int)perlin.startYFormula.ComputeFormula(islandGeneration.directBlockComputationAlgebra);
+
+                        //遍历每一个噪声点
+                        foreach (var noise in noises)
+                        {
+                            //如果 noise.y == 6, 那就要从 0 开始向上遍历, 把方块一个个放出来, 一共七个方块 (0123456)
+                            for (int i = 0; i < noise.y + 1; i++)
                             {
-                                var algebra = GetPerlinFormulaAlgebra(0, noise.y, islandGeneration.minPoint.y, islandGeneration.surface, islandGeneration.maxPoint.y);
-                                var min = (int)block.minFormula.ComputeFormula(algebra);
-                                var max = (int)block.maxFormula.ComputeFormula(algebra);
-
-                                if (i >= min && i <= max)
+                                /* -------------------------------- 接下来是添加方块 -------------------------------- */
+                                foreach (var block in perlin.blocks)
                                 {
-                                    var blockPos = new Vector2Int(noise.x, startY + i);
+                                    var algebra = GetPerlinFormulaAlgebra(0, noise.y, islandGeneration.minPoint.y, islandGeneration.surface, islandGeneration.maxPoint.y);
+                                    var min = (int)block.minFormula.ComputeFormula(algebra);
+                                    var max = (int)block.maxFormula.ComputeFormula(algebra);
 
-                                    AddBlockInTheIsland(block.block, blockPos, block.isBackground);
-                                    break;
+                                    if (i >= min && i <= max)
+                                    {
+                                        var blockPos = new Vector2Int(noise.x, startY + i);
+
+                                        AddBlockInTheIsland(block.block, blockPos, block.isBackground);
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                /* ---------------------------------- 生成 PostProcess --------------------------------- */
+                    /* ---------------------------------- 生成 PostProcess --------------------------------- */
 
-                //字典返回的是这个 x 对应的 y 值最高的点 (x 为 Key   y 为 Value)
-                Dictionary<int, int> wallHighestPointFunction = new();
-                Dictionary<int, int> backgroundHighestPointFunction = new();
+                    //字典返回的是这个 x 对应的 y 值最高的点 (x 为 Key   y 为 Value)
+                    Dictionary<int, int> wallHighestPointFunction = new();
+                    Dictionary<int, int> backgroundHighestPointFunction = new();
 
-                foreach (var oneAdded in blockAdded)
-                {
-                    var pos = oneAdded.pos;
-                    var isBackground = oneAdded.isBackground;
-
-                    var dic = isBackground ? backgroundHighestPointFunction : wallHighestPointFunction;
-
-                    //如果该 x 值没有被记录过, 那就记录该 x 值
-                    if (!dic.ContainsKey(pos.x))
-                        dic.Add(pos.x, pos.y);
-                    else if (dic[pos.x] < pos.y)  //如果该 x 值已经被记录过, 但是记录的 y 值比当前 y 值要小, 那就更新记录的 y 值
-                        dic[pos.x] = pos.y;
-                }
-
-                //遍历每个点
-                for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
-                {
-                    Parallel.For(islandGeneration.minPoint.y, islandGeneration.maxPoint.y, y =>
+                    foreach (var oneAdded in blockAdded)
                     {
-                        //当前遍历到的点
-                        Vector2Int pos = new(x, y);
+                        var pos = oneAdded.pos;
+                        var isBackground = oneAdded.isBackground;
 
-                        foreach (var g in postProcessBlocks)
+                        var dic = isBackground ? backgroundHighestPointFunction : wallHighestPointFunction;
+
+                        //如果该 x 值没有被记录过, 那就记录该 x 值
+                        if (!dic.ContainsKey(pos.x))
+                            dic.Add(pos.x, pos.y);
+                        else if (dic[pos.x] < pos.y)  //如果该 x 值已经被记录过, 但是记录的 y 值比当前 y 值要小, 那就更新记录的 y 值
+                            dic[pos.x] = pos.y;
+                    }
+
+                    //遍历每个点
+                    for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
+                    {
+                        for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
                         {
-                            if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
-                            {
-                                if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.blockSave.blockId == g.attached.blockId)
-                                {
-                                    foreach (var range in g.ranges)
-                                    {
-                                        if (!wallHighestPointFunction.TryGetValue(x, out int highestY))
-                                            highestY = 0;
+                            //当前遍历到的点
+                            Vector2Int pos = new(x, y);
 
-                                        var formulaAlgebra = new FormulaAlgebra()
+                            foreach (var g in postProcessBlocks)
+                            {
+                                if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
+                                {
+                                    if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
+                                        islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground)?.blockSave.blockId == g.attached.blockId)
+                                    {
+                                        foreach (var range in g.ranges)
+                                        {
+                                            if (!wallHighestPointFunction.TryGetValue(x, out int highestY))
+                                                highestY = 0;
+
+                                            var formulaAlgebra = new FormulaAlgebra()
                                         {
                                             {
                                                 "@bottom", islandGeneration.minPoint.y
@@ -1009,90 +1015,94 @@ namespace GameCore
                                             }
                                         };
 
-                                        if (string.IsNullOrWhiteSpace(range.minFormula) ||
-                                            string.IsNullOrWhiteSpace(range.maxFormula) ||
-                                            y.IInRange(
-                                                range.minFormula.ComputeFormula(formulaAlgebra),
-                                                range.maxFormula.ComputeFormula(formulaAlgebra)
-                                            ))
-                                        {
-                                            AddBlockInTheIslandForAreas(g.id, pos, g.areas);
+                                            if (string.IsNullOrWhiteSpace(range.minFormula) ||
+                                                string.IsNullOrWhiteSpace(range.maxFormula) ||
+                                                y.IInRange(
+                                                    range.minFormula.ComputeFormula(formulaAlgebra),
+                                                    range.maxFormula.ComputeFormula(formulaAlgebra)
+                                                ))
+                                            {
+                                                AddBlockInTheIslandForAreas(g.id, pos, g.areas);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    });
-                }
+                    }
 
-                if (islandCenterPoint == Vector2Int.zero)
-                {
-                    var middleX = Region.GetMiddleX(generation.index);
-                    generation.region.spawnPoint = new(middleX, wallHighestPointFunction[middleX] + 3);
-                }
+                    if (centerPoint == Vector2Int.zero)
+                    {
+                        var middleX = Region.GetMiddleX(generation.index);
+                        generation.region.spawnPoint = new(middleX, wallHighestPointFunction[middleX] + 3);
+                    }
 
-                //生成战利品
-                IslandGeneration.LootGeneration(islandGeneration, wallHighestPointFunction);
-
+                    //生成战利品
+                    IslandGeneration.LootGeneration(islandGeneration, wallHighestPointFunction);
 
 
 
 
-                /* -------------------------------------------------------------------------- */
-                /*                                    生成结构                                    */
-                /* -------------------------------------------------------------------------- */
-                if (islandGeneration.biome.structures?.Length > 0)
-                {
-                    //全部生成完后再生成结构
-                    for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
-                        for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
-                        {
-                            //当前遍历到的点
-                            Vector2Int pos = new(x, y);
 
-                            Parallel.ForEach(islandGeneration.biome.structures, l =>
+                    /* -------------------------------------------------------------------------- */
+                    /*                                    生成结构                                    */
+                    /* -------------------------------------------------------------------------- */
+                    if (islandGeneration.biome.structures?.Length > 0)
+                    {
+                        //全部生成完后再生成结构
+                        for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
+                            for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
                             {
-                                if (Tools.Prob100(l.structure.probability, islandGeneration.regionGeneration.random))
+                                //当前遍历到的点
+                                Vector2Int pos = new(x, y);
+
+                                Parallel.ForEach(islandGeneration.biome.structures, l =>
                                 {
-                                    //检查空间是否足够
-                                    if (l.structure.mustEnough)
+                                    if (Tools.Prob100(l.structure.probability, islandGeneration.regionGeneration.random))
                                     {
-                                        foreach (var fixedBlock in l.structure.fixedBlocks)
+                                        //检查空间是否足够
+                                        if (l.structure.mustEnough)
                                         {
-                                            if (islandGeneration.regionGeneration.region.GetBlock(pos + fixedBlock.offset, fixedBlock.isBackground) != null)
+                                            foreach (var fixedBlock in l.structure.fixedBlocks)
+                                            {
+                                                if (islandGeneration.regionGeneration.region.GetBlock(pos + fixedBlock.offset, fixedBlock.isBackground) != null)
+                                                {
+                                                    goto stopGeneration;
+                                                }
+                                            }
+                                        }
+
+                                        //检查是否满足所有需求
+                                        foreach (var require in l.structure.require)
+                                        {
+                                            if (!islandGeneration.regionGeneration.region.GetBlockOut(pos + require.offset, require.isBackground, out BlockSave_Location temp) || temp.blockSave.blockId != require.blockId)
                                             {
                                                 goto stopGeneration;
                                             }
                                         }
-                                    }
 
-                                    //检查是否满足所有需求
-                                    foreach (var require in l.structure.require)
-                                    {
-                                        if (!islandGeneration.regionGeneration.region.GetBlockOut(pos + require.offset, require.isBackground, out BlockSave_Location temp) || temp.blockSave.blockId != require.blockId)
+                                        //如果可以就继续
+                                        Parallel.ForEach(l.structure.fixedBlocks, attached =>
                                         {
-                                            goto stopGeneration;
-                                        }
+                                            var tempPos = pos + attached.offset;
+
+                                            AddBlockInTheIsland(attached.blockId, tempPos, attached.isBackground);
+                                        });
+
+                                    stopGeneration:
+                                        return;
                                     }
+                                });
+                            };
+                    }
+                });
 
-                                    //如果可以就继续
-                                    Parallel.ForEach(l.structure.fixedBlocks, attached =>
-                                    {
-                                        var tempPos = pos + attached.offset;
+                tasks[i] = task;
+                task.Start();
+            }
 
-                                        AddBlockInTheIsland(attached.blockId, tempPos, attached.isBackground);
-                                    });
-
-                                stopGeneration:
-                                    return;
-                                }
-                            });
-                        };
-                }
-            });
-
-
-
+            //等待所有 Thread 执行完毕
+            Task.WaitAll(tasks);
 
 
             /* -------------------------------------------------------------------------- */

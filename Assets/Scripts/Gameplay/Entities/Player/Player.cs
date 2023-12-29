@@ -258,8 +258,13 @@ namespace GameCore
         #region 物品
 
         [SyncGetter] Inventory inventory_get() => default; [SyncSetter] void inventory_set(Inventory value) { }
-        [Sync] public Inventory inventory { get => Inventory.ResumeFromStreamTransport(inventory_get(), this); set => inventory_set(value); }
+        [Sync(nameof(TempInventory))] public Inventory inventory { get => _inventory; set => inventory_set(value); }
+        private Inventory _inventory;
 
+        void TempInventory()
+        {
+            _inventory = Inventory.ResumeFromStreamTransport(inventory_get(), this);
+        }
 
         public Inventory GetInventory() => inventory;
 
@@ -356,8 +361,8 @@ namespace GameCore
         public static int playerLayerMask { get; private set; }
         public static int playerOnGroundLayerMask { get; private set; }
         public static float interactionRadius = 3;
-        public static int mainInventorySlotCount = 8;   //偶数
-        public static int halfMainInventorySlotCount = mainInventorySlotCount / 2;
+        public static int quickInventorySlotCount = 8;   //偶数
+        public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui;
         public const float playerDefaultGravity = 7f;
         public static float fallenDamageHeight = 9;
@@ -402,8 +407,16 @@ namespace GameCore
         #region Unity 回调
         [ServerRpc] static void Mtd1(Creature c, NetworkConnection caller) { Debug.Log("Mtd1"); }
         [ServerRpc] static void Mtd2(Player c, NetworkConnection caller) { Debug.Log("Mtd2"); }
-        protected override void Start()
+
+
+
+        public override void InitAfterAwake()
         {
+            base.InitAfterAwake();
+
+            //把 inventory 的初始值缓存下来
+            TempInventory();
+
             //加载服务器存档中的位置
             if (isServer)
             {
@@ -416,7 +429,10 @@ namespace GameCore
                 //这一行不是必要的, inventory 通常不会为空, 但是我们要保证代码 100% 正常运行
                 inventory ??= new(inventorySlotCount, this);
             }
+        }
 
+        protected override void Start()
+        {
             Debug.Log(this == null);
             Mtd2(this, null);
             Mtd1(this, null);
@@ -442,31 +458,29 @@ namespace GameCore
                 ServerGenerateRegion(regionIndex, true);
             }
 
-            StartCoroutine(IEWaitForCondition(() => !skinHead || !skinBody || !skinLeftArm || !skinRightArm || !skinLeftLeg || !skinRightLeg || !skinLeftFoot || !skinRightFoot, () =>
-            {
-                MethodAgent.TryRun(() =>
-                {
-                    body = AddBodyPart("body", skinBody, Vector2.zero, 5, model.transform, BodyPartType.Body);
-                    head = AddBodyPart("head", skinHead, new(0, -0.03f), 10, body, BodyPartType.Head, new(-0.03f, -0.04f));
-                    rightArm = AddBodyPart("rightArm", skinRightArm, new(0, 0.03f), 8, body, BodyPartType.RightArm);
-                    leftArm = AddBodyPart("leftArm", skinLeftArm, new(0, 0.03f), 3, body, BodyPartType.LeftArm);
-                    rightLeg = AddBodyPart("rightLeg", skinRightLeg, new(0.02f, 0.04f), 3, body, BodyPartType.RightLeg);
-                    leftLeg = AddBodyPart("leftLeg", skinLeftLeg, new(-0.02f, 0.04f), 1, body, BodyPartType.LeftLeg);
-                    rightFoot = AddBodyPart("rightFoot", skinRightFoot, Vector2.zero, 3, rightLeg, BodyPartType.RightFoot);
-                    leftFoot = AddBodyPart("leftFoot", skinLeftFoot, Vector2.zero, 1, leftLeg, BodyPartType.LeftFoot);
 
-                    //添加双手物品的显示
-                    usingItemRenderer = ObjectTools.CreateSpriteObject(rightArm.transform, "item");
 
-                    usingItemRenderer.sortingOrder = 9;
+            body = AddBodyPart("body", skinBody, Vector2.zero, 5, model.transform, BodyPartType.Body);
+            head = AddBodyPart("head", skinHead, new(0, -0.03f), 10, body, BodyPartType.Head, new(-0.03f, -0.04f));
+            rightArm = AddBodyPart("rightArm", skinRightArm, new(0, 0.03f), 8, body, BodyPartType.RightArm);
+            leftArm = AddBodyPart("leftArm", skinLeftArm, new(0, 0.03f), 3, body, BodyPartType.LeftArm);
+            rightLeg = AddBodyPart("rightLeg", skinRightLeg, new(0.02f, 0.04f), 3, body, BodyPartType.RightLeg);
+            leftLeg = AddBodyPart("leftLeg", skinLeftLeg, new(-0.02f, 0.04f), 1, body, BodyPartType.LeftLeg);
+            rightFoot = AddBodyPart("rightFoot", skinRightFoot, Vector2.zero, 3, rightLeg, BodyPartType.RightFoot);
+            leftFoot = AddBodyPart("leftFoot", skinLeftFoot, Vector2.zero, 1, leftLeg, BodyPartType.LeftFoot);
 
-                    usingItemRenderer.transform.localPosition = new(0.1f, -0.5f);
-                    usingItemRenderer.transform.SetScale(0.5f, 0.5f);
-                }, true);
+            //添加双手物品的显示
+            usingItemRenderer = ObjectTools.CreateSpriteObject(rightArm.transform, "item");
 
-                BindHumanAnimations(this);
-                animWeb.CreateConnectionFromTo("excavate_rightarm", "idle", () => true, 0.15f * 2, 0);
-            }));
+            usingItemRenderer.sortingOrder = 9;
+
+            usingItemRenderer.transform.localPosition = new(0.1f, -0.5f);
+            usingItemRenderer.transform.SetScale(0.5f, 0.5f);
+
+            BindHumanAnimations(this);
+            animWeb.CreateConnectionFromTo("excavate_rightarm", "idle", () => true, 0.15f * 2, 0);
+
+
 
             OnNameChange(playerName);
         }
@@ -535,7 +549,6 @@ namespace GameCore
 
 
 
-        //TODO: 降低 Update 开销
         protected override void Update()
         {
             if (!isHurting)
@@ -547,12 +560,6 @@ namespace GameCore
                 LocalUpdate();
 
             inventory?.DoBehaviours();
-
-            if (pui != null)
-            {
-                pui.useItemButtonImage.image.sprite = TryGetUsingItem()?.data?.texture?.sprite;
-                pui.useItemButtonImage.image.color = pui.useItemButtonImage.image.sprite ? Color.white : Color.clear;
-            }
 
             RefreshInventory();
         }
@@ -619,7 +626,7 @@ namespace GameCore
                     int value = usingItemIndex - 1;
 
                     if (value < 0)
-                        value = mainInventorySlotCount - 1;
+                        value = quickInventorySlotCount - 1;
 
                     SwitchItem(value);
                 }
@@ -627,7 +634,7 @@ namespace GameCore
                 {
                     int value = usingItemIndex + 1;
 
-                    if (value > mainInventorySlotCount - 1)
+                    if (value > quickInventorySlotCount - 1)
                         value = 0;
 
                     SwitchItem(value);
@@ -737,7 +744,7 @@ namespace GameCore
 
                 //从头上吐出物品
                 Vector2 pos = head ? head.transform.position : transform.localPosition;
-                GM.instance.SummonItem(pos, item.data.id, count, item.customData.ToString());
+                GM.instance.SummonDrop(pos, item.data.id, count, item.customData.ToString());
             }
         }
 
@@ -746,7 +753,7 @@ namespace GameCore
             usingItemIndex = index;
 
             //播放切换音效
-            GAudio.Play(AudioID.SwitchMainInventorySlot);
+            GAudio.Play(AudioID.SwitchQuickInventorySlot);
 
             //改变状态文本
             string itemName = GameUI.CompareText(TryGetUsingItem()?.data?.id).text;
@@ -1031,95 +1038,58 @@ namespace GameCore
 
         public void RefreshInventory()
         {
-            if (usingItemRenderer && head && body && leftArm && rightArm && leftLeg && rightLeg && leftFoot && rightFoot)
+            //缓存物品栏以保证性能
+            var inventoryTemp = inventory;
+
+            /* --------------------------------- 刷新手部物品 --------------------------------- */
+            usingItemRenderer.sprite = inventoryTemp.TryGetItem(usingItemIndex)?.data?.texture?.sprite;
+
+            /* --------------------------------- 刷新头盔的贴图 -------------------------------- */
+            if (Item.IsHelmet(inventoryTemp.helmet))
             {
-                /* --------------------------------- 刷新手部物品 --------------------------------- */
-                usingItemRenderer.sprite = TryGetUsingItem()?.data?.texture?.sprite;
-
-                /* --------------------------------- 刷新头盔的贴图 -------------------------------- */
-                if (Item.IsHelmet(inventory.helmet))
-                {
-                    head.armorSr.sprite = inventory.helmet.data.Helmet.head?.sprite;
-                }
-                else
-                {
-                    head.armorSr.sprite = null;
-                }
-
-                /* --------------------------------- 刷新胸甲的贴图 -------------------------------- */
-                if (Item.IsBreastplate(inventory.breastplate))
-                {
-                    body.armorSr.sprite = inventory.breastplate.data.Breastplate.body?.sprite;
-                    leftArm.armorSr.sprite = inventory.breastplate.data.Breastplate.leftArm?.sprite;
-                    rightArm.armorSr.sprite = inventory.breastplate.data.Breastplate.rightArm?.sprite;
-                }
-                else
-                {
-                    body.armorSr.sprite = null;
-                    leftArm.armorSr.sprite = null;
-                    rightArm.armorSr.sprite = null;
-                }
-
-                /* --------------------------------- 刷新护腿的贴图 -------------------------------- */
-                if (Item.IsLegging(inventory.legging))
-                {
-                    leftLeg.armorSr.sprite = inventory.legging.data.Legging.leftLeg?.sprite;
-                    rightLeg.armorSr.sprite = inventory.legging.data.Legging.rightLeg?.sprite;
-                }
-                else
-                {
-                    leftLeg.armorSr.sprite = null;
-                    rightLeg.armorSr.sprite = null;
-                }
-
-                /* --------------------------------- 刷新鞋子的贴图 -------------------------------- */
-                if (Item.IsBoots(inventory.boots))
-                {
-                    leftFoot.armorSr.sprite = inventory.boots.data.Boots.leftFoot?.sprite;
-                    rightFoot.armorSr.sprite = inventory.boots.data.Boots.rightFoot?.sprite;
-                }
-                else
-                {
-                    leftFoot.armorSr.sprite = null;
-                    rightFoot.armorSr.sprite = null;
-                }
+                head.armorSr.sprite = inventoryTemp.helmet.data.Helmet.head?.sprite;
+            }
+            else
+            {
+                head.armorSr.sprite = null;
             }
 
-            RefreshMainInventorySlots();
-        }
-
-        public void RefreshMainInventorySlots()
-        {
-            //只有本地玩家有物品栏
-            if (!isLocalPlayer)
-                return;
-
-            Internal_RefreshInventorySlot(pui.quickInventorySlots);
-        }
-
-        void Internal_RefreshInventorySlot(InventorySlotUI[] slots)
-        {
-            for (int i = 0; i < slots.Length; i++)
+            /* --------------------------------- 刷新胸甲的贴图 -------------------------------- */
+            if (Item.IsBreastplate(inventoryTemp.breastplate))
             {
-                var val = slots.ElementAt(i);
+                body.armorSr.sprite = inventoryTemp.breastplate.data.Breastplate.body?.sprite;
+                leftArm.armorSr.sprite = inventoryTemp.breastplate.data.Breastplate.leftArm?.sprite;
+                rightArm.armorSr.sprite = inventoryTemp.breastplate.data.Breastplate.rightArm?.sprite;
+            }
+            else
+            {
+                body.armorSr.sprite = null;
+                leftArm.armorSr.sprite = null;
+                rightArm.armorSr.sprite = null;
+            }
 
-                if (val == null)
-                    return;
+            /* --------------------------------- 刷新护腿的贴图 -------------------------------- */
+            if (Item.IsLegging(inventoryTemp.legging))
+            {
+                leftLeg.armorSr.sprite = inventoryTemp.legging.data.Legging.leftLeg?.sprite;
+                rightLeg.armorSr.sprite = inventoryTemp.legging.data.Legging.rightLeg?.sprite;
+            }
+            else
+            {
+                leftLeg.armorSr.sprite = null;
+                rightLeg.armorSr.sprite = null;
+            }
 
-                var itemInMainInventorySlots = inventory?.TryGetItem(i);
-
-                //设置物品图标
-                val.content.image.sprite = itemInMainInventorySlots?.data?.texture?.sprite;
-                val.content.image.color = new(val.content.image.color.r, val.content.image.color.g, val.content.image.color.b, !val.content.image.sprite ? 0 : 1);
-
-                //设置文本
-                val.button.buttonText.text.text = itemInMainInventorySlots?.count.ToString();
-
-                //设置栏位图标
-                if (usingItemIndex == i)
-                    val.button.image.sprite = ModFactory.CompareTexture("ori:using_item_tab")?.sprite;
-                else
-                    val.button.image.sprite = ModFactory.CompareTexture("ori:item_tab")?.sprite;
+            /* --------------------------------- 刷新鞋子的贴图 -------------------------------- */
+            if (Item.IsBoots(inventoryTemp.boots))
+            {
+                leftFoot.armorSr.sprite = inventoryTemp.boots.data.Boots.leftFoot?.sprite;
+                rightFoot.armorSr.sprite = inventoryTemp.boots.data.Boots.rightFoot?.sprite;
+            }
+            else
+            {
+                leftFoot.armorSr.sprite = null;
+                rightFoot.armorSr.sprite = null;
             }
         }
 

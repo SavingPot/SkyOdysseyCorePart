@@ -14,7 +14,6 @@ namespace GameCore
     public static class MethodAgent
     {
         public static Action updates = () => { };
-        public static Action fixedUpdates = () => { };
 
         public static SynchronizationContext mainThreadSyncContext = SynchronizationContext.Current;
         public static Thread mainThread = Thread.CurrentThread;
@@ -140,16 +139,6 @@ namespace GameCore
             return null;
         }
 
-        [ChineseName("添加更新")] public static void AddUpdate(IUpdate update) => updates += update.Update;
-        [ChineseName("添加更新")] public static void AddUpdate(Action update) => updates += update;
-        [ChineseName("删除更新")] public static void RemoveUpdate(IUpdate update) => updates -= update.Update;
-        [ChineseName("删除更新")] public static void RemoveUpdate(Action update) => updates -= update;
-
-        [ChineseName("添加固定更新")] public static void AddFixedUpdate(IFixedUpdate fixedUpdate) => fixedUpdates += fixedUpdate.FixedUpdate;
-        [ChineseName("添加固定更新")] public static void AddFixedUpdate(Action fixedUpdate) => fixedUpdates += fixedUpdate;
-        [ChineseName("删除固定更新")] public static void RemoveFixedUpdate(IFixedUpdate fixedUpdate) => fixedUpdates -= fixedUpdate.FixedUpdate;
-        [ChineseName("删除固定更新")] public static void RemoveFixedUpdate(Action fixedUpdate) => fixedUpdates -= fixedUpdate;
-
 
 
         public static async void CallFramesLater(int frameCount, Action action)
@@ -166,11 +155,21 @@ namespace GameCore
             action();
         }
 
-        public static void RunThread(ThreadStart start) => new Thread(start).Start();
+        public static Thread RunThread(ThreadStart start)
+        {
+            var thread = new Thread(start);
+            thread.Start();
+            return thread;
+        }
 
-        public static void RunBGThread(ThreadStart start) => new Thread(start) { IsBackground = true }.Start();
+        public static Thread RunBGThread(ThreadStart start)
+        {
+            var thread = new Thread(start) { IsBackground = true };
+            thread.Start();
+            return thread;
+        }
 
-        public static void RunThreadEndless(ThreadStart start) => RunThread(() =>
+        public static Thread RunThreadEndless(ThreadStart start) => RunThread(() =>
         {
             while (true)
                 start();

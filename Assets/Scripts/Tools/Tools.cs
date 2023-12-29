@@ -33,10 +33,10 @@ namespace GameCore
         /// <summary>
         /// 每次调用 Time.deltaTime 时 Unity 都会计算, 所以使用 Performance.frameTime 比 Time.deltaTime 性能更高 (他们的输出结果一般一样)
         /// </summary>
-        public static float time { get; private set; }
-        public static float deltaTime => Performance.frameTime;
-        public static float smoothDeltaTime => Performance.smoothFrameTime;
-        public static float fps => Performance.fps;
+        public static float time;
+        public static float deltaTime;
+        public static float smoothDeltaTime;
+        public static float fps;
         private Camera _mainCamera;
         private CameraController _mainCameraController;
 
@@ -171,15 +171,33 @@ namespace GameCore
         [UpdateChineseName]
         void Update()
         {
+            /* ---------------------------------- 计算时间 ---------------------------------- */
             time = Time.time;
-            Performance.frameTime = Time.deltaTime;
-            Performance.smoothFrameTime = Time.smoothDeltaTime;
-            Performance.fps = 1 / Performance.smoothFrameTime;
+            deltaTime = Time.deltaTime;
+            smoothDeltaTime = Time.smoothDeltaTime;
+            fps = 1 / smoothDeltaTime;
+
+
+
+            /* --------------------------- 把时间赋值到 Performance --------------------------- */
+            Performance.frameTime = deltaTime;
+            Performance.smoothFrameTime = smoothDeltaTime;
+            Performance.fps = fps;
+
+
+
+            /* --------------------------------- 更新活跃场景 --------------------------------- */
             GScene.active = SceneManager.GetActiveScene();
             GScene.name = GScene.active.name;
 
+
+
+            /* ---------------------------------- 执行代理 ---------------------------------- */
             MethodAgent.updates();
 
+
+
+            /* -------------------------------- 为调试做特殊处理 -------------------------------- */
 #if UNITY_EDITOR
             //更新日志消息
             modsToDebug = ModFactory.mods;
@@ -191,6 +209,9 @@ namespace GameCore
 
             //Debug.ClearDeveloperConsole();
 
+
+
+            /* ---------------------------------- 检测分辨率 --------------------------------- */
             if (screenWidthLastFrame != 0 && screenHeightLastFrame != 0)
             {
                 if (screenWidthLastFrame != Screen.width || screenHeightLastFrame != Screen.height)
@@ -202,6 +223,9 @@ namespace GameCore
             screenWidthLastFrame = Screen.width;
             screenHeightLastFrame = Screen.height;
 
+
+
+            /* ------------------------------ 计算视窗点位置的世界位置 ------------------------------ */
             if (mainCamera)
             {
                 viewLeftSideWorldPos = mainCamera.ViewportToWorldPoint(new(0f, 0.5f)).x;
@@ -209,12 +233,6 @@ namespace GameCore
                 viewUpSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 1f)).y;
                 viewDownSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 0f)).y;
             }
-        }
-
-        [FixedUpdateChineseName]
-        private void FixedUpdate()
-        {
-            MethodAgent.fixedUpdates();
         }
 
         [ChineseName("初始化")]

@@ -108,7 +108,7 @@ namespace GameCore
         {
             data.drops.For(drop =>
             {
-                GM.instance.SummonItem(pos, drop.id, drop.count, customData?.ToString());
+                GM.instance.SummonDrop(pos, drop.id, drop.count, customData?.ToString());
             });
         }
 

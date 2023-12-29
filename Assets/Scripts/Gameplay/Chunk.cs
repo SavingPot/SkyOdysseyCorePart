@@ -175,11 +175,11 @@ namespace GameCore.High
 
             if (editRegion && Server.isServer)
             {
-                Vector2Int blockSBPos = this.MapToRegionPos(pos);
+                Vector2Int blockRegionPos = this.MapToRegionPos(pos);
 
                 //在区域中添加
                 Region region = GFiles.world.GetOrAddRegion(regionIndex);
-                region.AddPos(block.id, new(blockSBPos.x, blockSBPos.y), isBackground);
+                region.AddPos(block.id, new(blockRegionPos.x, blockRegionPos.y), isBackground);
             }
 
             GameCallbacks.OnAddBlock(pos, isBackground, b, this);

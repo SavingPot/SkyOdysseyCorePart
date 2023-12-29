@@ -38,7 +38,7 @@ namespace GameCore
         public const string Reward = "ori:reward";
         public const string Rooster = "ori:rooster";
         public const string Smother = "ori:smother";
-        public const string SwitchMainInventorySlot = "ori:switch_inventory_slot";
+        public const string SwitchQuickInventorySlot = "ori:switch_quick_inventory_slot";
         public const string Town = "ori:town";
         public const string WearArmor = "ori:wear_armor";
         public const string WhyNotComeToTheParty = "ori:why_not_come_to_the_party";

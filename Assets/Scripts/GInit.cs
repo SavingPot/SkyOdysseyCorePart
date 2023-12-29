@@ -75,8 +75,8 @@ namespace GameCore
         [SerializeField]
         [Required(Tools.requiredErrorMessage)]
         [AssetsOnly]
-        [LabelText("物品的预制体")]
-        private EntityInit itemEntityPrefab;
+        [LabelText("掉落物的预制体")]
+        private EntityInit dropPrefab;
 
         [SerializeField]
         [Required(Tools.requiredErrorMessage)]
@@ -109,7 +109,7 @@ namespace GameCore
         private Light2D blockLightPrefab;
 
         public EntityInit GetEntityPrefab() => entityPrefab;
-        public EntityInit GetItemEntityPrefab() => itemEntityPrefab;
+        public EntityInit GetDropPrefab() => dropPrefab;
         public EntityInit GetEnemyPrefab() => enemyPrefab;
         public EntityInit GetNPCPrefab() => npcPrefab;
         public EntityInit GetCreaturePrefab() => creaturePrefab;

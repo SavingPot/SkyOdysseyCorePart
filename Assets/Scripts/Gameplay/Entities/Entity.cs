@@ -391,6 +391,18 @@ namespace GameCore
             mainCollider = GetComponent<BoxCollider2D>();
         }
 
+        public virtual void InitAfterAwake()
+        {
+            if (data != null)
+            {
+                rb.gravityScale = data.gravity;
+                mainCollider.size = data.colliderSize;
+                mainCollider.offset = data.colliderOffset;
+            }
+
+            SetAutoDestroyTime();
+        }
+
         protected virtual void OnDestroy()
         {
             //TODO: 移动到 EntityInit
@@ -401,14 +413,7 @@ namespace GameCore
 
         protected virtual void Start()
         {
-            if (data != null)
-            {
-                rb.gravityScale = data.gravity;
-                mainCollider.size = data.colliderSize;
-                mainCollider.offset = data.colliderOffset;
-            }
 
-            SetAutoDestroyTime();
         }
 
         protected virtual void Update()
@@ -429,7 +434,7 @@ namespace GameCore
             regionIndex = PosConvert.WorldPosToRegionIndex(transform.position);
 
             //自动销毁
-            if (isNotPlayer && timeToAutoDestroy >= Tools.time)
+            if (isNotPlayer && Tools.time >= timeToAutoDestroy)
             {
                 Death();
             }
@@ -670,7 +675,7 @@ namespace GameCore
         {
             foreach (DropData drop in data.drops)
             {
-                managerGame.SummonItem(transform.position, drop.id, drop.count);
+                managerGame.SummonDrop(transform.position, drop.id, drop.count);
             }
         }
 

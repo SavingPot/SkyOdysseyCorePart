@@ -43,7 +43,7 @@ namespace GameCore
             //    }
             //}
 
-            MethodAgent.AddUpdate(() =>
+            MethodAgent.updates += () =>
             {
                 if (Gamepad.current != null)
                 {
@@ -57,7 +57,7 @@ namespace GameCore
                     if (Keyboard.current.f11Key.wasPressedThisFrame)
                         OnDownFullScreen();
                 }
-            });
+            };
 
             InputSystem.onActionChange += DetectDeviceInput;
         }

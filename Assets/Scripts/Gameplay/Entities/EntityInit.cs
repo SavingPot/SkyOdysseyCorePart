@@ -320,6 +320,7 @@ namespace GameCore
             entity.Init = this;
             entity.data = data;
             entity.customData = JsonTools.LoadJObjectByString(save.customData);
+            entity.InitAfterAwake();
             isServerCompletelyReady = true;
         }
         internal class SyncAttributeData

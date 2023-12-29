@@ -680,7 +680,7 @@ namespace GameCore
             #region 添加主物品栏与左右手按钮
             {
                 //物品栏格子数
-                int mainInventorySlotCount = Player.mainInventorySlotCount;
+                int quickInventorySlotCount = Player.quickInventorySlotCount;
                 int buttonSize = 45;
                 int handUIInterval = 50;
                 float itemMultiple = 0.55f;
@@ -693,13 +693,13 @@ namespace GameCore
                 buttonExtraY += buttonSize / 2;
                 handUIInterval += buttonSize;
 
-                List<InventorySlotUI> mainInventorySlotTemp = new();
+                List<InventorySlotUI> quickInventorySlotTemp = new();
 
                 #region 添加主物品栏
-                for (int index = -mainInventorySlotCount / 2; index < mainInventorySlotCount / 2; index++)
+                for (int index = -quickInventorySlotCount / 2; index < quickInventorySlotCount / 2; index++)
                 {
                     int i = index;
-                    int indexAs0 = index + mainInventorySlotCount / 2;
+                    int indexAs0 = index + quickInventorySlotCount / 2;
                     var button = GameUI.AddButton(UPC.down, "ori:button.item_tab_" + indexAs0, GameUI.canvas.transform, "ori:item_tab");
                     var item = GameUI.AddImage(UPC.down, "ori:image.item_tab_item_" + indexAs0, "ori:item_tab", button);
 
@@ -731,10 +731,10 @@ namespace GameCore
                         }
                     });
 
-                    mainInventorySlotTemp.Add(new(button, item));
+                    quickInventorySlotTemp.Add(new(button, item));
                 }
 
-                quickInventorySlots = mainInventorySlotTemp.ToArray();
+                quickInventorySlots = quickInventorySlotTemp.ToArray();
                 #endregion
             }
             #endregion
@@ -1175,21 +1175,49 @@ namespace GameCore
             signImage.image.color = signImageBackground.image.color;
         }
 
-        static void SetUIHighest(IRectTransform ui, bool alsoGamepad = false)
+        static void SetUIHighest(IRectTransform ui)
         {
-            if (ui == null || ui.rectTransform == null)
-                return;
-
             ui.rectTransform.SetAsLastSibling();
 
-            if (alsoGamepad)
-                ui.rectTransform.gameObject.SetActive(GControls.mode == ControlMode.Touchscreen || GControls.mode == ControlMode.Gamepad);
-            else
-                ui.rectTransform.gameObject.SetActive(GControls.mode == ControlMode.Touchscreen);
+            if (!ui.rectTransform.gameObject.activeSelf)
+                ui.rectTransform.gameObject.SetActive(true);
+        }
+        static void SetUIDisabled(IRectTransform ui)
+        {
+            if (ui.rectTransform.gameObject.activeSelf)
+                ui.rectTransform.gameObject.SetActive(false);
         }
 
         public void Update()
         {
+            /* --------------------------------- 刷新快捷物品栏 -------------------------------- */
+            //缓存物品栏以保证性能
+            var inventoryTemp = player.inventory;
+
+            for (int i = 0; i < quickInventorySlots.Length; i++)
+            {
+                var slot = quickInventorySlots.ElementAt(i);
+
+                if (slot == null)
+                    return;
+
+                var item = inventoryTemp?.TryGetItem(i);
+
+                //设置物品图标
+                slot.content.image.sprite = item?.data?.texture?.sprite;
+                slot.content.image.color = new(slot.content.image.color.r, slot.content.image.color.g, slot.content.image.color.b, !slot.content.image.sprite ? 0 : 1);
+
+                //设置文本
+                slot.button.buttonText.text.text = item?.count.ToString();
+
+                //设置栏位图标
+                if (player.usingItemIndex == i)
+                    slot.button.image.sprite = ModFactory.CompareTexture("ori:using_item_tab")?.sprite;
+                else
+                    slot.button.image.sprite = ModFactory.CompareTexture("ori:item_tab")?.sprite;
+            }
+
+            /* ----------------------------------- 检测按键 ----------------------------------- */
             switch (GControls.mode)
             {
                 case ControlMode.KeyboardAndMouse:
@@ -1200,6 +1228,9 @@ namespace GameCore
 
                         if (Keyboard.current.enterKey.wasReleasedThisFrame)
                             Chat();
+
+                        if (Keyboard.current.tKey.wasReleasedThisFrame)
+                            ShowHideTaskView();
                     }
 
                     break;
@@ -1212,25 +1243,7 @@ namespace GameCore
 
                         if (Gamepad.current.dpad.down.wasReleasedThisFrame)
                             Chat();
-                    }
 
-                    break;
-            }
-
-            switch (GControls.mode)
-            {
-                case ControlMode.KeyboardAndMouse:
-                    if (Keyboard.current != null)
-                    {
-                        if (Keyboard.current.tKey.wasReleasedThisFrame)
-                            ShowHideTaskView();
-                    }
-
-                    break;
-
-                case ControlMode.Gamepad:
-                    if (Gamepad.current != null)
-                    {
                         if (Gamepad.current.dpad.up.wasReleasedThisFrame)
                             ShowHideTaskView();
                     }
@@ -1240,22 +1253,26 @@ namespace GameCore
 
             #region 手机操控
 
-            if (moveJoystick)
+            if (GControls.mode == ControlMode.Touchscreen)
             {
                 SetUIHighest(moveJoystick);
-            }
-
-            if (cursorJoystick)
-            {
                 SetUIHighest(cursorJoystick);
+                SetUIHighest(cursorImage);
+                SetUIHighest(attackButton);
+                SetUIHighest(interactionButton);
+                SetUIHighest(useItemButton);
+                SetUIHighest(craftingButton);
+
+                useItemButtonImage.image.sprite = player.TryGetUsingItem()?.data?.texture?.sprite;
+                useItemButtonImage.image.color = useItemButtonImage.image.sprite ? Color.white : Color.clear;
 
                 if (Player.PlayerCanControl(player) && cursorImage)
-                    cursorImage.rt.anchoredPosition = new(cursorImage.rt.anchoredPosition.x + cursorJoystick.Horizontal * GFiles.settings.playerCursorSpeed * Performance.frameTime, cursorImage.rt.anchoredPosition.y + cursorJoystick.Vertical * GFiles.settings.playerCursorSpeed * Performance.frameTime);
-            }
-
-            if (cursorImage)
-            {
-                SetUIHighest(cursorImage);
+                {
+                    cursorImage.rt.anchoredPosition = new(
+                        cursorImage.rt.anchoredPosition.x + cursorJoystick.Horizontal * GFiles.settings.playerCursorSpeed * Performance.frameTime,
+                        cursorImage.rt.anchoredPosition.y + cursorJoystick.Vertical * GFiles.settings.playerCursorSpeed * Performance.frameTime
+                    );
+                }
 
                 float maxX = player.transform.position.x + 10;
                 float maxY = player.transform.position.y + 10;
@@ -1275,26 +1292,15 @@ namespace GameCore
                 else if (cursorImage.transform.position.y < minY)
                     cursorImage.transform.position = new(cursorImage.transform.position.x, minY);
             }
-
-            if (attackButton)
+            else
             {
-                SetUIHighest(attackButton);
-            }
-
-            if (interactionButton)
-            {
-                SetUIHighest(interactionButton);
-            }
-
-
-            if (useItemButton)
-            {
-                SetUIHighest(useItemButton);
-            }
-
-            if (craftingButton)
-            {
-                SetUIHighest(craftingButton);
+                SetUIDisabled(moveJoystick);
+                SetUIDisabled(cursorJoystick);
+                SetUIDisabled(cursorImage);
+                SetUIDisabled(attackButton);
+                SetUIDisabled(interactionButton);
+                SetUIDisabled(useItemButton);
+                SetUIDisabled(craftingButton);
             }
 
             #endregion
@@ -1336,7 +1342,7 @@ namespace GameCore
             ui.AddTask("ori:get_planks", "ori:task.get_planks", "ori:get_log", new[] { $"{BlockID.OakPlanks}/=/10/=/null" });
             ui.AddTask("ori:get_stick", "ori:task.get_stick", "ori:get_planks", new[] { $"{ItemID.Stick}/=/10/=/null" });
             ui.AddTask("ori:get_campfire", "ori:task.get_campfire", "ori:get_stick", null);
-            
+
             ui.AddTask("ori:get_flint_knife", "ori:task.get_flint_knife", "ori:get_stick", null);
             ui.AddTask("ori:get_flint_hoe", "ori:task.get_flint_hoe", "ori:get_stick", null);
             ui.AddTask("ori:get_flint_sword", "ori:task.get_flint_sword", "ori:get_stick", null);

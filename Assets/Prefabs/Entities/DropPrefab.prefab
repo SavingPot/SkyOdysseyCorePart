@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: -1276353731835276603}
   - component: {fileID: 3969397233818297214}
   m_Layer: 10
-  m_Name: ItemPrefab
+  m_Name: DropPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

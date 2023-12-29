@@ -246,15 +246,20 @@ namespace GameCore
             base.Awake();
         }
 
-        protected override void Start()
+        public override void InitAfterAwake()
         {
-            base.Start();
+            base.InitAfterAwake();
 
             if (data != null)
             {
                 //等一帧再设置, 否则会被 Entity 覆盖
                 moveSpeed = data.speed;
             }
+        }
+
+        protected override void Start()
+        {
+            base.Start();
         }
 
         protected override void Update()

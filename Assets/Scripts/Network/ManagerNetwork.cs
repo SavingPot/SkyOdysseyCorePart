@@ -118,7 +118,7 @@ namespace GameCore.High
             base.Start();
 
             NetworkClient.RegisterPrefab(GInit.instance.GetEntityPrefab().gameObject);
-            NetworkClient.RegisterPrefab(GInit.instance.GetItemEntityPrefab().gameObject);
+            NetworkClient.RegisterPrefab(GInit.instance.GetDropPrefab().gameObject);
             NetworkClient.RegisterPrefab(GInit.instance.GetEnemyPrefab().gameObject);
             NetworkClient.RegisterPrefab(GInit.instance.GetNPCPrefab().gameObject);
             NetworkClient.RegisterPrefab(GInit.instance.GetCreaturePrefab().gameObject);

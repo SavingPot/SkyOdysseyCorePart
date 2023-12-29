@@ -222,7 +222,7 @@ MonoBehaviour:
     behaviourName: 
     tags: []
   entityPrefab: {fileID: 5246644827719253145, guid: 89b8c0828bd2d8342b8d026735402211, type: 3}
-  itemEntityPrefab: {fileID: -1276353731835276603, guid: 29cee456a70502444bf575a9d24f687c, type: 3}
+  dropPrefab: {fileID: -1276353731835276603, guid: 29cee456a70502444bf575a9d24f687c, type: 3}
   enemyPrefab: {fileID: -1159103054575226767, guid: ba829cbffa56d1d4789453ea1535cff9, type: 3}
   npcPrefab: {fileID: -6749035963941349616, guid: e8279c53ee688be4fa1af410193aefc8, type: 3}
   creaturePrefab: {fileID: -7392080320599077345, guid: 235a85535f1e97143b87378140bd944c, type: 3}

@@ -193,7 +193,7 @@ namespace GameCore.High
                     health = n.health
                 };
 
-                if (n.autoDatum)
+                if (n.saveIntoRegion)
                 {
                     if (GFiles.world.TryGetRegion(PosConvert.WorldPosToRegionIndex(saveDatum.pos), out var region))
                     {
@@ -225,7 +225,7 @@ namespace GameCore.High
         internal static EntityInit GetEntityPrefab(EntityData entity)
         {
             if (entity.id == EntityID.Drop)
-                return GInit.instance.GetItemEntityPrefab();
+                return GInit.instance.GetDropPrefab();
 
             if (entity.behaviourType.IsSubclassOf(typeof(Enemy)))
                 return GInit.instance.GetEnemyPrefab();
