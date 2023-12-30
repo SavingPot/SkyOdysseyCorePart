@@ -526,7 +526,7 @@ namespace GameCore.UI
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
             msg.rectTransform.localScale = Vector2.one;
             msg.image.sprite = ModFactory.CompareTexture(buttonSpriteId).sprite;
-            msg.AddMethod(() => GAudio.Play(AudioID.Button));
+            msg.OnClickBind(() => GAudio.Play(AudioID.Button));
 
             return msg;
         }

@@ -438,11 +438,11 @@ namespace GameCore
             pausePanelMask.panelImage.color = new(0, 0, 0, 0);
             pausePanelMask.OnUpdate += x => GameUI.SetUILayerToTop(x);
 
-            ButtonIdentity continueGame = GameUI.AddButton(UPC.middle, "ori:button.pause_continue_game", pausePanel).AddMethod(() =>
+            ButtonIdentity continueGame = GameUI.AddButton(UPC.middle, "ori:button.pause_continue_game", pausePanel).OnClickBind(() =>
             {
                 GameUI.SetPage(null);
             });
-            ButtonIdentity quitGame = GameUI.AddButton(UPC.middle, "ori:button.pause_quit_game", pausePanel).AddMethod(LeftGame);
+            ButtonIdentity quitGame = GameUI.AddButton(UPC.middle, "ori:button.pause_quit_game", pausePanel).OnClickBind(LeftGame);
 
             continueGame.rt.AddLocalPosY(30);
             quitGame.rt.AddLocalPosY(-30);
@@ -641,7 +641,7 @@ namespace GameCore
                 craftingButton.image.rectTransform.anchoredPosition = new(-70, -75);
                 craftingButton.button.HideClickAction();
                 craftingButton.button.onClick.RemoveAllListeners();
-                craftingButton.AddMethod(() =>
+                craftingButton.OnClickBind(() =>
                 {
                     if (backpackMask)
                         player.ShowOrHideBackpackAndSetSidebarToCrafting();
@@ -719,7 +719,7 @@ namespace GameCore
                     button.button.ClearColorEffects();
                     button.button.onClick = new();
 
-                    button.AddMethod(() =>
+                    button.OnClickBind(() =>
                     {
                         if (!backpackMask.gameObject.activeSelf)
                         {
@@ -804,10 +804,10 @@ namespace GameCore
                             inventorySlot.Refresh(player, index.ToString());
                         }
 
-                        inventoryHelmetUI.Refresh(player, Inventory.helmetVar);
-                        inventoryBreastplateUI.Refresh(player, Inventory.breastplateVar);
-                        inventoryLeggingUI.Refresh(player, Inventory.leggingVar);
-                        inventoryBootsUI.Refresh(player, Inventory.bootsVar);
+                        inventoryHelmetUI.Refresh(player, Inventory.helmetVar, item => Item.Null(item) || item.data.Helmet != null);
+                        inventoryBreastplateUI.Refresh(player, Inventory.breastplateVar, item => Item.Null(item) || item.data.Breastplate != null);
+                        inventoryLeggingUI.Refresh(player, Inventory.leggingVar, item => Item.Null(item) || item.data.Legging != null);
+                        inventoryBootsUI.Refresh(player, Inventory.bootsVar, item => Item.Null(item) || item.data.Boots != null);
                     }
                 };
 
@@ -837,7 +837,7 @@ namespace GameCore
                 //确认制作
                 craftingApplyButton = GameUI.AddButton(UPC.down, "ori:button.crafting_chose_item", inventoryItemView);
                 craftingApplyButton.SetAPos(0, -30);
-                craftingApplyButton.AddMethod(() =>
+                craftingApplyButton.OnClickBind(() =>
                 {
                     if (craftingSelectedRecipe == null || player.inventory.IsFull())
                         return;
@@ -934,7 +934,7 @@ namespace GameCore
                             button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
                             button.button.OnPointerStayAction += () => ItemInfoShower.Show(itemGot);
                             button.button.OnPointerExitAction += _ => ItemInfoShower.Hide();
-                            button.AddMethod(() =>
+                            button.OnClickBind(() =>
                             {
                                 craftingSelectedRecipe = pair;
 
@@ -1080,7 +1080,7 @@ namespace GameCore
                 rebornButton.SetAPosY(-20);
                 rebornButton.buttonText.RefreshUI();
                 rebornButton.buttonText.doRefresh = false;
-                rebornButton.AddMethod(() =>
+                rebornButton.OnClickBind(() =>
                 {
                     rebornButton.button.interactable = false;
                     GameUI.FadeOut(rebornPanel.panelImage);
@@ -1398,7 +1398,7 @@ namespace GameCore
             /* ---------------------------------- 绑定按钮 ---------------------------------- */
             node.button.button.OnPointerStayAction = () => TaskInfoShower.Show(node);
             node.button.button.OnPointerExitAction = _ => TaskInfoShower.Hide();
-            node.button.AddMethod(() =>
+            node.button.OnClickBind(() =>
             {
                 if (!node.completed || node.hasGotRewards)
                     return;
@@ -1789,52 +1789,80 @@ namespace GameCore
             return new(button, image);
         }
 
-        public void Refresh(IItemContainer container, string index)
+        public void Refresh(IItemContainer container, string itemIndex, Func<Item, bool> replacementCondition = null)
         {
-            Item item = container.GetItem(index);
+            Item item = container.GetItem(itemIndex);
+            replacementCondition ??= (_) => true;
 
             button.button.onClick.RemoveAllListeners();
 
             /* --------------------------------- 如果物品为空 --------------------------------- */
             if (Item.Null(item))
             {
+                //设置 UI
                 button.buttonText.text.text = string.Empty;
-
                 content.image.sprite = null;
                 content.image.gameObject.SetActive(false);
 
-                button.AddMethod(() =>
+                //加这一行是因为物品不为空时会绑定显示，我们要在这里取消它
+                button.button.OnPointerStayAction = () => ItemInfoShower.Hide();
+
+                //当栏位被点击时
+                button.OnClickBind(() =>
                 {
-                    ItemDragger.Drag(item, Vector2.zero, t => container.SetItem(index, t), null);
+                    ItemDragger.DragItem(
+                        item,
+                        Vector2.zero,
+                        value =>
+                        {
+                            container.SetItem(itemIndex, value);
+                        },
+                        () =>
+                        {
+                            content.image.color = Color.white;
+                        },
+                        replacementCondition
+                    );
                 });
             }
             /* --------------------------------- 如果物品不为空 -------------------------------- */
             else
             {
+                //设置 UI
                 button.buttonText.text.text = item.count.ToString();
-
                 content.image.sprite = item.data.texture.sprite; ////->?? GInit.instance.spriteUnknown;
                 content.image.gameObject.SetActive(true);
 
+                //当指针悬停时显示物品信息
                 button.button.OnPointerStayAction = () =>
                 {
                     var ui = ItemInfoShower.Show(item);
 
                     if (container is Player player)
                     {
-                        player.inventory.TryGetItemBehaviour(index)?.ModifyInfo(ui);
+                        player.inventory.TryGetItemBehaviour(itemIndex)?.ModifyInfo(ui);
                     }
                 };
                 button.button.OnPointerExitAction = _ => ItemInfoShower.Hide();
 
-                button.AddMethod(() =>
+                //当栏位被点击时
+                button.OnClickBind(() =>
                 {
                     content.image.color = new(1, 1, 1, 0.5f);
 
-                    ItemDragger.Drag(item, content.sd, t => container.SetItem(index, t), () =>
-                    {
-                        content.image.color = Color.white;
-                    });
+                    ItemDragger.DragItem(
+                        item,
+                        content.sd,
+                        value =>
+                        {
+                            container.SetItem(itemIndex, value);
+                        },
+                        () =>
+                        {
+                            content.image.color = Color.white;
+                        },
+                        replacementCondition
+                    );
                 });
             }
         }
@@ -1846,6 +1874,7 @@ namespace GameCore
         }
     }
 
+    //TODO
     public static class ItemInfoShower
     {
         private static ItemInfoUI uiInstance;
@@ -1961,6 +1990,156 @@ namespace GameCore
             this.image = image;
             this.nameText = nameText;
             this.detailText = detailText;
+        }
+    }
+
+    public static class ItemDragger
+    {
+        public class ItemDraggerUI
+        {
+            public ImageIdentity image;
+
+            public ItemDraggerUI(ImageIdentity image)
+            {
+                this.image = image;
+            }
+        }
+
+        public class ItemDraggerItem
+        {
+            public Item item;
+            public Action<Item> placement;
+            public Action cancel;
+            public Func<Item, bool> replacementCondition;
+
+            public ItemDraggerItem(Item item, Action<Item> placement, Action cancel, Func<Item, bool> replacementCondition)
+            {
+                this.item = item;
+                this.placement = placement;
+                this.cancel = cancel;
+                this.replacementCondition = replacementCondition;
+            }
+        }
+
+        public static ItemDraggerItem draggingItem;
+
+        private static ItemDraggerUI uiInstance;
+
+        public static ItemDraggerUI GetUI()
+        {
+            if (uiInstance == null || !uiInstance.image)
+            {
+                ImageIdentity image = GameUI.AddImage(UPC.middle, "ori:image.item_dragger", "ori:square_button_flat");
+                image.OnUpdate += i =>
+                {
+                    i.ap = GControls.cursorPosInMainCanvas;
+                };
+
+                image.image.raycastTarget = false;
+
+                uiInstance = new(image);
+            }
+
+            return uiInstance;
+        }
+
+
+
+
+        public static void DragItem(Item item, Vector2 iconSize, Action<Item> placement, Action onCancel, Func<Item, bool> replacementCondition)
+        {
+            ItemDraggerUI ui = GetUI();
+
+            /* ------------------------------- 先去掉原本在拖拽的物品 ------------------------------- */
+            if (draggingItem != null)
+            {
+                //如果正在拖拽，又点了一次本来就在拖拽的物品，就取消拖拽
+                if (draggingItem.item == item)
+                {
+                    CancelDragging();
+                    return;
+                }
+                //如果正在拖拽，又点了一次其他的物品，就交换物品位置
+                else
+                {
+                    SwapDraggingAndOldDragger(item, placement, onCancel, replacementCondition);
+                    return;
+                }
+            }
+
+            /* ------------------------------- 如果物品不为空就拖拽 ------------------------------- */
+            if (!Item.Null(item))
+            {
+                //设置 UI
+                ui.image.image.sprite = item.data.texture.sprite;
+                ui.image.sd = iconSize;
+                ui.image.gameObject.SetActive(true);
+
+                draggingItem = new(item, placement, onCancel, replacementCondition);
+            }
+            /* ------------------------------- 如果物品为空就不拖拽 ------------------------------- */
+            else
+            {
+                CancelDragging();
+            }
+        }
+
+        public static void CancelDragging()
+        {
+            ItemDraggerUI ui = GetUI();
+            ui.image.gameObject.SetActive(false);
+
+            if (draggingItem != null)
+            {
+                draggingItem.cancel();
+
+                draggingItem = null;
+            }
+        }
+
+        public static void SwapDraggingAndOldDragger(Item item, Action<Item> placement, Action cancel, Func<Item, bool> replacementCondition)
+        {
+            var oldDragger = draggingItem;
+            var draggingTemp = oldDragger.item;
+            var oldTemp = item;
+
+            /* ------------------------------- 如果物品不同直接交换 ------------------------------- */
+            if (Item.Null(draggingTemp) || Item.Null(oldTemp) || !Item.Same(draggingTemp, oldTemp))
+            {
+                if (replacementCondition(draggingTemp) && oldDragger.replacementCondition(oldTemp))
+                {
+                    oldDragger.placement(oldTemp);
+                    placement(draggingTemp);
+                }
+
+                CancelDragging();
+            }
+            /* ------------------------------- 如果物品相同且数量未满 ------------------------------- */
+            else if (oldTemp.count < oldTemp.data.maxCount)
+            {
+                //如果可以数量直接添加
+                if (draggingTemp.count + oldTemp.count <= oldTemp.data.maxCount)
+                {
+                    oldTemp.count += draggingTemp.count;
+
+                    placement(oldTemp);
+                    oldDragger.placement(null);
+
+                    CancelDragging();
+                }
+                else
+                {
+                    //TODO:FIx
+                    //如果数量过多先添加
+                    ushort countToExe = (ushort)Mathf.Min(draggingTemp.count, oldTemp.data.maxCount - draggingTemp.count);
+
+                    draggingTemp.count -= countToExe;
+                    oldTemp.count += countToExe;
+
+                    placement(draggingTemp);
+                    oldDragger.placement(oldTemp);
+                }
+            }
         }
     }
 }

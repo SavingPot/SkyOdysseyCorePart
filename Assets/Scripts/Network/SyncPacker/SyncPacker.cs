@@ -170,7 +170,6 @@ namespace GameCore
                 Debug.LogWarning($"寻找的同步变量 ID 为空");
                 return default;
             }
-#endif
 
             if (vars.TryGetValue(varId, out var value))
             {
@@ -179,6 +178,9 @@ namespace GameCore
 
             Debug.LogWarning($"未找到同步变量 {varId}");
             return default;
+#else
+            return vars[varId];
+#endif
         }
 
         public static bool HasVar(string varId)
@@ -200,39 +202,40 @@ namespace GameCore
                 Debug.LogError("设置的同步变量 Id 为空");
                 return false;
             }
+
+            if (!vars.TryGetValue(varId, out NMSyncVar var))
+            {
+                Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(RegisterVar)}(string) 来注册同步变量\n注意! 也可能是您修改了同步变量的属性名称, 但没有修改其配套的读取方法和写入方法导致的!");
+                return false;
+            }
+#else
+            NMSyncVar var = vars[varId];
 #endif
 
-            if (vars.TryGetValue(varId, out var var))
+            //只有服务器拥有设置的权力
+            if (!var.clientCanSet && !Server.isServer)
             {
-                //只有服务器拥有设置的权力
-                if (!var.clientCanSet && !Server.isServer)
-                {
-                    Debug.LogWarning($"客户端不能设置同步变量 {varId}, 原因是其 {nameof(NMSyncVar.clientCanSet)} 值为 false, 如果想在客户端设置请将其设置为 true");
-                    return false;
-                }
-
-                //设置值
-                var oldValue = var.value;
-                var.value = value;
-
-                //服务器直接赋值
-                if (Server.isServer)
-                {
-                    vars[varId] = var;
-                    OnVarValueChange.Invoke(var, oldValue);
-                }
-                //客户端发送给服务器赋值
-                else
-                {
-                    Client.Send(var);
-                }
-
-                return true;
+                Debug.LogWarning($"客户端不能设置同步变量 {varId}, 原因是其 {nameof(NMSyncVar.clientCanSet)} 值为 false, 如果想在客户端设置请将其设置为 true");
+                return false;
             }
 
-            Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(RegisterVar)}(string) 来注册同步变量\n注意! 也可能是您修改了同步变量的属性名称, 但没有修改其配套的读取方法和写入方法导致的!");
+            //设置值
+            var oldValue = var.value;
+            var.value = value;
 
-            return false;
+            //服务器直接赋值
+            if (Server.isServer)
+            {
+                vars[varId] = var;
+                OnVarValueChange.Invoke(var, oldValue);
+            }
+            //客户端发送给服务器赋值
+            else
+            {
+                Client.Send(var);
+            }
+
+            return true;
         }
 
 

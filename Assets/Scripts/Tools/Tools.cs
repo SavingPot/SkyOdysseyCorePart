@@ -138,7 +138,15 @@ namespace GameCore
         {
             base.Awake();
 
-            Initialization();
+            //注册回调
+            SceneManager.activeSceneChanged += SceneChanged;
+            GControls.OnDownFullScreen += FullScreen;
+
+#if DEBUG
+            Debug.unityLogger.logEnabled = true;
+#else
+            Debug.unityLogger.logEnabled = false;
+#endif
         }
 
         public static void KillTweensOf(object obj)
@@ -160,11 +168,6 @@ namespace GameCore
         }
 
         protected override void DestroyOrSave() => DontDestroyOnLoadSingleton();
-
-        protected override void Start()
-        {
-            base.Start();
-        }
 
 
 
@@ -233,14 +236,6 @@ namespace GameCore
                 viewUpSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 1f)).y;
                 viewDownSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 0f)).y;
             }
-        }
-
-        [ChineseName("初始化")]
-        void Initialization()
-        {
-            //注册回调
-            SceneManager.activeSceneChanged += SceneChanged;
-            GControls.OnDownFullScreen += FullScreen;
         }
 
         [ChineseName("当收到日志时")]

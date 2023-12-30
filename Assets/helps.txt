@@ -35,6 +35,13 @@ action();
 
 
 
+当2D光照不受到 Post Process 以及 ShaderCast2D 的影响时
+检查 Light2D 中 Volumetric 的设置
+
+
+
+
+
 
 --------------- CodeWhisper ------------------
 想要高效使用它, 请使用对话模式
@@ -169,6 +176,7 @@ Mirror不支持传输byte[][]
 ----- 性能 -----
 Physics2D -> Use Multithreading -> true
 不要在循环内部实现try-catch, 即使用 try{for()xxxxx}catch{} 而不是 for() try{xxxxx} catch{}
+用Mathf.Clamp限制一个数的范围
 ----------------
 
 ----- VS Code -----

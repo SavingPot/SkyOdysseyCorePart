@@ -11,7 +11,7 @@ namespace GameCore
             return new((int)Math.Round(vec.x), (int)Math.Round(vec.y));
         }
 
-        public static Vector2Int BlockPosToChunkIndex(Vector2Int pos)
+        public static Vector2Int MapPosToChunkIndex(Vector2Int pos)
         {
             //排除初始区块的影响 (初始区块只占了一半)
             float xDelta = pos.x > 0 ? Chunk.halfBlockCountPerAxis : -Chunk.halfBlockCountPerAxis;
@@ -31,12 +31,12 @@ namespace GameCore
 
         public static Vector2Int WorldPosToChunkIndex(Vector2 pos)
         {
-            return BlockPosToChunkIndex(new((int)pos.x, (int)pos.y));
+            return MapPosToChunkIndex(new((int)pos.x, (int)pos.y));
         }
 
         public static Vector2Int WorldPosToRegionIndex(Vector2 pos)
         {
-            return ChunkToRegionIndex(BlockPosToChunkIndex(new((int)pos.x, (int)pos.y)));
+            return ChunkToRegionIndex(MapPosToChunkIndex(new((int)pos.x, (int)pos.y)));
         }
 
         public static Vector2Int MapToRegionPos(this Chunk chunk, Vector2Int mapPos)

@@ -1,3 +1,4 @@
+using DG.Tweening;
 using GameCore.High;
 using Newtonsoft.Json;
 using Sirenix.OdinInspector;
@@ -22,10 +23,12 @@ namespace GameCore
             {
                 GameObject go = stack.Count == 0 ? Instantiate(GInit.instance.GetBlockPrefab()) : stack.Pop();
 
-                Block block = (Block)go.AddComponent(data.behaviourType ?? typeof(Block));
+                Block block = data.behaviourType == null ? new Block() : (Block)Activator.CreateInstance(data.behaviourType);
 
-                block.sr = block.GetComponent<SpriteRenderer>();
-                block.blockCollider = block.GetComponent<BoxCollider2D>();
+                block.sr = go.GetComponent<SpriteRenderer>();
+                block.blockCollider = go.GetComponent<BoxCollider2D>();
+                block.gameObject = go;
+                block.transform = go.transform;
 
 
 
@@ -34,18 +37,27 @@ namespace GameCore
                 block.isBackground = isBackground;
 
                 /* --------------------------------- 根据层设置参数 -------------------------------- */
-                block.transform.position = new(pos.x, pos.y, isBackground ? 0.02f : 0f);
-                block.sr.color = isBackground ? Block.backgroundColor : Block.wallColor;
+                if (isBackground)
+                {
+                    block.transform.position = new(pos.x, pos.y, 0.02f);
+                    block.sr.color = Block.backgroundColor;
+                }
+                else
+                {
+                    block.transform.position = new(pos.x, pos.y, 0f);
+                    block.sr.color = Block.wallColor;
+                }
 
 
                 /* --------------------------------- 移动到新的区块 -------------------------------- */
-                block.chunk = map.AddChunk(PosConvert.BlockPosToChunkIndex(pos)); ;
+                block.chunk = map.AddChunk(PosConvert.MapPosToChunkIndex(pos));
+                block.sr.enabled = block.chunk.totalRendererEnabled;
                 block.transform.SetParent(block.chunk.transform);
 
                 bool addedToChunk = false;
                 for (int i = 0; i < block.chunk.blocks.Length; i++)
                 {
-                    if (!block.chunk.blocks[i])
+                    if (block.chunk.blocks[i] == null)
                     {
                         block.chunk.blocks[i] = block;
                         addedToChunk = true;
@@ -57,8 +69,6 @@ namespace GameCore
                     Debug.LogError("添加方块到区块失败, 可能是没有空位置存放方块!");
                 }
 
-                //根据区块设置参数
-                block.sr.enabled = block.chunk.totalRendererEnabled;
                 /* ---------------------------------- 设置数据 ---------------------------------- */
                 block.health = Block.totalMaxHealth;
                 block.customData = JsonTools.LoadJObjectByString(customData);
@@ -68,7 +78,7 @@ namespace GameCore
                 /* ----------------------------------- 初始化 ---------------------------------- */
                 if (data.lightLevel > 0)
                 {
-                    block.blockLight = map.blockLightPool.Get(block); ;
+                    block.blockLight = map.blockLightPool.Get(block);
                 }
                 block.DoStart();
                 map.UpdateAt(block.pos, block.isBackground);
@@ -86,24 +96,22 @@ namespace GameCore
                 block.OnRecovered();
                 if (block.crackSr) map.blockCrackPool.Recover(block.crackSr);
                 if (block.blockLight) map.blockLightPool.Recover(block.blockLight);
+                if (map.blocksToCheckHealths.Contains(block)) map.blocksToCheckHealths.Remove(block);
+                block.scaleAnimationTween?.Kill();
+                block.shakeRotationTween?.Kill();
+
                 block.transform.SetParent(map.blockPoolTrans);
 
-                if (block.chunk)
+                for (int i = 0; i < block.chunk.blocks.Length; i++)
                 {
-                    for (int i = 0; i < block.chunk.blocks.Length; i++)
+                    if (block.chunk.blocks[i] == block)
                     {
-                        if (block.chunk.blocks[i] == block)
-                        {
-                            block.chunk.blocks[i] = null;
-                            break;
-                        }
+                        block.chunk.blocks[i] = null;
+                        break;
                     }
                 }
 
-                GameObject go = block.gameObject;
-                Block.Destroy(block);
-
-                stack.Push(go);
+                stack.Push(block.gameObject);
             }
         }
 
@@ -301,7 +309,7 @@ namespace GameCore
 
         public Block GetBlock(Vector2Int pos, bool isBackground)
         {
-            Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
+            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
 
             return AddChunk(chunkIndexTo).GetBlock(pos, isBackground);
         }
@@ -310,7 +318,7 @@ namespace GameCore
         {
             b = GetBlock(pos, isBackground);
 
-            return b;
+            return b != null;
         }
 
         public void SetBlockCustomDataOL(Block block)
@@ -357,7 +365,7 @@ namespace GameCore
             {
                 foreach (Block block in chunk.blocks)
                 {
-                    if (block && block.pos == pos && block.isBackground == isBackground)
+                    if (block != null && block.pos == pos && block.isBackground == isBackground)
                     {
                         return true;
                     }
@@ -376,7 +384,7 @@ namespace GameCore
 
         public bool GetBlockWorldPos(Vector2 pos, bool isBackground)
         {
-            return GetBlock(PosConvert.WorldToMapPos(pos), isBackground);
+            return GetBlock(PosConvert.WorldToMapPos(pos), isBackground) != null;
         }
 
         public bool HasBlockWorldPos(Vector2 pos, bool isBackground)
@@ -394,7 +402,7 @@ namespace GameCore
 
         public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion)
         {
-            Chunk chunk = AddChunk(PosConvert.BlockPosToChunkIndex(pos));
+            Chunk chunk = AddChunk(PosConvert.MapPosToChunkIndex(pos));
 
             chunk.RemoveBlock(pos, isBackground, editRegion);
 
@@ -410,14 +418,14 @@ namespace GameCore
             if (block == null)
                 return null;
 
-            Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
+            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
 
             return AddChunk(chunkIndexTo).AddBlock(pos, isBackground, block, customData, editRegion);
         }
 
         public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion)
         {
-            Vector2Int chunkIndexTo = PosConvert.BlockPosToChunkIndex(pos);
+            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
 
             AddChunk(chunkIndexTo).RemoveBlock(pos, isBackground, editRegion);
         }
@@ -441,7 +449,7 @@ namespace GameCore
             {
                 var block = GetBlock(p, isBackground);
 
-                if (block)
+                if (block != null)
                 {
                     block.OnUpdate();
                 }

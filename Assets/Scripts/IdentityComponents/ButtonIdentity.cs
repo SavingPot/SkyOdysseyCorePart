@@ -36,7 +36,7 @@ namespace GameCore
             buttonText.id = $"{id}.text";
         }
 
-        public ButtonIdentity AddMethod(UnityAction call)
+        public ButtonIdentity OnClickBind(UnityAction call)
         {
             button.onClick.AddListener(call);
             return this;

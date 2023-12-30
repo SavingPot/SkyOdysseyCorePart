@@ -18,6 +18,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using ReadOnlyAttribute = Unity.Collections.ReadOnlyAttribute;
 
 namespace GameCore
@@ -321,7 +322,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public virtual async void OnDeathServer()
         {
-            ClearSaveDatum();
             SummonDrops();
 
             //? 等待一秒是为了防止客户端延迟过高导致报错
@@ -431,19 +431,35 @@ namespace GameCore
 
         protected virtual void ServerUpdate()
         {
-            regionIndex = PosConvert.WorldPosToRegionIndex(transform.position);
+            regionIndex = PosConvert.ChunkToRegionIndex(chunkIndex);
 
             //自动销毁
             if (isNotPlayer && Tools.time >= timeToAutoDestroy)
             {
-                Death();
+                DestroyEntityOnServer();
             }
         }
 
         protected virtual void OnTriggerStay2D(Collider2D other)
         {
-            if (other.TryGetComponent(out Block block))
+            if (other.gameObject.layer == Block.blockLayer)
             {
+                var mapPos = PosConvert.WorldToMapPos(other.transform.position);
+                var chunk = Map.instance.AddChunk(PosConvert.MapPosToChunkIndex(mapPos));
+
+                //先尝试获取背景层
+                var block = chunk.GetBlock(mapPos, true);
+
+                //如果获取失败, 就从墙层获取
+                if (block == null || block.gameObject != other.gameObject)
+                    block = chunk.GetBlock(mapPos, false);
+
+                if (block == null)
+                {
+                    Debug.LogError("无法获取碰撞到的方块");
+                    return;
+                }
+
                 block.OnEntityStay(this);
             }
         }
@@ -481,41 +497,6 @@ namespace GameCore
 
         #region 网络变量逻辑
 
-        #region 等待
-
-        public IEnumerator IEWaitOneFrame(Action action)
-        {
-            yield return null;
-
-            action();
-        }
-
-        public IEnumerator IEWaitFrames(int count, Action action)
-        {
-            for (int i = 0; i < count; i++)
-                yield return null;
-
-            action();
-        }
-
-        public IEnumerator IEWaitForCondition(Func<bool> conditionToWait, Action action)
-        {
-            yield return new WaitWhile(conditionToWait);
-
-            action();
-        }
-
-        public void WaitOneFrame(Action action)
-        {
-            StartCoroutine(IEWaitOneFrame(action));
-        }
-
-        public void WaitFrames(int count, Action action)
-        {
-            StartCoroutine(IEWaitFrames(count, action));
-        }
-        #endregion
-
 
 
 
@@ -529,11 +510,26 @@ namespace GameCore
 
             sr.sprite = sprite;
             sr.material = GInit.instance.spriteLitMat;
-            renderers.Add(sr);
-            spriteRenderers.Add(sr);
+            sr.sortingOrder = 1;
+
+            AddSpriteRenderer(sr);
 
             return sr;
         }
+        public void AddSpriteRenderer(SpriteRenderer renderer)
+        {
+            //添加光线遮挡效果
+            renderer.gameObject.AddComponent<ShadowCaster2D>();
+
+            spriteRenderers.Add(renderer);
+            AddRenderer(renderer);
+        }
+
+        public void AddRenderer(Renderer renderer)
+        {
+            renderers.Add(renderer);
+        }
+
 
 
         public void HealthCheck()
@@ -739,7 +735,7 @@ namespace GameCore
         {
             if (GFiles.world == null)
             {
-                Debug.LogError("世界为空, 无法清除");
+                Debug.LogError("世界为空, 无法清除实体数据");
                 return;
             }
 
@@ -761,6 +757,7 @@ namespace GameCore
         public void DestroyEntityOnServer()
         {
             Server.DestroyObj(gameObject);
+            ClearSaveDatum();
         }
 
 

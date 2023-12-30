@@ -12,7 +12,7 @@ using DG.Tweening;
 
 namespace GameCore
 {
-    public class Block : MonoBehaviour, IEntity
+    public class Block : IEntity
     {
         /* -------------------------------------------------------------------------- */
         /*                               Static & Const                               */
@@ -50,18 +50,20 @@ namespace GameCore
         public Chunk chunk { get; internal set; }
         [LabelText("上次受伤时间")] public float lastDamageTime;
         public BlockData data;
-        public SpriteRenderer sr { get; internal set; }
         public SpriteRenderer crackSr { get; internal set; }
         public Light2D blockLight { get; internal set; }
+        public DG.Tweening.Core.TweenerCore<Vector3, Vector3, DG.Tweening.Plugins.Options.VectorOptions> scaleAnimationTween;
 
 
         public Vector2Int pos { get; internal set; }
         public bool isBackground { get; internal set; }
-        public BoxCollider2D blockCollider { get; internal set; }
         [LabelText("自定义数据")] public JObject customData;
 
-        public DG.Tweening.Core.TweenerCore<Vector3, Vector3, DG.Tweening.Plugins.Options.VectorOptions> scaleAnimationTween;
         public Tweener shakeRotationTween;
+        public Transform transform;
+        public GameObject gameObject;
+        public SpriteRenderer sr { get; internal set; }
+        public BoxCollider2D blockCollider { get; internal set; }
 
 
 
@@ -157,15 +159,6 @@ namespace GameCore
             health -= damage / data.hardness;
             scaleAnimationTween = transform.DOScale(blockDamageScale, 0.1f).OnStepComplete(() => transform.DOScale(Vector3.one, 0.1f));
             shakeRotationTween = transform.DOShakeRotation(0.1f, new Vector3(0, 0, 15));
-        }
-
-        private void OnDestroy()
-        {
-            if (chunk.map.blocksToCheckHealths.Contains(this))
-                chunk.map.blocksToCheckHealths.Remove(this);
-
-            scaleAnimationTween?.Kill();
-            shakeRotationTween?.Kill();
         }
 
         public void Death()

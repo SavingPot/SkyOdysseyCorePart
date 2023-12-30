@@ -34,7 +34,7 @@ namespace GameCore
 
         public InputButtonIdentity AddMethod(UnityAction call)
         {
-            button.AddMethod(call);
+            button.OnClickBind(call);
             return this;
         }
 

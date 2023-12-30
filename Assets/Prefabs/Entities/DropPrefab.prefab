@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1153788081555785568}
   - component: {fileID: -1276353731835276603}
   - component: {fileID: 3969397233818297214}
+  - component: {fileID: -2672401702439648106}
   m_Layer: 10
   m_Name: DropPrefab
   m_TagString: Untagged
@@ -200,10 +201,15 @@ MonoBehaviour:
     speed: 0
     gravity: 0
     colliderSize: {x: 0, y: 0}
+    colliderOffset: {x: 0, y: 0}
     maxHealth: 0
+    lifetime: 180
     drops: []
-  saveId: 
-  playerName: 
+  save:
+    id: 
+    customData: 
+    pos: {x: 0, y: 0}
+    saveId: 
 --- !u!61 &3969397233818297214
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -249,3 +255,33 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 0.0001, y: 0.0001}
   m_EdgeRadius: 0.02
+--- !u!114 &-2672401702439648106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5688412443235167145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db70e0ea77f5ac47a8f4565a9406397, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShadowGroup: 0
+  m_ComponentVersion: 1
+  m_HasRenderer: 0
+  m_UseRendererSilhouette: 1
+  m_CastsShadows: 1
+  m_SelfShadows: 0
+  m_ApplyToSortingLayers: 000000003ba123e84325fd8981fde2e7350026fcad7eef4ffd0882ed67de4906
+  m_ShapePath:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  m_ShapePathHash: 0
+  m_Mesh: {fileID: 0}
+  m_InstanceId: -4644102
+  m_LocalBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}

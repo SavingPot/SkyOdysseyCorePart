@@ -70,7 +70,7 @@ namespace GameCore
 
 
             //注销变量
-            if (isServer)
+            if (Server.isServer)
             {
                 var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
 

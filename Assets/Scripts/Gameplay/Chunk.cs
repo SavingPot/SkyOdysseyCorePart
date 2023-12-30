@@ -19,7 +19,7 @@ namespace GameCore.High
         public const int blockCountSingleLayer = blockCountPerAxis * blockCountPerAxis;
         public const int blockCountMultiLayer = blockCountSingleLayer * 2;
 
-        [LabelText("方块")] public Block[] blocks = new Block[blockCountMultiLayer];
+        [LabelText("方块")] public readonly Block[] blocks = new Block[blockCountMultiLayer];
         public Vector2Int chunkIndex { get; internal set; }
         public bool totalRendererEnabled = true;
         //public bool collidersEnabled = true;
@@ -101,7 +101,7 @@ namespace GameCore.High
         {
             foreach (Block block in chunk.blocks)
             {
-                if (block && block.sr)
+                if (block != null && block.sr)
                 {
                     block.sr.enabled = e;
                 }
@@ -114,7 +114,7 @@ namespace GameCore.High
         {
             foreach (Block block in blocks)
             {
-                if (block && block.pos == mapPos && block.isBackground == isBackground)
+                if (block != null && block.pos == mapPos && block.isBackground == isBackground)
                 {
                     return block;
                 }
@@ -127,14 +127,14 @@ namespace GameCore.High
         {
             block = GetBlock(mapPos, isBackground);
 
-            return block;
+            return block != null;
         }
 
         public void RecoverAllBlocks()
         {
             foreach (Block block in blocks)
             {
-                if (block)
+                if (block != null)
                 {
                     Map.instance.blockPool.Recover(block);
                 }
@@ -145,7 +145,7 @@ namespace GameCore.High
         {
             foreach (var block in blocks)
             {
-                if (block && block.pos == pos && block.isBackground == isBackground)
+                if (block != null && block.pos == pos && block.isBackground == isBackground)
                 {
                     if (editRegion && Server.isServer)
                     {

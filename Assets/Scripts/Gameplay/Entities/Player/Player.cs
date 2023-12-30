@@ -385,9 +385,8 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public PlayerUI pui;
 
-        [BoxGroup("组件"), LabelText("UI画布"), SerializeField, ReadOnly]
-        private Transform _playerCanvas;
-        public Transform playerCanvas => _playerCanvas;
+        [BoxGroup("组件"), LabelText("UI画布"), ReadOnly]
+        public Transform playerCanvas;
 
         [BoxGroup("组件")]
         [LabelText("名字文本")]
@@ -489,10 +488,12 @@ namespace GameCore
         {
             base.Awake();
 
-            PlayerCenter.AddPlayer(this);
-
             Func<float> oldValue = moveMultiple;
             moveMultiple = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
+
+            playerCanvas = transform.Find("Canvas");
+
+            PlayerCenter.AddPlayer(this);
         }
 
         protected override void OnDestroy()
@@ -510,8 +511,6 @@ namespace GameCore
 
             if (isLocalPlayer)
                 LocalFixedUpdate();
-
-            onGround = RayTools.TryOverlapCircle(mainCollider.DownPoint(), 0.2f, playerOnGroundLayerMask, out _);
 
             AutoSetPlayerOrientation(this);
         }
@@ -545,6 +544,18 @@ namespace GameCore
             // }
         };
 
+        public override void SetOrientation(bool right)
+        {
+            base.SetOrientation(right);
+
+            if (nameText)
+            {
+                if (right)
+                    nameText.transform.SetScaleXAbs();
+                else
+                    nameText.transform.SetScaleXNegativeAbs();
+            }
+        }
 
 
 
@@ -582,6 +593,7 @@ namespace GameCore
             if (PlayerCanControl(this))
             {
                 Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
+                var onGround = RayTools.TryOverlapCircle(mainCollider.DownPoint(), 0.2f, playerOnGroundLayerMask, out _);
 
                 //如果在地面上并且点跳跃
                 if (onGround && PlayerControls.Jump(this))
@@ -660,12 +672,10 @@ namespace GameCore
                     }
                 }
 
-                #region 改变操控层
                 if (nameText)
                 {
                     isControllingBackground = PlayerControls.IsControllingBackground(this);
                 }
-                #endregion
             }
 
             //血量低于 10 放心跳声, 死了就不播放声音
@@ -876,7 +886,7 @@ namespace GameCore
             if (pui.backpackMask.gameObject.activeSelf)
             {
                 ItemInfoShower.Hide();
-                ItemDragger.Hide();
+                ItemDragger.CancelDragging();
                 GameUI.SetPage(null);
                 GAudio.Play(AudioID.CloseBackpack);
             }
@@ -970,7 +980,8 @@ namespace GameCore
 
         public override void OnRebornServer()
         {
-
+            hungerValue = 20;
+            thirstValue = 20;
         }
 
         public override void OnRebornClient()
@@ -1024,16 +1035,11 @@ namespace GameCore
                 Destroy(nameText.gameObject);
 
             //初始化新的 nameText
-            //TODO: nameText改为世界Canvas, 并适应联机
             nameText = GameUI.AddText(UPC.middle, "ori:player_name_" + newValue, playerCanvas);
-            nameText.rectTransform.AddLocalPosY(-10f);
-            nameText.text.SetFontSize(10);
-            nameText.AfterRefreshing += n =>
-            {
-                string text = $"{newValue}";
-
-                n.text.text = text;
-            };
+            nameText.rectTransform.AddLocalPosY(30f);
+            nameText.text.SetFontSize(7);
+            nameText.text.text = newValue;
+            nameText.autoCompareText = false;
         }
 
         public void RefreshInventory()
@@ -1901,143 +1907,6 @@ namespace GameCore
         public static void WriteInventoryToCustomData<T>(this T entity) where T : Entity, IInventoryOwner
         {
             entity.customData["ori:inventory"]["data"] = JsonTools.ToJson(entity.GetInventory());
-        }
-    }
-
-    public static class ItemDragger
-    {
-        public class ItemDraggerUI
-        {
-            public ImageIdentity image;
-
-            public ItemDraggerUI(ImageIdentity image)
-            {
-                this.image = image;
-            }
-        }
-
-        public class ItemDraggerItem
-        {
-            public Item item;
-            public Action<Item> placement;
-            public Action cancel;
-
-            public ItemDraggerItem(Item item, Action<Item> placement, Action cancel)
-            {
-                this.item = item;
-                this.placement = placement;
-                this.cancel = cancel;
-            }
-        }
-
-        public static ItemDraggerItem draggingItem;
-
-        private static ItemDraggerUI uiInstance;
-
-        public static void DoneSwap(ItemDraggerItem oldDragger, Item item, Action<Item> placement, Action cancel)
-        {
-            var draggingTemp = oldDragger.item;
-            var oldTemp = item;
-
-            /* ------------------------------- 如果物品不同直接交换 ------------------------------- */
-            if (Item.Null(draggingTemp) || Item.Null(oldTemp) || !Item.Same(draggingTemp, oldTemp))
-            {
-                oldDragger.placement(oldTemp);
-                placement(draggingTemp);
-
-                ItemDragger.Hide();
-            }
-            /* ------------------------------- 如果物品相同且数量未满 ------------------------------- */
-            else if (oldTemp.count < oldTemp.data.maxCount)
-            {
-                //如果可以数量直接添加
-                if (draggingTemp.count + oldTemp.count <= oldTemp.data.maxCount)
-                {
-                    oldTemp.count += draggingTemp.count;
-
-                    placement(oldTemp);
-                    oldDragger.placement(null);
-
-                    ItemDragger.Hide();
-                }
-                else
-                {
-                    //如果数量过多先添加
-                    ushort countToExe = (ushort)Mathf.Min(draggingTemp.count, oldTemp.data.maxCount - draggingTemp.count);
-
-                    draggingTemp.count -= countToExe;
-                    oldTemp.count += countToExe;
-
-                    placement(oldTemp);   //把容器2物品设为容器1的
-                    oldDragger.placement(draggingTemp);   //把容器1物品设为容器2的
-                }
-            }
-        }
-
-        public static ItemDraggerUI GetUI()
-        {
-            if (uiInstance == null || !uiInstance.image)
-            {
-                ImageIdentity image = GameUI.AddImage(UPC.middle, "ori:image.item_dragger", "ori:square_button_flat");
-                image.OnUpdate += i =>
-                {
-                    i.ap = GControls.cursorPosInMainCanvas;
-                };
-
-                image.image.raycastTarget = false;
-
-                uiInstance = new(image);
-            }
-
-            return uiInstance;
-        }
-
-        public static void Drag(Item item, Vector2 iconSize, Action<Item> placement, Action onCancel)
-        {
-            ItemDraggerUI ui = GetUI();
-
-            /* ------------------------------- 先去掉原本在拖拽的物品 ------------------------------- */
-            if (draggingItem != null)
-            {
-                if (ItemDragger.draggingItem.item == item)
-                {
-                    ItemDragger.Hide();
-                    return;
-                }
-                else
-                {
-                    ItemDragger.DoneSwap(ItemDragger.draggingItem, item, placement, onCancel);
-                    return;
-                }
-            }
-
-            /* ------------------------------- 如果物品不为空就拖拽 ------------------------------- */
-            if (!Item.Null(item))
-            {
-                ui.image.image.sprite = item.data.texture.sprite;
-                ui.image.sd = iconSize;
-
-                ui.image.gameObject.SetActive(true);
-                draggingItem = new(item, placement, onCancel);
-            }
-            /* ------------------------------- 如果物品为空就不拖拽 ------------------------------- */
-            else
-            {
-                Hide();
-            }
-        }
-
-        public static void Hide()
-        {
-            ItemDraggerUI ui = GetUI();
-            ui.image.gameObject.SetActive(false);
-
-            if (draggingItem != null)
-            {
-                draggingItem.cancel();
-
-                draggingItem = null;
-            }
         }
     }
 

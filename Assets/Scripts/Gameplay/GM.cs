@@ -178,7 +178,15 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             weatherParticle.textureSheetAnimation.Clear();
 
-            AddWeather("ori:sunny", null, null);
+            AddWeather("ori:sunny", () =>
+            {
+                if (globalVolume.profile.TryGet(out Bloom bloom))
+                {
+                    bloom.active = true;
+                    bloom.threshold.Override(0.95f);
+                    bloom.intensity.Override(0.5f);
+                }
+            }, null);
 
             AddWeather("ori:rain", () =>
             {
@@ -196,8 +204,12 @@ namespace GameCore
                 //开始发射
                 weatherParticleEmission.enabled = true;
 
-                if (globalVolume.profile.TryGet<Bloom>(out Bloom bloom))
+                if (globalVolume.profile.TryGet(out Bloom bloom))
+                {
                     bloom.active = true;
+                    bloom.threshold.Override(0.8f);
+                    bloom.intensity.Override(3f);
+                }
             },
             () =>
             {
@@ -207,8 +219,11 @@ namespace GameCore
                 //停止所有音效
                 GAudio.Stop(AudioID.Rain);
 
-                if (globalVolume.profile.TryGet<Bloom>(out Bloom bloom))
-                    bloom.active = false;
+                if (globalVolume.profile.TryGet(out Bloom bloom))
+                {
+                    bloom.threshold.Override(0.95f);
+                    bloom.intensity.Override(0.5f);
+                }
             });
 
             SetWeather("ori:sunny");
@@ -588,6 +603,7 @@ namespace GameCore
             SummonEntity(pos, EntityID.Drop, guid, true, null, param.ToString());
         }
 
+        [Button]
         public void SummonEntity(Vector3 pos, string id, string saveId = null, bool saveIntoRegion = true, float? health = null, string customData = null)
         {
             saveId ??= Tools.randomGUID;
@@ -1121,11 +1137,16 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                   加上区域边界                                   */
             /* -------------------------------------------------------------------------- */
-            for (int x = generation.minPoint.x; x < generation.maxPoint.x; x++)
+
+            //? 为什么是 "<=" 最高点, 而不是 "<" 呢?
+            //? 我们假设 min=(-3,-3), max=(3,3)
+            //? 那么我们会循环 -3, -2, -1, 0, 1, 2
+            //? 发现了吗, 3 没有被遍历到, 以此要使用 "<="
+            for (int x = generation.minPoint.x; x <= generation.maxPoint.x; x++)
             {
-                for (int y = generation.minPoint.y; y < generation.maxPoint.y; y++)
+                for (int y = generation.minPoint.y; y <= generation.maxPoint.y; y++)
                 {
-                    if (x == generation.minPoint.x || y == generation.minPoint.y || x == generation.maxPoint.x - 1 || y == generation.maxPoint.y - 1)
+                    if (x == generation.minPoint.x || y == generation.minPoint.y || x == generation.maxPoint.x || y == generation.maxPoint.y)
                     {
                         Vector2Int pos = new(x, y);
 

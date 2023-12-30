@@ -8,6 +8,7 @@ using SP.Tools.Unity;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace GameCore
 {
@@ -22,10 +23,9 @@ namespace GameCore
         public Func<float> moveMultiple = () => 1;
         [HideInInspector] public GameObject model;
         [BoxGroup("属性"), LabelText("移速")] public float moveSpeed = 3;
-        [BoxGroup("属性"), LabelText("起步速度倍数")] public float startingSpeedMultiple = 0.25f;
-        [BoxGroup("属性"), LabelText("坠落空气阻力")] public float movementAirResistance = 0.95f;
-        public bool onGround { get; set; }
-        public AnimWeb animWeb = new();
+        [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.25f;
+        [BoxGroup("属性"), LabelText("移动空气阻力")] public float movementAirResistance = 0.95f;
+        public AnimWeb animWeb = null;
 
 
 
@@ -88,6 +88,9 @@ namespace GameCore
         public static void BindHumanAnimations(Creature creature)
         {
             float attackAnimTime = 0.3f;
+
+
+            creature.animWeb = new();
 
             #region 静止
             {
@@ -272,14 +275,10 @@ namespace GameCore
             //修正位置
             if (model)
             {
-                model.transform.localPosition = Vector3.zero;
-                model.transform.localScale = Vector3.one;
-
-                if (body)
-                {
-                    body.transform.localPosition = Vector3.zero;
-                    body.transform.localScale = Vector3.one;
-                }
+                if (model.transform.localPosition != Vector3.zero)
+                    model.transform.localPosition = Vector3.zero;
+                if (model.transform.localScale != Vector3.zero)
+                    model.transform.localScale = Vector3.one;
             }
 
 
@@ -291,14 +290,15 @@ namespace GameCore
 
 
 
-
         public Vector2 GetMovementVelocity(Vector2 movementDirection)
         {
             float multi = moveMultiple();
-            float xVelocity = (rb.velocity.x.Abs() > multi ? (rb.velocity.x) : (rb.velocity.x + movementDirection.x * multi * startingSpeedMultiple)) * movementAirResistance;
-            float yVelocity = (rb.velocity.y.Abs() > multi ? (rb.velocity.y) : (rb.velocity.y + movementDirection.y * multi * startingSpeedMultiple)) * movementAirResistance;
+            float acceleration = multi * accelerationMultiple;
 
-            return new(xVelocity, yVelocity);
+            float xVelocity = rb.velocity.x.Abs() > multi ? rb.velocity.x : (rb.velocity.x + movementDirection.x * acceleration);
+            float yVelocity = rb.velocity.y.Abs() > multi ? rb.velocity.y : (rb.velocity.y + movementDirection.y * acceleration);
+
+            return new(xVelocity * movementAirResistance, yVelocity * movementAirResistance);
         }
 
 
@@ -399,6 +399,8 @@ namespace GameCore
 
         public virtual void RefreshHurtEffect()
         {
+            var isHurting = this.isHurting;
+
             foreach (var sr in spriteRenderers)
             {
                 if (isHurting)
@@ -487,10 +489,8 @@ namespace GameCore
             part.mainBody = this;
 
             bodyParts.Add(part);
-            renderers.Add(part.armorSr);
-            renderers.Add(part.sr);
-            spriteRenderers.Add(part.armorSr);
-            spriteRenderers.Add(part.sr);
+            AddSpriteRenderer(part.armorSr);
+            AddSpriteRenderer(part.sr);
             return part;
         }
     }
