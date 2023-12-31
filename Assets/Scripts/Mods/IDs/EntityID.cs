@@ -19,6 +19,7 @@ namespace GameCore
         public const string ExtremeWeatherRegionGuard = "ori:extreme_weather_region_guard";
         public const string ExtremeWeatherRegionGuardSand = "ori:extreme_weather_region_guard_sand";
         public const string ExtremeWeatherRegionGuardSnowball = "ori:extreme_weather_region_guard_snowball";
+        public const string FlintArrow = "ori:flint_arrow";
         public const string Fly = "ori:fly";
         public const string GrasslandSlime = "ori:grassland_slime";
         public const string GrasslandSpore = "ori:grassland_spore";
@@ -42,7 +43,6 @@ namespace GameCore
         public const string Snail = "ori:snail";
         public const string SnowfieldSlime = "ori:snowfield_slime";
         public const string Spark = "ori:spark";
-        public const string WoodenArrow = "ori:wooden_arrow";
         public const string Zombie = "ori:zombie";
     }
 }

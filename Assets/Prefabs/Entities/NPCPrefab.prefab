@@ -147,10 +147,15 @@ MonoBehaviour:
     speed: 0
     gravity: 0
     colliderSize: {x: 0, y: 0}
+    colliderOffset: {x: 0, y: 0}
     maxHealth: 0
+    lifetime: 0
     drops: []
-  saveId: 
-  playerName: 
+  save:
+    id: 
+    customData: 
+    pos: {x: 0, y: 0}
+    saveId: 
 --- !u!61 &-5584403391073953275
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -160,7 +165,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 5688412443235167145}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 549921f9f82e8a94cbf7587d35b6417b, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0

@@ -23,7 +23,7 @@ namespace GameCore
         public Func<float> moveMultiple = () => 1;
         [HideInInspector] public GameObject model;
         [BoxGroup("属性"), LabelText("移速")] public float moveSpeed = 3;
-        [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.25f;
+        [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.1f;
         [BoxGroup("属性"), LabelText("移动空气阻力")] public float movementAirResistance = 0.95f;
         public AnimWeb animWeb = null;
 

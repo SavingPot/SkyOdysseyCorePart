@@ -186,11 +186,19 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("掉落的Y位置")] public float fallenY;
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
         [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
+        [BoxGroup("属性"), LabelText("移动方块阻力")] public float movementBlockResistance = 0.95f;
+        public bool onGround;
 
         public bool askingForGeneratingRegion { get; private set; }
         public float askingForGeneratingRegionTime { get; private set; } = float.NegativeInfinity;
         public bool generatedFirstRegion;
         private bool hasSetPosBySave;
+
+
+
+        #region 同步变量
+
+        #region 任务
         [SyncGetter] List<TaskStatusForSave> completedTasks_get() => default; [SyncSetter] void completedTasks_set(List<TaskStatusForSave> value) { }
         [Sync] public List<TaskStatusForSave> completedTasks { get => completedTasks_get(); set => completedTasks_set(value); }
 
@@ -200,10 +208,7 @@ namespace GameCore
             tasksTemp.Add(task);
             completedTasks = tasksTemp;
         }
-
-
-
-        #region 同步变量
+        #endregion
 
         #region 皮肤
 
@@ -593,7 +598,6 @@ namespace GameCore
             if (PlayerCanControl(this))
             {
                 Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
-                var onGround = RayTools.TryOverlapCircle(mainCollider.DownPoint(), 0.2f, playerOnGroundLayerMask, out _);
 
                 //如果在地面上并且点跳跃
                 if (onGround && PlayerControls.Jump(this))
@@ -716,7 +720,7 @@ namespace GameCore
             {
                 DeathRotation();
             }
-
+            
             ////AutoGenerateRegion();
 
             //刷新状态栏
@@ -1402,10 +1406,24 @@ namespace GameCore
             else
                 move = PlayerControls.Move(this);
 
+            onGround = RayTools.TryOverlapCircle(mainCollider.DownPoint(), 0.2f, playerOnGroundLayerMask, out _);
+
             if (isLocalPlayer && !isDead)
             {
                 //设置速度
                 rb.velocity = GetMovementVelocity(new(move, 0));
+
+                if (onGround && move == 0 && rb.velocity.x != 0)
+                {
+                    if (Mathf.Abs(rb.velocity.x) <= 0.1f)
+                    {
+                        rb.velocity = Vector2.zero;
+                    }
+                    else
+                    {
+                        rb.velocity = GetMovementVelocity(new(-rb.velocity.x * movementBlockResistance, 0));
+                    }
+                }
 
                 //执行 移动的启停
                 if (move == 0 && moveVecLastFrame != 0)
@@ -2134,7 +2152,7 @@ namespace GameCore
                     player.happinessValue = happinessValue - happinessValueDelta;
 
                     if (thirstValue <= 0 || hungerValue <= 0)
-                        player.health -= Performance.frameTime * 15;
+                        player.health -= Performance.frameTime * 3; //TODO：定时受伤，而非一直扣血
                 }
             }
         }

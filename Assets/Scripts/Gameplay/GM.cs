@@ -1302,7 +1302,7 @@ namespace GameCore
             /* ------------------------------------------------------------------------ */
 
             //确定大小
-            size = new(Region.chunkCountX * Chunk.blockCountPerAxis, Region.chunkCountX * Chunk.blockCountPerAxis);
+            size = new(Region.chunkCount * Chunk.blockCountPerAxis, Region.chunkCount * Chunk.blockCountPerAxis);
 
             //边际 (左下右上)
             maxPoint = new((int)Math.Floor(size.x / 2f), (int)Math.Floor(size.y / 2f));

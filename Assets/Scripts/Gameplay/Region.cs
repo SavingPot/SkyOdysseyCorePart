@@ -23,13 +23,11 @@ namespace GameCore
         public bool generatedAlready;
 
         //单数!
-        public const int chunkCountX = 12 + 1;
-        public const int chunkCountY = 12 + 1;
-        public const float chunkCountXReciprocal = 1f / chunkCountX;
-        public const float chunkCountYReciprocal = 1f / chunkCountY;
-        public const float halfChunkCountX = chunkCountX / 2f;
-        public const float halfChunkCountY = chunkCountY / 2f;
-        public static readonly Vector2Int placeVec = new(Chunk.blockCountPerAxis * chunkCountX, Chunk.blockCountPerAxis * chunkCountY);
+        public const int chunkCount = 12 + 1;
+        public const float chunkCountReciprocal = 1f / chunkCount;
+        public const float halfChunkCount = chunkCount / 2f;
+        public const float negativeHalfChunkCount = -halfChunkCount;
+        public static readonly Vector2Int placeVec = new(Chunk.blockCountPerAxis * chunkCount, Chunk.blockCountPerAxis * chunkCount);
         public static readonly Vector2 halfPlaceVec = new(placeVec.x / 2f, placeVec.y / 2f);
         public static Vector2Int place => placeVec;
         public static Vector2 halfPlace => halfPlaceVec;

@@ -12,7 +12,7 @@ using DG.Tweening;
 
 namespace GameCore
 {
-    public class Block : IEntity
+    public class Block
     {
         /* -------------------------------------------------------------------------- */
         /*                               Static & Const                               */
@@ -20,7 +20,6 @@ namespace GameCore
         public static Color backgroundColor = new(0.6f, 0.6f, 0.7f);
         public static Color wallColor = new(1f, 1f, 1f);
         public static Vector3 blockDamageScale = new(1.2f, 1.2f, 1.2f);
-        public static Color blockLightDefaultColor = Tools.HexToColor("#FFA578");
 
 
 
@@ -29,23 +28,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                  Instance                                  */
         /* -------------------------------------------------------------------------- */
-        private float _health;
-        public float health
-        {
-            get => _health;
-            set
-            {
-                if (_health == value)
-                    return;
-
-                if (value > totalMaxHealth)
-                    value = totalMaxHealth;
-
-                _health = value;
-                OnHealthChange(this);
-                OnUpdate();
-            }
-        }
+        public float health;
 
         public Chunk chunk { get; internal set; }
         [LabelText("上次受伤时间")] public float lastDamageTime;
@@ -75,7 +58,7 @@ namespace GameCore
             //(-∞,0]
             if (block.health <= 0)
             {
-                block.Death();
+                block.Destroy();
             }
             //(0,100)
             else if (block.health != 100)
@@ -88,7 +71,6 @@ namespace GameCore
             {
                 block.chunk.map.blocksToCheckHealths.Remove(block);
             }
-
         };
 
         public static int blockLayer { get; private set; }
@@ -103,8 +85,6 @@ namespace GameCore
             //写入存档中
             GFiles.world.GetRegion(chunk.regionIndex).GetBlock(PosConvert.MapToRegionPos(pos, chunk.regionIndex), isBackground).customData = customData?.ToString(Formatting.None);
         }
-
-        #region Behaviour
 
         public virtual void OutputDrops(Vector3 pos)
         {
@@ -150,18 +130,30 @@ namespace GameCore
                 crackSr = chunk.map.blockCrackPool.Get(this, (byte)Mathf.Min(4, 4 - health / totalMaxHealth * 5));
         }
 
-        #endregion
-
 
         public void TakeDamage(float damage)
         {
             lastDamageTime = Time.time;
-            health -= damage / data.hardness;
+            SetHealth(health - damage / data.hardness);
             scaleAnimationTween = transform.DOScale(blockDamageScale, 0.1f).OnStepComplete(() => transform.DOScale(Vector3.one, 0.1f));
             shakeRotationTween = transform.DOShakeRotation(0.1f, new Vector3(0, 0, 15));
         }
 
-        public void Death()
+        public void SetHealth(float value)
+        {
+            if (health == value)
+                return;
+
+            if (value > totalMaxHealth)
+                value = totalMaxHealth;
+
+            health = value;
+            OnHealthChange(this);
+            OnUpdate();
+        }
+
+
+        public void Destroy()
         {
             Client.Send<NMDestroyBlock>(new(chunk.regionIndex, pos, isBackground));
         }
@@ -171,6 +163,33 @@ namespace GameCore
         {
             blockLayer = LayerMask.NameToLayer("Block");
             blockLayerMask = blockLayer.LayerMaskOnly();
+        }
+
+        public static bool TryGetBlockFromCollision(Collider2D other, out Block block)
+        {
+            if (other.gameObject.layer == blockLayer)
+            {
+                var mapPos = PosConvert.WorldToMapPos(other.transform.position);
+                var chunk = Map.instance.AddChunk(PosConvert.MapPosToChunkIndex(mapPos));
+
+                //先尝试获取背景层
+                block = chunk.GetBlock(mapPos, true);
+
+                //如果获取失败, 就从墙层获取
+                if (block == null || block.gameObject != other.gameObject)
+                    block = chunk.GetBlock(mapPos, false);
+
+                if (block == null)
+                {
+                    Debug.LogError("碰撞到了方块，但是无法获取碰撞到的方块");
+                    return false;
+                }
+
+                return true;
+            }
+
+            block = null;
+            return false;
         }
     }
 }

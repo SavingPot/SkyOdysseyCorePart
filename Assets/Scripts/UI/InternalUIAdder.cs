@@ -318,14 +318,27 @@ namespace GameCore.UI
                     {
                         if (worldNameField.field.text.IsNullOrWhiteSpace())
                         {
-                            Debug.LogError("世界名不能为空");
+                            Debug.LogError("世界名不能为空，创建失败");
                             return;
                         }
 
-                        GFiles.CreateWorld(worldSeedField.field.text.ToInt(), worldNameField.field.text);
+                        foreach (var worldFile in worldFiles)
+                        {
+                            if (worldFile.worldName == worldNameField.field.text)
+                            {
+                                Debug.LogError("存在一个同名世界，创建失败");
+                                return;
+                            }
+                        }
+
+                        var worldNameBuilder = Tools.stringBuilderPool.Get().Append(worldNameField.field.text);
+                        StringTools.ModifySpecialPath(worldNameBuilder, "New World", "x");
+
+                        GFiles.CreateWorld(worldSeedField.field.text.ToInt(), worldNameBuilder.ToString());
                         RefreshWorldFiles();
                         RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
                         GameUI.SetPage(chooseWorldPanel);
+                        Tools.stringBuilderPool.Recover(worldNameBuilder);
                     });
                     create.SetAPosOnBySizeDown(worldSeedField, 50);
 

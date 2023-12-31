@@ -167,8 +167,9 @@ namespace GameCore
                     if (block != null &&
                         !block.isBackground &&
                         !Map.instance.HasBlock(block.pos + Vector2Int.up, false) &&
-                        Math.Abs(block.pos.x - Region.GetMiddleX(chunk.regionIndex)) < Region.chunkCountX * Chunk.blockCountPerAxis &&
-                        Math.Abs(block.pos.y - Region.GetMiddleY(chunk.regionIndex)) < Region.chunkCountY * Chunk.blockCountPerAxis &&
+                        //TODO: 把 MapPosToChunkPos 打包到 PosConvert
+                        Math.Abs(block.pos.x - Region.GetMiddleX(chunk.regionIndex)) < Region.chunkCount * Chunk.blockCountPerAxis &&
+                        Math.Abs(block.pos.y - Region.GetMiddleY(chunk.regionIndex)) < Region.chunkCount * Chunk.blockCountPerAxis &&
                         !Tools.instance.IsInView2D(block.pos.To2()))
                     {
                         return block.pos + new Vector2Int(0, 2);

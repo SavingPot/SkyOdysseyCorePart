@@ -16,6 +16,7 @@ namespace GameCore.High
         public const int blockCountPerAxis = 24 + 1;
         public const float blockCountPerAxisReciprocal = 1f / blockCountPerAxis;
         public const float halfBlockCountPerAxis = blockCountPerAxis / 2f;
+        public const float negativeHalfBlockCountPerAxis = -halfBlockCountPerAxis;
         public const int blockCountSingleLayer = blockCountPerAxis * blockCountPerAxis;
         public const int blockCountMultiLayer = blockCountSingleLayer * 2;
 

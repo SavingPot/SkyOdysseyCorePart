@@ -496,7 +496,7 @@ namespace GameCore
             taskView.scrollRect.horizontal = true;   //允许水平拖拽
             taskView.scrollRect.movementType = ScrollRect.MovementType.Unrestricted;   //不限制拖拽
             taskView.scrollRect.scrollSensitivity = 0;   //不允许滚轮控制
-            taskView.content.localScale = new(0.18f, 0.18f, 1);   //缩小界面
+            taskView.content.localScale = new(0.1f, 0.1f, 1);   //缩小界面
             taskView.content.anchoredPosition = new(GameUI.canvasScaler.referenceResolution.x / 2, GameUI.canvasScaler.referenceResolution.y / 2);  //将任务居中
             taskView.viewportMask.enabled = false;   //关闭显示剔除
             UnityEngine.Object.Destroy(taskView.gridLayoutGroup);   //删除自动排序器

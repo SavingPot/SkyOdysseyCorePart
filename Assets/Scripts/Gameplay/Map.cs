@@ -161,7 +161,6 @@ namespace GameCore
                 light.gameObject.SetActive(true);
                 light.transform.position = block.transform.position;
 
-                light.color = Block.blockLightDefaultColor;
                 light.pointLightOuterRadius = block.data.lightLevel * 1.5f;
                 light.intensity = block.data.lightLevel / 7f;
 
@@ -250,7 +249,7 @@ namespace GameCore
         protected override void Awake()
         {
             base.Awake();
-
+            
             blockPoolTrans = new GameObject("Block Pool").transform;
             blockPoolTrans.SetParent(transform);
             blockPoolTrans.gameObject.SetActive(false);
@@ -292,7 +291,7 @@ namespace GameCore
 
                     if (Tools.time >= block.lastDamageTime + 7.5f)
                     {
-                        block.health += deltaHealth;
+                        block.SetHealth(block.health + deltaHealth);
                     }
                 }
             }
@@ -449,10 +448,7 @@ namespace GameCore
             {
                 var block = GetBlock(p, isBackground);
 
-                if (block != null)
-                {
-                    block.OnUpdate();
-                }
+                block?.OnUpdate();
             }
         }
     }

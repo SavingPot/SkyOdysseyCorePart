@@ -434,32 +434,19 @@ namespace GameCore
             regionIndex = PosConvert.ChunkToRegionIndex(chunkIndex);
 
             //自动销毁
-            if (isNotPlayer && Tools.time >= timeToAutoDestroy)
+            if (isNotPlayer)
             {
-                DestroyEntityOnServer();
+                if (Tools.time >= timeToAutoDestroy)
+                {
+                    DestroyEntityOnServer();
+                }
             }
         }
 
         protected virtual void OnTriggerStay2D(Collider2D other)
         {
-            if (other.gameObject.layer == Block.blockLayer)
+            if (Block.TryGetBlockFromCollision(other, out Block block))
             {
-                var mapPos = PosConvert.WorldToMapPos(other.transform.position);
-                var chunk = Map.instance.AddChunk(PosConvert.MapPosToChunkIndex(mapPos));
-
-                //先尝试获取背景层
-                var block = chunk.GetBlock(mapPos, true);
-
-                //如果获取失败, 就从墙层获取
-                if (block == null || block.gameObject != other.gameObject)
-                    block = chunk.GetBlock(mapPos, false);
-
-                if (block == null)
-                {
-                    Debug.LogError("无法获取碰撞到的方块");
-                    return;
-                }
-
                 block.OnEntityStay(this);
             }
         }
