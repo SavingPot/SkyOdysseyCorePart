@@ -41,8 +41,8 @@ namespace GameCore
                 GAudio.Play(AudioID.PlaceBlock);
 
                 //播放手臂动画
-                if (!player.animWeb.GetAnim("excavate_rightarm", 0).isPlaying)
-                    player.animWeb.SwitchPlayingTo("excavate_rightarm");
+                if (!player.animWeb.GetAnim("slight_rightarm_lift", 0).isPlaying)
+                    player.animWeb.SwitchPlayingTo("slight_rightarm_lift");
             }
         }
 

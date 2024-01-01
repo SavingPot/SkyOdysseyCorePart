@@ -334,10 +334,10 @@ namespace GameCore
             ColliderOff();
             this.enabled = false;
         }
-        public virtual void OnRebornServer() { }
-        public virtual void OnRebornClient() { }
-        public virtual void OnGetHurtServer() { }
-        public virtual void OnGetHurtClient() { }
+        public virtual void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller) { }
+        public virtual void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller) { }
+        public virtual void OnGetHurtServer(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
+        public virtual void OnGetHurtClient(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
 
 
 
@@ -550,7 +550,7 @@ namespace GameCore
             health -= damage;
             this.invincibleTime = invincibleTime;
 
-            OnGetHurtServer();
+            OnGetHurtServer(damage, invincibleTime, damageOriginPos, impactForce, caller);
 
             if (isNotPlayer)
             {
@@ -573,7 +573,7 @@ namespace GameCore
             if (!takeDamageAudioId.IsNullOrWhiteSpace())
                 GAudio.Play(takeDamageAudioId);
 
-            OnGetHurtClient();
+            OnGetHurtClient(damage, invincibleTime, damageOriginPos, impactForce, caller);
 
             //应用击退效果
             if (isPlayer && isOwned)
@@ -633,7 +633,7 @@ namespace GameCore
             health = newHealth;
             isDead = false;
 
-            OnRebornServer();
+            OnRebornServer(newHealth, newPos, caller);
 
             if (newPos.x == float.PositiveInfinity && newPos.y == float.NegativeInfinity)
                 newPos = GFiles.world.GetRegion(regionIndex)?.spawnPoint ?? Vector2Int.zero;
@@ -647,7 +647,7 @@ namespace GameCore
         [ClientRpc]
         public void ClientReborn(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
-            OnRebornClient();
+            OnRebornClient(newHealth, newPos, caller);
 
             if (isPlayer)
                 transform.position = newPos;

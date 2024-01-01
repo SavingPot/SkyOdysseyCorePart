@@ -482,7 +482,7 @@ namespace GameCore
             usingItemRenderer.transform.SetScale(0.5f, 0.5f);
 
             BindHumanAnimations(this);
-            animWeb.CreateConnectionFromTo("excavate_rightarm", "idle", () => true, 0.15f * 2, 0);
+            animWeb.CreateConnectionFromTo("slight_rightarm_lift", "idle", () => true, 0.15f * 2, 0);
 
 
 
@@ -982,13 +982,13 @@ namespace GameCore
             animWeb.Stop();
         }
 
-        public override void OnRebornServer()
+        public override void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
             hungerValue = 20;
             thirstValue = 20;
         }
 
-        public override void OnRebornClient()
+        public override void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
             if (isLocalPlayer)
             {
@@ -996,9 +996,9 @@ namespace GameCore
             }
         }
 
-        public override void OnGetHurtServer() { }
+        public override void OnGetHurtServer(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
 
-        public override void OnGetHurtClient()
+        public override void OnGetHurtClient(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
         {
             if (GControls.mode == ControlMode.Gamepad)
                 GControls.GamepadVibrationMediumStrong();
@@ -1143,8 +1143,8 @@ namespace GameCore
 
             if (block != null)
             {
-                if (!animWeb.GetAnim("excavate_rightarm", 0).isPlaying)
-                    animWeb.SwitchPlayingTo("excavate_rightarm");
+                if (!animWeb.GetAnim("slight_rightarm_lift", 0).isPlaying)
+                    animWeb.SwitchPlayingTo("slight_rightarm_lift");
 
                 block.TakeDamage(excavationStrength);
 

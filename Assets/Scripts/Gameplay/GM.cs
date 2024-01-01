@@ -858,17 +858,18 @@ namespace GameCore
                     unexpectedBlocks = unexpectedBlocksTemp.ToArray();
 
 
-                    void AddBlockInTheIsland(string blockId, Vector2Int pos, bool isBackground)
+                    void AddBlockInTheIsland(string blockId, Vector2Int pos, bool isBackground, string customData = null)
                     {
-                        pos += centerPoint;
-                        blockAdded.Add((pos, isBackground));
+                        //? 添加到区域生成，需要根据岛的中心位置做偏移，而在添加到岛屿生成则不需要
+                        islandGeneration.regionGeneration.region.AddPos(blockId, pos + centerPoint, isBackground, true, customData);
 
-                        islandGeneration.regionGeneration.region.AddPos(blockId, pos, isBackground, true);
+                        blockAdded.Add((pos, isBackground)); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
                     }
 
                     void AddBlockInTheIslandForAreas(string blockId, Vector2Int pos, Vector3Int[] areas)
                     {
-                        pos += centerPoint;
+                        islandGeneration.regionGeneration.region.AddPos(blockId, pos + centerPoint, areas, true); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
+
                         foreach (var item in areas)
                         {
                             Vector2Int actualPos = new(pos.x + item.x, pos.y + item.y);
@@ -885,8 +886,6 @@ namespace GameCore
                                 blockAdded.Add((actualPos, actualIsBackground));
                             }
                         }
-
-                        islandGeneration.regionGeneration.region.AddPos(blockId, pos, areas, true);
                     }
 
 
@@ -1054,7 +1053,7 @@ namespace GameCore
                     }
 
                     //生成战利品
-                    IslandGeneration.LootGeneration(islandGeneration, wallHighestPointFunction);
+                    IslandGeneration.LootGeneration(islandGeneration, wallHighestPointFunction, AddBlockInTheIsland);
 
 
 
@@ -1081,7 +1080,9 @@ namespace GameCore
                                         {
                                             foreach (var fixedBlock in l.structure.fixedBlocks)
                                             {
-                                                if (islandGeneration.regionGeneration.region.GetBlock(pos + fixedBlock.offset, fixedBlock.isBackground) != null)
+                                                var tempPos = pos + fixedBlock.offset + centerPoint;
+
+                                                if (islandGeneration.regionGeneration.region.GetBlock(tempPos, fixedBlock.isBackground) != null)
                                                 {
                                                     goto stopGeneration;
                                                 }
@@ -1091,19 +1092,21 @@ namespace GameCore
                                         //检查是否满足所有需求
                                         foreach (var require in l.structure.require)
                                         {
-                                            if (!islandGeneration.regionGeneration.region.GetBlockOut(pos + require.offset, require.isBackground, out BlockSave_Location temp) || temp.blockSave.blockId != require.blockId)
+                                            var tempPos = pos + require.offset + centerPoint;
+
+                                            if (islandGeneration.regionGeneration.region.GetBlock(tempPos, require.isBackground)?.blockSave?.blockId != require.blockId)
                                             {
                                                 goto stopGeneration;
                                             }
                                         }
 
                                         //如果可以就继续
-                                        Parallel.ForEach(l.structure.fixedBlocks, attached =>
+                                        foreach (var fixedBlock in l.structure.fixedBlocks)
                                         {
-                                            var tempPos = pos + attached.offset;
+                                            var tempPos = pos + fixedBlock.offset;
 
-                                            AddBlockInTheIsland(attached.blockId, tempPos, attached.isBackground);
-                                        });
+                                            AddBlockInTheIsland(fixedBlock.blockId, tempPos, fixedBlock.isBackground);
+                                        }
 
                                     stopGeneration:
                                         return;
@@ -1117,18 +1120,20 @@ namespace GameCore
                 task.Start();
             }
 
-            //等待所有 Thread 执行完毕
+            //等待所有 Task 执行完毕
             Task.WaitAll(tasks);
 
 
             /* -------------------------------------------------------------------------- */
             /*                                    生成传送点                                   */
             /* -------------------------------------------------------------------------- */
-            Vector2Int portalMiddle = new(generation.maxPoint.x / 2, generation.maxPoint.y * 3 / 4);
+            Vector2Int portalMiddle = generation.region.spawnPoint;
             generation.region.AddPos(BlockID.Portal, portalMiddle, false, true);
             generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(0, -1), false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-2, -1), false, true);
             generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-1, -1), false, true);
             generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(1, -1), false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(2, -1), false, true);
 
 
 
@@ -1353,7 +1358,7 @@ namespace GameCore
             };
         }
 
-        public static Action<IslandGeneration, Dictionary<int, int>> LootGeneration = (generation, wallHighestPointFunction) =>
+        public static Action<IslandGeneration, Dictionary<int, int>, Action<string, Vector2Int, bool, string>> LootGeneration = (generation, wallHighestPointFunction, AddBlockInIsland) =>
         {
             foreach (var highest in wallHighestPointFunction)
             {
@@ -1452,7 +1457,7 @@ namespace GameCore
                         jo["ori:container"].AddObject("items");
                         jo["ori:container"]["items"].AddArray("array", group);
 
-                        generation.regionGeneration.region.AddPos(BlockID.Barrel, lootBlockPos, false, true, jo.ToString(Formatting.None));
+                        AddBlockInIsland(BlockID.Barrel, lootBlockPos, false, jo.ToString(Formatting.None));
                     }
                 }
 
@@ -1551,7 +1556,7 @@ namespace GameCore
                     jo["ori:container"].AddObject("items");
                     jo["ori:container"]["items"].AddArray("array", group);
 
-                    generation.regionGeneration.region.AddPos(BlockID.WoodenChest, lootBlockPos, false, true, jo.ToString(Formatting.None));
+                    AddBlockInIsland(BlockID.WoodenChest, lootBlockPos, false, jo.ToString(Formatting.None));
                 }
             }
         };

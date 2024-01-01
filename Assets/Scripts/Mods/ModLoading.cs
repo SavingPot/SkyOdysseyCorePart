@@ -551,10 +551,10 @@ namespace GameCore
                     {
                         if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
                             requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
-                        if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
+                        else if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
                             requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
                         else
-                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(), false));
+                            requireBlockTemp.Add(new(i["id"]?.ToString(), Vector2Int.zero, false));
                     }
                 });
                 temp.require = requireBlockTemp.ToArray();

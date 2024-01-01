@@ -238,7 +238,7 @@ namespace GameCore
             return null;
         }
 
-        public bool GetBlockOut(Vector2Int pos, bool isBackground, out BlockSave_Location dbs)
+        public bool TryGetBlock(Vector2Int pos, bool isBackground, out BlockSave_Location dbs)
         {
             dbs = GetBlock(pos, isBackground);
 

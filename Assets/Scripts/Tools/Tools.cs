@@ -431,7 +431,6 @@ namespace GameCore
 
             return probability >= random.NextDouble() * 100;
         }
-
         public static int MultiProb100(float probability)
         {
             float temp = probability;

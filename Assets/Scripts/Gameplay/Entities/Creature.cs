@@ -23,7 +23,7 @@ namespace GameCore
         public Func<float> moveMultiple = () => 1;
         [HideInInspector] public GameObject model;
         [BoxGroup("属性"), LabelText("移速")] public float moveSpeed = 3;
-        [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.1f;
+        [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.14f;
         [BoxGroup("属性"), LabelText("移动空气阻力")] public float movementAirResistance = 0.95f;
         public AnimWeb animWeb = null;
 
@@ -161,12 +161,12 @@ namespace GameCore
                 float time = 0.15f; //!Player的绑定部分使用到了这个时间
                 float rot = 35f;
 
-                creature.animWeb.AddAnim("excavate_leftarm", 1, new AnimFragment[] {
+                creature.animWeb.AddAnim("slight_leftarm_lift", 1, new AnimFragment[] {
                     new LocalRotationZAnimFragment(creature.leftArm.transform, rot, time, Ease.InOutSine),
                     new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, time, Ease.InOutSine)
                 }, 0);
 
-                creature.animWeb.AddAnim("excavate_rightarm", 1, new AnimFragment[] {
+                creature.animWeb.AddAnim("slight_rightarm_lift", 1, new AnimFragment[] {
                     new LocalRotationZAnimFragment(creature.rightArm.transform, rot, time, Ease.InOutSine),
                     new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, time, Ease.InOutSine)
                 }, 0);

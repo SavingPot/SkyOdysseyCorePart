@@ -161,6 +161,7 @@ namespace GameCore
 
         /* ----------------------------------- 背包 ----------------------------------- */
         public ScrollViewIdentity inventoryItemView;
+        public Color backpackColor = Color.white;
 
 
         /* ----------------------------------- 合成 ----------------------------------- */
@@ -496,7 +497,7 @@ namespace GameCore
             taskView.scrollRect.horizontal = true;   //允许水平拖拽
             taskView.scrollRect.movementType = ScrollRect.MovementType.Unrestricted;   //不限制拖拽
             taskView.scrollRect.scrollSensitivity = 0;   //不允许滚轮控制
-            taskView.content.localScale = new(0.1f, 0.1f, 1);   //缩小界面
+            taskView.content.localScale = new(0.08f, 0.08f, 1);   //缩小界面
             taskView.content.anchoredPosition = new(GameUI.canvasScaler.referenceResolution.x / 2, GameUI.canvasScaler.referenceResolution.y / 2);  //将任务居中
             taskView.viewportMask.enabled = false;   //关闭显示剔除
             UnityEngine.Object.Destroy(taskView.gridLayoutGroup);   //删除自动排序器
@@ -695,7 +696,7 @@ namespace GameCore
 
                 List<InventorySlotUI> quickInventorySlotTemp = new();
 
-                #region 添加主物品栏
+                #region 添加快速物品栏
                 for (int index = -quickInventorySlotCount / 2; index < quickInventorySlotCount / 2; index++)
                 {
                     int i = index;
@@ -739,7 +740,7 @@ namespace GameCore
             }
             #endregion
 
-            #region 添加物品栏界面
+            #region 添加背包界面
             {
                 //背包的遮罩
                 backpackMask = GameUI.AddPanel("ori:panel.backpack_panel_mask");
@@ -756,7 +757,7 @@ namespace GameCore
                 inventoryItemView.viewportImage.sprite = ModFactory.CompareTexture("ori:backpack_inventory_background").sprite;
                 inventoryItemView.gridLayoutGroup.cellSize = new(80, 80);
                 inventoryItemView.scrollViewImage.color = Color.clear;
-                inventoryItemView.viewportImage.color = new(0.75f, 0.75f, 0.75f, 0.75f);
+                inventoryItemView.viewportImage.color = backpackColor;
                 inventoryItemView.content.sizeDelta = new(0, inventoryItemView.content.sizeDelta.y);
                 inventoryItemView.content.anchoredPosition = new(-inventoryItemView.content.sizeDelta.x / 2, inventoryItemView.content.anchoredPosition.y);
 
@@ -1152,7 +1153,7 @@ namespace GameCore
             itemView.gridLayoutGroup.cellSize = new(cellSize, cellSize);
             itemView.gridLayoutGroup.spacing = spacing;
             itemView.scrollViewImage.color = Color.clear;
-            itemView.viewportImage.color = new(0.75f, 0.75f, 0.75f, 0.75f);
+            itemView.viewportImage.color =backpackColor;
             itemView.content.sizeDelta = new(0, itemView.content.sizeDelta.y);
             itemView.content.anchoredPosition = new(-itemView.content.sizeDelta.x / 2, itemView.content.anchoredPosition.y);
 
@@ -1883,28 +1884,35 @@ namespace GameCore
         {
             if (uiInstance == null || !uiInstance.image || !uiInstance.nameText || !uiInstance.detailText)
             {
-                ImageIdentity image = GameUI.AddImage(UPC.middle, "ori:image.item_info_shower", "ori:item_info_shower");
-                TextIdentity nameText = GameUI.AddText(UPC.upperLeft, "ori:text.item_info_shower.name", image);
-                TextIdentity detailText = GameUI.AddText(UPC.upperLeft, "ori:text.item_info_shower.detail", image);
+                int borderSize = 5;
+                int detailTextFontSize = 15;
+
+                ImageIdentity backgroundImage = GameUI.AddImage(UPC.middle, "ori:image.item_info_shower", "ori:item_info_shower");
+                TextIdentity nameText = GameUI.AddText(UPC.upperLeft, "ori:text.item_info_shower.name", backgroundImage);
+                //ImageIdentity damageIcon = GameUI.AddImage(UPC.upperLeft, "ori:image.item_info_shower.damage_icon", "ori:item_info_shower_damage", backgroundImage);
+                TextIdentity detailText = GameUI.AddText(UPC.upperLeft, "ori:text.item_info_shower.detail", backgroundImage);
 
                 nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
                 detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
+                detailText.text.paragraphSpacing = 15;
 
-                image.SetSizeDelta(200, 200);
-                nameText.SetSizeDelta(image.sd.x, 30);
-                detailText.SetSizeDelta(nameText.sd.x, image.sd.y - nameText.sd.y);
+                backgroundImage.SetSizeDelta(200, 200);
+                nameText.SetSizeDelta(backgroundImage.sd.x, 30);
+                //damageIcon.SetSizeDelta(detailTextFontSize, detailTextFontSize);
+                detailText.SetSizeDelta(nameText.sd.x, backgroundImage.sd.y - nameText.sd.y);
 
-                nameText.SetAPos(nameText.sd.x / 2, -nameText.sd.y / 2 - 5);
-                detailText.SetAPos(nameText.ap.x, nameText.ap.y - nameText.sd.y / 2 - detailText.sd.y / 2 - 5);
+                nameText.SetAPos(nameText.sd.x / 2, -nameText.sd.y / 2 - borderSize);
+                detailText.SetAPos(nameText.ap.x, nameText.ap.y - nameText.sd.y / 2 - detailText.sd.y / 2 - borderSize);
+                //damageIcon.SetAPos(borderSize + damageIcon.sd.x / 2, nameText.ap.y - nameText.sd.y / 2 - damageIcon.sd.y - borderSize);
 
                 nameText.text.SetFontSize(18);
-                detailText.text.SetFontSize(13);
+                detailText.text.SetFontSize(detailTextFontSize);
 
-                image.image.raycastTarget = false;
+                backgroundImage.image.raycastTarget = false;
                 nameText.text.raycastTarget = false;
                 detailText.text.raycastTarget = false;
 
-                uiInstance = new(image, nameText, detailText);
+                uiInstance = new(backgroundImage, nameText, detailText);
             }
 
             return uiInstance;
@@ -1919,7 +1927,7 @@ namespace GameCore
 
             ui.image.ap = pos;
             ui.nameText.text.text = GameUI.CompareText(item.data.id).text;   //$"{GameUI.CompareText(item.basic.id).text} <size=60%>({item.basic.id})";
-            ui.detailText.text.text = GetDetailText(item).ToString();
+            ui.detailText.text.text = $"<color=#E0E0E0>{GetDetailText(item)}</color>";
 
             ui.image.gameObject.SetActive(true);
             return ui;
@@ -1934,7 +1942,7 @@ namespace GameCore
 
             ui.image.ap = pos;
             ui.nameText.text.text = GameUI.CompareText(item.id).text;
-            ui.detailText.text.text = GetDetailText(item).ToString();
+            ui.detailText.text.text = $"<color=#E0E0E0>{GetDetailText(item)}</color>";
 
             ui.image.gameObject.SetActive(true);
             return ui;

@@ -165,7 +165,7 @@ namespace GameCore
                 //得到画布的尺寸
                 Vector2 uiSize = GameUI.canvasRT.sizeDelta;
 
-                Vector2 finalPos = new Vector2(X * (uiSize.x / Screen.width), Y * (uiSize.y / Screen.height));
+                Vector2 finalPos = new(X * (uiSize.x / Screen.width), Y * (uiSize.y / Screen.height));
 
                 return finalPos;
             }
@@ -175,20 +175,15 @@ namespace GameCore
         {
             get
             {
-                switch (mode)
+                return mode switch
                 {
-                    case ControlMode.KeyboardAndMouse:
-                        return mousePosInMainCanvas;
-
-                    case ControlMode.Gamepad:
-                        // GameUI.ScreenUIPosInConstantCanvas(VirtualCursor.instance.image.rectTransform.anchoredPosition, GameUI.canvasScaler);
-                        // Vector2 pos = VirtualCursor.instance.image.rectTransform.anchoredPosition * GameUI.canvasScaler.referenceResolution / VirtualCursor.GetCursorCanvas().GetComponent<RectTransform>().sizeDelta;
-                        // return pos - GameUI.canvasScaler.referenceResolution / 2;
-                        return GameUI.ScreenUIPosInConstantCanvas(VirtualCursor.instance.image.rectTransform.anchoredPosition, GameUI.canvasScaler);
-
-                    default:
-                        return Vector2.zero;
-                }
+                    ControlMode.KeyboardAndMouse => mousePosInMainCanvas,
+                    // GameUI.ScreenUIPosInConstantCanvas(VirtualCursor.instance.image.rectTransform.anchoredPosition, GameUI.canvasScaler);
+                    // Vector2 pos = VirtualCursor.instance.image.rectTransform.anchoredPosition * GameUI.canvasScaler.referenceResolution / VirtualCursor.GetCursorCanvas().GetComponent<RectTransform>().sizeDelta;
+                    // return pos - GameUI.canvasScaler.referenceResolution / 2;
+                    ControlMode.Gamepad => GameUI.ScreenUIPosInConstantCanvas(VirtualCursor.instance.image.rectTransform.anchoredPosition, GameUI.canvasScaler),
+                    _ => Vector2.zero,
+                };
             }
         }
 
