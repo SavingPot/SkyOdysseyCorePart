@@ -21,7 +21,8 @@ namespace GameCore
     {
         public delegate void OnVarValueChangeCallback(NMSyncVar nm, byte[] oldValue);
 
-        public static OnVarValueChangeCallback OnVarValueChange = (_, _) => { };
+        public static OnVarValueChangeCallback OnVarValueChange = OnVarValueChangeDefaultMethod;
+        static void OnVarValueChangeDefaultMethod(NMSyncVar nm, byte[] oldValue) { }
         public static Action<NMRegisterSyncVar> OnRegisterVar = a => { };
 
         public static readonly Dictionary<string, NMSyncVar> vars = new();
@@ -253,12 +254,18 @@ namespace GameCore
         public static Action StaticVarsRegister;
         public static Action<IVarInstanceID> InstanceVarsRegister;
 
+        private static readonly StringBuilder stringBuilder = new();
+
+
         public static bool _InstanceSet(IVarInstanceID __instance, object value, MethodBase __originalMethod)
         {
+            stringBuilder.Clear();
+            stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
+
 #if DEBUG
             try
             {
-                var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
+                var path = stringBuilder.ToString();
                 if (__instance == null)
                     Debug.LogError($"调用实例同步变量赋值器 {path} 时出错! 实例为空");
                 var varInstanceId = __instance.varInstanceId;
@@ -271,17 +278,21 @@ namespace GameCore
                 throw;
             }
 #else
-            SetValue(InstanceSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", __instance.varInstanceId), Rpc.ObjectToBytes(value));
+            SetValue(InstanceSetId(stringBuilder.ToString(), __instance.varInstanceId), Rpc.ObjectToBytes(value));
 #endif
+
             return false;
         }
 
         public static bool _InstanceGet(IVarInstanceID __instance, ref object __result, MethodBase __originalMethod)
         {
+            stringBuilder.Clear();
+            stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
+
 #if DEBUG
             try
             {
-                var path = $"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}";
+                var path = stringBuilder.ToString();
                 if (__instance == null)
                     Debug.LogError($"调用实例同步变量赋值器 {path} 时出错! 实例为空");
                 var varInstanceId = __instance.varInstanceId;
@@ -293,21 +304,30 @@ namespace GameCore
                 throw;
             }
 #else
-            __result = Rpc.BytesToObject(GetVar(InstanceGetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}", __instance.varInstanceId)).value);
+            __result = Rpc.BytesToObject(GetVar(InstanceGetId(stringBuilder.ToString(), __instance.varInstanceId)).value);
 #endif
+
             return false;
         }
 
 
         public static bool _StaticSet(object value, MethodBase __originalMethod)
         {
-            SetValue(StaticSetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}"), Rpc.ObjectToBytes(value));
+            stringBuilder.Clear();
+            stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
+
+            SetValue(StaticSetId(stringBuilder.ToString()), Rpc.ObjectToBytes(value));
+
             return false;
         }
 
         public static bool _StaticGet(ref object __result, MethodBase __originalMethod)
         {
-            __result = Rpc.BytesToObject(GetVar(StaticGetId($"{__originalMethod.DeclaringType.FullName}.{__originalMethod.Name}")).value);
+            stringBuilder.Clear();
+            stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
+
+            __result = Rpc.BytesToObject(GetVar(StaticGetId(stringBuilder.ToString())).value);
+
             return false;
         }
 
@@ -648,6 +668,7 @@ namespace GameCore
             static void ClearVars()
             {
                 vars.Clear();
+                OnVarValueChange = OnVarValueChangeDefaultMethod;
                 Debug.Log($"退出或关闭了服务器, {nameof(vars)} 被清空");
             }
 

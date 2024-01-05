@@ -3,42 +3,86 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Sirenix.OdinInspector;
+using SP.Tools.Unity;
 
 namespace GameCore
 {
     public class Enemy : Creature, IHumanBodyParts<CreatureBodyPart>
     {
-        [Tooltip("目标的 Transform")]
-        [LabelText("目标")]
-        [BoxGroup("组件")]
         public Transform targetTransform;
+        public float searchTime = float.NegativeInfinity;
+        public float attackTimer;
+        public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: 包含 动画的layer 信息
 
 
-        public Func<Transform> FindTarget = () =>
+
+
+
+
+
+        public Func<Enemy, Transform> FindTarget = (enemy) =>
         {
-            if (!Server.isServer)
-            {
-                Debug.LogWarning("不应该在客户端寻找目标!");
+            //搜索 CD 3s
+            if (Tools.time < enemy.searchTime + 3)
                 return null;
+
+            enemy.searchTime = Tools.time;
+
+            foreach (var player in PlayerCenter.all)
+            {
+                if ((player.transform.position - enemy.transform.position).sqrMagnitude <= enemy.data.searchRadiusSqr)
+                {
+                    return player.transform;
+                }
             }
-            
-            var pl = FindObjectOfType<Player>();
-            return (pl && !pl.isDead) ? pl.transform : null;
+
+            return null;
         };
 
 
 
 
-
-        protected override void Update()
+        protected override void ServerUpdate()
         {
-            base.Update();
+            base.ServerUpdate();
 
-            //修正位置
-            if (model && model.transform.localPosition != Vector3.zero)
-                model.transform.localPosition = Vector3.zero;
+            //检查目标
+            if (targetTransform)
+            {
+                #region 普通攻击
 
-            if (!targetTransform && isServer)
+                if (!isDead)
+                {
+                    //为了性能使用 x - x, y - y 而不是 Vector2.Distance()
+                    float disX = Mathf.Abs(transform.position.x - targetTransform.position.x);
+                    float disY = Mathf.Abs(transform.position.y - targetTransform.position.y);
+
+                    //在攻击范围内, 并且 CD 已过
+                    if (disX <= data.normalAttackRadius && disY <= data.normalAttackRadius && Tools.time >= attackTimer)
+                    {
+                        attackTimer = Tools.time + data.normalAttackCD;
+
+                        //设置动画
+                        if (animWeb != null)
+                        {
+                            foreach (var animId in attackAnimations)
+                            {
+                                animWeb.SwitchPlayingTo(animId, 0);
+                            }
+                        }
+
+                        if (UObjectTools.GetComponent(targetTransform, out Entity entity))
+                        {
+                            entity.TakeDamage(data.normalAttackDamage, 0.3f, transform.position, transform.position.x < targetTransform.position.x ? Vector2.right * 12 : Vector2.left * 12);
+                        }
+                    }
+                }
+
+                #endregion
+
+                CheckEnemyTargetDistance();
+            }
+            else
                 ReFindTarget();
         }
 
@@ -50,10 +94,16 @@ namespace GameCore
                 return;
             }
 
-            var tempTransform = FindTarget();
+            var tempTransform = FindTarget(this);
 
             if (tempTransform)
                 targetTransform = tempTransform;
+        }
+
+        public void CheckEnemyTargetDistance()
+        {
+            if ((targetTransform.position - transform.position).sqrMagnitude > data.searchRadiusSqr)
+                targetTransform = null;
         }
     }
 }

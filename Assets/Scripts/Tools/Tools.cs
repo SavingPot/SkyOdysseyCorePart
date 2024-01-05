@@ -238,6 +238,11 @@ namespace GameCore
             }
         }
 
+        private void OnGUI()
+        {
+            GUILayout.Label($"FPS: {fps}");
+        }
+
         [ChineseName("当收到日志时")]
         internal void OnHandleLog(string logString, string stackTrace, LogType type)
         {

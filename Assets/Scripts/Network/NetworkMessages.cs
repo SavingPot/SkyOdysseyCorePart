@@ -152,7 +152,7 @@ namespace GameCore.High
     {
         public string varId;
         public byte[] value;
-        public byte[] valueLastSync;
+        [NonSerialized] public byte[] valueLastSync;
         public readonly bool clientCanSet;
 
         public NMSyncVar(string varId, byte[] value, bool clientCanSet)

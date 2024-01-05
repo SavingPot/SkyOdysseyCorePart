@@ -1127,7 +1127,7 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    生成传送点                                   */
             /* -------------------------------------------------------------------------- */
-            Vector2Int portalMiddle = generation.region.spawnPoint;
+            Vector2Int portalMiddle = new(generation.region.spawnPoint.x, generation.region.spawnPoint.y + 10);
             generation.region.AddPos(BlockID.Portal, portalMiddle, false, true);
             generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(0, -1), false, true);
             generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-2, -1), false, true);

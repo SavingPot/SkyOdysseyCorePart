@@ -69,9 +69,9 @@ namespace GameCore
                 return;
 
 
-            //注销变量
             if (Server.isServer)
             {
+                /* ---------------------------------- 注销变量 ---------------------------------- */
                 var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
 
                 StringBuilder sb = new();
@@ -81,13 +81,13 @@ namespace GameCore
                     string id = SyncPacker.GetInstanceID(sb, pair.propertyPath, netId);
                     SyncPacker.UnregisterVar(id);
                 }
-            }
 
 
-            //取消绑定变量的钩子
-            foreach (var hook in varHooksToUnbind)
-            {
-                SyncPacker.OnVarValueChange -= hook;
+                /* -------------------------------- 取消绑定变量的钩子 ------------------------------- */
+                foreach (var hook in varHooksToUnbind)
+                {
+                    SyncPacker.OnVarValueChange -= hook;
+                }
             }
         }
 
@@ -111,6 +111,8 @@ namespace GameCore
                     data = ModFactory.CompareEntity(generationId);
                 if (generationId == EntityID.Player)
                     data.behaviourType = typeof(Player);
+                if (data == null)
+                    Debug.LogError("严重错误!! 该实体的 data 为空!!!!!!!", this);
 
                 AutoRegisterVars();
             }));

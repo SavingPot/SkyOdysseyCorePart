@@ -60,12 +60,14 @@ namespace GameCore
         {
             if (Server.isServer)
             {
+                float frameTime = Performance.frameTime;
+
                 foreach (var entity in all)
                 {
                     var invincibleTime = entity.invincibleTime;
 
                     if (invincibleTime > 0)
-                        entity.invincibleTime = invincibleTime - Mathf.Min(Performance.frameTime, invincibleTime);
+                        entity.invincibleTime = invincibleTime - Mathf.Min(frameTime, invincibleTime);
                 }
             }
         }
@@ -150,7 +152,6 @@ namespace GameCore
     }
 
     //TODO: 告别冗长代码
-    //TODO: NetworkBehaviour->MonoBehaviour
     [DisallowMultipleComponent]
     public class Entity : MonoBehaviour, IEntity, IRigidbody2D, IVarInstanceID
     {
@@ -259,23 +260,20 @@ namespace GameCore
         public bool TryGetRegion(out Region region)
         {
             if (GFiles.world == null)
-                goto fail;
+            {
+                region = null;
+                return false;
+            }
 
             try
             {
-                GFiles.world.TryGetRegion(regionIndex, out region);
-
-                return true;
+                return GFiles.world.TryGetRegion(regionIndex, out region);
             }
             catch (Exception)
             {
-                goto fail;
+                region = null;
+                return false;
             }
-
-        fail:
-            region = null;
-
-            return false;
         }
         public Region region => GFiles.world.GetRegion(regionIndex);
 
@@ -305,13 +303,13 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public NetworkIdentity netIdentity;
 
-        public uint netId => netIdentity.netId;
         //TODO: Temp them
-        public bool isServer => Server.isServer;
-        public bool isClient => Client.isClient;
-        public bool isOwned => netIdentity.isOwned;
-        public bool isHost => isServer && isClient;
-        public bool isLocalPlayer => Client.localPlayer == this;
+        [HideInInspector] public uint netId ;
+        [HideInInspector] public bool isServer;
+        [HideInInspector] public bool isClient;
+        [HideInInspector] public bool isOwned ;
+        [HideInInspector] public bool isHost ;
+        [HideInInspector] public bool isLocalPlayer ;
 
 
 
@@ -389,16 +387,20 @@ namespace GameCore
             classType = GetType();
             rb = GetComponent<Rigidbody2D>();
             mainCollider = GetComponent<BoxCollider2D>();
+
+            netId = netIdentity.netId;
+            isServer = Server.isServer;
+            isClient = Client.isClient;
+            isOwned = netIdentity.isOwned;
+            isHost = isServer && isClient;
+            isLocalPlayer = Client.localPlayer == this;
         }
 
         public virtual void InitAfterAwake()
         {
-            if (data != null)
-            {
-                rb.gravityScale = data.gravity;
-                mainCollider.size = data.colliderSize;
-                mainCollider.offset = data.colliderOffset;
-            }
+            rb.gravityScale = data.gravity;
+            mainCollider.size = data.colliderSize;
+            mainCollider.offset = data.colliderOffset;
 
             SetAutoDestroyTime();
         }
@@ -472,17 +474,8 @@ namespace GameCore
 
         public void SetAutoDestroyTime()
         {
-            if (data != null)
-            {
-                timeToAutoDestroy = Tools.time + data.lifetime;
-            }
-            else
-            {
-                timeToAutoDestroy = Tools.time + EntityData.defaultLifetime;
-            }
+            timeToAutoDestroy = Tools.time + data.lifetime;
         }
-
-        #region 网络变量逻辑
 
 
 
@@ -760,7 +753,6 @@ namespace GameCore
                 transform.SetScaleXNegativeAbs();
             }
         }
-        #endregion
 
 
 
@@ -848,6 +840,11 @@ namespace GameCore
         [LabelText("碰撞箱偏移")] public Vector2 colliderOffset;
         [LabelText("最大血量")] public float maxHealth;
         [LabelText("自动清除周期")] public float lifetime = defaultLifetime;
+        [LabelText("搜索半径")] public ushort searchRadius;
+        [LabelText("搜索半径平方")] public int searchRadiusSqr;
+        [LabelText("普通攻击半径")] public float normalAttackRadius;
+        [LabelText("普通攻击伤害")] public float normalAttackDamage;
+        [LabelText("普通攻击CD")] public float normalAttackCD;
         public static float defaultLifetime = 60 * 3;
         public Type behaviourType;
         [LabelText("掉落的物品")] public List<DropData> drops;

@@ -20,10 +20,10 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
-        public Func<float> moveMultiple = () => 1;
+        public Func<float> velocityFactor = null;
         [HideInInspector] public GameObject model;
         [BoxGroup("属性"), LabelText("移速")] public float moveSpeed = 3;
-        [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.14f;
+        [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.18f;
         [BoxGroup("属性"), LabelText("移动空气阻力")] public float movementAirResistance = 0.95f;
         public AnimWeb animWeb = null;
 
@@ -241,10 +241,7 @@ namespace GameCore
 
         protected override void Awake()
         {
-            moveMultiple = () => moveSpeed;
-
-            model = new("model");
-            model.transform.SetParent(transform);
+            velocityFactor = () => moveSpeed;
 
             base.Awake();
         }
@@ -253,11 +250,7 @@ namespace GameCore
         {
             base.InitAfterAwake();
 
-            if (data != null)
-            {
-                //等一帧再设置, 否则会被 Entity 覆盖
-                moveSpeed = data.speed;
-            }
+            moveSpeed = data.speed;
         }
 
         protected override void Start()
@@ -272,16 +265,6 @@ namespace GameCore
             animWeb?.UpdateWeb();
             RefreshHurtEffect();
 
-            //修正位置
-            if (model)
-            {
-                if (model.transform.localPosition != Vector3.zero)
-                    model.transform.localPosition = Vector3.zero;
-                if (model.transform.localScale != Vector3.zero)
-                    model.transform.localScale = Vector3.one;
-            }
-
-
 #if UNITY_EDITOR
             isMoving_for_editor_view = isMoving;
 #endif
@@ -292,11 +275,11 @@ namespace GameCore
 
         public Vector2 GetMovementVelocity(Vector2 movementDirection)
         {
-            float multi = moveMultiple();
-            float acceleration = multi * accelerationMultiple;
+            float max = velocityFactor();
+            float acceleration = max * accelerationMultiple;
 
-            float xVelocity = rb.velocity.x.Abs() > multi ? rb.velocity.x : (rb.velocity.x + movementDirection.x * acceleration);
-            float yVelocity = rb.velocity.y.Abs() > multi ? rb.velocity.y : (rb.velocity.y + movementDirection.y * acceleration);
+            float xVelocity = Mathf.Abs(rb.velocity.x) > max ? rb.velocity.x : (rb.velocity.x + movementDirection.x * acceleration);
+            float yVelocity = Mathf.Abs(rb.velocity.y) > max ? rb.velocity.y : (rb.velocity.y + movementDirection.y * acceleration);
 
             return new(xVelocity * movementAirResistance, yVelocity * movementAirResistance);
         }
@@ -401,16 +384,29 @@ namespace GameCore
         {
             var isHurting = this.isHurting;
 
-            foreach (var sr in spriteRenderers)
+            if (isHurting)
             {
-                if (isHurting)
+                foreach (var sr in spriteRenderers)
+                {
                     sr.color = new(sr.color.r, 0.5f, 0.5f);
-                else
+                }
+            }
+            else
+            {
+                foreach (var sr in spriteRenderers)
+                {
                     sr.color = Color.white;
+                }
             }
         }
 
 
+        public void CreateModel()
+        {
+            model = new("model");
+            model.transform.SetParent(transform);
+            model.transform.localPosition = Vector2.zero;
+        }
 
         public virtual CreatureBodyPart AddBodyPart(string partName, Sprite sprite, Vector2 jointExtraOffset, int sortingOrder, CreatureBodyPart parent, BodyPartType type = BodyPartType.Body, Vector2? textureOffset = null)
         => AddBodyPart<CreatureBodyPart>(partName, sprite, jointExtraOffset, sortingOrder, parent, parent.transform, type, textureOffset ?? Vector2.zero);

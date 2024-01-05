@@ -464,6 +464,7 @@ namespace GameCore
 
 
 
+            CreateModel();
             body = AddBodyPart("body", skinBody, Vector2.zero, 5, model.transform, BodyPartType.Body);
             head = AddBodyPart("head", skinHead, new(0, -0.03f), 10, body, BodyPartType.Head, new(-0.03f, -0.04f));
             rightArm = AddBodyPart("rightArm", skinRightArm, new(0, 0.03f), 8, body, BodyPartType.RightArm);
@@ -493,8 +494,8 @@ namespace GameCore
         {
             base.Awake();
 
-            Func<float> oldValue = moveMultiple;
-            moveMultiple = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
+            Func<float> oldValue = velocityFactor;
+            velocityFactor = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
 
             playerCanvas = transform.Find("Canvas");
 
@@ -720,7 +721,7 @@ namespace GameCore
             {
                 DeathRotation();
             }
-            
+
             ////AutoGenerateRegion();
 
             //刷新状态栏

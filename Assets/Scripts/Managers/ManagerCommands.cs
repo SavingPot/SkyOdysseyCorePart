@@ -48,7 +48,7 @@ namespace GameCore.High
                 if (p == null)
                     return;
 
-                p.moveMultiple = p.moveMultiple.Multiply(2);
+                p.velocityFactor = p.velocityFactor.Multiply(2);
             }
             else if (command.Length == 2)
             {
@@ -59,7 +59,7 @@ namespace GameCore.High
                 };
 
                 foreach (Player p in ps)
-                    p.moveMultiple = () => command[1].ToFloat();
+                    p.velocityFactor = () => command[1].ToFloat();
             }
         }
     }
