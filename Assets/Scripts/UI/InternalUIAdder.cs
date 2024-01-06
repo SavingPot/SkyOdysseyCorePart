@@ -20,7 +20,6 @@ using static GameCore.SerializationSurrogates;
 
 namespace GameCore.UI
 {
-    [CreateAfterSceneLoad(new string[] { SceneNames.PreloadScene, SceneNames.MainMenu })]
     public class InternalUIAdder : MonoBehaviour
     {
         public static InternalUIAdder instance { get; private set; }
@@ -107,7 +106,6 @@ namespace GameCore.UI
                     {
                         float earliestExitTime = Tools.time + 5;
 
-                        //先开始加载场景
                         var panel = GameUI.AddPanel("ori:panel.first_scene_panel");
                         panel.panelImage.color = Tools.HexToColor("#070714");
 

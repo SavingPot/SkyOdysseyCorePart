@@ -654,15 +654,11 @@ namespace GameCore
 
         public static T NewObjectToComponent<T>() where T : Component => NewObjectToComponent(typeof(T)) as T;
 
-        public static T NewObjectToComponent<T>(string debugMessage) where T : Component => NewObjectToComponent(typeof(T), debugMessage) as T;
-
-        public static Component NewObjectToComponent(Type type, string debugMessage = null)
+        public static Component NewObjectToComponent(Type type)
         {
             GameObject go = new(type.Name);
             Component com = go.AddComponent(type);
 
-            if (!string.IsNullOrEmpty(debugMessage))
-                Debug.Log(debugMessage);
             //Debug.Log($"已为 {type.Name} ({type.Assembly.Location}) 新建物体");
 
 

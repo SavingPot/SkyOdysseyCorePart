@@ -214,10 +214,6 @@ namespace GameCore
 
 
 
-        /// <summary>
-        /// ////////armor:1 use_on
-        /// effect:[{name:, change:, time:}] can_always_eat, eat_time
-        /// </summary>
         [SerializeField, Tooltip("模组管理器识别并加载的所有模组 (包括游戏本体)"), LabelText("模组")] public static Mod[] mods;
 
         public static List<Assembly> assemblies = new();
@@ -228,11 +224,11 @@ namespace GameCore
 
         public static FinalLang CompareFinalDatumText(string id)
         {
-            for (int i = 0; i < finalTextData.Count; i++)
+            foreach (var item in finalTextData)
             {
-                if (finalTextData[i].id == id)
+                if (item.id == id)
                 {
-                    return finalTextData[i];
+                    return item;
                 }
             }
 
@@ -291,7 +287,7 @@ namespace GameCore
 
         [ChineseName("在指定的模组中匹配物品")] public static Spell CompareSpell(string id, Mod targetMod) => CompareSpell(id, new[] { targetMod });
 
-        [ChineseName("在指定的模组中匹配物品")] public static Spell CompareSpell(string id, IList<Mod> modss) => CompareModElement(id, mods, mod => mod.spells);
+        [ChineseName("在指定的模组中匹配物品")] public static Spell CompareSpell(string id, IList<Mod> mods) => CompareModElement(id, ModFactory.mods, mod => mod.spells);
 
 
         [ChineseName("在已加载的全局模组中匹配文本")] public static GameLang CompareText(string id) => CompareText(id, mods);

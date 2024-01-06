@@ -1371,6 +1371,7 @@ namespace GameCore
             else
                 move = PlayerControls.Move(this);
 
+            //FIXME: 背景方块
             onGround = RayTools.TryOverlapCircle(mainCollider.DownPoint(), 0.2f, playerOnGroundLayerMask, out _);
 
             if (isLocalPlayer && !isDead)

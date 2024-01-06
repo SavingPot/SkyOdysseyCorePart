@@ -1,4 +1,5 @@
 ﻿using GameCore.High;
+using GameCore.UI;
 using SP.Tools;
 using SP.Tools.Unity;
 using System;
@@ -25,15 +26,8 @@ namespace GameCore
 
             Debug.Log($"场景变为: {name} ({index})");
 
-            //遍历所有已加载所有 Type
-            lock (ModFactory.mods)
-                foreach (var mod in ModFactory.mods)
-                    foreach (var type in mod.importTypes)
-                        //如果 Type 拥有特性 CreateAfterSceneLoadAttribute
-                        if (AttributeGetter.TryGetAttribute(type.type, typeof(CreateAfterSceneLoadAttribute), out var attribute))
-                            //如果排除的场景没有一个为当前场景
-                            if (!((CreateAfterSceneLoadAttribute)attribute).exceptScenes.Any(p => p == name))
-                                Tools.NewObjectToComponent(type.type);
+            if (name == SceneNames.GameScene)
+                Tools.NewObjectToComponent<InternalUIAdder>();
 
             if (Client.isClient)
             {
