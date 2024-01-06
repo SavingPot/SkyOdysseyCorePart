@@ -155,7 +155,7 @@ namespace GameCore
             }
             #endregion
 
-            #region 挖掘
+            #region 抬手
             {
                 float time = 0.15f; //!Player的绑定部分使用到了这个时间
                 float rot = 35f;
@@ -229,8 +229,6 @@ namespace GameCore
             creature.animWeb.CreateConnectionFromTo("attack_leftarm", "idle", () => true, attackAnimTime * 2, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
             creature.animWeb.CreateConnectionFromTo("attack_rightarm", "idle", () => true, attackAnimTime * 2, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
 
-
-
             creature.animWeb.SwitchPlayingTo("idle", 0);
         }
 
@@ -300,7 +298,7 @@ namespace GameCore
             OnStartMovementAction();
         }
 
-        public Action OnStartMovementAction = () => { };
+        public Action OnStartMovementAction = () => {  };
 
 
 

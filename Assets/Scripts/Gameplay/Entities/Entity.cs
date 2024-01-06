@@ -463,7 +463,7 @@ namespace GameCore
 
         protected virtual void OnTriggerStay2D(Collider2D other)
         {
-            if (Block.TryGetBlockFromCollision(other, out Block block))
+            if (Block.TryGetBlockFromCollider(other, out Block block))
             {
                 block.OnEntityStay(this);
             }

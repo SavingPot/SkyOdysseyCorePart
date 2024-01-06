@@ -171,7 +171,7 @@ namespace GameCore
             blockLayerMask = blockLayer.LayerMaskOnly();
         }
 
-        public static bool TryGetBlockFromCollision(Collider2D other, out Block block)
+        public static bool TryGetBlockFromCollider(Collider2D other, out Block block)
         {
             if (other.gameObject.layer == blockLayer)
             {

@@ -109,14 +109,20 @@ namespace GameCore.UI
                         var panel = GameUI.AddPanel("ori:panel.first_scene_panel");
                         panel.panelImage.color = Tools.HexToColor("#070714");
 
-                        var (barBg, barFull, mascotImage, progressText) = GameUI.GenerateLoadingBar(UPC.stretchBottom,
-                                                "ori:image.mod_loading_bar_bg", "ori:image.mod_loading_bar_full", "ori:image.mod_loading_bar_mascot", "ori:mod_loading_progress.mod_loading_progress_text",
-                                                "ori:loading_bar_2", "ori:loading_bar_2", "ori:mod_loading_mascot",
-                                                15, 0,
-                                                new(0, 24), new(50, 50),
-                                                () => (float)ModFactory.mods.Length / (float)ModFactory.modCountFound,
-                                                () => $"Loading... {ModFactory.mods.Length}/{ModFactory.modCountFound}", //TODO; Make Loading into text comparation
-                                                panel.transform);
+                        var (barBg, barFull, mascotImage, progressText) = GameUI.GenerateLoadingBar(
+                                        UPC.stretchBottom,
+                                        "ori:image.mod_loading_bar_bg",
+                                        "ori:image.mod_loading_bar_full",
+                                        "ori:image.mod_loading_bar_mascot",
+                                        "ori:mod_loading_progress.mod_loading_progress_text",
+                                        "ori:loading_bar_2",
+                                        "ori:loading_bar_2",
+                                        "ori:mod_loading_mascot",
+                                        15, 0,
+                                        new(0, 24), new(50, 50),
+                                        () => (float)ModFactory.mods.Length / (float)ModFactory.modCountFound,
+                                        () => $"Loading... {ModFactory.mods.Length}/{ModFactory.modCountFound}", //TODO; Make Loading into text comparation
+                                        panel.transform);
 
                         //刷新吉祥物位置
                         mascotImage.OnUpdate += img =>

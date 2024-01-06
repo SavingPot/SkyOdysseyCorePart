@@ -1361,6 +1361,9 @@ namespace GameCore
         public void ClientReduceItemCount(string index, ushort count, NetworkConnection caller = null) => inventory.ReduceItemCount(index, count);
         #endregion
 
+        readonly Collider2D[] OnGroundHits = new Collider2D[10];
+
+
         #region 移动和转向
         public override void Movement()
         {
@@ -1371,8 +1374,35 @@ namespace GameCore
             else
                 move = PlayerControls.Move(this);
 
-            //FIXME: 背景方块
-            onGround = RayTools.TryOverlapCircle(mainCollider.DownPoint(), 0.2f, playerOnGroundLayerMask, out _);
+            onGround = false;
+            for (int i = 0; i < OnGroundHits.Length; i++)
+            {
+                OnGroundHits[i] = default;
+            }
+            var position = transform.position;
+            Physics2D.OverlapAreaNonAlloc(
+                    new(
+                        position.x + mainCollider.offset.x - mainCollider.size.x * 0.5f,
+                        position.y + mainCollider.offset.y - mainCollider.size.y * 0.5f
+                    ),
+                    new(
+                        position.x + mainCollider.offset.x + mainCollider.size.x * 0.5f,
+                        position.y + mainCollider.offset.y - mainCollider.size.y * 0.5f - 0.2f
+                    ),
+                    OnGroundHits,
+                    playerOnGroundLayerMask);
+
+            foreach (var item in OnGroundHits)
+            {
+                if (item == null)
+                    break;
+
+                if (!item.isTrigger && Block.TryGetBlockFromCollider(item, out _))
+                {
+                    onGround = true;
+                    break;
+                }
+            }
 
             if (isLocalPlayer && !isDead)
             {

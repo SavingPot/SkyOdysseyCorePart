@@ -162,27 +162,6 @@ namespace GameCore
             }
         }
 
-        public static NMSyncVar GetVar(string varId)
-        {
-#if DEBUG
-            if (string.IsNullOrEmpty(varId))
-            {
-                Debug.LogWarning($"寻找的同步变量 ID 为空");
-                return default;
-            }
-
-            if (vars.TryGetValue(varId, out var value))
-            {
-                return value;
-            }
-
-            Debug.LogWarning($"未找到同步变量 {varId}");
-            return default;
-#else
-            return vars[varId];
-#endif
-        }
-
         public static bool HasVar(string varId)
         {
 #if DEBUG
@@ -215,7 +194,7 @@ namespace GameCore
             //只有服务器拥有设置的权力
             if (!var.clientCanSet && !Server.isServer)
             {
-                Debug.LogWarning($"客户端不能设置同步变量 {varId}, 原因是其 {nameof(NMSyncVar.clientCanSet)} 值为 false, 如果想在客户端设置请将其设置为 true");
+                Debug.LogWarning($"客户端不能设置同步变量 {varId}, 原因是其 {nameof(NMSyncVar.clientCanSet)} 值为 false, 如果想在客户端设置, 请将其设置为 true");
                 return false;
             }
 
@@ -244,11 +223,11 @@ namespace GameCore
 
 
 
-        public static Func<string, uint, string> InstanceGetId;
-        public static Func<string, uint, string> InstanceSetId;
+        public static Func<string, uint, string> InstanceGetterId;
+        public static Func<string, uint, string> InstanceSetterId;
 
-        public static Func<string, string> StaticGetId;
-        public static Func<string, string> StaticSetId;
+        public static Func<string, string> StaticGetterId;
+        public static Func<string, string> StaticSetterId;
 
         public static Action StaticVarsRegister;
         public static Action<IVarInstanceID> InstanceVarsRegister;
@@ -269,7 +248,7 @@ namespace GameCore
                     Debug.LogError($"调用实例同步变量赋值器 {path} 时出错! 实例为空");
                 var varInstanceId = __instance.varInstanceId;
                 var bytes = Rpc.ObjectToBytes(value);
-                SetValue(InstanceSetId(path, varInstanceId), bytes);
+                SetValue(InstanceSetterId(path, varInstanceId), bytes);
             }
             catch (Exception ex)
             {
@@ -295,7 +274,25 @@ namespace GameCore
                 if (__instance == null)
                     Debug.LogError($"调用实例同步变量赋值器 {path} 时出错! 实例为空");
                 var varInstanceId = __instance.varInstanceId;
-                __result = Rpc.BytesToObject(GetVar(InstanceGetId(path, varInstanceId)).value);
+                var varId = InstanceGetterId(path, varInstanceId);
+
+
+                if (string.IsNullOrEmpty(varId))
+                {
+                    Debug.LogError($"寻找的同步变量 ID 为空");
+                    return false;
+                }
+
+                if (!vars.TryGetValue(varId, out var syncVar))
+                {
+                    Debug.LogError($"未找到同步变量 {varId}");
+                    return false;
+                }
+
+
+
+
+                __result = Rpc.BytesToObject(syncVar.value);
             }
             catch (Exception ex)
             {
@@ -303,7 +300,7 @@ namespace GameCore
                 throw;
             }
 #else
-            __result = Rpc.BytesToObject(GetVar(InstanceGetId(stringBuilder.ToString(), __instance.varInstanceId)).value);
+            __result = Rpc.BytesToObject(vars[InstanceGetId(stringBuilder.ToString(), __instance.varInstanceId)].value);
 #endif
 
             return false;
@@ -315,7 +312,7 @@ namespace GameCore
             stringBuilder.Clear();
             stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
 
-            SetValue(StaticSetId(stringBuilder.ToString()), Rpc.ObjectToBytes(value));
+            SetValue(StaticSetterId(stringBuilder.ToString()), Rpc.ObjectToBytes(value));
 
             return false;
         }
@@ -325,7 +322,7 @@ namespace GameCore
             stringBuilder.Clear();
             stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
 
-            __result = Rpc.BytesToObject(GetVar(StaticGetId(stringBuilder.ToString())).value);
+            __result = Rpc.BytesToObject(vars[StaticGetterId(stringBuilder.ToString())].value);
 
             return false;
         }
@@ -361,20 +358,19 @@ namespace GameCore
             var GetInstanceID = typeof(SyncPacker).GetMethod("GetInstanceID", new Type[] { typeof(string), typeof(uint) });
             var RegisterVar = typeof(SyncPacker).GetMethod("RegisterVar", new Type[] { typeof(string), typeof(bool), typeof(byte[]) });
 
-            ParameterExpression instanceGetIdParam_getter = Expression.Parameter(typeof(string), "id");
-            ParameterExpression instanceGetIdParam_instance = Expression.Parameter(typeof(uint), "instanceId");
-            ParameterExpression instanceSetIdParam_setter = Expression.Parameter(typeof(string), "id");
-            ParameterExpression instanceSetIdParam_instance = Expression.Parameter(typeof(uint), "instanceId");
+            ParameterExpression instanceGetterIdParam_getter = Expression.Parameter(typeof(string), "id");
+            ParameterExpression instanceGetterIdParam_instance = Expression.Parameter(typeof(uint), "instanceId");
+            ParameterExpression instanceSetterIdParam_setter = Expression.Parameter(typeof(string), "id");
+            ParameterExpression instanceSetterIdParam_instance = Expression.Parameter(typeof(uint), "instanceId");
 
-            ParameterExpression staticGetIdParam_getter = Expression.Parameter(typeof(string), "id");
-            ParameterExpression staticSetIdParam_setter = Expression.Parameter(typeof(string), "id");
-            ParameterExpression returnTypeParam_path = Expression.Parameter(typeof(string), "path");
+            ParameterExpression staticGetterIdParam_getter = Expression.Parameter(typeof(string), "id");
+            ParameterExpression staticSetterIdParam_setter = Expression.Parameter(typeof(string), "id");
 
-            List<SwitchCase> instanceGetIdCases = new();
-            List<SwitchCase> instanceSetIdCases = new();
+            List<SwitchCase> instanceGetterIdCases = new();
+            List<SwitchCase> instanceSetterIdCases = new();
 
-            List<SwitchCase> staticGetIdCases = new();
-            List<SwitchCase> staticSetIdCases = new();
+            List<SwitchCase> staticGetterIdCases = new();
+            List<SwitchCase> staticSetterIdCases = new();
 
             Action staticVarsRegisterMethods = () => { };
 
@@ -416,15 +412,15 @@ namespace GameCore
 
                             if (!method.IsStatic)
                             {
-                                instanceGetIdCases.Add(Expression.SwitchCase(
-                                    Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceGetIdParam_instance),
+                                instanceGetterIdCases.Add(Expression.SwitchCase(
+                                    Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceGetterIdParam_instance),
                                     Expression.Constant(methodPath)
                                 ));
                                 harmony.Patch(method, new HarmonyMethod(_InstanceGet));
                             }
                             else
                             {
-                                staticGetIdCases.Add(Expression.SwitchCase(
+                                staticGetterIdCases.Add(Expression.SwitchCase(
                                     Expression.Constant(splitted[0]),
                                     Expression.Constant(methodPath)
                                 ));
@@ -454,15 +450,15 @@ namespace GameCore
 
                             if (!method.IsStatic)
                             {
-                                instanceSetIdCases.Add(Expression.SwitchCase(
-                                    Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceSetIdParam_instance),
+                                instanceSetterIdCases.Add(Expression.SwitchCase(
+                                    Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceSetterIdParam_instance),
                                     Expression.Constant(methodPath)
                                 ));
                                 harmony.Patch(method, new HarmonyMethod(_InstanceSet));
                             }
                             else
                             {
-                                staticSetIdCases.Add(Expression.SwitchCase(
+                                staticSetterIdCases.Add(Expression.SwitchCase(
                                     Expression.Constant(splitted[0]),
                                     Expression.Constant(methodPath)
                                 ));
@@ -578,18 +574,18 @@ namespace GameCore
             }
 
             /* ----------------------------- 定义方法体 (Switch) ----------------------------- */
-            var instanceGetIdBody = Expression.Switch(instanceGetIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), instanceGetIdParam_getter), instanceGetIdCases.ToArray());
-            var instanceSetIdBody = Expression.Switch(instanceSetIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), instanceSetIdParam_setter), instanceSetIdCases.ToArray());
+            var instanceGetIdBody = Expression.Switch(instanceGetterIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), instanceGetterIdParam_getter), instanceGetterIdCases.ToArray());
+            var instanceSetIdBody = Expression.Switch(instanceSetterIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), instanceSetterIdParam_setter), instanceSetterIdCases.ToArray());
 
-            var staticGetIdBody = Expression.Switch(staticGetIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticGetIdParam_getter), staticGetIdCases.ToArray());
-            var staticSetIdBody = Expression.Switch(staticSetIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticSetIdParam_setter), staticSetIdCases.ToArray());
+            var staticGetIdBody = Expression.Switch(staticGetterIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticGetterIdParam_getter), staticGetterIdCases.ToArray());
+            var staticSetIdBody = Expression.Switch(staticSetterIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticSetterIdParam_setter), staticSetterIdCases.ToArray());
 
             /* ---------------------------------- 编译方法 ---------------------------------- */
-            InstanceGetId = Expression.Lambda<Func<string, uint, string>>(instanceGetIdBody, instanceGetIdParam_getter, instanceGetIdParam_instance).Compile();
-            InstanceSetId = Expression.Lambda<Func<string, uint, string>>(instanceSetIdBody, instanceSetIdParam_setter, instanceSetIdParam_instance).Compile();
+            InstanceGetterId = Expression.Lambda<Func<string, uint, string>>(instanceGetIdBody, instanceGetterIdParam_getter, instanceGetterIdParam_instance).Compile();
+            InstanceSetterId = Expression.Lambda<Func<string, uint, string>>(instanceSetIdBody, instanceSetterIdParam_setter, instanceSetterIdParam_instance).Compile();
 
-            StaticGetId = Expression.Lambda<Func<string, string>>(staticGetIdBody, staticGetIdParam_getter).Compile();
-            StaticSetId = Expression.Lambda<Func<string, string>>(staticSetIdBody, staticSetIdParam_setter).Compile();
+            StaticGetterId = Expression.Lambda<Func<string, string>>(staticGetIdBody, staticGetterIdParam_getter).Compile();
+            StaticSetterId = Expression.Lambda<Func<string, string>>(staticSetIdBody, staticSetterIdParam_setter).Compile();
 
             StaticVarsRegister = staticVarsRegisterMethods;
 

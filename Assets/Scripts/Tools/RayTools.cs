@@ -140,7 +140,7 @@ namespace GameCore
         /// <returns></returns>
         public static bool TryOverlapBox(Vector2 point, Vector2 size, float angle, int layerMask, out Collider2D result)
         {
-            result = Physics2D.OverlapBox(point, Vector2.one, 0, layerMask);
+            result = Physics2D.OverlapBox(point, size, angle, layerMask);
 
             return result != null;
         }

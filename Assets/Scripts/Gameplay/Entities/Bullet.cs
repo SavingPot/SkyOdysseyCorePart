@@ -50,7 +50,7 @@ namespace GameCore
                     if (destroyOnHit)
                         Death();
                 }
-                else if (Block.TryGetBlockFromCollision(obj, out Block block) && !block.blockCollider.isTrigger)
+                else if (Block.TryGetBlockFromCollider(obj, out Block block) && !block.blockCollider.isTrigger)
                 {
                     BlockCollision(block);
                 }
