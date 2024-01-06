@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 
 namespace GameCore
 {
-    [RequireComponent(typeof(CanvasGroup)), DisallowMultipleComponent]
+    [DisallowMultipleComponent]
     public class UIIdentity : IdentityComponent, IRectTransform
     {
         private RectTransform _rectTransform;
@@ -16,7 +16,7 @@ namespace GameCore
         public RectTransform rt => rectTransform;
         public Vector2 ap { get => rectTransform.anchoredPosition; set => rectTransform.anchoredPosition = value; }
         public Vector2 sd { get => rectTransform.sizeDelta; set => rectTransform.sizeDelta = value; }
-        public CanvasGroup canvasGroup { get { if (!_canvasGroup) _canvasGroup = GetComponent<CanvasGroup>(); return _canvasGroup; } }
+        public CanvasGroup canvasGroup { get { if (!_canvasGroup) _canvasGroup = gameObject.GetOrAddComponent<CanvasGroup>(); return _canvasGroup; } }
 
         public bool doRefresh = true;
 

@@ -9,7 +9,7 @@ using SP.Tools.Unity;
 namespace GameCore
 {
     [EntityBinding(EntityID.Drop), NotSummonable]
-    public sealed class Drop : Entity, IPlayerInteraction
+    public sealed class Drop : Entity
     {
         private SpriteRenderer _spriteRenderer;
         public SpriteRenderer spriteRenderer { get { if (!_spriteRenderer) _spriteRenderer = gameObject.GetOrAddComponent<SpriteRenderer>(); return _spriteRenderer; } }
@@ -18,17 +18,6 @@ namespace GameCore
         [LabelText("物品数据")]
         public Item itemData;
 
-
-        public void Interactive(Player caller)
-        {
-            if (caller.inventory.IsFull())
-                return;
-
-            caller.ServerAddItem(itemData);
-            GAudio.Play(AudioID.PickUpItem);
-
-            Death();
-        }
 
         protected override void Start()
         {

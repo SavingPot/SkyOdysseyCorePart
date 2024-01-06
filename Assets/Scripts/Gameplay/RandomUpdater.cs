@@ -69,7 +69,7 @@ namespace GameCore
                 List<EntityData> entities = new();
 
                 //将符合条件的实体添加到预选列表
-                ModFactory.mods.ForEach(m => m.entities.ForEach(e =>
+                Array.ForEach(ModFactory.mods, m => m.entities.ForEach(e =>
                 {
                     if (e.behaviourType == null)
                     {
@@ -110,7 +110,7 @@ namespace GameCore
             Bind("ori:ambient_audio", 6, () =>
             {
                 List<AudioData> audios = new();
-                ModFactory.mods.ForEach(m => m.audios.ForEach(a =>
+                Array.ForEach(ModFactory.mods, m => m.audios.ForEach(a =>
                 {
                     //如果不为空且是环境音效并符合时间要求, 就添加至预选列表
                     if (a != null && a.audioMixerType == AudioMixerType.Ambient && GTime.IsInTime(GTime.time24Format, a.earliestTime, a.latestTime))

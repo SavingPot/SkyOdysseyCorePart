@@ -32,7 +32,7 @@ namespace GameCore
             button.id = $"{id}.button";
         }
 
-        public InputButtonIdentity AddMethod(UnityAction call)
+        public InputButtonIdentity OnClickBind(UnityAction call)
         {
             button.OnClickBind(call);
             return this;

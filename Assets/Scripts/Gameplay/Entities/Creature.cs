@@ -53,7 +53,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                               Static & Const                               */
         /* -------------------------------------------------------------------------- */
-        public static Func<Creature, bool> CanMove = c => true;
 
         [LabelText("身体部位"), ReadOnly, BoxGroup("组件")]
         public List<CreatureBodyPart> bodyParts = new();
@@ -263,7 +262,6 @@ namespace GameCore
             base.Update();
 
             animWeb?.UpdateWeb();
-            RefreshHurtEffect();
 
 #if UNITY_EDITOR
             isMoving_for_editor_view = isMoving;
@@ -292,7 +290,6 @@ namespace GameCore
         [ServerRpc]
         protected void ServerOnStartMovement(NetworkConnection caller = null)
         {
-            Debug.Log("Start");
             isMoving = true;
             ClientOnStartMovement();
         }
@@ -316,7 +313,6 @@ namespace GameCore
         [ServerRpc]
         protected void ServerOnStopMovement(NetworkConnection caller = null)
         {
-            Debug.Log("Stop");
             isMoving = false;
             ClientOnStopMovement();
         }
@@ -335,8 +331,7 @@ namespace GameCore
         {
             base.FixedUpdate();
 
-            if (CanMove(this))
-                Movement();
+            Movement();
         }
 
 
@@ -378,26 +373,6 @@ namespace GameCore
             jumpTimer = Tools.time + jumpCD;
 
             return jumpVelocity;   //设置 Y 速度
-        }
-
-        public virtual void RefreshHurtEffect()
-        {
-            var isHurting = this.isHurting;
-
-            if (isHurting)
-            {
-                foreach (var sr in spriteRenderers)
-                {
-                    sr.color = new(sr.color.r, 0.5f, 0.5f);
-                }
-            }
-            else
-            {
-                foreach (var sr in spriteRenderers)
-                {
-                    sr.color = Color.white;
-                }
-            }
         }
 
 

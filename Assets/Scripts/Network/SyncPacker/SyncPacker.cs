@@ -21,8 +21,7 @@ namespace GameCore
     {
         public delegate void OnVarValueChangeCallback(NMSyncVar nm, byte[] oldValue);
 
-        public static OnVarValueChangeCallback OnVarValueChange = OnVarValueChangeDefaultMethod;
-        static void OnVarValueChangeDefaultMethod(NMSyncVar nm, byte[] oldValue) { }
+        public static OnVarValueChangeCallback OnVarValueChange = (_, _) => { };
         public static Action<NMRegisterSyncVar> OnRegisterVar = a => { };
 
         public static readonly Dictionary<string, NMSyncVar> vars = new();
@@ -659,7 +658,6 @@ namespace GameCore
                 ClearVars();
             };
 
-
             NetworkCallbacks.OnStopServer += () =>
             {
                 ClearVars();
@@ -668,8 +666,7 @@ namespace GameCore
             static void ClearVars()
             {
                 vars.Clear();
-                OnVarValueChange = OnVarValueChangeDefaultMethod;
-                Debug.Log($"退出或关闭了服务器, {nameof(vars)} 被清空");
+                Debug.Log($"已清空 SyncPacker 同步变量");
             }
 
             NetworkCallbacks.OnStartServer += () =>

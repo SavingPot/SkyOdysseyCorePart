@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1368055323630927166}
   - component: {fileID: 1368055323630927167}
-  - component: {fileID: 1368055323630927164}
   - component: {fileID: 1291152111623117417}
+  - component: {fileID: -7502893648790794389}
   m_Layer: 0
   m_Name: ManagerNetwork
   m_TagString: Untagged
@@ -55,7 +55,7 @@ MonoBehaviour:
   autoConnectClientBuild: 0
   offlineScene: Assets/Scenes/MainMenu.unity
   onlineScene: 
-  transport: {fileID: 1368055323630927164}
+  transport: {fileID: -7502893648790794389}
   networkAddress: localhost
   maxConnections: 10
   disconnectInactiveConnections: 0
@@ -81,35 +81,6 @@ MonoBehaviour:
   evaluationInterval: 3
   timeInterpolationGui: 0
   _discovery: {fileID: 1291152111623117417}
---- !u!114 &1368055323630927164
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1368055323630927165}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b0fecffa3f624585964b0d0eb21b18e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  port: 24442
-  DualMode: 1
-  NoDelay: 1
-  Interval: 10
-  Timeout: 30000
-  RecvBufferSize: 7361536
-  SendBufferSize: 7361536
-  FastResend: 2
-  ReceiveWindowSize: 4096
-  SendWindowSize: 4096
-  MaxRetransmit: 40
-  MaximizeSocketBuffers: 1
-  ReliableMaxMessageSize: 297433
-  UnreliableMaxMessageSize: 1195
-  debugLog: 0
-  statisticsGUI: 0
-  statisticsLog: 0
 --- !u!114 &1291152111623117417
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,8 +97,37 @@ MonoBehaviour:
   BroadcastAddress: 
   serverBroadcastListenPort: 47777
   ActiveDiscoveryInterval: 3
-  transport: {fileID: 1368055323630927164}
+  transport: {fileID: -7502893648790794389}
   OnServerFound:
     m_PersistentCalls:
       m_Calls: []
   secretHandshake: 7705936149086435663
+--- !u!114 &-7502893648790794389
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1368055323630927165}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7e416e0486524f0d9580be7e13388f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  port: 24442
+  DualMode: 1
+  NoDelay: 1
+  Interval: 10
+  Timeout: 10000
+  RecvBufferSize: 7361536
+  SendBufferSize: 7361536
+  FastResend: 2
+  ReceiveWindowSize: 4096
+  SendWindowSize: 4096
+  MaxRetransmit: 40
+  MaximizeSocketBuffers: 1
+  ReliableMaxMessageSize: 297433
+  UnreliableMaxMessageSize: 1195
+  debugLog: 0
+  statisticsGUI: 0
+  statisticsLog: 0

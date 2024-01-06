@@ -26,7 +26,7 @@ namespace GameCore
     /// 玩家的逻辑脚本
     /// </summary>
     [ChineseName("玩家"), EntityBinding(EntityID.Player), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
-    public class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IHumanUsingItemRenderer, IPlayerInteraction, IOnInventoryItemChange, IItemContainer, IInventoryOwner, IUseRadius
+    public class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IHumanUsingItemRenderer, IOnInventoryItemChange, IItemContainer, IInventoryOwner
     {
         /* -------------------------------------------------------------------------- */
         /*                                     接口                                     */
@@ -44,17 +44,6 @@ namespace GameCore
         Item[] IItemContainer.items { get => inventory.slots; set => inventory.slots = value; }
 
 
-
-        public void Interactive(Player caller)
-        {
-            if (isDead && !playerSavingMe && !caller.savingPlayer)
-            {
-                Debug.Log("开始救援");
-                caller.savingPlayer = this;
-                caller.savingTime = 0;
-                playerSavingMe = caller;
-            }
-        }
 
 
 
@@ -291,16 +280,6 @@ namespace GameCore
         [Button("输出玩家名称")] private void EditorOutputPlayerName() => Debug.Log($"玩家名: {playerName}");
         [Button("输出玩家血量")] private void EditorOutputHealth() => Debug.Log($"血量: {health}");
         [Button("输出区域序号")] private void EditorOutputRegionIndex() => Debug.Log($"区域序号: {regionIndex}");
-        [Button("AutoTest0 传输测试"), ServerRpc] private void EditorAutoTest0TransportationServer(NetworkConnection caller) { EditorAutoTest0TransportationCaller(new() { id = null, num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() }, /*testArray = new float[] { UnityEngine.Random.Range(-10000f, 100000f), UnityEngine.Random.Range(-10000f, 100000f), UnityEngine.Random.Range(-10000f, 100000f) },*/ testNullable = Tools.randomBool ? UnityEngine.Random.Range(-10000, 100000) : null }, caller); }
-        [ConnectionRpc] private void EditorAutoTest0TransportationCaller(AutoTest0 param0, NetworkConnection caller) { Debug.Log($"id:{param0.id}, num:{param0.num}, testList:{param0.testList[0]}-{param0.testList[1]}-{param0.testList[2]}, nullable:{param0.testNullable}"); }
-        [Button("AutoTest1 传输测试"), ServerRpc] private void EditorAutoTest1TransportationServer(NetworkConnection caller) { EditorAutoTest1TransportationCaller(new() { index = UnityEngine.Random.Range(0, 10000), self = Path.GetRandomFileName(), t0 = new() { id = Path.GetRandomFileName(), num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } } }, caller); }
-        [ConnectionRpc] private void EditorAutoTest1TransportationCaller(AutoTest1 param0, NetworkConnection caller) { Debug.Log($"index:{param0.index}, self:{param0.self}            -id:{param0.t0.id}, num:{param0.t0.num}, tests:{param0.t0.testList[0]}-{param0.t0.testList[1]}-{param0.t0.testList[2]}"); }
-        [Button("AutoTest2 传输测试"), ServerRpc]
-        private void EditorAutoTest2TransportationServer(NetworkConnection caller)
-        {
-            EditorAutoTest2TransportationCaller(new() { byte_index = (byte)UnityEngine.Random.Range(0, 255), uint_index = (uint)UnityEngine.Random.Range(0, 100000), long_index = UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue) + UnityEngine.Random.Range(0, int.MaxValue), t1 = new() { index = UnityEngine.Random.Range(0, 10000), self = Path.GetRandomFileName(), t0 = new() { id = Path.GetRandomFileName(), num = UnityEngine.Random.Range(0, 10000), testList = new() { Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName() } } } }, caller);
-        }
-        [ConnectionRpc] private void EditorAutoTest2TransportationCaller(AutoTest2 param0, NetworkConnection caller) { Debug.Log($"uint-index:{param0.uint_index}, long-index:{param0.long_index}, byte-index:{param0.byte_index}             index:{param0.t1.index}, self:{param0.t1.self}            -id:{param0.t1.t0.id}, num:{param0.t1.t0.num}, tests:{param0.t1.t0.testList[0]}-{param0.t1.t0.testList[1]}-{param0.t1.t0.testList[2]}"); }
         [Button("设置手中物品")]
         private void EditorSetUsingItem(string id = "ori:", ushort count = 1)
         {
@@ -315,16 +294,6 @@ namespace GameCore
             EditorSetUsingItem(id, ushort.MaxValue);
         }
 #endif
-        #endregion
-
-        #region 救援
-        [SyncGetter] Player savingPlayer_get() => default; [SyncSetter] void savingPlayer_set(Player value) { }
-        [Sync, SyncDefaultValue(null)] public Player savingPlayer { get => savingPlayer_get(); set => savingPlayer_set(value); }
-        [SyncGetter] Player playerSavingMe_get() => default; [SyncSetter] void playerSavingMe_set(Player value) { }
-        [Sync, SyncDefaultValue(null)] public Player playerSavingMe { get => playerSavingMe_get(); set => playerSavingMe_set(value); }
-        [SyncGetter] float savingTime_get() => default; [SyncSetter] void savingTime_set(float value) { }
-        [Sync, SyncDefaultValue(0f)] public float savingTime { get => savingTime_get(); set => savingTime_set(value); }
-
         #endregion
 
         #endregion
@@ -354,6 +323,7 @@ namespace GameCore
         /*                                    临时数据                                    */
         /* -------------------------------------------------------------------------- */
         private float moveVecLastFrame;
+        private Collider2D[] itemPickUpObjectsDetectedTemp = new Collider2D[50];
 
 
 
@@ -365,7 +335,7 @@ namespace GameCore
         public static int playerLayer { get; private set; }
         public static int playerLayerMask { get; private set; }
         public static int playerOnGroundLayerMask { get; private set; }
-        public static float interactionRadius = 3;
+        public static float itemPickUpRadius = 2.5f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui;
@@ -526,7 +496,6 @@ namespace GameCore
             FallingDamage(this);
         }
 
-
         public Action<Player> FallingDamage = caller =>
         {
             if (caller.rb.velocity.y >= 0)
@@ -568,9 +537,6 @@ namespace GameCore
 
         protected override void Update()
         {
-            if (!isHurting)
-                DeathColor();
-
             base.Update();
 
             if (isLocalPlayer)
@@ -579,19 +545,6 @@ namespace GameCore
             inventory?.DoBehaviours();
 
             RefreshInventory();
-        }
-
-        protected override void ServerUpdate()
-        {
-            base.ServerUpdate();
-
-            //如果需要救的玩家死了那么将 savingPlayer 设为零值
-            if (!isDead && playerSavingMe)
-            {
-                playerSavingMe = null;
-            }
-
-            SavePlayer();
         }
 
         protected virtual void AliveLocalUpdate()
@@ -603,9 +556,6 @@ namespace GameCore
                 //如果在地面上并且点跳跃
                 if (onGround && PlayerControls.Jump(this))
                     Jump();
-
-                if (PlayerControls.Interaction(this))
-                    InteractiveWithObject(this);
 
                 if (PlayerControls.HoldingAttack(this))
                     OnHoldAttack();
@@ -743,6 +693,31 @@ namespace GameCore
                 }
             }
             #endregion
+        }
+
+        protected override void ServerUpdate()
+        {
+            base.ServerUpdate();
+
+            Physics2D.OverlapCircleNonAlloc(transform.position, itemPickUpRadius, itemPickUpObjectsDetectedTemp);
+
+            foreach (var other in itemPickUpObjectsDetectedTemp)
+            {
+                if (other == null)
+                    break;
+
+                if (other.TryGetComponent<Drop>(out var drop))
+                {
+                    //TODO 不要检测整个背包，而是检测这个物品能否放入
+                    if (inventory.IsFull())
+                        return;
+
+                    ServerAddItem(drop.itemData);
+                    GAudio.Play(AudioID.PickUpItem);
+
+                    drop.Death();
+                }
+            }
         }
 
         [ServerRpc]
@@ -974,6 +949,12 @@ namespace GameCore
         {
             deathTimer = Tools.time;//TODO: Fix:   + 20;  
 
+            //设置颜色
+            foreach (var sr in spriteRenderers)
+            {
+                sr.color = deathLowestColor;
+            }
+
             if (isLocalPlayer)
             {
                 GAudio.Play(AudioID.Death);
@@ -991,6 +972,12 @@ namespace GameCore
 
         public override void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
+            //设置颜色
+            foreach (var sr in spriteRenderers)
+            {
+                sr.color = Color.white;
+            }
+
             if (isLocalPlayer)
             {
                 MethodAgent.CallUntil(() => pui != null, () => pui.rebornPanel.gameObject.SetActive(false));
@@ -1295,7 +1282,7 @@ namespace GameCore
                         generatedFirstRegion = true;
                     }
                     //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
-                }, null, (ushort)(GFiles.settings.performanceLevel * (isFirstGeneration ? 3 : 0.8f)));
+                }, null, (ushort)(GFiles.settings.performanceLevel * (isFirstGeneration ? 4 : 0.8f)));
 
                 askingForGeneratingRegion = false;
             }, true);
@@ -1303,31 +1290,8 @@ namespace GameCore
 
         #endregion
 
-        [HideInInspector] public Collider2D[] interactionObjectsDetectedTemp = new Collider2D[100];
 
         #region 玩家行为
-        #region 交互
-        public static Action<Player> InteractiveWithObject = caller =>
-        {
-            if (!caller.isLocalPlayer || caller.isDead)
-                return;
-
-            Physics2D.OverlapCircleNonAlloc(caller.transform.position, Player.interactionRadius, caller.interactionObjectsDetectedTemp);
-            IPlayerInteraction interaction = null;
-
-            foreach (var obj in caller.interactionObjectsDetectedTemp)
-            {
-                if (!obj)
-                {
-                    break;
-                }
-
-                if (obj.TryGetComponent(out interaction))
-                {
-                    interaction.Interactive(caller);
-                }
-            }
-        };
 
 
 
@@ -1402,7 +1366,7 @@ namespace GameCore
         {
             float move;
 
-            if (!CanMove(this) || !PlayerCanControl(this))
+            if (!PlayerCanControl(this))
                 move = 0;
             else
                 move = PlayerControls.Move(this);
@@ -1582,34 +1546,6 @@ namespace GameCore
         #endregion
 
         #region 死亡
-        private void DeathColor()
-        {
-            if (isDead)
-            {
-                if (playerSavingMe)
-                {
-                    //根据救援进度的不同, 结果也会不同
-                    float progress = playerSavingMe.savingTime / enoughSavingTime;
-
-                    //result 决定显示的颜色   [若最 lowest 为 0.45, 则运算为   0.45+(1-0.45)pro = 0.45+0.55pro   当 pro 为最大值 1 时, result 也为最大值 1, 即颜色和救起来后一致]
-                    float result = deathLowestColorFloat + oneMinusDeathLowestColorFloat * progress;
-
-                    //设置颜色
-                    foreach (var sr in spriteRenderers)
-                    {
-                        sr.color = new(result, result, result);
-                    }
-                }
-                else
-                {
-                    //设置颜色
-                    foreach (var sr in spriteRenderers)
-                    {
-                        sr.color = deathLowestColor;
-                    }
-                }
-            }
-        }
 
         private void DeathRotation()
         {
@@ -1625,46 +1561,6 @@ namespace GameCore
         }
         #endregion
 
-        #region 救援
-        private void SavePlayer()
-        {
-            if (!savingPlayer)
-                return;
-
-            if (savingPlayer.playerSavingMe != this)
-            {
-                savingPlayer = null;
-                return;
-            }
-
-            //如果死了取消救援
-            if (isDead)
-            {
-                savingTime = 0;
-                savingPlayer = null;
-                return;
-            }
-
-            //增加累计救援时间
-            savingTime += Performance.frameTime;
-
-            //检测是否达到救援时间
-            if (savingTime >= enoughSavingTime)
-            {
-                savingTime = 0;
-                savingPlayer.Reborn(10, transform.position);
-            }
-
-            //如果需要救的玩家死了那么将 savingPlayer 设为零值
-            if (!savingPlayer.isDead)
-            {
-                savingPlayer = null;
-            }
-        }
-        #endregion
-
-        #region 消耗
-
         public void RefreshPropertiesBar()
         {
             if (pui == null)
@@ -1675,9 +1571,6 @@ namespace GameCore
             pui.happinessBarFull.image.fillAmount = happinessValue / maxHappinessValue;
             pui.healthBarFull.image.fillAmount = health / maxHealth;
         }
-
-        #endregion
-        #endregion
 
 
 
@@ -2022,30 +1915,6 @@ namespace GameCore
         }
     }
 
-#if UNITY_EDITOR
-    public struct AutoTest0
-    {
-        public string id;
-        public int num;
-        public List<string> testList;
-        public int? testNullable;
-    }
-
-    public struct AutoTest1
-    {
-        public AutoTest0 t0;
-        public string self;
-        public int index;
-    }
-
-    public struct AutoTest2
-    {
-        public AutoTest1 t1;
-        public uint uint_index;
-        public long long_index;
-        public byte byte_index;
-    }
-#endif
 
 
 
@@ -2058,56 +1927,6 @@ namespace GameCore
 
 
 
-
-
-
-
-
-
-
-    public struct Timer
-    {
-        public float time;
-
-        public readonly bool HasFinished()
-        {
-            return Tools.time >= time;
-        }
-
-        public void Finish()
-        {
-            time = Tools.time;
-        }
-
-        public void Close()
-        {
-            time = float.PositiveInfinity;
-        }
-
-        public void Start(float time)
-        {
-            this.time = Tools.time + time;
-        }
-
-        public void More(float delta)
-        {
-            time += delta;
-        }
-
-        public void Less(float delta)
-        {
-            time -= delta;
-        }
-
-        public readonly float Remainder() => time - Tools.time;
-    }
-
-    public interface IUseRadius
-    {
-        public bool InUseRadius();
-        public bool InUseRadius(Vector2 vec);
-        public bool InUseRadius(Vector2 vec1, Vector2 vec2);
-    }
 
     public static class PlayerCenter
     {

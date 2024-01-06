@@ -94,13 +94,14 @@ namespace GameCore
             public void Recover(Block block)
             {
                 block.OnRecovered();
-                if (block.crackSr) map.blockCrackPool.Recover(block.crackSr);
+                if (block.crackSr) map.blockCrackPool.Recover(block);
                 if (block.blockLight) map.blockLightPool.Recover(block.blockLight);
                 if (map.blocksToCheckHealths.Contains(block)) map.blocksToCheckHealths.Remove(block);
                 block.scaleAnimationTween?.Kill();
                 block.shakeRotationTween?.Kill();
 
                 block.transform.SetParent(map.blockPoolTrans);
+                block.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
                 for (int i = 0; i < block.chunk.blocks.Length; i++)
                 {
@@ -120,32 +121,27 @@ namespace GameCore
         {
             public Stack<SpriteRenderer> stack = new();
 
-            public SpriteRenderer Get(Block block, byte progress)
+            public SpriteRenderer Get(Block block)
             {
-                if (progress >= 0)
-                {
-                    SpriteRenderer sr = stack.Count == 0 ? ObjectTools.CreateSpriteObject() : stack.Pop();
+                SpriteRenderer sr = stack.Count == 0 ? ObjectTools.CreateSpriteObject("Block Crack") : stack.Pop();
 
-                    //设置贴图
-                    sr.sprite = ModFactory.CompareTexture($"ori:block_crack_{progress}").sprite;
-                    sr.sortingOrder = block.sr.sortingOrder;
-                    sr.gameObject.SetActive(true);
+                //设置贴图
+                sr.sortingOrder = block.sr.sortingOrder;
+                sr.gameObject.SetActive(true);
 
-                    //设置为方块的状态
-                    sr.transform.SetParent(block.transform);
-                    sr.transform.localPosition = new(0, 0, block.transform.position.z - 0.01f);
-                    sr.color = block.sr.color;
+                //设置为方块的状态
+                sr.transform.SetParent(block.transform);
+                sr.transform.localPosition = new(0, 0, block.transform.position.z - 0.01f);
+                sr.color = block.sr.color;
 
-                    return sr;
-                }
-
-                return null;
+                return sr;
             }
-            public void Recover(SpriteRenderer sr)
+            public void Recover(Block block)
             {
-                sr.transform.SetParent(null);
-                sr.gameObject.SetActive(false);
-                stack.Push(sr);
+                block.crackSr.transform.SetParent(null);
+                block.crackSr.gameObject.SetActive(false);
+                stack.Push(block.crackSr);
+                block.crackSr = null;
             }
         }
 
@@ -221,11 +217,13 @@ namespace GameCore
                 chunk.ComputePoints();
 
                 map.chunks.Add(chunk);
+                map.chunkTable.Add(chunkIndex, chunk);
             }
 
             public void Recover(Chunk chunk)
             {
                 map.chunks.Remove(chunk);
+                map.chunkTable.Remove(chunk.chunkIndex);
                 chunk.gameObject.SetActive(false);
 
                 //回收区块里的方块
@@ -244,12 +242,13 @@ namespace GameCore
 
 
         public List<Chunk> chunks = new();
+        public Dictionary<Vector2Int, Chunk> chunkTable = new();
         public List<Block> blocksToCheckHealths = new();
 
         protected override void Awake()
         {
             base.Awake();
-            
+
             blockPoolTrans = new GameObject("Block Pool").transform;
             blockPoolTrans.SetParent(transform);
             blockPoolTrans.gameObject.SetActive(false);
@@ -299,11 +298,14 @@ namespace GameCore
 
         public Chunk AddChunk(Vector2Int chunkIndex)
         {
-            foreach (Chunk chunk in chunks)
-                if (chunk.chunkIndex == chunkIndex)
-                    return chunk;
-
-            return chunkPool.Get(chunkIndex);
+            if (chunkTable.TryGetValue(chunkIndex, out Chunk chunk))
+            {
+                return chunk;
+            }
+            else
+            {
+                return chunkPool.Get(chunkIndex);
+            }
         }
 
         public Block GetBlock(Vector2Int pos, bool isBackground)

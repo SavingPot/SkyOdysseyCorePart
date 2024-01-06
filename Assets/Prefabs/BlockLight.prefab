@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5598078404335303888}
   - component: {fileID: 2230981656462515531}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: BlockLight
   m_TagString: Untagged
   m_Icon: {fileID: 0}

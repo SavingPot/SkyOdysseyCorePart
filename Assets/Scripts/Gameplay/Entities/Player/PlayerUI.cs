@@ -462,7 +462,7 @@ namespace GameCore
             chatInput = GameUI.AddInputButton(UPC.down, "ori:input_button.chat", chatView);
             chatInput.field.image.color = new(1, 1, 1, 0.8f);
             chatInput.button.image.color = new(1, 1, 1, 0.8f);
-            chatInput.AddMethod(() =>
+            chatInput.OnClickBind(() =>
             {
                 if (!Player.local)
                     return;

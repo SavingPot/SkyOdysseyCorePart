@@ -11,7 +11,7 @@ TagManager:
   - Player
   - Water
   - UI
-  - Minimap
+  - Light
   - Enemy
   - Block
   - Creature

@@ -1,6 +1,5 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using GameCore.Converters;
 using GameCore.High;
 using GameCore.UI;
 using Mirror;
@@ -13,10 +12,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using TMPro;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using ReadOnlyAttribute = Unity.Collections.ReadOnlyAttribute;
@@ -215,7 +212,24 @@ namespace GameCore
         #region 同步变量
         #region 无敌时间
         [SyncGetter] float invincibleTime_get() => default; [SyncSetter] void invincibleTime_set(float value) { }
-        [Sync, SyncDefaultValue(0f)] public float invincibleTime { get => invincibleTime_get(); set => invincibleTime_set(value); }
+        [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime { get => invincibleTime_get(); set => invincibleTime_set(value); }
+        void OnInvincibleTimeChange()
+        {
+            if (isHurting)
+            {
+                foreach (var sr in spriteRenderers)
+                {
+                    sr.color = new(sr.color.r, 0.5f, 0.5f);
+                }
+            }
+            else
+            {
+                foreach (var sr in spriteRenderers)
+                {
+                    sr.color = Color.white;
+                }
+            }
+        }
         #endregion
 
         #region 最大血量
@@ -304,12 +318,12 @@ namespace GameCore
         public NetworkIdentity netIdentity;
 
         //TODO: Temp them
-        [HideInInspector] public uint netId ;
+        [HideInInspector] public uint netId;
         [HideInInspector] public bool isServer;
         [HideInInspector] public bool isClient;
-        [HideInInspector] public bool isOwned ;
-        [HideInInspector] public bool isHost ;
-        [HideInInspector] public bool isLocalPlayer ;
+        [HideInInspector] public bool isOwned;
+        [HideInInspector] public bool isHost;
+        [HideInInspector] public bool isLocalPlayer;
 
 
 
@@ -433,7 +447,9 @@ namespace GameCore
 
         protected virtual void ServerUpdate()
         {
-            regionIndex = PosConvert.ChunkToRegionIndex(chunkIndex);
+            //更新区域序列
+            var newRegionIndex = PosConvert.ChunkToRegionIndex(chunkIndex);
+            if (regionIndex != newRegionIndex) regionIndex = newRegionIndex;
 
             //自动销毁
             if (isNotPlayer)

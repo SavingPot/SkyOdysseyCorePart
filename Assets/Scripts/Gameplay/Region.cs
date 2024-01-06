@@ -183,7 +183,10 @@ namespace GameCore
             lock (saves)
                 foreach (var save in saves)
                 {
-                    lock (save.locations)
+                    try
+                    {
+                        save.readerWriterLock.EnterWriteLock();
+
                         for (int b = 0; b < save.locations.Count; b++)
                         {
                             BlockSave_Location location = save.locations[b];
@@ -194,6 +197,11 @@ namespace GameCore
                                 break;
                             }
                         }
+                    }
+                    finally
+                    {
+                        save.readerWriterLock.ExitWriteLock();
+                    }
                 }
         }
 
@@ -205,7 +213,9 @@ namespace GameCore
                     if (save.blockId != id)
                         continue;
 
-                    lock (save.locations)
+                    try
+                    {
+                        save.readerWriterLock.EnterWriteLock();
                         for (int b = 0; b < save.locations.Count; b++)
                         {
                             BlockSave_Location location = save.locations[b];
@@ -216,52 +226,59 @@ namespace GameCore
                                 return;
                             }
                         }
+                    }
+                    finally
+                    {
+                        save.readerWriterLock.ExitWriteLock();
+                    }
                 }
         }
 
-        public bool HasBlock(Vector2Int pos, bool isBackground) => GetBlock(pos, isBackground) != null;
+        public bool HasBlock(Vector2Int pos, bool isBackground) => GetBlock(pos, isBackground).location != null;
 
-        public BlockSave_Location GetBlock(Vector2Int pos, bool isBackground)
+        public BlockSave GetBlock(string blockId)
+        {
+            foreach (var save in saves)
+                if (save.blockId == blockId)
+                    return save;
+
+            return null;
+        }
+
+        public (BlockSave save, BlockSave_Location location) GetBlock(Vector2Int pos, bool isBackground)
         {
             savesReaderWriterLock.EnterReadLock();
             try
             {
-                foreach (var block in saves)
-                    if (block.TryGetLocation(pos, isBackground, out var result))
-                        return result;
+                foreach (var save in saves)
+                    if (save.TryGetLocation(pos, isBackground, out var result))
+                        return (save, result);
             }
             finally
             {
                 savesReaderWriterLock.ExitReadLock();
             }
 
-            return null;
+            return (null, null);
         }
 
-        public bool TryGetBlock(Vector2Int pos, bool isBackground, out BlockSave_Location dbs)
+        public bool TryGetBlock(Vector2Int pos, bool isBackground, out (BlockSave save, BlockSave_Location location) result)
         {
-            dbs = GetBlock(pos, isBackground);
+            result = GetBlock(pos, isBackground);
 
-            return dbs != null;
+            return result.location != null;
         }
     }
 
     [Serializable]
     public class BlockSave_Location
     {
-        [NonSerialized] public BlockSave blockSave;
         public Vector2Int pos;
         public bool isBackground;
         [LabelText("自定义数据")] public string customData;
 
-        public BlockSave_Location()
+        public BlockSave_Location(Vector2Int pos, bool isBackground, string customData)
         {
-
-        }
-
-        public BlockSave_Location(BlockSave blockSave, Vector2Int pos, bool isBackground, string customData)
-        {
-            this.blockSave = blockSave;
             this.pos = pos;
             this.isBackground = isBackground;
             this.customData = customData;
@@ -273,11 +290,12 @@ namespace GameCore
     {
         public List<BlockSave_Location> locations;
         public string blockId;
+        [NonSerialized] internal ReaderWriterLockSlim readerWriterLock;
 
 
         public BlockSave()
         {
-
+            readerWriterLock = new(LockRecursionPolicy.SupportsRecursion);
         }
 
         public BlockSave(string blockId) : this()
@@ -288,28 +306,70 @@ namespace GameCore
 
         public BlockSave(Vector2Int pos, bool isBackground, string blockId, string customData) : this()
         {
-            this.locations = new() { new(this, pos, isBackground, customData) };
+            this.locations = new() { new(pos, isBackground, customData) };
             this.blockId = blockId;
         }
 
         public bool HasLocation(Vector2Int pos, bool isBackground)
         {
-            lock (locations)
+            try
+            {
+                readerWriterLock.EnterReadLock();
+
                 foreach (var location in locations)
                     if (location.pos == pos && location.isBackground == isBackground)
                         return true;
+            }
+            finally
+            {
+                readerWriterLock.ExitReadLock();
+            }
+
 
             return false;
         }
 
         public BlockSave_Location GetLocation(Vector2Int pos, bool isBackground)
         {
-            lock (locations)
+            try
+            {
+                readerWriterLock.EnterReadLock();
+
                 foreach (var location in locations)
                     if (location.pos == pos && location.isBackground == isBackground)
                         return location;
+            }
+            finally
+            {
+                readerWriterLock.ExitReadLock();
+            }
 
             return null;
+        }
+
+        public void SetLocation(Vector2Int pos, bool isBackground, BlockSave_Location newValue)
+        {
+            try
+            {
+                readerWriterLock.EnterWriteLock();
+
+                for (int i = 0; i < locations.Count; i++)
+                {
+                    var location = locations[i];
+
+                    if (location.pos == pos && location.isBackground == isBackground)
+                    {
+                        locations[i] = newValue;
+                        return;
+                    }
+                }
+            }
+            finally
+            {
+                readerWriterLock.ExitWriteLock();
+            }
+
+            Debug.LogError($"修改方块 {blockId} ({pos}, {isBackground}) 失败：方块不存在");
         }
 
         public bool TryGetLocation(Vector2Int pos, bool isBackground, out BlockSave_Location result)
@@ -321,8 +381,10 @@ namespace GameCore
 
         public void AddLocation(Vector2Int pos, bool isBackground, bool overwriteIfContains = false, string customData = null)
         {
-            lock (locations)
+            try
             {
+                readerWriterLock.EnterWriteLock();
+
                 for (int i = 0; i < locations.Count; i++)
                 {
                     BlockSave_Location location = locations[i];
@@ -330,40 +392,51 @@ namespace GameCore
                     if (location.pos.x == pos.x && location.pos.y == pos.y && location.isBackground == isBackground)
                     {
                         if (overwriteIfContains)
-                            locations[i] = new(this, pos, isBackground, customData);
+                            locations[i] = new(pos, isBackground, customData);
                         else
-                            Debug.LogError($"位置 {pos} [{isBackground}] 已存在");
+                            Debug.LogError($"添加方块 {blockId} ({pos}, {isBackground}) 失败：方块已存在");
                         return;
                     }
                 }
 
-                locations.Add(new(this, pos, isBackground, customData));
+                locations.Add(new(pos, isBackground, customData));
+            }
+            finally
+            {
+                readerWriterLock.ExitWriteLock();
             }
         }
 
         public void RemoveLocation(Vector2Int pos, bool isBackground)
         {
-            lock (locations)
+            try
             {
+                readerWriterLock.EnterUpgradeableReadLock();
+
                 for (int i = 0; i < locations.Count; i++)
                 {
                     BlockSave_Location location = locations[i];
 
                     if (location.pos.x == pos.x && location.pos.y == pos.y && location.isBackground == isBackground)
                     {
+                        readerWriterLock.EnterWriteLock();
                         locations.RemoveAt(i);
+                        readerWriterLock.ExitWriteLock();
                         return;
                     }
                 }
+            }
+            finally
+            {
+                readerWriterLock.ExitUpgradeableReadLock();
             }
         }
 
         public void RemovePosAt(int index)
         {
-            lock (locations)
-            {
-                locations.RemoveAt(index);
-            }
+            readerWriterLock.EnterWriteLock();
+            locations.RemoveAt(index);
+            readerWriterLock.ExitWriteLock();
         }
     }
 

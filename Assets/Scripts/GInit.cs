@@ -190,7 +190,8 @@ namespace GameCore
 
             /* ---------------------------------- 获取目录 ---------------------------------- */
             dataPath = Application.persistentDataPath;
-            Tools.logsPath = Path.Combine(GInit.dataPath, "logs", $"{Tools.GetFileConvertedDate()}_{GInit.gameVersion}.md");
+            Tools.logsPath = Path.Combine(GInit.dataPath, "logs", $"{Tools.GetFileConvertedDate()}_{gameVersion}.md");
+            File.Delete(Tools.logsPath);
             cachePath = Path.Combine(dataPath, "cache");
             modsPath = Path.Combine(dataPath, "mods");
             IOTools.CreateDirectoryIfNone(modsPath);
@@ -296,7 +297,6 @@ namespace GameCore
             {
                 Rpc.Init();
                 Entity.EntityTypeInit();
-                //GScene.Next();
             }));
 
             base.Awake();

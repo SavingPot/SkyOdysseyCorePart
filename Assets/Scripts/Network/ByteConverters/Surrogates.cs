@@ -290,7 +290,7 @@ namespace GameCore
                 var bg = (bool)info.GetValue("bg", typeof(bool));
                 var cd = (byte[])info.GetValue("cd", typeof(byte[]));
 
-                return new BlockSave_Location(null, new(x, y), bg, cd == null ? null : ByteConverter.ToString(cd));
+                return new BlockSave_Location(new(x, y), bg, cd == null ? null : ByteConverter.ToString(cd));
             }
         }
 

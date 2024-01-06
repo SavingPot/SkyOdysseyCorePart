@@ -159,13 +159,5 @@ namespace GameCore
                 ControlMode.Gamepad => false,
                 _ => false
             };
-
-        public static Func<Player, bool> Interaction = (p) => GControls.mode switch
-            {
-                ControlMode.Touchscreen => p.pui != null && p.pui.interactionButton.button.wasPressedThisFrame,
-                ControlMode.KeyboardAndMouse => Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame,
-                ControlMode.Gamepad => Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame,
-                _ => false
-            };
     }
 }

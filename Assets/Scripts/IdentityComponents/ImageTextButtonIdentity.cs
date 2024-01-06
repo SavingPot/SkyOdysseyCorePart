@@ -37,7 +37,7 @@ namespace GameCore
             buttonTextDown.id = $"{id}.buttonTextDown";
         }
 
-        public ImageTextButtonIdentity AddMethod(UnityAction call)
+        public ImageTextButtonIdentity OnClickBind(UnityAction call)
         {
             button.button.onClick.AddListener(call);
             return this;

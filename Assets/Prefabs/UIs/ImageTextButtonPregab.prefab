@@ -1,5 +1,29 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!225 &1406356661607150884
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 581470366845773656}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!225 &5080072841483201714
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 3608299664974798235}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &6105786471089194381
 GameObject:
   m_ObjectHideFlags: 0
@@ -11,7 +35,6 @@ GameObject:
   - component: {fileID: 3926135743619296272}
   - component: {fileID: 8543248927365398739}
   - component: {fileID: 8218570964484213762}
-  - component: {fileID: 4678143168758701612}
   - component: {fileID: -2814501411830329645}
   m_Layer: 5
   m_Name: ImageTextButtonPregab
@@ -35,7 +58,6 @@ RectTransform:
   - {fileID: 3204133032724722061}
   - {fileID: 1406356661607150888}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -80,18 +102,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!225 &4678143168758701612
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6105786471089194381}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
 --- !u!114 &-2814501411830329645
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -110,6 +120,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 3926135743619296272}
     m_Modifications:
     - target: {fileID: 1581326588845094568, guid: fd6805abaae4abd4ba5d787e87465193, type: 3}
@@ -241,6 +252,12 @@ PrefabInstance:
       value: -0.173
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1987685960184959600, guid: fd6805abaae4abd4ba5d787e87465193, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3487905319452574632}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fd6805abaae4abd4ba5d787e87465193, type: 3}
 --- !u!224 &1406356661607150888 stripped
 RectTransform:
@@ -252,6 +269,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 3926135743619296272}
     m_Modifications:
     - target: {fileID: 2755790562839445770, guid: a3b67cc247b1204438d09a803592a106, type: 3}
@@ -343,6 +361,9 @@ PrefabInstance:
       value: ImagePrefab
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a3b67cc247b1204438d09a803592a106, type: 3}
 --- !u!224 &3204133032724722061 stripped
 RectTransform:
@@ -354,6 +375,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 1406356661607150888}
     m_Modifications:
     - target: {fileID: 176984014275567155, guid: bd63b5fb32c653048bfe5b04b96a643b, type: 3}
@@ -477,4 +499,12 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bd63b5fb32c653048bfe5b04b96a643b, type: 3}
+--- !u!224 &3487905319452574632 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 176984014275567155, guid: bd63b5fb32c653048bfe5b04b96a643b, type: 3}
+  m_PrefabInstance: {fileID: 3608299664974798235}
+  m_PrefabAsset: {fileID: 0}

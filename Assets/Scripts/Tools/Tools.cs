@@ -37,6 +37,8 @@ namespace GameCore
         public static float deltaTime;
         public static float smoothDeltaTime;
         public static float fps;
+        public static float smoothFps;
+        private static float smoothFpsUpdaterTimer;
         private Camera _mainCamera;
         private CameraController _mainCameraController;
 
@@ -66,7 +68,7 @@ namespace GameCore
 
 #if UNITY_EDITOR
         [SerializeField, LabelText("模组"), ListDrawerSettings(HideAddButton = true)]
-        private List<Mod> modsToDebug;
+        private Mod[] modsToDebug;
 
         [SerializeField, LabelText("最终文本"), ListDrawerSettings(HideAddButton = true)]
         private List<FinalLang> finalTextDataToDebug;
@@ -82,7 +84,7 @@ namespace GameCore
 #endif
 
 
-        public static readonly Dictionary<string, LogType> totalLogTexts = new();
+        public static readonly List<(string, LogType)> totalLogTexts = new();
         public static System.Random staticRandom = new();
 
 
@@ -179,6 +181,11 @@ namespace GameCore
             deltaTime = Time.deltaTime;
             smoothDeltaTime = Time.smoothDeltaTime;
             fps = 1 / smoothDeltaTime;
+            if (time >= smoothFpsUpdaterTimer)
+            {
+                smoothFps = fps;
+                smoothFpsUpdaterTimer = time + 0.5f;
+            }
 
 
 
@@ -238,13 +245,8 @@ namespace GameCore
             }
         }
 
-        private void OnGUI()
-        {
-            GUILayout.Label($"FPS: {fps}");
-        }
-
         [ChineseName("当收到日志时")]
-        internal void OnHandleLog(string logString, string stackTrace, LogType type)
+        internal void OnHandleLog(string logString, string _, LogType type)
         {
             if (!writeLogsToFile)
                 return;
@@ -252,18 +254,12 @@ namespace GameCore
             switch (type)
             {
                 case LogType.Warning:
-                    if (stackTrace.IsNullOrWhiteSpace())
-                        LogWarningToFile(logString + "\n" + Environment.StackTrace);
-                    else
-                        LogWarningToFile(logString + "\n" + stackTrace);
+                    LogWarningToFile(logString + "\n" + HighlightedStackTraceForMarkdown());
                     break;
 
                 case LogType.Error:
                 case LogType.Exception:
-                    if (stackTrace.IsNullOrWhiteSpace())
-                        LogErrorToFile(logString + "\n" + Environment.StackTrace);
-                    else
-                        LogErrorToFile(logString + "\n" + stackTrace);
+                    LogErrorToFile(logString + "\n" + HighlightedStackTraceForMarkdown());
                     break;
 
                 default:
@@ -294,13 +290,12 @@ namespace GameCore
         {
             string str = content.ToString();
 
-            if (!totalLogTexts.ContainsKey(str))
-                totalLogTexts.Add(str, type);
+            totalLogTexts.Add(new(str, type));
 
             try
             {
                 using StreamWriter writer = new(logsPath, true, Encoding.UTF8);
-                writer.WriteLine(str);
+                writer.WriteLine($"***\n{str}");
             }
             catch
             {
@@ -308,11 +303,16 @@ namespace GameCore
             }
         }
 
-        public static void LogToFile(object obj) => LogTextToFile($"[{DateTime.Now}]: {obj}", LogType.Log);
+        public static string TimeInDay()
+        {
+            return DateTime.Now.ToString("[HH:mm:ss]");
+        }
 
-        public static void LogWarningToFile(object obj) => LogTextToFile($"[{DateTime.Now}]: `警告: {obj}`", LogType.Warning);
+        public static void LogToFile(object obj) => LogTextToFile($"{TimeInDay()}: {obj}", LogType.Log);
 
-        public static void LogErrorToFile(object obj) => LogTextToFile($"[{DateTime.Now}]: ```错误: {obj}```", LogType.Error);
+        public static void LogWarningToFile(object obj) => LogTextToFile($"{TimeInDay()}: 警告: {obj}", LogType.Warning);
+
+        public static void LogErrorToFile(object obj) => LogTextToFile($"{TimeInDay()}: 错误: {obj}", LogType.Error);
 
 
         #region 其他
@@ -687,9 +687,29 @@ namespace GameCore
 
         static readonly Regex HighlightedStackTraceRegex = new(@"at\s(.*)\s(\(.*\))\s\[\w+\]\sin\s(.*:\d+)");
 
+        public static string HighlightedStackTraceForMarkdown()
+        {
+            string stackTrace = Environment.StackTrace;
+            int index = stackTrace.IndexOf('\n', stackTrace.IndexOf('\n') + 1); // 找到第二个换行符的位置
+            string result = stackTrace.Remove(0, index + 1); // 删除前两行
+
+            return HighlightedStackTraceForMarkdown(result);
+        }
+
+        public static string HighlightedStackTraceForMarkdown(string stackTrace)
+        {
+            string replacement = @"at <font color=#e5c072>$1</font>$2 <font color=#4988ff>[$3]</font>";
+
+            return HighlightedStackTraceRegex.Replace(stackTrace, replacement);
+        }
+
         public static string HighlightedStackTrace()
         {
-            return HighlightedStackTrace(Environment.StackTrace);
+            string stackTrace = Environment.StackTrace;
+            int index = stackTrace.IndexOf('\n', stackTrace.IndexOf('\n') + 1); // 找到第二个换行符的位置
+            string result = stackTrace.Remove(0, index + 1); // 删除前两行
+
+            return HighlightedStackTrace(result);
         }
 
         public static string HighlightedStackTrace(Exception exception)
@@ -786,7 +806,7 @@ namespace GameCore
     /// <remarks>
     /// Prefabricated scene names
     /// </remarks>
-    public struct SceneNames
+    public static class SceneNames
     {
         public const string PreloadScene = "PreloadScene";
         public const string MainMenu = "MainMenu";
@@ -810,39 +830,5 @@ namespace GameCore
         public static Vector2Int medium => size3;
         public static Vector2Int small => size4;
         public static Vector2Int mini => size5;
-    }
-
-    public struct JobRandom
-    {
-        public static Unity.Mathematics.Random instance = Unity.Mathematics.Random.CreateFromIndex(1);
-
-        public static bool Prob100(float probability)
-        {
-            if (probability >= 100)
-                return true;
-
-            if (probability <= 0)
-                return false;
-
-            return probability >= instance.NextFloat(0, 100);
-        }
-
-        public static int MultiProb100(float probability)
-        {
-            float temp = probability;
-            int times = 0;
-
-            //对于 >=100 直接 ++ 并将概率减去 100
-            while (temp >= 100)
-            {
-                times++;
-                temp -= 100;
-            }
-
-            //运算 <100 后的结果
-            times += Prob100(temp) ? 1 : 0;
-
-            return times;
-        }
     }
 }

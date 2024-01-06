@@ -360,8 +360,8 @@ namespace GameCore.UI
                 else
                     msg.checkmark.image.sprite = ModFactory.CompareTexture("ori:disabled").sprite;
             }
-            msg.AddMethod(RefreshIt);
-            msg.AddMethod(_ => GAudio.Play(AudioID.Button));
+            msg.OnValueChangeBind(RefreshIt);
+            msg.OnValueChangeBind(_ => GAudio.Play(AudioID.Button));
 
             return msg;
         }
@@ -411,7 +411,7 @@ namespace GameCore.UI
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
             msg.rectTransform.localScale = Vector2.one;
             msg.button.image.sprite = ModFactory.CompareTexture("ori:button_flat").sprite;
-            msg.AddMethod(() => GAudio.Play(AudioID.Button));
+            msg.OnClickBind(() => GAudio.Play(AudioID.Button));
 
             return msg;
         }
@@ -438,7 +438,7 @@ namespace GameCore.UI
             msg.rt.localScale = Vector2.one;
             msg.button.image.sprite = ModFactory.CompareTexture("ori:square_button").sprite;
             msg.field.image.sprite = ModFactory.CompareTexture("ori:button_flat").sprite;
-            msg.AddMethod(() => GAudio.Play(AudioID.Button));
+            msg.OnClickBind(() => GAudio.Play(AudioID.Button));
 
             return msg;
         }
@@ -857,7 +857,7 @@ namespace GameCore.UI
                         AppearType.PositionRightToLeft => new(Tools.resolution.x, 0),
                         _ => new(0, Tools.resolution.y),
                     });
-                    CanvasGroup cg = trans.GetComponent<CanvasGroup>();
+                    CanvasGroup cg = trans.gameObject.GetOrAddComponent<CanvasGroup>();
                     cg.interactable = false;
                     trans.gameObject.SetActive(true);
 

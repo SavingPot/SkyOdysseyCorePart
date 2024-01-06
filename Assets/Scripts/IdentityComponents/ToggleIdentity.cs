@@ -42,7 +42,7 @@ namespace GameCore
             text.id = $"{id}.text";
         }
 
-        public ToggleIdentity AddMethod(UnityAction<bool> call)
+        public ToggleIdentity OnValueChangeBind(UnityAction<bool> call)
         {
             toggle.onValueChanged.AddListener(call);
             return this;

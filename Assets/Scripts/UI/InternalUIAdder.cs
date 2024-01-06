@@ -116,14 +116,14 @@ namespace GameCore.UI
                                                 "ori:loading_bar_2", "ori:loading_bar_2", "ori:mod_loading_mascot",
                                                 15, 0,
                                                 new(0, 24), new(50, 50),
-                                                () => (float)ModFactory.mods.Count / (float)ModFactory.modCountFound,
-                                                () => $"Loading... {ModFactory.mods.Count}/{ModFactory.modCountFound}", //TODO; Make Loading into text comparation
+                                                () => (float)ModFactory.mods.Length / (float)ModFactory.modCountFound,
+                                                () => $"Loading... {ModFactory.mods.Length}/{ModFactory.modCountFound}", //TODO; Make Loading into text comparation
                                                 panel.transform);
 
                         //刷新吉祥物位置
                         mascotImage.OnUpdate += img =>
                         {
-                            var progressFloat = (float)ModFactory.mods.Count / (float)ModFactory.modCountFound;
+                            var progressFloat = (float)ModFactory.mods.Length / (float)ModFactory.modCountFound;
 
                             mascotImage.SetAPosX(progressFloat * GameUI.canvasRT.sizeDelta.x);
                         };
@@ -151,7 +151,7 @@ namespace GameCore.UI
                             return false;
                         });
 
-                        while (ModFactory.mods.Count < ModFactory.modCountFound || Tools.time < earliestExitTime)
+                        while (ModFactory.mods.Length < ModFactory.modCountFound || Tools.time < earliestExitTime)
                         {
                             await UniTask.NextFrame();
                         }
@@ -195,7 +195,7 @@ namespace GameCore.UI
 
                         sb.Append(GameUI.CompareText("ori:game_version").text).AppendLine(GInit.gameVersion);
                         sb.Append(GameUI.CompareText("ori:engine_version").text).AppendLine(GInit.unityVersion);
-                        sb.Append(GameUI.CompareText("ori:mod_count").text).AppendLine(ModFactory.mods.Count.ToString());
+                        sb.Append(GameUI.CompareText("ori:mod_count").text).AppendLine(ModFactory.mods.Length.ToString());
 
                         t.text.text = sb.ToString();
                         Tools.stringBuilderPool.Recover(sb);
@@ -661,7 +661,7 @@ namespace GameCore.UI
                 Vector2Int delBtnSize = new(40, 40);
 
                 Transform t = chooseWorldScrollView.transform.parent;
-                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.middle, "ori:itb.choose_world_" + worldName + "_" + i).AddMethod(() => MethodAgent.TryRun(() =>
+                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.middle, "ori:itb.choose_world_" + worldName + "_" + i).OnClickBind(() => MethodAgent.TryRun(() =>
                 {
                     GameUI.Disappear(t.gameObject);
 
@@ -712,7 +712,7 @@ namespace GameCore.UI
                 int i = index;
                 var dir = modDirs[i];
 
-                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.middle, "ori:button.edit_mod_" + dir.info.id).AddMethod(() => MethodAgent.TryRun(() =>
+                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.middle, "ori:button.edit_mod_" + dir.info.id).OnClickBind(() => MethodAgent.TryRun(() =>
                 {
                     configuringModDir = dir;
                     GameUI.SetPage(modConfiguringPanel);

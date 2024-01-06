@@ -218,7 +218,7 @@ namespace GameCore
         /// ////////armor:1 use_on
         /// effect:[{name:, change:, time:}] can_always_eat, eat_time
         /// </summary>
-        [SerializeField, Tooltip("模组管理器识别并加载的所有模组 (包括游戏本体)"), LabelText("模组")] public static List<Mod> mods = new();
+        [SerializeField, Tooltip("模组管理器识别并加载的所有模组 (包括游戏本体)"), LabelText("模组")] public static Mod[] mods;
 
         public static List<Assembly> assemblies = new();
 
@@ -409,7 +409,7 @@ namespace GameCore
             //TODO: 优化寻址逻辑
             Debug.Log("开始重加载所有模组");
 
-            mods = new();
+            List<Mod> modsTemp = new();
             assemblies.Clear();
 
             if (!Directory.Exists(GInit.modsPath))
@@ -440,12 +440,14 @@ namespace GameCore
 
             foreach (var path in modPathsWithInfo)
             {
-                LoadMod(path, false);
+                LoadMod(path, modsTemp);
                 //Task loading = new(() => LoadMod(modPathsWithInfo[i]));
 
                 //loading.Start();
                 //loading.Wait();
             }
+
+            mods = modsTemp.ToArray();
 
             StringBuilder sb = Tools.stringBuilderPool.Get();
             sb.Append("模组加载完毕, 列表如下:\n");
@@ -465,9 +467,9 @@ namespace GameCore
 
             sb.AppendLine(string.Empty);
             sb.Append("启用的模组数量: ");
-            sb.Append(mods.Count);
+            sb.Append(mods.Length);
             sb.Append("/");
-            sb.AppendLine(mods.Count.ToString());
+            sb.AppendLine(modPathsWithInfo.Length.ToString());
             sb.Append(" (没有信息文件的模组有 ");
             sb.Append(modPathsWithoutInfo.Length);
             sb.AppendLine(" 个)");
@@ -512,7 +514,7 @@ namespace GameCore
         }
 
         [ChineseName("加载模组")]
-        public static void LoadMod(string modPath, bool autoReconfigureMods = true)
+        public static void LoadMod(string modPath, List<Mod> modsTemp)
         {
             string folderName = IOTools.GetDirectoryName(modPath);
 
@@ -823,26 +825,48 @@ namespace GameCore
                 #endregion
 
                 #region 加载脚本 (Dll)
+                List<ImportType> importTypesTemp = new();
                 if (Directory.Exists(scriptsPath))
                 {
                     string[] dllPaths = IOTools.GetFilesInFolder(scriptsPath, true, "dll");
+
+
+
+                    static void LoadDLLInternal(Type[] types, string dllPath, List<ImportType> importTypes)
+                    {
+                        foreach (Type typeInEach in types)
+                        {
+                            ImportType newTypeData = new()
+                            {
+                                type = typeInEach,
+                                dllPath = dllPath
+                            };
+
+                            importTypes.Add(newTypeData);
+                        }
+                    }
+
+
 
                     foreach (var dllPath in dllPaths)
                     {
                         MethodAgent.TryRun(() =>
                         {
-                            var ass = Assembly.LoadFrom(dllPath);
+                            //Assembly.LoadFrom 也会顺带加载需要的程序集, 这会导致程序集被多次加载, 因此使用 LoadFile
+                            var ass = Assembly.LoadFile(dllPath);
+
                             assemblies.Add(ass);
-                            LoadDLLInternal(ass.GetExportedTypes(), dllPath, newMod);
+                            LoadDLLInternal(ass.GetTypes(), dllPath, importTypesTemp);
                         }, true);
                     }
 
                     if (newMod.isOri)
                     {
                         assemblies.Add(Tools.coreAssembly);
-                        LoadDLLInternal(Tools.coreAssembly.GetTypes(), string.Empty, newMod);
+                        LoadDLLInternal(Tools.coreAssembly.GetTypes(), string.Empty, importTypesTemp);
                     }
                 }
+                newMod.importTypes = importTypesTemp.ToArray();
                 #endregion
 
                 #region 加载实体
@@ -862,11 +886,14 @@ namespace GameCore
                 #endregion
 
 
-                mods.Add(newMod);
+                modsTemp.Add(newMod);
+
 
                 #region 添加内置 UI
                 if (newMod.isOri)
                 {
+                    mods = new[] { newMod };
+
                     MethodAgent.RunOnMainThread(() =>
                     {
                         GScene.Next();
@@ -878,12 +905,22 @@ namespace GameCore
                 //调用 ModEntry 的 OnModLoaded
                 MethodAgent.TryRun(() => CallOnModLoaded(mods[^1]), true);
             }, true);
+        }
 
-            //重新配置所有模组
-            if (autoReconfigureMods)
-            {
-                ReconfigureAllMods();
-            }
+        public static Mod GetMod(string id)
+        {
+            foreach (var mod in mods)
+                if (mod.info.id == id)
+                    return mod;
+
+            return null;
+        }
+
+        public static bool TryGetMod(string id, out Mod result)
+        {
+            result = GetMod(id);
+
+            return result != null;
         }
 
         public static void ReconfigureAllMods()
@@ -892,7 +929,7 @@ namespace GameCore
             MethodAgent.TryQueueOnMainThread(() =>
             {
                 //遍历所有模组并重新配置
-                for (int i = 0; i < mods.Count; i++)
+                for (int i = 0; i < mods.Length; i++)
                 {
                     var mod = mods[i];
                     ReconfigureMod(ref mod);
@@ -921,12 +958,12 @@ namespace GameCore
         public static void GetModEntry(Mod mod)
         {
             //遍历加载的所有 Type
-            for (int i = 0; i < mod.typeData.Count; i++)
+            foreach (ImportType importType in mod.importTypes)
             {
                 //如果不为空并继承自 ModEntry 就执行指定方法
-                if (mod.typeData[i].type != null && mod.typeData[i].type.IsSubclassOf(typeof(ModEntry)))
+                if (importType.type != null && importType.type.IsSubclassOf(typeof(ModEntry)))
                 {
-                    mod.entryInstance = (ModEntry)Activator.CreateInstance(mod.typeData[i].type, null);
+                    mod.entryInstance = (ModEntry)Activator.CreateInstance(importType.type, null);
                     return;
                 }
             }
@@ -936,14 +973,14 @@ namespace GameCore
         {
             foreach (Mod mod in mods)
             {
-                foreach (ImportType type in mod.typeData)
+                foreach (ImportType importType in mod.importTypes)
                 {
                     //如果继承自 EntityBehaviour (包括间接继承) 并绑定了 实体json.id
-                    if (type.type.IsSubclassOf(typeof(Entity)) &&
-                        AttributeGetter.TryGetAttribute(type.type, out EntityBindingAttribute attribute) &&
+                    if (importType.type.IsSubclassOf(typeof(Entity)) &&
+                        AttributeGetter.TryGetAttribute(importType.type, out EntityBindingAttribute attribute) &&
                         attribute.id == entity.id)
                     {
-                        entity.behaviourType = type.type;
+                        entity.behaviourType = importType.type;
                         return;
                     }
                 }
@@ -954,7 +991,7 @@ namespace GameCore
         {
             foreach (Mod mod in mods)
             {
-                foreach (ImportType type in mod.typeData)
+                foreach (ImportType type in mod.importTypes)
                 {
                     if (type.type.IsSubclassOf(typeof(ItemBehaviour)) &&
                         AttributeGetter.TryGetAttribute<ItemBindingAttribute>(type.type, out var attribute) &&
@@ -973,7 +1010,7 @@ namespace GameCore
         {
             foreach (Mod mod in mods)
             {
-                foreach (ImportType type in mod.typeData)
+                foreach (ImportType type in mod.importTypes)
                 {
                     if (type.type.IsSubclassOf(typeof(SpellBehaviour)) &&
                         AttributeGetter.TryGetAttribute<SpellBindingAttribute>(type.type, out var attribute) &&
@@ -993,7 +1030,7 @@ namespace GameCore
         {
             foreach (Mod mod in mods)
             {
-                foreach (ImportType type in mod.typeData)
+                foreach (ImportType type in mod.importTypes)
                 {
                     if (type.type.FullName == block.behaviourName && type.type.IsSubclassOf(typeof(Block)))
                     {
@@ -1127,20 +1164,6 @@ namespace GameCore
         public static string GetCorrectJsonFormatByJObject(JObject jo) => ModLoading.GetCorrectJsonFormatByJObject(jo);
 
         public static void ConvertJsonFormat(ref string jsonFormat) => ModLoading.ConvertJsonFormat(ref jsonFormat);
-
-        static void LoadDLLInternal(Type[] types, string dllPath, Mod modData)
-        {
-            foreach (Type typeInEach in types)
-            {
-                ImportType newTypeData = new()
-                {
-                    type = typeInEach,
-                    dllPath = dllPath
-                };
-
-                modData.typeData.Add(newTypeData);
-            }
-        }
     }
 
     [Serializable]
@@ -1243,7 +1266,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class ImportType
+    public struct ImportType
     {
         [JsonIgnore] public Type type;
         [JsonIgnore, LabelText("Dll路径")] public string dllPath;

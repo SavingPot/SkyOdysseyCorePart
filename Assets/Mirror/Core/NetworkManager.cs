@@ -610,7 +610,10 @@ namespace Mirror
         {
             // return if already stopped to avoid recursion deadlock
             if (!NetworkServer.active)
+            {
+                Debug.LogWarning("服务器还未开启，不需要关闭");
                 return;
+            }
 
             if (authenticator != null)
             {

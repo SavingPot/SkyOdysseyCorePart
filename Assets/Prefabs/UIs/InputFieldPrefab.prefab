@@ -32,7 +32,6 @@ RectTransform:
   - {fileID: 8475373953403695687}
   - {fileID: 8475373953606370070}
   m_Father: {fileID: 8475373953138906094}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -66,7 +65,6 @@ GameObject:
   - component: {fileID: 8475373953138906089}
   - component: {fileID: 5445545556401839805}
   - component: {fileID: -8004134274671379352}
-  - component: {fileID: 6248328886229736234}
   m_Layer: 5
   m_Name: InputFieldPrefab
   m_TagString: Untagged
@@ -88,7 +86,6 @@ RectTransform:
   m_Children:
   - {fileID: 8475373952929464983}
   m_Father: {fileID: 0}
-  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -245,18 +242,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   doRefresh: 1
   lockType: 0
---- !u!225 &6248328886229736234
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8475373953138906095}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
 --- !u!1 &8475373953403695684
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,7 +274,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8475373952929464983}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -444,7 +428,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8475373952929464983}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}

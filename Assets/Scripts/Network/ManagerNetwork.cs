@@ -90,7 +90,7 @@ namespace GameCore.High
         private ServerDiscovery _discovery;
         public ServerDiscovery discovery { get => _discovery; }
 
-        public KcpTransport kcp { get; private set; }
+        public ThreadedKcpTransport kcp { get; private set; }
 
         #region Unity Callbacks
         /// <summary>
@@ -106,7 +106,7 @@ namespace GameCore.High
 
             base.Awake();
 
-            kcp = GetComponent<KcpTransport>();
+            kcp = GetComponent<ThreadedKcpTransport>();
         }
 
         /// <summary>

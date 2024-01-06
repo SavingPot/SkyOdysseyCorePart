@@ -63,13 +63,24 @@ namespace GameCore
             //(0,100)
             else if (block.health != 100)
             {
+                //添加到回血列表
                 if (!block.chunk.map.blocksToCheckHealths.Contains(block))
+                {
                     block.chunk.map.blocksToCheckHealths.Add(block);
+                }
+
+                //显示裂痕
+                if (block.crackSr == null) block.crackSr = block.chunk.map.blockCrackPool.Get(block);
+                block.crackSr.sprite = ModFactory.CompareTexture($"ori:block_crack_{(byte)Mathf.Min(4, 4 - block.health / totalMaxHealth * 5)}").sprite;
             }
             //100
             else if (block.chunk.map.blocksToCheckHealths.Contains(block))
             {
                 block.chunk.map.blocksToCheckHealths.Remove(block);
+
+                //回收裂痕
+                if (block.crackSr)
+                    block.chunk.map.blockCrackPool.Recover(block);
             }
         };
 
@@ -82,8 +93,8 @@ namespace GameCore
 
         public void WriteCustomDataToSave()
         {
-            //写入存档中
-            GFiles.world.GetRegion(chunk.regionIndex).GetBlock(PosConvert.MapToRegionPos(pos, chunk.regionIndex), isBackground).customData = customData?.ToString(Formatting.None);
+            //获取存档中的值
+            GFiles.world.GetRegion(chunk.regionIndex).GetBlock(PosConvert.MapToRegionPos(pos, chunk.regionIndex), isBackground).location.customData = customData?.ToString(Formatting.None);
         }
 
         public virtual void OutputDrops(Vector3 pos)
@@ -122,12 +133,7 @@ namespace GameCore
 
         public virtual void OnUpdate()
         {
-            //生成世界时候这个方法也会被调用, 因此要检查 chunk
-            if (crackSr)
-                chunk.map.blockCrackPool.Recover(crackSr);
 
-            if (health != 100)
-                crackSr = chunk.map.blockCrackPool.Get(this, (byte)Mathf.Min(4, 4 - health / totalMaxHealth * 5));
         }
 
 

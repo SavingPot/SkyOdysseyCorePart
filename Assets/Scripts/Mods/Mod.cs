@@ -28,8 +28,8 @@ namespace GameCore
         [LabelText("结构")] public List<StructureData> structures = new();
         [LabelText("文本")] public List<GameLang> langs = new();
         [LabelText("音频")] public List<AudioData> audios = new();
-        [LabelText("Type数据")] public List<ImportType> typeData = new();
         [LabelText("实体")] public List<EntityData> entities = new();
+        [LabelText("导入类型")] public ImportType[] importTypes;
 
         [NonSerialized] public ModEntry entryInstance;
 

@@ -81,13 +81,12 @@ namespace GameCore
                     string id = SyncPacker.GetInstanceID(sb, pair.propertyPath, netId);
                     SyncPacker.UnregisterVar(id);
                 }
+            }
 
-
-                /* -------------------------------- 取消绑定变量的钩子 ------------------------------- */
-                foreach (var hook in varHooksToUnbind)
-                {
-                    SyncPacker.OnVarValueChange -= hook;
-                }
+            /* -------------------------------- 取消绑定变量的钩子 ------------------------------- */
+            foreach (var hook in varHooksToUnbind)
+            {
+                SyncPacker.OnVarValueChange -= hook;
             }
         }
 
@@ -167,7 +166,7 @@ namespace GameCore
 
                 if (pair.hook != null)
                 {
-                    SyncPacker.OnVarValueChangeCallback callback = (nm, oldValue) => OnValueChangeHook(nm, oldValue, pair.hook, id);
+                    void callback(NMSyncVar nm, byte[] oldValue) => OnValueChangeHook(nm, oldValue, pair.hook, id);
                     varHooksToUnbindTemp.Add(callback);
                     SyncPacker.OnVarValueChange += callback;
                 }
