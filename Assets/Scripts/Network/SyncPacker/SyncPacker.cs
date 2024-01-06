@@ -312,6 +312,7 @@ namespace GameCore
             stringBuilder.Clear();
             stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
 
+            //TODO: 直接编译 StaticSetValue, 一步到位, 而不再是 StaticSetterId
             SetValue(StaticSetterId(stringBuilder.ToString()), Rpc.ObjectToBytes(value));
 
             return false;
