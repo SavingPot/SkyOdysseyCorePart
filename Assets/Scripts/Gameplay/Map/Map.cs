@@ -315,11 +315,11 @@ namespace GameCore
             return AddChunk(chunkIndexTo).GetBlock(pos, isBackground);
         }
 
-        public bool TryGetBlock(Vector2Int pos, bool isBackground, out Block b)
+        public bool TryGetBlock(Vector2Int pos, bool isBackground, out Block block)
         {
-            b = GetBlock(pos, isBackground);
+            block = GetBlock(pos, isBackground);
 
-            return b != null;
+            return block != null;
         }
 
         public void SetBlockCustomDataOL(Block block)
@@ -398,7 +398,7 @@ namespace GameCore
         public void SetBlockNet(Vector2Int pos, bool isBackground, string id, string customData) => Client.Send<NMSetBlock>(new(pos, isBackground, id, customData));
 
 #if UNITY_EDITOR
-        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editRegion) => SetBlock(pos, isBackground, ModFactory.CompareBlockDatum(block), null, editRegion);
+        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editRegion) => SetBlock(pos, isBackground, ModFactory.CompareBlockData(block), null, editRegion);
 #endif
 
         public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion)

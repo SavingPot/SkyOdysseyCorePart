@@ -256,7 +256,7 @@ namespace GameCore
                 throw;
             }
 #else
-            SetValue(InstanceSetId(stringBuilder.ToString(), __instance.varInstanceId), Rpc.ObjectToBytes(value));
+            SetValue(InstanceSetterId(stringBuilder.ToString(), __instance.varInstanceId), Rpc.ObjectToBytes(value));
 #endif
 
             return false;
@@ -300,7 +300,7 @@ namespace GameCore
                 throw;
             }
 #else
-            __result = Rpc.BytesToObject(vars[InstanceGetId(stringBuilder.ToString(), __instance.varInstanceId)].value);
+            __result = Rpc.BytesToObject(vars[InstanceGetterId(stringBuilder.ToString(), __instance.varInstanceId)].value);
 #endif
 
             return false;

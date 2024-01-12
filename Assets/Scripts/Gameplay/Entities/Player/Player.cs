@@ -172,10 +172,9 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("经验")] public int experience;
         [LabelText("是否控制背景"), BoxGroup("状态")] public bool isControllingBackground;
         [BoxGroup("属性"), LabelText("挖掘范围")] public float excavationRadius = 2.75f;
-        [BoxGroup("属性"), LabelText("掉落的Y位置")] public float fallenY;
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
         [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
-        [BoxGroup("属性"), LabelText("移动方块阻力")] public float movementBlockResistance = 0.95f;
+        [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
         public bool onGround;
 
         public bool askingForGeneratingRegion { get; private set; }
@@ -318,12 +317,11 @@ namespace GameCore
 
 
 
-
         /* -------------------------------------------------------------------------- */
         /*                                    临时数据                                    */
         /* -------------------------------------------------------------------------- */
         private float moveVecLastFrame;
-        private Collider2D[] itemPickUpObjectsDetectedTemp = new Collider2D[50];
+        private readonly Collider2D[] itemPickUpObjectsDetectedTemp = new Collider2D[40];
 
 
 
@@ -338,9 +336,8 @@ namespace GameCore
         public static float itemPickUpRadius = 2.5f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
-        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui;
+        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion;
         public const float playerDefaultGravity = 7f;
-        public static float fallenDamageHeight = 9;
 
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);
         public static float deathLowestColorFloat = 0.45f;
@@ -375,14 +372,12 @@ namespace GameCore
 
 
 
-        /* -------------------------------------------------------------------------- */
-        /*                                     动态方法                                    */
-        /* -------------------------------------------------------------------------- */
+
+
+
+
+
         #region Unity 回调
-        [ServerRpc] static void Mtd1(Creature c, NetworkConnection caller) { Debug.Log("Mtd1"); }
-        [ServerRpc] static void Mtd2(Player c, NetworkConnection caller) { Debug.Log("Mtd2"); }
-
-
 
         public override void InitAfterAwake()
         {
@@ -397,6 +392,7 @@ namespace GameCore
                 if (Init.save.pos != Vector2.zero)
                 {
                     transform.position = Init.save.pos;
+                    fallenY = transform.position.y;
                     hasSetPosBySave = true;
                 }
 
@@ -407,10 +403,6 @@ namespace GameCore
 
         protected override void Start()
         {
-            Debug.Log(this == null);
-            Mtd2(this, null);
-            Mtd1(this, null);
-
             base.Start();
 
             if (isLocalPlayer)
@@ -485,39 +477,8 @@ namespace GameCore
         {
             base.FixedUpdate();
 
-            if (isLocalPlayer)
-                LocalFixedUpdate();
-
             AutoSetPlayerOrientation(this);
         }
-
-        protected void LocalFixedUpdate()
-        {
-            FallingDamage(this);
-        }
-
-        public Action<Player> FallingDamage = caller =>
-        {
-            if (caller.rb.velocity.y >= 0)
-            {
-                float oldValue = caller.fallenY;
-                caller.fallenY = caller.transform.position.y;
-                float delta = oldValue - caller.fallenY;
-                float damageValue = (delta - fallenDamageHeight) * 0.75f;
-
-                //generatedFirstRegion 是防止初始区域 y<0 导致直接摔死
-                if (damageValue >= 2 && caller.generatedFirstRegion)
-                {
-                    caller.TakeDamage(damageValue);
-                }
-            }
-            // //如果下落了 100格 且下方 50格 无方块
-            // else if (!caller.isDead && caller.fallenY - caller.transform.position.y > 100 && !RayTools.Hit(caller.transform.position, Vector2.down, 50, Block.blockLayerMask))
-            // {
-            //     caller.health = 0;
-            //     caller.Death();
-            // }
-        };
 
         public override void SetOrientation(bool right)
         {
@@ -553,13 +514,37 @@ namespace GameCore
             {
                 Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
 
-                //如果在地面上并且点跳跃
+                /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
                 if (onGround && PlayerControls.Jump(this))
                     Jump();
 
+                /* ----------------------------------- 挖掘与攻击 ----------------------------------- */
                 if (PlayerControls.HoldingAttack(this))
-                    OnHoldAttack();
+                {
+                    //如果还在 攻击CD 就返回
+                    if (itemUseTime + (TryGetUsingItem()?.data?.useCD ?? ItemData.defaultUseCD) > Tools.time)
+                    {
+                        return;
+                    }
 
+                    //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的 && 方块不是液体
+                    if (InUseRadius() &&
+                        map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
+                        block.gameObject.activeInHierarchy &&
+                        !block.data.GetTag("ori:liquid").hasTag)
+                    {
+                        ExcavateBlock(block);
+                    }
+                    else if (PlayerControls.ClickingAttack(this))
+                    {
+                        OnStartAttack();
+                    }
+
+                    //设置时间
+                    itemUseTime = Tools.time;
+                }
+
+                /* ---------------------------------- 抛弃物品 ---------------------------------- */
                 if (PlayerControls.ThrowItem(this))
                     ServerThrowItem(usingItemIndex.ToString(), 1);
 
@@ -627,10 +612,7 @@ namespace GameCore
                     }
                 }
 
-                if (nameText)
-                {
-                    isControllingBackground = PlayerControls.IsControllingBackground(this);
-                }
+                isControllingBackground = PlayerControls.IsControllingBackground(this);
             }
 
             //血量低于 10 放心跳声, 死了就不播放声音
@@ -651,11 +633,6 @@ namespace GameCore
             }
 
             caller.gravity = playerDefaultGravity;
-
-            if (!caller.managerGame.generatedExistingRegions.Any(p => p.index == caller.regionIndex) || caller.isDead)
-            {
-                caller.gravity *= 0.05f;
-            }
         };
 
         protected virtual void LocalUpdate()
@@ -712,6 +689,7 @@ namespace GameCore
                     if (inventory.IsFull())
                         return;
 
+                    //TODO: 改成吸引 Drop 到玩家身旁
                     ServerAddItem(drop.itemData);
                     GAudio.Play(AudioID.PickUpItem);
 
@@ -891,8 +869,8 @@ namespace GameCore
 
                 NPC npc = (NPC)entity;
 
-                /* ------------------------------- 如果在光标互动范围内 ------------------------------- */ //TODO: Fix (问题是可以在任意地方点击到NPC)
-                if ((entity.transform.position.x - cursorPos.x).Abs() < npc.interactionSize.x / 2 && (entity.transform.position.y - cursorPos.y).Abs() < npc.interactionSize.y / 2)
+                /* ------------------------------- 如果在两倍的互动范围内  ------------------------------- */
+                if ((entity.transform.position.x - caller.transform.position.x).Abs() < npc.interactionSize.x && (entity.transform.position.y - caller.transform.position.y).Abs() < npc.interactionSize.y)
                 {
                     npc.PlayerInteraction(caller);
                     return;
@@ -996,29 +974,6 @@ namespace GameCore
 
 
 
-#if UNITY_EDITOR
-        [Button, ServerRpc] public static void ServerRpcTry(NetworkConnection caller = null) { Debug.Log(MethodGetter.GetCurrentMethodName()); }
-        [Button, ClientRpc] public static void ClientRpcTry(NetworkConnection caller = null) { Debug.Log(MethodGetter.GetCurrentMethodName()); }
-        [Button, ServerRpc] public static void ConnectionTry(NetworkConnection caller = null) { Debug.Log(MethodGetter.GetCurrentMethodName()); ConnectionOnClientTry(caller); }
-        [ConnectionRpc] public static void ConnectionOnClientTry(NetworkConnection caller) { Debug.Log(MethodGetter.GetCurrentMethodName()); }
-
-        [Button, ServerRpc] public static void ServerRpcTryParam1(Player param0, NetworkConnection caller = null) { Debug.Log($"{MethodGetter.GetCurrentMethodName()} :of {param0.playerName}"); }
-        [Button, ClientRpc] public static void ClientRpcTryParam1(Player param0, NetworkConnection caller = null) { if (param0 == null) { Debug.LogError("玩家参数为空"); return; } Debug.Log($"{MethodGetter.GetCurrentMethodName()} :of {param0.playerName}"); }
-        [Button, ServerRpc] public static void ConnectionTryParam1(Player param0, NetworkConnection caller = null) { Debug.Log($"{MethodGetter.GetCurrentMethodName()} :of {param0.playerName}"); ConnectionOnClientTryParam1(param0, caller); }
-        [ConnectionRpc] public static void ConnectionOnClientTryParam1(Player param0, NetworkConnection caller) { Debug.Log($"{MethodGetter.GetCurrentMethodName()} :of {param0.playerName}"); }
-
-        [Button, ServerRpc] public static void ServerRpcTryParam2(string param0, Player param1, NetworkConnection caller = null) { Debug.Log($"{param0} : {MethodGetter.GetCurrentMethodName()} :of {param1.playerName}"); }
-        [Button, ClientRpc] public static void ClientRpcTryParam2(string param0, Player param1, NetworkConnection caller = null) { Debug.Log($"{param0} : {MethodGetter.GetCurrentMethodName()} :of {param1.playerName}"); }
-        [Button, ServerRpc] public static void ConnectionTryParam2(string param0, Player param1, NetworkConnection caller = null) { Debug.Log($"{param0} : {MethodGetter.GetCurrentMethodName()} :of {param1.playerName}"); ConnectionOnClientTryParam2(param0, param1, caller); }
-        [ConnectionRpc] public static void ConnectionOnClientTryParam2(string param0, Player param1, NetworkConnection caller) { Debug.Log($"{param0} : {MethodGetter.GetCurrentMethodName()} :of {param1.playerName}"); }
-
-        [Button, ServerRpc] public static void ServerRpcTryParam3(string param0, int param1, Player param2, NetworkConnection caller = null) { Debug.Log($"{param0} : {param1.ToString()} : {MethodGetter.GetCurrentMethodName()} :of {param2.playerName}"); }
-        [Button, ClientRpc] public static void ClientRpcTryParam3(string param0, int param1, Player param2, NetworkConnection caller = null) { Debug.Log($"{param0} : {param1.ToString()} : {MethodGetter.GetCurrentMethodName()}:of {param2.playerName}"); }
-        [Button, ServerRpc] public static void ConnectionTryParam3(string param0, int param1, Player param2, NetworkConnection caller = null) { Debug.Log($"{param0} : {param1.ToString()} : {MethodGetter.GetCurrentMethodName()}:of {param2.playerName}"); ConnectionOnClientTryParam3(param0, param1, param2, caller); }
-        [ConnectionRpc] public static void ConnectionOnClientTryParam3(string param0, int param1, Player param2, NetworkConnection caller) { Debug.Log($"{param0} : {param1.ToString()} : {MethodGetter.GetCurrentMethodName()}:of {param2.playerName}"); }
-#endif
-
-
 
         public void OnNameChange(string newValue)
         {
@@ -1089,31 +1044,6 @@ namespace GameCore
                 leftFoot.armorSr.sprite = null;
                 rightFoot.armorSr.sprite = null;
             }
-        }
-
-        public void OnHoldAttack()
-        {
-            if (!isLocalPlayer || isDead)
-                return;
-
-            //如果还在 攻击CD 就返回
-            if (itemUseTime + (TryGetUsingItem()?.data?.useCD ?? ItemData.defaultUseCD) > Tools.time)
-            {
-                return;
-            }
-
-            //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的
-            if (InUseRadius() && map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) && block.gameObject.activeInHierarchy)
-            {
-                ExcavateBlock(block);
-            }
-            else
-            {
-                OnStartAttack();
-            }
-
-            //设置时间
-            itemUseTime = Tools.time;
         }
 
         /// <returns>鼠标是否在使用范围内</returns>
@@ -1279,6 +1209,7 @@ namespace GameCore
                         if (!hasSetPosBySave)
                             transform.position = region.spawnPoint.To2();
 
+                        fallenY = transform.position.y;
                         generatedFirstRegion = true;
                     }
                     //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
@@ -1417,7 +1348,7 @@ namespace GameCore
                     }
                     else
                     {
-                        rb.velocity = GetMovementVelocity(new(-rb.velocity.x * movementBlockResistance, 0));
+                        rb.velocity = GetMovementVelocity(new(-rb.velocity.x * blockFriction, 0));
                     }
                 }
 
@@ -1964,6 +1895,7 @@ namespace GameCore
         public static List<Player> all = new();
         public static Action<Player> OnAddPlayer = _ => { };
         public static Action<Player> OnRemovePlayer = _ => { };
+        public static float playerHungerThirstHurtTimer;
 
         public static void AddPlayer(Player player)
         {
@@ -1981,6 +1913,8 @@ namespace GameCore
         {
             if (Server.isServer)
             {
+                var frameTime = Performance.frameTime;
+
                 foreach (var player in all)
                 {
                     bool isMoving = player.isMoving;
@@ -1988,22 +1922,28 @@ namespace GameCore
                     float hungerValue = player.hungerValue;
                     float happinessValue = player.happinessValue;
 
-                    float thirstValueDelta = Performance.frameTime / 40;
-                    if (isMoving) thirstValueDelta += Performance.frameTime / 40;
+                    float thirstValueDelta = frameTime / 40;
+                    if (isMoving) thirstValueDelta += frameTime / 40;
                     player.thirstValue = thirstValue - thirstValueDelta;
 
-                    float hungerValueDelta = Performance.frameTime / 30;
-                    if (isMoving) hungerValueDelta += Performance.frameTime / 40;
+                    float hungerValueDelta = frameTime / 30;
+                    if (isMoving) hungerValueDelta += frameTime / 40;
                     player.hungerValue = hungerValue - hungerValueDelta;
 
-                    float happinessValueDelta = Performance.frameTime / 25;
-                    if (isMoving) happinessValueDelta += Performance.frameTime / 10;
-                    if (thirstValue <= 30) happinessValueDelta += Performance.frameTime / 30;
-                    if (hungerValue <= 30) happinessValueDelta += Performance.frameTime / 20;
+                    float happinessValueDelta = frameTime / 25;
+                    if (isMoving) happinessValueDelta += frameTime / 10;
+                    if (thirstValue <= 30) happinessValueDelta += frameTime / 30;
+                    if (hungerValue <= 30) happinessValueDelta += frameTime / 20;
                     player.happinessValue = happinessValue - happinessValueDelta;
 
-                    if (thirstValue <= 0 || hungerValue <= 0)
-                        player.health -= Performance.frameTime * 3; //TODO：定时受伤，而非一直扣血
+                    //每三秒扣一次血
+                    if (Tools.time >= playerHungerThirstHurtTimer)
+                    {
+                        playerHungerThirstHurtTimer = Tools.time + 5;
+
+                        if (thirstValue <= 0 || hungerValue <= 0)
+                            player.TakeDamage(5);
+                    }
                 }
             }
         }

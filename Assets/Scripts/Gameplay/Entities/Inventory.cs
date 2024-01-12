@@ -545,7 +545,6 @@ namespace GameCore
             }
         }
 
-        //TODO: Rename null to is null
         public static bool Null(Item item)
         {
             return string.IsNullOrWhiteSpace(item?.data?.id);
@@ -623,7 +622,7 @@ namespace GameCore
         public const float defaultDamage = 5;
         public const ushort defaultMaxCount = 32;
         public static float defaultExcavationStrength = 40;
-        public static float defaultUseCD = 0.15f;
+        public static float defaultUseCD = 0.2f;
 
 
 

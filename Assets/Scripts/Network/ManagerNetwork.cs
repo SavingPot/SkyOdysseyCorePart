@@ -236,7 +236,6 @@ namespace GameCore.High
                     GameObject player = Instantiate(playerPrefab);
                     player.name = $"Player {nm.playerName} [{conn.address}, id={conn.connectionId}]";
 
-                    //TODO: Move the player data set to here?
                     var init = player.GetComponent<EntityInit>();
                     init.generationId = EntityID.Player;
                     init.data = ModFactory.CompareEntity(EntityID.Player);

@@ -213,7 +213,6 @@ namespace GameCore
         public Joystick cursorJoystick;
         public ImageIdentity cursorImage;
         public ButtonIdentity attackButton;
-        public ButtonIdentity interactionButton;
         public ImageIdentity useItemButtonImage;
         public ButtonIdentity useItemButton;
         public ButtonIdentity craftingButton;
@@ -618,18 +617,6 @@ namespace GameCore
 
                 useItemButtonImage = GameUI.AddImage(UPC.middle, "ori:image.player_use_item_icon", null, useItemButton);
                 useItemButtonImage.sd = useItemButton.sd * 0.5f;
-            }
-
-            /* -------------------------------------------------------------------------- */
-            /*                                     互动                                     */
-            /* -------------------------------------------------------------------------- */
-            {
-                interactionButton = GameUI.AddButton(UPC.lowerLeft, "ori:button.player_interaction", GameUI.canvas.transform, "ori:player_interaction_button");
-                Component.Destroy(interactionButton.buttonText.gameObject);
-                interactionButton.sd = phoneUniversalSize;
-                interactionButton.SetAPosOnBySizeRight(moveJoystick, 150);
-                interactionButton.button.HideClickAction();
-                interactionButton.button.onClick.RemoveAllListeners();
             }
 
             /* -------------------------------------------------------------------------- */
@@ -1153,7 +1140,7 @@ namespace GameCore
             itemView.gridLayoutGroup.cellSize = new(cellSize, cellSize);
             itemView.gridLayoutGroup.spacing = spacing;
             itemView.scrollViewImage.color = Color.clear;
-            itemView.viewportImage.color =backpackColor;
+            itemView.viewportImage.color = backpackColor;
             itemView.content.sizeDelta = new(0, itemView.content.sizeDelta.y);
             itemView.content.anchoredPosition = new(-itemView.content.sizeDelta.x / 2, itemView.content.anchoredPosition.y);
 
@@ -1260,7 +1247,6 @@ namespace GameCore
                 SetUIHighest(cursorJoystick);
                 SetUIHighest(cursorImage);
                 SetUIHighest(attackButton);
-                SetUIHighest(interactionButton);
                 SetUIHighest(useItemButton);
                 SetUIHighest(craftingButton);
 
@@ -1299,7 +1285,6 @@ namespace GameCore
                 SetUIDisabled(cursorJoystick);
                 SetUIDisabled(cursorImage);
                 SetUIDisabled(attackButton);
-                SetUIDisabled(interactionButton);
                 SetUIDisabled(useItemButton);
                 SetUIDisabled(craftingButton);
             }
@@ -1879,6 +1864,7 @@ namespace GameCore
     public static class ItemInfoShower
     {
         private static ItemInfoUI uiInstance;
+        private static readonly StringBuilder stringBuilder = new();
 
         public static ItemInfoUI GetUI()
         {
@@ -1918,20 +1904,7 @@ namespace GameCore
             return uiInstance;
         }
 
-        public static ItemInfoUI Show(Item item)
-        {
-            ItemInfoUI ui = GetUI();
-            Vector2 pos = GControls.cursorPosInMainCanvas;
-            pos.x += ui.image.sd.x;
-            pos.y -= ui.image.sd.y;
-
-            ui.image.ap = pos;
-            ui.nameText.text.text = GameUI.CompareText(item.data.id).text;   //$"{GameUI.CompareText(item.basic.id).text} <size=60%>({item.basic.id})";
-            ui.detailText.text.text = $"<color=#E0E0E0>{GetDetailText(item)}</color>";
-
-            ui.image.gameObject.SetActive(true);
-            return ui;
-        }
+        public static ItemInfoUI Show(Item item) => Show(item.data);
 
         public static ItemInfoUI Show(ItemData item)
         {
@@ -1941,41 +1914,22 @@ namespace GameCore
             pos.y -= ui.image.sd.y;
 
             ui.image.ap = pos;
-            ui.nameText.text.text = GameUI.CompareText(item.id).text;
-            ui.detailText.text.text = $"<color=#E0E0E0>{GetDetailText(item)}</color>";
+            ui.nameText.text.text = GameUI.CompareText(item.id).text;   //$"{GameUI.CompareText(item.basic.id).text} <size=60%>({item.basic.id})";
+            ui.detailText.text.text = $"<color=#E0E0E0>{GetDetailText(item, stringBuilder.Clear())}</color>";
 
             ui.image.gameObject.SetActive(true);
             return ui;
         }
 
-        public static StringBuilder GetDetailText(Item item)
+        public static StringBuilder GetDetailText(Item item) => GetDetailText(item.data, stringBuilder);
+
+        public static StringBuilder GetDetailText(ItemData item, StringBuilder sb)
         {
-            StringBuilder sb = GetDetailTextWithoutDescription(item.data);
-
-            sb.AppendLine(string.Empty);
-            sb.AppendLine(GameUI.CompareText(item.data.description).text);
-
-            return sb;
-        }
-
-        public static StringBuilder GetDetailText(ItemData item)
-        {
-            StringBuilder sb = GetDetailTextWithoutDescription(item);
-
-            sb.AppendLine(string.Empty);
-            sb.Append(GameUI.CompareText(item.description).text);
-
-            return sb;
-        }
-
-        public static StringBuilder GetDetailTextWithoutDescription(ItemData item)
-        {
-            //TODO: Pool-ify
-            StringBuilder sb = new();
-
             sb.AppendLine(GameUI.CompareText("ori:item.damage").text.Replace("{value}", item.damage.ToString()));
             sb.AppendLine(GameUI.CompareText("ori:item.excavation_strength").text.Replace("{value}", item.excavationStrength.ToString()));
             sb.AppendLine(GameUI.CompareText("ori:item.use_cd").text.Replace("{value}", item.useCD.ToString()));
+            sb.AppendLine(string.Empty);
+            sb.Append(GameUI.CompareText(item.description).text);
 
             return sb;
         }

@@ -30,10 +30,10 @@ namespace GameCore
     [DisallowMultipleComponent, ChineseName("超级工具")]
     public class Tools : SingletonClass<Tools>
     {
+        public static float time;
         /// <summary>
         /// 每次调用 Time.deltaTime 时 Unity 都会计算, 所以使用 Performance.frameTime 比 Time.deltaTime 性能更高 (他们的输出结果一般一样)
         /// </summary>
-        public static float time;
         public static float deltaTime;
         public static float smoothDeltaTime;
         public static float fps;
@@ -149,6 +149,11 @@ namespace GameCore
 #else
             Debug.unityLogger.logEnabled = false;
 #endif
+        }
+
+        private void OnGUI()
+        {
+            GUILayout.Label($"FPS: {(int)smoothFps}");
         }
 
         public static void KillTweensOf(object obj)

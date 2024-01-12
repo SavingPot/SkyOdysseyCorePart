@@ -778,10 +778,28 @@ namespace GameCore
         /*                                  Static 方法                                 */
         /* -------------------------------------------------------------------------- */
 
-        public static Entity GetEntityByNetId(uint netIdToFind) => GetEntityByNetId<Entity>(netIdToFind);
+        public static Component GetEntityByNetId(uint netIdToFind, Type type)
+        {
+#if DEBUG
+            //uint.MaxValue 是我设定的无效值, 如果 netIdToFind 为 uint.MaxValue 是几乎不可能找到合适的 NetworkIdentity 的
+            if (!NetworkClient.spawned.TryGetValue(netIdToFind, out NetworkIdentity identity))
+            {
+                if (netIdToFind == uint.MaxValue)
+                    Debug.LogError($"无法找到无效实体 {type.FullName}");
+                else
+                    Debug.LogError($"无法找到实体 {type.FullName} {netIdToFind}");
+                return null;
+            }
+
+            return identity.GetComponent(type);
+#else
+            return NetworkClient.spawned[netIdToFind].GetComponent(type);
+#endif
+        }
 
         public static T GetEntityByNetId<T>(uint netIdToFind) where T : Entity
         {
+#if DEBUG
             //uint.MaxValue 是我设定的无效值, 如果 netIdToFind 为 uint.MaxValue 是几乎不可能找到合适的 NetworkIdentity 的
             if (!NetworkClient.spawned.TryGetValue(netIdToFind, out NetworkIdentity identity))
             {
@@ -789,18 +807,13 @@ namespace GameCore
                     Debug.LogError($"无法找到无效 {typeof(T).FullName}");
                 else
                     Debug.LogError($"无法找到 {typeof(T).FullName} {netIdToFind}");
-                Debug.Log(Tools.HighlightedStackTrace());
                 return null;
             }
 
             return identity.GetComponent<T>();
-        }
-
-        public static bool TryGetEntityByNetId(uint netIdToFind, out Entity result)
-        {
-            result = GetEntityByNetId(netIdToFind);
-
-            return result;
+#else
+            return NetworkClient.spawned[netIdToFind].GetComponent<T>();
+#endif
         }
 
         public static bool TryGetEntityByNetId<T>(uint netIdToFind, out T result) where T : Entity

@@ -9,7 +9,7 @@ namespace GameCore
     public class NPC : Creature
     {
         //TODO: 所有实体都可用 PlayerInteraction
-        public virtual Vector2 interactionSize { get; } = new(1, 1.7f);
+        public virtual Vector2 interactionSize { get; } = new(5, 5f);
 
         public virtual void PlayerInteraction(Player caller)
         {

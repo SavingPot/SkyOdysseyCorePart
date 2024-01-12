@@ -123,7 +123,6 @@ namespace GameCore
             }
         }
 
-        //TODO: 降低 Update 开销
         private void Update()
         {
             OnUpdate();
@@ -526,16 +525,6 @@ namespace GameCore
         //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMSetBlockMessage(NetworkConnection conn, NMSetBlock n)
         {
-            /* -------------------------------- 把方块添加到存档 -------------------------------- */
-            Chunk chunk = map.AddChunk(n.pos);
-            Vector2Int blockRegionPos = chunk.MapToRegionPos(n.pos);
-
-            //在区域中添加
-            Region region = GFiles.world.GetOrAddRegion(chunk.regionIndex);
-            region.AddPos(n.block, new(blockRegionPos.x, blockRegionPos.y), n.isBackground);
-
-
-
             //将消息转发给客户端
             Server.Send(n);
         }
@@ -565,7 +554,7 @@ namespace GameCore
             if (GScene.name != SceneNames.GameScene)
                 return;
 
-            map.SetBlock(n.pos, n.isBackground, n.block == null ? null : ModFactory.CompareBlockDatum(n.block), n.customData, false);
+            map.SetBlock(n.pos, n.isBackground, n.block == null ? null : ModFactory.CompareBlockData(n.block), n.customData, true);
         }
 
         //当服务器收到 NMPos 消息时的回调
@@ -574,7 +563,6 @@ namespace GameCore
             if (GScene.name != SceneNames.GameScene)
                 return;
 
-            //TODO: 完善这个
             if (map.TryGetBlock(n.pos, n.isBackground, out Block block))
             {
                 Debug.Log($"n: {n.pos}, {n.isBackground}");
@@ -727,7 +715,7 @@ namespace GameCore
 
             foreach (var save in region.saves)
             {
-                BlockData block = ModFactory.CompareBlockDatum(save.blockId);
+                BlockData block = ModFactory.CompareBlockData(save.blockId);
 
                 for (int i = 0; i < save.locations.Count; i++)
                 {
@@ -902,7 +890,7 @@ namespace GameCore
                             if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
                             {
                                 if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                   islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground).save.blockId == g.attached.blockId
+                                   islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground).save?.blockId == g.attached.blockId
                                     )
                                 {
                                     foreach (var range in g.ranges)
@@ -1007,7 +995,7 @@ namespace GameCore
                             if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
                             {
                                 if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground).save.blockId == g.attached.blockId
+                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground).save?.blockId == g.attached.blockId
                                     )
                                 {
                                     foreach (var range in g.ranges)
@@ -1052,6 +1040,9 @@ namespace GameCore
                     var middleX = Region.GetMiddleX(generation.index);
                     generation.region.spawnPoint = new(middleX, wallHighestPointFunction[middleX] + 3);
                 }
+
+                //TODO：检测矿石的位置，把单个矿石变成矿石团块
+                IslandGeneration.OreClumpsGeneration(islandGeneration, AddBlockInTheIslandForAreas);
 
                 //生成战利品
                 IslandGeneration.LootGeneration(islandGeneration, wallHighestPointFunction, AddBlockInTheIsland);
@@ -1351,6 +1342,37 @@ namespace GameCore
                 }
             };
         }
+
+        public static Action<IslandGeneration, Action<string , Vector2Int , Vector3Int[]>> OreClumpsGeneration = (generation, AddBlockInTheIslandForAreas) =>
+        {
+            foreach (var save in generation.regionGeneration.region.saves)
+            {
+                var blockData = ModFactory.CompareBlockData(save.blockId);
+
+                //找到矿石
+                if (blockData != null)
+                {
+                    var tag = blockData.GetValueTagToInt("ori:ore", 10);
+
+                    if (tag.hasTag)
+                    {
+                        foreach (var location in save.locations)
+                        {
+                            List<Vector3Int> locations = new() { Vector3Int.zero };
+
+                            // tagValue 决定了团块有多大
+                            for (int i = 0; i < tag.tagValue; i++)
+                            {
+                                var randomLocation = locations.Extract();
+                                locations.Add(new(randomLocation.x + (Tools.randomBool ? -1 : 1), randomLocation.y + (Tools.randomBool ? -1 : 1)));
+                            }
+
+                            AddBlockInTheIslandForAreas(save.blockId, location.pos, locations.ToArray());
+                        }
+                    }
+                }
+            }
+        };
 
         public static Action<IslandGeneration, Dictionary<int, int>, Action<string, Vector2Int, bool, string>> LootGeneration = (generation, wallHighestPointFunction, AddBlockInIsland) =>
         {

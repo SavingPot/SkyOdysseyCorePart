@@ -61,7 +61,7 @@ namespace GameCore
             {
                 var netId = info.GetUInt32("netId");
 
-                return Entity.GetEntityByNetId(netId);
+                return Entity.GetEntityByNetId<Entity>(netId);
             }
         }
 
@@ -91,11 +91,9 @@ namespace GameCore
 
         public class PlayerSurrogate : ISerializationSurrogate<Player>
         {
-            //TODO: 貌似所有的实体都无法被正常的网络传输
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
                 var entity = (Player)obj;
-                Debug.Log($"Write {entity?.netId}");
                 info.AddValue("netId", entity.netId);
             }
 
@@ -103,7 +101,6 @@ namespace GameCore
             {
                 var netId = info.GetUInt32("netId");
 
-                Debug.Log($"Read {netId}");
                 return Entity.GetEntityByNetId<Player>(netId);
             }
         }

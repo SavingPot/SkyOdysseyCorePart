@@ -235,11 +235,11 @@ namespace GameCore
             return null;
         }
 
-        [ChineseName("在已加载的全局模组中匹配方块数据")] public static BlockData CompareBlockDatum(string id) => CompareBlockDatum(id, mods);
+        [ChineseName("在已加载的全局模组中匹配方块数据")] public static BlockData CompareBlockData(string id) => CompareBlockData(id, mods);
 
-        [ChineseName("在指定的模组中匹配方块数据")] public static BlockData CompareBlockDatum(string id, Mod targetMod) => CompareBlockDatum(id, new[] { targetMod });
+        [ChineseName("在指定的模组中匹配方块数据")] public static BlockData CompareBlockData(string id, Mod targetMod) => CompareBlockData(id, new[] { targetMod });
 
-        [ChineseName("在指定的模组中匹配方块数据")] public static BlockData CompareBlockDatum(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.blocks, new(id));
+        [ChineseName("在指定的模组中匹配方块数据")] public static BlockData CompareBlockData(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.blocks, new(id));
 
 
         [ChineseName("在已加载的全局模组中匹配群系")] public static BiomeData CompareBiome(string id) => CompareBiome(id, mods);

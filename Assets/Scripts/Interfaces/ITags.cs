@@ -46,9 +46,9 @@ namespace GameCore
             return new(false);
         }
 
-        public static ValueTag<int> GetValueTagToInt(this ITags t, string id)
+        public static ValueTag<int> GetValueTagToInt(this ITags t, string id, int defaultValue = 0)
         {
-            return GetValueTag<int>(t, id, str => str.ToInt(), 0);
+            return GetValueTag<int>(t, id, str => str.ToInt(), defaultValue);
         }
 
         public static ValueTag<T> GetValueTag<T>(this ITags t, string id, Func<string, T> func, T defaultValue)

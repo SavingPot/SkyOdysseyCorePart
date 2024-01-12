@@ -76,6 +76,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  clientStarted: 0
   sceneId: 0
   _assetId: 4220958520
   serverOnly: 0
@@ -142,7 +143,6 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   target: {fileID: 5149061481135640842}
-  clientAuthority: 0
   syncPosition: 1
   syncRotation: 1
   syncScale: 1
@@ -156,6 +156,7 @@ MonoBehaviour:
   showOverlay: 0
   overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
   onlySyncOnChange: 0
+  compressRotation: 1
   bufferResetMultiplier: 5
   positionSensitivity: 0.01
   rotationSensitivity: 0.01
@@ -196,6 +197,11 @@ MonoBehaviour:
     colliderOffset: {x: 0, y: 0}
     maxHealth: 0
     lifetime: 0
+    searchRadius: 0
+    searchRadiusSqr: 0
+    normalAttackRadius: 0
+    normalAttackDamage: 0
+    normalAttackCD: 0
     drops: []
   save:
     id: 

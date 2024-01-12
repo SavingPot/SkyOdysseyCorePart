@@ -25,7 +25,7 @@ namespace GameCore.High
                 return;
             }
 
-            Debug.Log($"新客户端接入, 地址为 {conn.address}, 目前共有 {NetworkServer.connections.Count} 名玩家");
+            Debug.Log($"新客户端接入, 目前共有 {NetworkServer.connections.Count} 名玩家");
         };
         public static event Action<NetworkConnectionToClient> OnClientDisconnect = conn =>
         {

@@ -7,6 +7,8 @@ using SP.Tools;
 using SP.Tools.Unity;
 using System;
 using System.Collections.Generic;
+using Unity.Burst;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -24,7 +26,7 @@ namespace GameCore
         [HideInInspector] public GameObject model;
         [BoxGroup("属性"), LabelText("移速")] public float moveSpeed = 3;
         [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.18f;
-        [BoxGroup("属性"), LabelText("移动空气阻力")] public float movementAirResistance = 0.95f;
+        [BoxGroup("属性"), LabelText("空气摩擦力")] public float airFriction = 0.95f;
         public AnimWeb animWeb = null;
 
 
@@ -67,6 +69,8 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         [BoxGroup("属性"), LabelText("跳跃计时器"), ReadOnly] public float jumpTimer;
         [BoxGroup("属性"), LabelText("跳跃CD"), ReadOnly] public float jumpCD = 0.3f;
+        [BoxGroup("属性"), LabelText("掉落的Y位置")] public float fallenY;
+        public static float fallenDamageHeight = 9;
 
 
 
@@ -86,7 +90,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public static void BindHumanAnimations(Creature creature)
         {
-            float attackAnimTime = 0.3f;
+            float attackAnimTime = 0.2f;
 
 
             creature.animWeb = new();
@@ -269,15 +273,20 @@ namespace GameCore
 
 
 
+        /// <summary>
+        /// 注：这个方法耗时并不高，无需过度优化
+        /// </summary>
+        /// <param name="movementDirection"></param>
+        /// <returns></returns>
         public Vector2 GetMovementVelocity(Vector2 movementDirection)
         {
             float max = velocityFactor();
             float acceleration = max * accelerationMultiple;
 
-            float xVelocity = Mathf.Abs(rb.velocity.x) > max ? rb.velocity.x : (rb.velocity.x + movementDirection.x * acceleration);
-            float yVelocity = Mathf.Abs(rb.velocity.y) > max ? rb.velocity.y : (rb.velocity.y + movementDirection.y * acceleration);
+            float xVelocity = Math.Abs(rb.velocity.x) > max ? rb.velocity.x : (rb.velocity.x + movementDirection.x * acceleration);
+            float yVelocity = Math.Abs(rb.velocity.y) > max ? rb.velocity.y : (rb.velocity.y + movementDirection.y * acceleration);
 
-            return new(xVelocity * movementAirResistance, yVelocity * movementAirResistance);
+            return new(xVelocity * airFriction, yVelocity * airFriction);
         }
 
 
@@ -298,7 +307,7 @@ namespace GameCore
             OnStartMovementAction();
         }
 
-        public Action OnStartMovementAction = () => {  };
+        public Action OnStartMovementAction = () => { };
 
 
 
@@ -330,6 +339,24 @@ namespace GameCore
             base.FixedUpdate();
 
             Movement();
+
+            if (isLocalPlayer)
+            {
+                //摔落伤害
+                if (rb && rb.velocity.y >= 0)
+                {
+                    float fallingStartPoint = fallenY;
+                    fallenY = transform.position.y;
+                    float delta = fallingStartPoint - fallenY;
+                    float damageValue = (delta - fallenDamageHeight) * 0.9f;
+
+                    //generatedFirstRegion 是防止初始区域 y<0 导致直接摔死
+                    if (damageValue >= 2)
+                    {
+                        TakeDamage(damageValue);
+                    }
+                }
+            }
         }
 
 
@@ -378,7 +405,7 @@ namespace GameCore
         {
             model = new("model");
             model.transform.SetParent(transform);
-            model.transform.localPosition = Vector2.zero;
+            model.transform.SetLocalPositionAndRotation(Vector2.zero, Quaternion.identity);
         }
 
         public virtual CreatureBodyPart AddBodyPart(string partName, Sprite sprite, Vector2 jointExtraOffset, int sortingOrder, CreatureBodyPart parent, BodyPartType type = BodyPartType.Body, Vector2? textureOffset = null)

@@ -12,7 +12,7 @@ namespace GameCore
         public Transform targetTransform;
         public float searchTime = float.NegativeInfinity;
         public float attackTimer;
-        public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: °üº¬ ¶¯»­µÄlayer ĞÅÏ¢
+        public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: åŒ…å« åŠ¨ç”»çš„layer ä¿¡æ¯
 
 
 
@@ -22,7 +22,7 @@ namespace GameCore
 
         public Func<Enemy, Transform> FindTarget = (enemy) =>
         {
-            //ËÑË÷ CD 3s
+            //æœç´¢ CD 3s
             if (Tools.time < enemy.searchTime + 3)
                 return null;
 
@@ -30,7 +30,7 @@ namespace GameCore
 
             foreach (var player in PlayerCenter.all)
             {
-                if ((player.transform.position - enemy.transform.position).sqrMagnitude <= enemy.data.searchRadiusSqr)
+                if ((player.transform.position - enemy.transform.position).sqrMagnitude <= enemy.data.searchRadiusSqr && !player.isDead)
                 {
                     return player.transform;
                 }
@@ -46,23 +46,23 @@ namespace GameCore
         {
             base.ServerUpdate();
 
-            //¼ì²éÄ¿±ê
+            //æ£€æŸ¥ç›®æ ‡
             if (targetTransform)
             {
-                #region ÆÕÍ¨¹¥»÷
+                #region æ™®é€šæ”»å‡»
 
                 if (!isDead)
                 {
-                    //ÎªÁËĞÔÄÜÊ¹ÓÃ x - x, y - y ¶ø²»ÊÇ Vector2.Distance()
+                    //ä¸ºäº†æ€§èƒ½ä½¿ç”¨ x - x, y - y è€Œä¸æ˜¯ Vector2.Distance()
                     float disX = Mathf.Abs(transform.position.x - targetTransform.position.x);
                     float disY = Mathf.Abs(transform.position.y - targetTransform.position.y);
 
-                    //ÔÚ¹¥»÷·¶Î§ÄÚ, ²¢ÇÒ CD ÒÑ¹ı
+                    //åœ¨æ”»å‡»èŒƒå›´å†…, å¹¶ä¸” CD å·²è¿‡
                     if (disX <= data.normalAttackRadius && disY <= data.normalAttackRadius && Tools.time >= attackTimer)
                     {
                         attackTimer = Tools.time + data.normalAttackCD;
 
-                        //ÉèÖÃ¶¯»­
+                        //è®¾ç½®åŠ¨ç”»
                         if (animWeb != null)
                         {
                             foreach (var animId in attackAnimations)
@@ -90,7 +90,7 @@ namespace GameCore
         {
             if (!isServer)
             {
-                Debug.LogWarning("²»Ó¦¸ÃÔÚ¿Í»§¶ËÑ°ÕÒÄ¿±ê!");
+                Debug.LogWarning("ä¸åº”è¯¥åœ¨å®¢æˆ·ç«¯å¯»æ‰¾ç›®æ ‡!");
                 return;
             }
 

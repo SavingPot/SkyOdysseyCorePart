@@ -22,17 +22,17 @@ namespace GameCore
         public TweenCallback perLoopCompleteCallback = () => { };
         protected IEnumerator playingCoroutine;
         protected Tween playingTween;
-        protected Action killTweensOnStop;
 
         public void Stop()
         {
+            /* ---------------------------------- 停止播放 ---------------------------------- */
             if (playingCoroutine != null)
                 CoroutineStarter.instance.StopCoroutine(playingCoroutine);
 
-            if (playingTween != null)
-                playingTween.Kill();
+            playingTween?.Kill();
+            /* ----------------------------------------------------------------------------- */
 
-            killTweensOnStop?.Invoke();
+
             isPlaying = false;
         }
 
@@ -96,7 +96,6 @@ namespace GameCore
 
                         playingTween = tween;
 
-                        //TODO: 支持播放时根据 forceStopped 直接打断
                         yield return tween.WaitForCompletion();
 
                         //杀死片段的 Tween
@@ -119,7 +118,6 @@ namespace GameCore
 
                         playingTween = tween;
 
-                        //TODO: 支持播放时根据 forceStopped 直接打断
                         yield return tween.WaitForCompletion();
 
                         //杀死片段的 Tween

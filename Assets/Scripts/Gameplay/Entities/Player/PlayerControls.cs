@@ -152,6 +152,14 @@ namespace GameCore
                 _ => false
             };
 
+        public static Func<Player, bool> ClickingAttack = (p) => GControls.mode switch
+            {
+                ControlMode.Touchscreen => p.pui != null && p.pui.attackButton && p.pui.attackButton.button.wasPressedThisFrame,
+                ControlMode.KeyboardAndMouse => Mouse.current?.leftButton?.wasPressedThisFrame ?? false,
+                ControlMode.Gamepad => Gamepad.current?.rightTrigger?.wasPressedThisFrame ?? false,
+                _ => false
+            };
+
         public static Func<Player, bool> ThrowItem = (p) => GControls.mode switch
             {
                 ControlMode.Touchscreen => false,
