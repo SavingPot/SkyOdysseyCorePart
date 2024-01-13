@@ -177,10 +177,18 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
         public bool onGround;
 
+        #region 区域生成
+
         public bool askingForGeneratingRegion { get; private set; }
         public float askingForGeneratingRegionTime { get; private set; } = float.NegativeInfinity;
         public bool generatedFirstRegion;
         private bool hasSetPosBySave;
+        bool regionGenerationIsFirstGeneration;
+        List<BlockSave> regionGenerationSaves = null;
+        int regionGenerationBlocksCount;
+        Region regionGenerationRegion = null;
+
+        #endregion
 
 
 
@@ -333,7 +341,7 @@ namespace GameCore
         public static int playerLayer { get; private set; }
         public static int playerLayerMask { get; private set; }
         public static int playerOnGroundLayerMask { get; private set; }
-        public static float itemPickUpRadius = 2.5f;
+        public static float itemPickUpRadius = 1.5f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion;
@@ -392,7 +400,7 @@ namespace GameCore
                 if (Init.save.pos != Vector2.zero)
                 {
                     transform.position = Init.save.pos;
-                    fallenY = transform.position.y;
+                    fallenY = Init.save.pos.y;
                     hasSetPosBySave = true;
                 }
 
@@ -870,7 +878,9 @@ namespace GameCore
                 NPC npc = (NPC)entity;
 
                 /* ------------------------------- 如果在两倍的互动范围内  ------------------------------- */
-                if ((entity.transform.position.x - caller.transform.position.x).Abs() < npc.interactionSize.x && (entity.transform.position.y - caller.transform.position.y).Abs() < npc.interactionSize.y)
+                if ((entity.transform.position.x - caller.transform.position.x).Abs() < npc.interactionSize.x &&
+                    (entity.transform.position.y - caller.transform.position.y).Abs() < npc.interactionSize.y &&
+                    npc.mainCollider.IsInCollider(caller.cursorWorldPos))
                 {
                     npc.PlayerInteraction(caller);
                     return;
@@ -1146,9 +1156,48 @@ namespace GameCore
         [Button]
         public void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme = null)
         {
+            if (regionGenerationSaves != null || regionGenerationRegion != null)
+            {
+                Debug.LogError("正在生成区域, 请等待");
+                return;
+            }
+
+            //初始化资源
             askingForGeneratingRegion = true;
+            regionGenerationSaves = new();
 
             ServerGenerateRegionCore(index, isFirstGeneration, specificTheme);
+            StartCoroutine(IEWaitForRegionSegments());
+        }
+
+        IEnumerator IEWaitForRegionSegments()
+        {
+            yield return new WaitUntil(() => regionGenerationRegion != null);
+            yield return new WaitUntil(() => regionGenerationSaves.Count == regionGenerationBlocksCount);
+
+            regionGenerationRegion.blocks = regionGenerationSaves;
+
+            Debug.Log($"收到服务器回调, 正在生成已有区域 {region.index}");
+
+            GM.instance.GenerateExistingRegion(region, () =>
+            {
+                if (regionGenerationIsFirstGeneration)
+                {
+                    //如果先前没获取过位置, 则将玩家的位置设置到该区域出生点
+                    if (!hasSetPosBySave)
+                        transform.position = region.spawnPoint.To2();
+
+                    fallenY = transform.position.y;
+                    generatedFirstRegion = true;
+                }
+                //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
+            }, null, (ushort)(GFiles.settings.performanceLevel * (regionGenerationIsFirstGeneration ? 4 : 0.8f)));
+
+
+            //清理资源
+            askingForGeneratingRegion = false;
+            regionGenerationRegion = null;
+            regionGenerationSaves = null;
         }
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
@@ -1164,7 +1213,6 @@ namespace GameCore
                     //如果没有则生成新的区域
                     GM.instance.GenerateNewRegion(index, specificTheme);
 
-                    //如果有直接让服务器生成
                     lock (GFiles.world.regionData)
                     {
                         foreach (Region region in GFiles.world.regionData)
@@ -1173,17 +1221,35 @@ namespace GameCore
                             {
                                 MethodAgent.RunOnMainThread(() =>
                                 {
-                                    //* 如果是客户端发送的申请: 服务器生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
-                                    if (!isLocalPlayer)
-                                        GM.instance.GenerateExistingRegion(
-                                            region,
-                                            () => ConnectionGenerateRegion(region, isFirstGeneration, caller),
-                                            () => ConnectionGenerateRegion(region, isFirstGeneration, caller),
-                                            (ushort)(GFiles.settings.performanceLevel / 2)
-                                        );
+                                    //? 因为直接发送一个 region 实在太大了，所以我们不得不将他们分成一个个的 BlockSave
+                                    void ConnectionGenerate()
+                                    {
+                                        var copy = region.ShallowCopy();
+                                        copy.blocks = null;
+
+                                        ConnectionGenerateRegionTotal(copy, region.blocks.Count, isFirstGeneration, caller);
+
+                                        foreach (var segment in region.blocks)
+                                        {
+                                            ConnectionGenerateRegion(segment, caller);
+                                        }
+                                    }
+
                                     //* 如果是服务器发送的申请: 服务器生成
+                                    if (isLocalPlayer)
+                                    {
+                                        ConnectionGenerate();
+                                    }
+                                    //* 如果是客户端发送的申请: 服务器先生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
                                     else
-                                        ConnectionGenerateRegion(region, isFirstGeneration, caller);
+                                    {
+                                        GM.instance.GenerateExistingRegion(
+                                                region,
+                                                () => ConnectionGenerate(),
+                                                () => ConnectionGenerate(),
+                                                (ushort)(GFiles.settings.performanceLevel / 2)
+                                            );
+                                    }
                                 });
 
                                 break;
@@ -1194,29 +1260,19 @@ namespace GameCore
             }, true);
         }
 
+
         [ConnectionRpc]
-        void ConnectionGenerateRegion(Region region, bool isFirstGeneration, NetworkConnection caller)
+        void ConnectionGenerateRegionTotal(Region region, int regionToGenerateBlocksCount, bool isFirstGeneration, NetworkConnection caller)
         {
-            MethodAgent.TryRun(() =>
-            {
-                Debug.Log($"收到服务器回调, 正在生成已有区域 {region.index}");
+            this.regionGenerationBlocksCount = regionToGenerateBlocksCount;
+            this.regionGenerationIsFirstGeneration = isFirstGeneration;
+            regionGenerationRegion = region;
+        }
 
-                GM.instance.GenerateExistingRegion(region, () =>
-                {
-                    if (isFirstGeneration)
-                    {
-                        //如果先前没获取过位置, 则将玩家的位置设置到该区域出生点
-                        if (!hasSetPosBySave)
-                            transform.position = region.spawnPoint.To2();
-
-                        fallenY = transform.position.y;
-                        generatedFirstRegion = true;
-                    }
-                    //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
-                }, null, (ushort)(GFiles.settings.performanceLevel * (isFirstGeneration ? 4 : 0.8f)));
-
-                askingForGeneratingRegion = false;
-            }, true);
+        [ConnectionRpc]
+        void ConnectionGenerateRegion(BlockSave block, NetworkConnection caller)
+        {
+            regionGenerationSaves.Add(block);
         }
 
         #endregion
@@ -1305,6 +1361,10 @@ namespace GameCore
             else
                 move = PlayerControls.Move(this);
 
+
+
+
+
             onGround = false;
             for (int i = 0; i < OnGroundHits.Length; i++)
             {
@@ -1335,6 +1395,10 @@ namespace GameCore
                 }
             }
 
+
+
+            
+
             if (isLocalPlayer && !isDead)
             {
                 //设置速度
@@ -1361,12 +1425,6 @@ namespace GameCore
                 {
                     ServerOnStartMovement();
                 }
-            }
-
-            if (isServer)
-            {
-                if (isDead)
-                    isMoving = false;
             }
 
             //用于在下一帧检测是不是刚刚停止或开始移动

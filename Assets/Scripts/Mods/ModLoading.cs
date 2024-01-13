@@ -184,8 +184,8 @@ namespace GameCore
                 {
                     temp.jsonFormatWhenLoad = "0.7.1";
 
-                    temp.id = t?["id"]?.ToString();
-                    temp.count = Convert.ToByte(t?["count"]?.ToString()?.ToInt() ?? 1);
+                    temp.id = t["id"]?.ToString();
+                    temp.count = Convert.ToByte(t["count"]?.ToString()?.ToInt() ?? 1);
                 }
 
                 ts.Add(temp);

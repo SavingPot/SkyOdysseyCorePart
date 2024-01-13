@@ -270,6 +270,14 @@ namespace GameCore
 #endif
         }
 
+        protected override void ServerUpdate()
+        {
+            base.ServerUpdate();
+
+            if (isDead)
+                isMoving = false;
+        }
+
 
 
 
@@ -294,10 +302,11 @@ namespace GameCore
 
 
 
-        [ServerRpc]
+        [ServerRpc, Button]
         protected void ServerOnStartMovement(NetworkConnection caller = null)
         {
             isMoving = true;
+            isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
             ClientOnStartMovement();
         }
 
@@ -321,6 +330,7 @@ namespace GameCore
         protected void ServerOnStopMovement(NetworkConnection caller = null)
         {
             isMoving = false;
+            isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
             ClientOnStopMovement();
         }
 

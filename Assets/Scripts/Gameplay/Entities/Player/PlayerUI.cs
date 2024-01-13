@@ -854,7 +854,7 @@ namespace GameCore
                 craftingApplyButton.gameObject.SetActive(false);
 
                 //制作原料
-                GenerateSidebar(SidebarType.Right, "ori:scrollview.crafting_stuff", 70, 210, Vector2.zero, "ori:crafting_result", "ori:sidebar_sign.crafting_stuff", out craftingStuffView, out _, out _);
+                GenerateSidebar(SidebarType.Right, "ori:scrollview.crafting_stuff", 70, 70 * 3 + 20, Vector2.zero, "ori:crafting_result", "ori:sidebar_sign.crafting_stuff", out craftingStuffView, out _, out _);
                 craftingStuffView.CustomMethod += (type, _) =>
                 {
                     type ??= "refresh";
@@ -901,7 +901,7 @@ namespace GameCore
                 craftingStuffView.gameObject.SetActive(false);
 
                 //制作结果
-                GenerateSidebar(SidebarType.Left, "ori:scrollview.crafting_results", 70, 210, Vector2.zero, "ori:crafting_result", "ori:sidebar_sign.crafting_results", out craftingResultView, out _, out _);
+                GenerateSidebar(SidebarType.Left, "ori:scrollview.crafting_results", 70, 70 * 3 + 20, Vector2.zero, "ori:crafting_result", "ori:sidebar_sign.crafting_results", out craftingResultView, out _, out _);
                 craftingResultView.CustomMethod += (type, _) =>
                 {
                     type ??= "refresh";
@@ -1112,7 +1112,7 @@ namespace GameCore
             Right,
         }
 
-        public void GenerateSidebar(SidebarType type, string id, float cellSize, int sidebarSizeX, Vector2 spacing, string texture, string signTextureId, out ScrollViewIdentity itemView, out ImageIdentity signImageBackground, out ImageIdentity signImage)
+        public void GenerateSidebar(SidebarType type, string id, float cellSize, int sidebarSizeX, Vector2 cellSpacing, string texture, string signTextureId, out ScrollViewIdentity itemView, out ImageIdentity signImageBackground, out ImageIdentity signImage)
         {
             //桶的物品视图
             itemView = GameUI.AddScrollView(UPC.middle, id, backpackMask);
@@ -1138,7 +1138,7 @@ namespace GameCore
 
             itemView.gridLayoutGroup.childAlignment = TextAnchor.UpperCenter;
             itemView.gridLayoutGroup.cellSize = new(cellSize, cellSize);
-            itemView.gridLayoutGroup.spacing = spacing;
+            itemView.gridLayoutGroup.spacing = cellSpacing;
             itemView.scrollViewImage.color = Color.clear;
             itemView.viewportImage.color = backpackColor;
             itemView.content.sizeDelta = new(0, itemView.content.sizeDelta.y);

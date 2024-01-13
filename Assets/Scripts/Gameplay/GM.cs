@@ -680,7 +680,7 @@ namespace GameCore
                 Debug.LogWarning($"区域 {index} 不存在");
         }
 
-        public void GenerateExistingRegion(Region region, Action afterGenerating = null, Action ifGenerated = null, ushort waitScale = 80)
+        public void GenerateExistingRegion(Region region, Action afterGenerating, Action ifGenerated, ushort waitScale)
         {
             StartCoroutine(IEGenerateExistingRegion(region, afterGenerating, ifGenerated, waitScale));
         }
@@ -697,8 +697,6 @@ namespace GameCore
                 yield break;
             }
 
-            Debug.Log($"开始生成已有区域 {region.index}");
-
             generatingExistingRegion = true;
 
             GameCallbacks.CallBeforeGeneratingExistingRegion(region);
@@ -713,7 +711,7 @@ namespace GameCore
             int xDelta = Region.GetMiddleX(region.index);
             int yDelta = Region.GetMiddleY(region.index);
 
-            foreach (var save in region.saves)
+            foreach (var save in region.blocks)
             {
                 BlockData block = ModFactory.CompareBlockData(save.blockId);
 
@@ -721,7 +719,7 @@ namespace GameCore
                 {
                     BlockSave_Location location = save.locations[i];
 
-                    Map.instance.SetBlock(new(location.pos.x + xDelta, location.pos.y + yDelta), location.isBackground, block, location.customData, false);
+                    Map.instance.SetBlock(new(location.x + xDelta, location.y + yDelta), save.isBg, block, location.cd, false);
 
                     //定时 Sleep 防止游戏卡死
                     if (i % waitScale == 0)
@@ -808,12 +806,8 @@ namespace GameCore
 
             Vector2Int[] islandCenterPoints = islandCentersTemp.ToArray();
 
-            Task[] tasks = new Task[islandCenterPoints.Length];
-
-            Parallel.For(0, islandCenterPoints.Length, index =>
+            foreach (var centerPoint in islandCenterPoints)
             {
-                var centerPoint = islandCenterPoints[index];
-
                 IslandGeneration islandGeneration = generation.NewIsland(centerPoint == Vector2Int.zero);
                 BiomeData_Block[] directBlocks;
                 BiomeData_Block[] perlinBlocks;
@@ -848,21 +842,21 @@ namespace GameCore
                 unexpectedBlocks = unexpectedBlocksTemp.ToArray();
 
 
-                void AddBlockInTheIsland(string blockId, Vector2Int pos, bool isBackground, string customData = null)
+                void AddBlockInTheIsland(string blockId, int x, int y, bool isBackground, string customData = null)
                 {
                     //? 添加到区域生成，需要根据岛的中心位置做偏移，而在添加到岛屿生成则不需要
-                    islandGeneration.regionGeneration.region.AddPos(blockId, pos + centerPoint, isBackground, true, customData);
+                    islandGeneration.regionGeneration.region.AddPos(blockId, x + centerPoint.x, y + centerPoint.y, isBackground, true, customData);
 
-                    blockAdded.Add((pos, isBackground)); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
+                    blockAdded.Add((new(x, y), isBackground)); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
                 }
 
-                void AddBlockInTheIslandForAreas(string blockId, Vector2Int pos, Vector3Int[] areas)
+                void AddBlockInTheIslandForAreas(string blockId, int x, int y, Vector3Int[] areas)
                 {
-                    islandGeneration.regionGeneration.region.AddPos(blockId, pos + centerPoint, areas, true); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
+                    islandGeneration.regionGeneration.region.AddPos(blockId, x + centerPoint.x, y + centerPoint.y, areas, true); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
 
                     foreach (var item in areas)
                     {
-                        Vector2Int actualPos = new(pos.x + item.x, pos.y + item.y);
+                        Vector2Int actualPos = new(x + item.x, y + item.y);
                         bool actualIsBackground = item.z < 0;
 
                         for (int c = 0; c < blockAdded.Count; c++)
@@ -882,15 +876,12 @@ namespace GameCore
                 {
                     for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
                     {
-                        //当前遍历到的点
-                        Vector2Int pos = new(x, y);
-
                         foreach (var g in directBlocks)
                         {
                             if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
                             {
                                 if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                   islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground).save?.blockId == g.attached.blockId
+                                   islandGeneration.regionGeneration.region.GetBlock(x + g.attached.offset.x, y + g.attached.offset.y, g.attached.isBackground).save?.blockId == g.attached.blockId
                                     )
                                 {
                                     foreach (var range in g.ranges)
@@ -902,7 +893,7 @@ namespace GameCore
                                                 range.maxFormula.ComputeFormula(islandGeneration.directBlockComputationAlgebra)
                                             ))
                                         {
-                                            AddBlockInTheIslandForAreas(g.id, pos, g.areas);
+                                            AddBlockInTheIslandForAreas(g.id, x, y, g.areas);
                                         }
                                     }
                                 }
@@ -952,9 +943,7 @@ namespace GameCore
 
                                 if (i >= min && i <= max)
                                 {
-                                    var blockPos = new Vector2Int(noise.x, startY + i);
-
-                                    AddBlockInTheIsland(block.block, blockPos, block.isBackground);
+                                    AddBlockInTheIsland(block.block, noise.x, startY + i, block.isBackground);
                                     break;
                                 }
                             }
@@ -987,15 +976,12 @@ namespace GameCore
                 {
                     for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
                     {
-                        //当前遍历到的点
-                        Vector2Int pos = new(x, y);
-
                         foreach (var g in postProcessBlocks)
                         {
                             if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
                             {
                                 if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                    islandGeneration.regionGeneration.region.GetBlock(pos + g.attached.offset, g.attached.isBackground).save?.blockId == g.attached.blockId
+                                    islandGeneration.regionGeneration.region.GetBlock(x + g.attached.offset.x, y + g.attached.offset.y, g.attached.isBackground).save?.blockId == g.attached.blockId
                                     )
                                 {
                                     foreach (var range in g.ranges)
@@ -1026,7 +1012,7 @@ namespace GameCore
                                                 range.maxFormula.ComputeFormula(formulaAlgebra)
                                             ))
                                         {
-                                            AddBlockInTheIslandForAreas(g.id, pos, g.areas);
+                                            AddBlockInTheIslandForAreas(g.id, x, y, g.areas);
                                         }
                                     }
                                 }
@@ -1040,9 +1026,6 @@ namespace GameCore
                     var middleX = Region.GetMiddleX(generation.index);
                     generation.region.spawnPoint = new(middleX, wallHighestPointFunction[middleX] + 3);
                 }
-
-                //TODO：检测矿石的位置，把单个矿石变成矿石团块
-                IslandGeneration.OreClumpsGeneration(islandGeneration, AddBlockInTheIslandForAreas);
 
                 //生成战利品
                 IslandGeneration.LootGeneration(islandGeneration, wallHighestPointFunction, AddBlockInTheIsland);
@@ -1058,6 +1041,7 @@ namespace GameCore
                 {
                     //全部生成完后再生成结构
                     for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
+                    {
                         for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
                         {
                             //当前遍历到的点
@@ -1072,9 +1056,10 @@ namespace GameCore
                                     {
                                         foreach (var fixedBlock in l.structure.fixedBlocks)
                                         {
-                                            Vector2Int tempPos = new(pos.x + fixedBlock.offset.x + centerPoint.x, pos.y + fixedBlock.offset.y + centerPoint.y);
+                                            int tempPosX = pos.x + fixedBlock.offset.x + centerPoint.x;
+                                            int tempPosY = pos.y + fixedBlock.offset.y + centerPoint.y;
 
-                                            if (islandGeneration.regionGeneration.region.GetBlock(tempPos, fixedBlock.isBackground).location != null)
+                                            if (islandGeneration.regionGeneration.region.GetBlock(tempPosX, tempPosY, fixedBlock.isBackground).location != null)
                                             {
                                                 goto stopGeneration;
                                             }
@@ -1084,9 +1069,10 @@ namespace GameCore
                                     //检查是否满足所有需求
                                     foreach (var require in l.structure.require)
                                     {
-                                        Vector2Int tempPos = new(pos.x + require.offset.x + centerPoint.x, pos.y + require.offset.y + centerPoint.y);
+                                        int tempPosX = pos.x + require.offset.x + centerPoint.x;
+                                        int tempPosY = pos.y + require.offset.y + centerPoint.y;
 
-                                        if (islandGeneration.regionGeneration.region.GetBlock(tempPos, require.isBackground).save?.blockId != require.blockId)
+                                        if (islandGeneration.regionGeneration.region.GetBlock(tempPosX, tempPosY, require.isBackground).save?.blockId != require.blockId)
                                         {
                                             goto stopGeneration;
                                         }
@@ -1095,30 +1081,36 @@ namespace GameCore
                                     //如果可以就继续
                                     foreach (var fixedBlock in l.structure.fixedBlocks)
                                     {
-                                        var tempPos = pos + fixedBlock.offset;
+                                        var tempPosX = pos.x + fixedBlock.offset.x;
+                                        var tempPosY = pos.y + fixedBlock.offset.y;
 
-                                        AddBlockInTheIsland(fixedBlock.blockId, tempPos, fixedBlock.isBackground);
+                                        AddBlockInTheIsland(fixedBlock.blockId, tempPosX, tempPosY, fixedBlock.isBackground);
                                     }
 
                                 stopGeneration:
-                                    return;
+                                    continue;
                                 }
                             }
                         };
+                    }
                 }
-            });
+            }
 
+
+            //TODO: 检测矿石的位置，把单个矿石变成矿石团块
+            IslandGeneration.OreClumpsGeneration(generation);
 
             /* -------------------------------------------------------------------------- */
             /*                                    生成传送点                                   */
             /* -------------------------------------------------------------------------- */
-            Vector2Int portalMiddle = new(generation.region.spawnPoint.x, generation.region.spawnPoint.y + 10);
-            generation.region.AddPos(BlockID.Portal, portalMiddle, false, true);
-            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(0, -1), false, true);
-            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-2, -1), false, true);
-            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(-1, -1), false, true);
-            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(1, -1), false, true);
-            generation.region.AddPos(BlockID.PortalBase, portalMiddle + new Vector2Int(2, -1), false, true);
+            int portalMiddleX = generation.region.spawnPoint.x;
+            int portalMiddleY = generation.region.spawnPoint.y + 10;
+            generation.region.AddPos(BlockID.Portal, portalMiddleX, portalMiddleY, false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddleX, portalMiddleY - 1, false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddleX - 2, portalMiddleY - 1, false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddleX - 1, portalMiddleY - 1, false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddleX + 1, portalMiddleY - 1, false, true);
+            generation.region.AddPos(BlockID.PortalBase, portalMiddleX + 2, portalMiddleY - 1, false, true);
 
 
 
@@ -1138,14 +1130,12 @@ namespace GameCore
                 {
                     if (x == generation.minPoint.x || y == generation.minPoint.y || x == generation.maxPoint.x || y == generation.maxPoint.y)
                     {
-                        Vector2Int pos = new(x, y);
-
                         //删除边界上的任何方块
-                        generation.region.RemovePos(pos, false);
-                        generation.region.RemovePos(pos, true);
+                        generation.region.RemovePos(x, y, false);
+                        generation.region.RemovePos(x, y, true);
 
                         //添加边界方块
-                        generation.region.AddPos(BlockID.Boundary, pos, false, true);
+                        generation.region.AddPos(BlockID.Boundary, x, y, false, true);
                     }
                 }
             }
@@ -1343,9 +1333,9 @@ namespace GameCore
             };
         }
 
-        public static Action<IslandGeneration, Action<string , Vector2Int , Vector3Int[]>> OreClumpsGeneration = (generation, AddBlockInTheIslandForAreas) =>
+        public static Action<RegionGeneration> OreClumpsGeneration = (generation) =>
         {
-            foreach (var save in generation.regionGeneration.region.saves)
+            foreach (var save in generation.region.blocks)
             {
                 var blockData = ModFactory.CompareBlockData(save.blockId);
 
@@ -1356,25 +1346,43 @@ namespace GameCore
 
                     if (tag.hasTag)
                     {
-                        foreach (var location in save.locations)
+                        var locationsTemp = save.locations.ToArray();
+
+                        foreach (var location in locationsTemp)
                         {
                             List<Vector3Int> locations = new() { Vector3Int.zero };
 
                             // tagValue 决定了团块有多大
-                            for (int i = 0; i < tag.tagValue; i++)
+                            for (int i = 0; i < generation.random.Next(tag.tagValue / 3, tag.tagValue + 1); i++)
                             {
-                                var randomLocation = locations.Extract();
-                                locations.Add(new(randomLocation.x + (Tools.randomBool ? -1 : 1), randomLocation.y + (Tools.randomBool ? -1 : 1)));
+                                var randomLocation = locations.Extract(generation.random);
+                                var randomPos = new Vector3Int(
+                                                    randomLocation.x + generation.random.Next(-1, 2),
+                                                    randomLocation.y + generation.random.Next(-1, 2));
+                                if (!locations.Contains(randomPos))
+                                    locations.Add(randomPos);
                             }
 
-                            AddBlockInTheIslandForAreas(save.blockId, location.pos, locations.ToArray());
+                            locations.Remove(Vector3Int.zero);
+                            foreach (var loc in locations)
+                            {
+                                int newX = location.x + loc.x;
+                                int newY = location.y + loc.y;
+
+                                //只有石头会被替换
+                                if (generation.region.TryGetBlock(newX, newY, save.isBg, out var stone) && stone.save.blockId == BlockID.Stone)
+                                {
+                                    stone.save.RemoveLocation(newX, newY);
+                                    save.AddLocation(newX, newY);
+                                }
+                            }
                         }
                     }
                 }
             }
         };
 
-        public static Action<IslandGeneration, Dictionary<int, int>, Action<string, Vector2Int, bool, string>> LootGeneration = (generation, wallHighestPointFunction, AddBlockInIsland) =>
+        public static Action<IslandGeneration, Dictionary<int, int>, Action<string, int, int, bool, string>> LootGeneration = (generation, wallHighestPointFunction, AddBlockInIsland) =>
         {
             foreach (var highest in wallHighestPointFunction)
             {
@@ -1422,7 +1430,7 @@ namespace GameCore
                                         Mod mod = null;
                                         while (mod == null)
                                         {
-                                            mod = ModFactory.mods.Extract();
+                                            mod = ModFactory.mods.Extract(generation.regionGeneration.random);
                                             if (mod.items.Count == 0)
                                                 mod = null;
                                         }
@@ -1431,7 +1439,7 @@ namespace GameCore
                                         ItemData itemData = null;
                                         for (var inner = 0; inner < mod.items.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的物品
                                         {
-                                            itemData = mod.items.Extract();
+                                            itemData = mod.items.Extract(generation.regionGeneration.random);
 
                                             if (itemData == null)
                                                 continue;
@@ -1473,7 +1481,7 @@ namespace GameCore
                         jo["ori:container"].AddObject("items");
                         jo["ori:container"]["items"].AddArray("array", group);
 
-                        AddBlockInIsland(BlockID.Barrel, lootBlockPos, false, jo.ToString(Formatting.None));
+                        AddBlockInIsland(BlockID.Barrel, lootBlockPos.x, lootBlockPos.y, false, jo.ToString(Formatting.None));
                     }
                 }
 
@@ -1491,12 +1499,12 @@ namespace GameCore
                         Mod mod = null;
                         while (mod == null)
                         {
-                            mod = ModFactory.mods.Extract();
+                            mod = ModFactory.mods.Extract(generation.regionGeneration.random);
                             if (mod.items.Count == 0)
                                 mod = null;
                         }
 
-                        static string ExtractSpell()
+                        static string ExtractSpell(Random random)
                         {
                             Spell spell = null;
                             Mod mod = null;
@@ -1504,7 +1512,7 @@ namespace GameCore
                             //获取模组
                             while (mod == null)
                             {
-                                mod = ModFactory.mods.Extract();
+                                mod = ModFactory.mods.Extract(random);
                                 if (mod.spells.Count == 0)
                                     mod = null;
                             }
@@ -1512,7 +1520,7 @@ namespace GameCore
                             //获取魔咒
                             for (var inner = 0; inner < mod.spells.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的魔咒
                             {
-                                spell = mod.spells.Extract();
+                                spell = mod.spells.Extract(random);
 
                                 if (spell == null)
                                     continue;
@@ -1530,7 +1538,7 @@ namespace GameCore
                         ItemData item = null;
                         for (var inner = 0; inner < mod.items.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的物品
                         {
-                            item = mod.items.Extract();
+                            item = mod.items.Extract(generation.regionGeneration.random);
 
                             if (item == null)
                                 continue;
@@ -1551,14 +1559,14 @@ namespace GameCore
                                 jo.AddObject("original:mana_container");
                                 jo["original:mana_container"].AddProperty("totalMana", generation.regionGeneration.random.Next(0, 100));
                                 jo.AddObject("original:spell_container");
-                                jo["original:spell_container"].AddProperty("spell", ExtractSpell());
+                                jo["original:spell_container"].AddProperty("spell", ExtractSpell(generation.regionGeneration.random));
                                 extendedItem.customData = jo;
                             }
                             else if (item.id == ItemID.SpellManuscript)
                             {
                                 var jo = new JObject();
                                 jo.AddObject("original:spell_container");
-                                jo["original:spell_container"].AddProperty("spell", ExtractSpell());
+                                jo["original:spell_container"].AddProperty("spell", ExtractSpell(generation.regionGeneration.random));
                                 extendedItem.customData = jo;
                             }
 
@@ -1572,7 +1580,7 @@ namespace GameCore
                     jo["ori:container"].AddObject("items");
                     jo["ori:container"]["items"].AddArray("array", group);
 
-                    AddBlockInIsland(BlockID.WoodenChest, lootBlockPos, false, jo.ToString(Formatting.None));
+                    AddBlockInIsland(BlockID.WoodenChest, lootBlockPos.x, lootBlockPos.y, false, jo.ToString(Formatting.None));
                 }
             }
         };
@@ -1589,7 +1597,7 @@ namespace GameCore
             if (isCenterIsland)
                 biome = ModFactory.CompareBiome(BiomeID.Center);
             else
-                biome = regionGeneration.biomes.Extract();
+                biome = regionGeneration.biomes.Extract(regionGeneration.random);
 
             //决定岛的大小
             size = new(regionGeneration.random.Next(biome.minSize.x, biome.maxSize.x).IRange(10, Region.place.x),

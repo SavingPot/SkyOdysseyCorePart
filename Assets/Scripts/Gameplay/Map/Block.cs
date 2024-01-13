@@ -93,8 +93,10 @@ namespace GameCore
 
         public void WriteCustomDataToSave()
         {
+            var posInRegion = PosConvert.MapToRegionPos(pos, chunk.regionIndex);
+
             //获取存档中的值
-            GFiles.world.GetRegion(chunk.regionIndex).GetBlock(PosConvert.MapToRegionPos(pos, chunk.regionIndex), isBackground).location.customData = customData?.ToString(Formatting.None);
+            GFiles.world.GetRegion(chunk.regionIndex).GetBlock(posInRegion.x, posInRegion.y, isBackground).location.cd = customData?.ToString(Formatting.None);
         }
 
         public virtual void OutputDrops(Vector3 pos)

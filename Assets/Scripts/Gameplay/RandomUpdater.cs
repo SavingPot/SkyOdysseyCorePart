@@ -91,7 +91,7 @@ namespace GameCore
                     for (int tryCount = 0; tryCount < entities.Count - 1; tryCount++)
                     {
                         //随机抽取一个实体并生成
-                        EntityData entity = entities.Extract();
+                        EntityData entity = entities.Extract(EntitySummonPosRandom);
                         Vector2 pos = EntitySummonPos(entity);
 
                         entities.Remove(entity);
@@ -120,7 +120,7 @@ namespace GameCore
                 if (audios.Count > 0)
                 {
                     //随机抽取一个实体并生成
-                    AudioData audio = audios.Extract();
+                    AudioData audio = audios.Extract(EntitySummonPosRandom);
 
                     GAudio.Play(audio.id);
                 }
@@ -144,6 +144,7 @@ namespace GameCore
             }
         }
 
+        public static System.Random EntitySummonPosRandom = new();
         public static Func<EntityData, Vector2> EntitySummonPos = e =>
         {
             //TODO: 优化性能
@@ -151,7 +152,7 @@ namespace GameCore
             for (byte cTime = 0; cTime < 24; cTime++)
             {
                 //抽取一个区块
-                Chunk chunk = Map.instance.chunks.Extract();
+                Chunk chunk = Map.instance.chunks.Extract(EntitySummonPosRandom);
 
                 if (!string.IsNullOrEmpty(e.summon.region) && GFiles.world.TryGetRegion(chunk.regionIndex, out Region region) && e.summon.region != region.regionTheme)
                 {
@@ -162,7 +163,7 @@ namespace GameCore
                 for (byte bTime = 0; bTime < 32; bTime++)
                 {
                     //抽取一个方块并检查
-                    Block block = chunk.blocks.Extract();
+                    Block block = chunk.blocks.Extract(EntitySummonPosRandom);
 
                     if (block != null &&
                         !block.isBackground &&

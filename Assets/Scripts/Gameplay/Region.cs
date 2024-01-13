@@ -14,13 +14,26 @@ namespace GameCore
     public class Region
     {
         public Vector2Int index;
-        [NonSerialized] ReaderWriterLockSlim savesReaderWriterLock = new(LockRecursionPolicy.NoRecursion);
-        public List<BlockSave> saves = new();
+        public List<BlockSave> blocks = new();
         public List<EntitySave> entities = new();
         public string regionTheme;
         public Vector2Int size;
         public Vector2Int spawnPoint;
         public bool generatedAlready;
+
+        public Region ShallowCopy()
+        {
+            return new()
+            {
+                index = index,
+                blocks = blocks,
+                entities = entities,
+                regionTheme = regionTheme,
+                size = size,
+                spawnPoint = spawnPoint,
+                generatedAlready = generatedAlready,
+            };
+        }
 
         //单数!
         public const int chunkCount = 12 + 1;
@@ -29,6 +42,7 @@ namespace GameCore
         public const float negativeHalfChunkCount = -halfChunkCount;
         public static readonly Vector2Int placeVec = new(Chunk.blockCountPerAxis * chunkCount, Chunk.blockCountPerAxis * chunkCount);
         public static readonly Vector2 halfPlaceVec = new(placeVec.x / 2f, placeVec.y / 2f);
+
         public static Vector2Int place => placeVec;
         public static Vector2 halfPlace => halfPlaceVec;
 
@@ -89,182 +103,128 @@ namespace GameCore
             return y;
         }
 
-        public void AddPos(string id, Vector2Int centerPoint, Vector3Int[] areas, bool overwriteIfContains, string customData = null)
+        public void AddPos(string id, int centerX, int centerY, Vector3Int[] areas, bool overwriteIfContains, string customData = null)
         {
-            savesReaderWriterLock.EnterWriteLock();
-            try
-            {
-                if (!saves.Any(p => p.blockId == id))
-                    saves.Add(new(id));
-            }
-            finally
-            {
-                savesReaderWriterLock.ExitWriteLock();
-            }
+            //TODO: Performance
+            if (!blocks.Any(p => p.blockId == id && p.isBg))
+                blocks.Add(new(id, true));
+            if (!blocks.Any(p => p.blockId == id && !p.isBg))
+                blocks.Add(new(id, false));
 
-
-
-            savesReaderWriterLock.EnterReadLock();
-            try
+            foreach (var area in areas)
             {
-                foreach (var save in saves)
+                int targetX = centerX + area.x;
+                int targetY = centerY + area.y;
+                bool targetIsBackground = area.z < 0;
+
+                foreach (var save in blocks)
                 {
-                    if (save.blockId == id)
+                    if (save.blockId == id && save.isBg == targetIsBackground)
                     {
-                        foreach (var area in areas)
-                        {
-                            Vector2Int targetPos = new(centerPoint.x + area.x, centerPoint.y + area.y);
-                            bool targetIsBackground = area.z < 0;
-
-                            save.AddLocation(targetPos, targetIsBackground, overwriteIfContains);
-                        }
-
-                        return;
+                        save.AddLocation(targetX, targetY, overwriteIfContains);
+                        break;
                     }
                 }
             }
-            finally
-            {
-                savesReaderWriterLock.ExitReadLock();
-            }
         }
 
-        public void AddPos(string id, Vector2Int pos, bool isBackground, bool overwriteIfContains = false, string customData = null)
+        public void AddPos(string id, int x, int y, bool isBackground, bool overwriteIfContains = false, string customData = null)
         {
             //TODO: 检测 pos 是否超出区域边界
             //如果 id 为空, 意思就是要删掉这个点
             if (string.IsNullOrEmpty(id))
             {
-                savesReaderWriterLock.EnterReadLock();
-                try
+                foreach (var save in blocks)
                 {
-                    foreach (var save in saves)
-                    {
-                        if (save.HasLocation(pos, isBackground))
-                        {
-                            save.RemoveLocation(pos, isBackground);
-                            return;
-                        }
-                    }
-                }
-                finally
-                {
-                    savesReaderWriterLock.ExitReadLock();
-                }
-            }
-            else
-            {
-                savesReaderWriterLock.EnterUpgradeableReadLock();
-                try
-                {
-                    foreach (var save in saves)
-                    {
-                        if (save.blockId == id)
-                        {
-                            save.AddLocation(pos, isBackground, overwriteIfContains, customData);
-
-                            return;
-                        }
-                    }
-
-                    savesReaderWriterLock.EnterWriteLock();
-                    saves.Add(new(pos, isBackground, id, customData));
-                    savesReaderWriterLock.ExitWriteLock();
-                }
-                finally
-                {
-                    savesReaderWriterLock.ExitUpgradeableReadLock();
-                }
-            }
-        }
-
-        public void RemovePos(Vector2Int pos, bool isBackground)
-        {
-            lock (saves)
-                foreach (var save in saves)
-                {
-                    try
-                    {
-                        save.readerWriterLock.EnterWriteLock();
-
-                        for (int b = 0; b < save.locations.Count; b++)
-                        {
-                            BlockSave_Location location = save.locations[b];
-
-                            if (location.pos == pos && location.isBackground == isBackground)
-                            {
-                                save.RemovePosAt(b);
-                                break;
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        save.readerWriterLock.ExitWriteLock();
-                    }
-                }
-        }
-
-        public void RemovePos(string id, Vector2Int pos, bool isBackground)
-        {
-            lock (saves)
-                foreach (var save in saves)
-                {
-                    if (save.blockId != id)
+                    if (save.isBg != isBackground)
                         continue;
 
-                    try
+                    save.RemoveLocation(x, y);
+                    return;
+                }
+            }
+            //如果 id 不为空, 意思就是要加上这个点
+            else
+            {
+                foreach (var save in blocks)
+                {
+                    if (save.blockId == id && save.isBg == isBackground)
                     {
-                        save.readerWriterLock.EnterWriteLock();
-                        for (int b = 0; b < save.locations.Count; b++)
-                        {
-                            BlockSave_Location location = save.locations[b];
+                        save.AddLocation(x, y, overwriteIfContains, customData);
 
-                            if (location.pos == pos && location.isBackground == isBackground)
-                            {
-                                save.RemovePosAt(b);
-                                return;
-                            }
-                        }
+                        return;
                     }
-                    finally
+                }
+
+                blocks.Add(new(x, y, id, isBackground, customData));
+            }
+        }
+
+        public void RemovePos(int x, int y, bool isBackground)
+        {
+            lock (blocks)
+                foreach (var save in blocks)
+                {
+                    if (save.isBg != isBackground)
+                        continue;
+
+                    for (int b = 0; b < save.locations.Count; b++)
                     {
-                        save.readerWriterLock.ExitWriteLock();
+                        BlockSave_Location location = save.locations[b];
+
+                        if (location.x == x && location.y == y)
+                        {
+                            save.RemoveLocationAt(b);
+                            break;
+                        }
                     }
                 }
         }
 
-        public bool HasBlock(Vector2Int pos, bool isBackground) => GetBlock(pos, isBackground).location != null;
+        public void RemovePos(string id, int x, int y, bool isBackground)
+        {
+            lock (blocks)
+                foreach (var save in blocks)
+                {
+                    if (save.blockId != id || save.isBg != isBackground)
+                        continue;
+
+                    for (int b = 0; b < save.locations.Count; b++)
+                    {
+                        BlockSave_Location location = save.locations[b];
+
+                        if (location.x == x && location.y == y)
+                        {
+                            save.RemoveLocationAt(b);
+                            return;
+                        }
+                    }
+                }
+        }
+
+        public bool HasBlock(int x, int y, bool isBackground) => GetBlock(x, y, isBackground).location != null;
 
         public BlockSave GetBlock(string blockId)
         {
-            foreach (var save in saves)
+            foreach (var save in blocks)
                 if (save.blockId == blockId)
                     return save;
 
             return null;
         }
 
-        public (BlockSave save, BlockSave_Location location) GetBlock(Vector2Int pos, bool isBackground)
+        public (BlockSave save, BlockSave_Location location) GetBlock(int x, int y, bool isBackground)
         {
-            savesReaderWriterLock.EnterReadLock();
-            try
-            {
-                foreach (var save in saves)
-                    if (save.TryGetLocation(pos, isBackground, out var result))
-                        return (save, result);
-            }
-            finally
-            {
-                savesReaderWriterLock.ExitReadLock();
-            }
+            foreach (var save in blocks)
+                if (save.TryGetLocation(x, y, isBackground, out var result))
+                    return (save, result);
 
             return (null, null);
         }
 
-        public bool TryGetBlock(Vector2Int pos, bool isBackground, out (BlockSave save, BlockSave_Location location) result)
+        public bool TryGetBlock(int x, int y, bool isBackground, out (BlockSave save, BlockSave_Location location) result)
         {
-            result = GetBlock(pos, isBackground);
+            result = GetBlock(x, y, isBackground);
 
             return result.location != null;
         }
@@ -273,15 +233,15 @@ namespace GameCore
     [Serializable]
     public class BlockSave_Location
     {
-        public Vector2Int pos;
-        public bool isBackground;
-        [LabelText("自定义数据")] public string customData;
+        public int x;
+        public int y;
+        [LabelText("自定义数据")] public string cd;
 
-        public BlockSave_Location(Vector2Int pos, bool isBackground, string customData)
+        public BlockSave_Location(int x, int y, string customData)
         {
-            this.pos = pos;
-            this.isBackground = isBackground;
-            this.customData = customData;
+            this.x = x;
+            this.y = y;
+            this.cd = customData;
         }
     }
 
@@ -290,153 +250,89 @@ namespace GameCore
     {
         public List<BlockSave_Location> locations;
         public string blockId;
-        [NonSerialized] internal ReaderWriterLockSlim readerWriterLock;
+        public bool isBg;
 
 
         public BlockSave()
         {
-            readerWriterLock = new(LockRecursionPolicy.SupportsRecursion);
+
         }
 
-        public BlockSave(string blockId) : this()
+        public BlockSave(string blockId, bool isBg) : this()
         {
             this.locations = new() { };
             this.blockId = blockId;
+            this.isBg = isBg;
         }
 
-        public BlockSave(Vector2Int pos, bool isBackground, string blockId, string customData) : this()
+        public BlockSave(int x, int y, string blockId, bool isBg, string customData) : this()
         {
-            this.locations = new() { new(pos, isBackground, customData) };
+            this.locations = new() { new(x, y, customData) };
             this.blockId = blockId;
+            this.isBg = isBg;
         }
 
-        public bool HasLocation(Vector2Int pos, bool isBackground)
+        public bool HasLocation(int x, int y)
         {
-            try
-            {
-                readerWriterLock.EnterReadLock();
-
-                foreach (var location in locations)
-                    if (location.pos == pos && location.isBackground == isBackground)
-                        return true;
-            }
-            finally
-            {
-                readerWriterLock.ExitReadLock();
-            }
-
+            foreach (var location in locations)
+                if (location.x == x && location.y == y)
+                    return true;
 
             return false;
         }
 
-        public BlockSave_Location GetLocation(Vector2Int pos, bool isBackground)
+        public BlockSave_Location GetLocation(int x, int y, bool isBackground)
         {
-            try
-            {
-                readerWriterLock.EnterReadLock();
-
-                foreach (var location in locations)
-                    if (location.pos == pos && location.isBackground == isBackground)
-                        return location;
-            }
-            finally
-            {
-                readerWriterLock.ExitReadLock();
-            }
+            foreach (var location in locations)
+                if (location.x == x && location.y == y)
+                    return location;
 
             return null;
         }
 
-        public void SetLocation(Vector2Int pos, bool isBackground, BlockSave_Location newValue)
+        public bool TryGetLocation(int x, int y, bool isBackground, out BlockSave_Location result)
         {
-            try
-            {
-                readerWriterLock.EnterWriteLock();
-
-                for (int i = 0; i < locations.Count; i++)
-                {
-                    var location = locations[i];
-
-                    if (location.pos == pos && location.isBackground == isBackground)
-                    {
-                        locations[i] = newValue;
-                        return;
-                    }
-                }
-            }
-            finally
-            {
-                readerWriterLock.ExitWriteLock();
-            }
-
-            Debug.LogError($"修改方块 {blockId} ({pos}, {isBackground}) 失败：方块不存在");
-        }
-
-        public bool TryGetLocation(Vector2Int pos, bool isBackground, out BlockSave_Location result)
-        {
-            result = GetLocation(pos, isBackground);
+            result = GetLocation(x, y, isBackground);
 
             return result != null;
         }
 
-        public void AddLocation(Vector2Int pos, bool isBackground, bool overwriteIfContains = false, string customData = null)
+        public void AddLocation(int x, int y, bool overwriteIfContains = false, string customData = null)
         {
-            try
+            for (int i = 0; i < locations.Count; i++)
             {
-                readerWriterLock.EnterWriteLock();
+                BlockSave_Location location = locations[i];
 
-                for (int i = 0; i < locations.Count; i++)
+                if (location.x == x && location.y == y)
                 {
-                    BlockSave_Location location = locations[i];
-
-                    if (location.pos.x == pos.x && location.pos.y == pos.y && location.isBackground == isBackground)
-                    {
-                        if (overwriteIfContains)
-                            locations[i] = new(pos, isBackground, customData);
-                        else
-                            Debug.LogError($"添加方块 {blockId} ({pos}, {isBackground}) 失败：方块已存在");
-                        return;
-                    }
+                    if (overwriteIfContains)
+                        locations[i] = new(x, y, customData);
+                    else
+                        Debug.LogError($"添加方块 {blockId} (({x},{y}), {isBg}) 失败：方块已存在");
+                    return;
                 }
-
-                locations.Add(new(pos, isBackground, customData));
             }
-            finally
+
+            locations.Add(new(x, y, customData));
+        }
+
+        public void RemoveLocation(int x, int y)
+        {
+            for (int i = 0; i < locations.Count; i++)
             {
-                readerWriterLock.ExitWriteLock();
+                BlockSave_Location location = locations[i];
+
+                if (location.x == x && location.y == y)
+                {
+                    locations.RemoveAt(i);
+                    return;
+                }
             }
         }
 
-        public void RemoveLocation(Vector2Int pos, bool isBackground)
+        public void RemoveLocationAt(int index)
         {
-            try
-            {
-                readerWriterLock.EnterUpgradeableReadLock();
-
-                for (int i = 0; i < locations.Count; i++)
-                {
-                    BlockSave_Location location = locations[i];
-
-                    if (location.pos.x == pos.x && location.pos.y == pos.y && location.isBackground == isBackground)
-                    {
-                        readerWriterLock.EnterWriteLock();
-                        locations.RemoveAt(i);
-                        readerWriterLock.ExitWriteLock();
-                        return;
-                    }
-                }
-            }
-            finally
-            {
-                readerWriterLock.ExitUpgradeableReadLock();
-            }
-        }
-
-        public void RemovePosAt(int index)
-        {
-            readerWriterLock.EnterWriteLock();
             locations.RemoveAt(index);
-            readerWriterLock.ExitWriteLock();
         }
     }
 

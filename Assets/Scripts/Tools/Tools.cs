@@ -801,6 +801,36 @@ namespace GameCore
         #endregion
     }
 
+    public static class SpriteRendererPool
+    {
+        public static Stack<SpriteRenderer> stack = new();
+
+        public static SpriteRenderer Get(int sortingOrder)
+        {
+            SpriteRenderer sr;
+
+            if (stack.Count > 0)
+            {
+                sr = stack.Pop();
+                sr.gameObject.SetActive(true);
+                return sr;
+            }
+            else
+            {
+                sr = new GameObject("SpriteRenderer").AddComponent<SpriteRenderer>();
+            }
+
+            sr.sortingOrder = sortingOrder;
+            return sr;
+        }
+
+        public static void Recover(SpriteRenderer sr)
+        {
+            sr.gameObject.SetActive(false);
+            stack.Push(sr);
+        }
+    }
+
     /// <summary>
     /// 预制的场景名
     /// </summary>

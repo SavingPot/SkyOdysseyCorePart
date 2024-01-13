@@ -154,7 +154,7 @@ namespace GameCore.High
 
                         //在区域中删除
                         Region region = GFiles.world.GetOrAddRegion(regionIndex);
-                        region.RemovePos(block.data.id, blockChunkPos, block.isBackground);
+                        region.RemovePos(block.data.id, blockChunkPos.x, blockChunkPos.y, block.isBackground);
                     }
 
                     map.blockPool.Recover(block);
@@ -180,7 +180,7 @@ namespace GameCore.High
 
                 //在区域中添加
                 Region region = GFiles.world.GetOrAddRegion(regionIndex);
-                region.AddPos(block.id, new(blockRegionPos.x, blockRegionPos.y), isBackground);
+                region.AddPos(block.id, blockRegionPos.x, blockRegionPos.y, isBackground);
             }
 
             GameCallbacks.OnAddBlock(pos, isBackground, b, this);

@@ -21,7 +21,17 @@ namespace GameCore
 
             public Block Get(Vector2Int pos, bool isBackground, BlockData data, string customData)
             {
-                GameObject go = stack.Count == 0 ? Instantiate(GInit.instance.GetBlockPrefab()) : stack.Pop();
+                GameObject go;
+
+                if (stack.Count == 0)
+                {
+                    go = Instantiate(GInit.instance.GetBlockPrefab());
+                }
+                else
+                {
+                    go = stack.Pop();
+                    go.transform.localScale = Vector3.one;
+                }
 
                 Block block = data.behaviourType == null ? new Block() : (Block)Activator.CreateInstance(data.behaviourType);
 
@@ -140,6 +150,8 @@ namespace GameCore
             {
                 block.crackSr.transform.SetParent(null);
                 block.crackSr.gameObject.SetActive(false);
+                block.crackSr.transform.localScale = Vector3.one;
+                block.crackSr.transform.localRotation = Quaternion.identity;
                 stack.Push(block.crackSr);
                 block.crackSr = null;
             }

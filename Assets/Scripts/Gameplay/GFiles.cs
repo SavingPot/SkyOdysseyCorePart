@@ -192,11 +192,11 @@ namespace GameCore
                 if (temp.index == region.index)
                 {
                     //遍历每一个方块并添加
-                    foreach (var saveTemp in temp.saves)
+                    foreach (var saveTemp in temp.blocks)
                     {
                         foreach (var locationTemp in saveTemp.locations)
                         {
-                            region.AddPos(saveTemp.blockId, locationTemp.pos, locationTemp.isBackground);
+                            region.AddPos(saveTemp.blockId, locationTemp.x, locationTemp.y, saveTemp.isBg);
                         }
                     }
 

@@ -29,6 +29,8 @@ namespace GameCore
             if (name == SceneNames.GameScene)
                 Tools.NewObjectToComponent<InternalUIAdder>();
 
+            SpriteRendererPool.stack.Clear();
+
             if (Client.isClient)
             {
                 Client.WhenIsConnected(() =>

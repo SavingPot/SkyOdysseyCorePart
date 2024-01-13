@@ -22,6 +22,15 @@ namespace GameCore
 
     }
 
+
+
+
+
+
+
+
+
+
     [SerializationSurrogatesClass]
     public static class SerializationSurrogates
     {
@@ -274,20 +283,18 @@ namespace GameCore
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
                 BlockSave_Location location = (BlockSave_Location)obj;
-                info.AddValue("x", location.pos.x);
-                info.AddValue("y", location.pos.y);
-                info.AddValue("bg", location.isBackground);
-                info.AddValue("cd", location.customData == null ? null : ByteConverter.ToBytes(location.customData.ToString()));
+                info.AddValue("x", location.x);
+                info.AddValue("y", location.y);
+                info.AddValue("c", location.cd == null ? null : Compressor.CompressBytes(ByteConverter.ToBytes(location.cd.ToString())));
             }
 
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)
             {
                 var x = (int)info.GetValue("x", typeof(int));
                 var y = (int)info.GetValue("y", typeof(int));
-                var bg = (bool)info.GetValue("bg", typeof(bool));
-                var cd = (byte[])info.GetValue("cd", typeof(byte[]));
+                var cd = (byte[])info.GetValue("c", typeof(byte[]));
 
-                return new BlockSave_Location(new(x, y), bg, cd == null ? null : ByteConverter.ToString(cd));
+                return new BlockSave_Location(x, y, cd == null ? null : ByteConverter.ToString(Compressor.DecompressBytes(cd)));
             }
         }
 

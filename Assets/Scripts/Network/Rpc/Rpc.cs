@@ -260,9 +260,8 @@ namespace GameCore
             {
                 return null;
             }
-
+            
             using MemoryStream ms = new(LZ4.Decompress(data));
-
             return binaryFormatter.Deserialize(ms);
         }
 
