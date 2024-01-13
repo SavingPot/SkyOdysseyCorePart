@@ -25,7 +25,9 @@ namespace GameCore.UI
                 sr.color = color;
             }
 
-            transform.position = new(Tools.instance.mainCamera.transform.position.x * parallaxFactor + positionDelta.x, Tools.instance.mainCamera.transform.position.y * parallaxFactor + positionDelta.y);
+            var cameraPos = Tools.instance.mainCamera.transform.position;
+
+            transform.position = new(cameraPos.x * parallaxFactor + positionDelta.x, cameraPos.y * parallaxFactor + positionDelta.y);
         }
     }
 }
