@@ -41,24 +41,6 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: UpDefault
+  - name: NoLight
     uniqueID: 3894649147
-    locked: 0
-  - name: LeftLeg
-    uniqueID: 2315068739
-    locked: 0
-  - name: RightLeg
-    uniqueID: 3890412929
-    locked: 0
-  - name: LeftArm
-    uniqueID: 4230348853
-    locked: 0
-  - name: Body
-    uniqueID: 1341095597
-    locked: 0
-  - name: RightArm
-    uniqueID: 3984722173
-    locked: 0
-  - name: Head
-    uniqueID: 105504359
     locked: 0

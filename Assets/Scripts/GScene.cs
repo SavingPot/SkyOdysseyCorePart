@@ -26,9 +26,6 @@ namespace GameCore
 
             Debug.Log($"场景变为: {name} ({index})");
 
-            if (name == SceneNames.GameScene)
-                Tools.NewObjectToComponent<InternalUIAdder>();
-
             SpriteRendererPool.stack.Clear();
 
             if (Client.isClient)
