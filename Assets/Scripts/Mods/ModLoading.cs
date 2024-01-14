@@ -791,9 +791,13 @@ namespace GameCore
                     BiomeData_Block block;
 
                     if (l["prefab"] == null)
+                    {
                         block = LoadBiomeBlock(l, jfToLoad);
+                    }
                     else
+                    {
                         block = new() { id = l["prefab"].ToString(), isPrefab = true, initialized = false };
+                    }
 
                     blocksTemp.Add(block);
                 });

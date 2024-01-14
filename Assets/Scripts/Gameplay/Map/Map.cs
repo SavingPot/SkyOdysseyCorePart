@@ -90,9 +90,8 @@ namespace GameCore
                 {
                     block.blockLight = map.blockLightPool.Get(block);
                 }
-                block.DoStart();
-                map.UpdateAt(block.pos, block.isBackground);
 
+                block.DoStart();
                 return block;
             }
 
@@ -410,37 +409,31 @@ namespace GameCore
         public void SetBlockNet(Vector2Int pos, bool isBackground, string id, string customData) => Client.Send<NMSetBlock>(new(pos, isBackground, id, customData));
 
 #if UNITY_EDITOR
-        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editRegion) => SetBlock(pos, isBackground, ModFactory.CompareBlockData(block), null, editRegion);
+        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editRegion) => SetBlock(pos, isBackground, ModFactory.CompareBlockData(block), null, editRegion, true);
 #endif
 
-        public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion)
+        public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion, bool executeBlockUpdate)
         {
             Chunk chunk = AddChunk(PosConvert.MapPosToChunkIndex(pos));
 
-            chunk.RemoveBlock(pos, isBackground, editRegion);
+            //Remove 不执行生命周期，等到 Add 再更新，以节约性能
+            chunk.RemoveBlock(pos, isBackground, editRegion, false);
 
-            return chunk.AddBlock(pos, isBackground, block, customData, editRegion);
+            return chunk.AddBlock(pos, isBackground, block, customData, editRegion, executeBlockUpdate);
         }
 
-        public void DestroyBlockNet(Vector2Int pos, bool isBackground) => SetBlockNet(pos, isBackground, null, null);
-
-        public void DestroyBlock(Vector2Int pos, bool isBackground, bool editRegion) => SetBlock(pos, isBackground, null, null, editRegion);
-
-        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion)
-        {
-            if (block == null)
-                return null;
-
-            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
-
-            return AddChunk(chunkIndexTo).AddBlock(pos, isBackground, block, customData, editRegion);
-        }
-
-        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion)
+        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData blockData, string customData, bool editRegion, bool executeBlockUpdate)
         {
             Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
 
-            AddChunk(chunkIndexTo).RemoveBlock(pos, isBackground, editRegion);
+            return AddChunk(chunkIndexTo).AddBlock(pos, isBackground, blockData, customData, editRegion, executeBlockUpdate);
+        }
+
+        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion, bool executeBlockUpdate)
+        {
+            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
+
+            AddChunk(chunkIndexTo).RemoveBlock(pos, isBackground, editRegion, executeBlockUpdate);
         }
 
         public void UpdateAt(Vector2Int pos, bool isBackground)

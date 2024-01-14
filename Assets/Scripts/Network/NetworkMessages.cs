@@ -6,6 +6,7 @@ using UnityEngine;
 using GameCore.Converters;
 using System.IO;
 using SP.Tools;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace GameCore.High
 {
@@ -173,6 +174,18 @@ namespace GameCore.High
         public NMDestroyBlock(Vector2Int region, Vector2Int pos, bool isBackground)
         {
             this.region = region;
+            this.pos = pos;
+            this.isBackground = isBackground;
+        }
+    }
+
+    public struct NMRemoveBlock : NetworkMessage
+    {
+        public Vector2Int pos;
+        public bool isBackground;
+
+        public NMRemoveBlock(Vector2Int pos, bool isBackground)
+        {
             this.pos = pos;
             this.isBackground = isBackground;
         }

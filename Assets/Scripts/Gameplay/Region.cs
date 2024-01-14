@@ -189,13 +189,13 @@ namespace GameCore
                     if (save.blockId != id || save.isBg != isBackground)
                         continue;
 
-                    for (int b = 0; b < save.locations.Count; b++)
+                    for (int i = 0; i < save.locations.Count; i++)
                     {
-                        BlockSave_Location location = save.locations[b];
+                        BlockSave_Location location = save.locations[i];
 
                         if (location.x == x && location.y == y)
                         {
-                            save.RemoveLocationAt(b);
+                            save.RemoveLocationAt(i);
                             return;
                         }
                     }

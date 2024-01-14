@@ -49,6 +49,10 @@ namespace GameCore.UI
         public PanelIdentity worldConfigPanel;
         public static bool hasShowedModLoadingInterface;
 
+        public List<ParallaxBackground> parallaxBackgrounds;
+
+
+
         private void Awake()
         {
             if (instance)
@@ -641,10 +645,17 @@ namespace GameCore.UI
 
                 case SceneNames.GameScene:
                     {
+                        parallaxBackgrounds = new();
+
                         var c0 = UObjectTools.CreateComponent<ParallaxBackground>("ParallaxBackground0");
                         var c1 = UObjectTools.CreateComponent<ParallaxBackground>("ParallaxBackground1");
                         var c2 = UObjectTools.CreateComponent<ParallaxBackground>("ParallaxBackground2");
                         var c3 = UObjectTools.CreateComponent<ParallaxBackground>("ParallaxBackground3");
+
+                        parallaxBackgrounds.Add(c0);
+                        parallaxBackgrounds.Add(c1);
+                        parallaxBackgrounds.Add(c2);
+                        parallaxBackgrounds.Add(c3);
 
                         c0.parallaxFactor = 0.5f;
                         c1.parallaxFactor = 0.65f;
@@ -670,6 +681,22 @@ namespace GameCore.UI
         {
             if (modConfiguringPanel && configuringModDir != null)
                 modConfiguringPanel.CustomMethod("ori:refresh", null);
+
+            if (parallaxBackgrounds != null)
+            {
+                Color color = new(
+                        GM.instance.globalLight.color.r * GM.instance.globalLight.intensity,
+                        GM.instance.globalLight.color.g * GM.instance.globalLight.intensity,
+                        GM.instance.globalLight.color.b * GM.instance.globalLight.intensity);
+
+                foreach (var item in parallaxBackgrounds)
+                {
+                    foreach (var sr in item.renderers)
+                    {
+                        sr.color = color;
+                    }
+                }
+            }
         }
 
         private void RefreshWorldList(ref ScrollViewIdentity chooseWorldScrollView, PanelIdentity panel)

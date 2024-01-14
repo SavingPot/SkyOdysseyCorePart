@@ -34,14 +34,6 @@ namespace GameCore
             SummonSetup();
         }
 
-        public override async void OnDeathServer()
-        {
-            ClearSaveDatum();
-
-            await 1;
-            DestroyEntityOnServer();
-        }
-
         [Button("重初始化")]
         public void SummonSetup()
         {

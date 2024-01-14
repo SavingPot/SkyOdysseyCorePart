@@ -280,12 +280,14 @@ namespace GameCore
             {
                 Server.Callback<NMDestroyBlock>(OnServerGetNMDestroyBlock);
                 Server.Callback<NMSetBlock>(OnServerGetNMSetBlockMessage);
+                Server.Callback<NMRemoveBlock>(OnServerGetNMRemoveBlockMessage);
                 Server.Callback<NMSetBlockCustomData>(OnServerGetNMSetBlockCustomData);
             };
             NetworkCallbacks.OnTimeToClientCallback += () =>
             {
                 Client.Callback<NMDestroyBlock>(OnClientGetNMDestroyBlockMessage);
                 Client.Callback<NMSetBlock>(OnClientGetNMSetBlockMessage);
+                Client.Callback<NMRemoveBlock>(OnClientGetNMRemoveBlockMessage);
                 Client.Callback<NMSetBlockCustomData>(OnClientGetNMSetBlockCustomData);
             };
         }
@@ -530,6 +532,13 @@ namespace GameCore
         }
 
         //当服务器收到 NMPos 消息时的回调
+        static void OnServerGetNMRemoveBlockMessage(NetworkConnection conn, NMRemoveBlock n)
+        {
+            //将消息转发给客户端
+            Server.Send(n);
+        }
+
+        //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMSetBlockCustomData(NetworkConnection conn, NMSetBlockCustomData n)
         {
             //将消息转发给客户端
@@ -543,7 +552,7 @@ namespace GameCore
                 return;
 
             //把指定位置的方块摧毁
-            map.DestroyBlock(n.pos, n.isBackground, true);
+            map.RemoveBlock(n.pos, n.isBackground, true, true);
 
             GAudio.Play(AudioID.DestroyBlock);
         }
@@ -554,7 +563,17 @@ namespace GameCore
             if (GScene.name != SceneNames.GameScene)
                 return;
 
-            map.SetBlock(n.pos, n.isBackground, n.block == null ? null : ModFactory.CompareBlockData(n.block), n.customData, true);
+            map.SetBlock(n.pos, n.isBackground, n.block == null ? null : ModFactory.CompareBlockData(n.block), n.customData, true, true);
+        }
+
+        //当客户端收到 NMPos 消息时的回调
+        static void OnClientGetNMRemoveBlockMessage(NMRemoveBlock n)
+        {
+            if (GScene.name != SceneNames.GameScene)
+                return;
+
+            //把指定位置的方块摧毁
+            map.RemoveBlock(n.pos, n.isBackground, true, true);
         }
 
         //当服务器收到 NMPos 消息时的回调
@@ -586,13 +605,12 @@ namespace GameCore
         [ChineseName("生成掉落物")]
         public void SummonDrop(Vector3 pos, string itemId, ushort count = 1, string customData = null)
         {
-            string guid = Tools.randomGUID;
             StringBuilder sb = Tools.stringBuilderPool.Get();
             var param = new JObject();
             param.AddProperty("ori:item_data", sb.Append(itemId).Append("/=/").Append(count).Append("/=/").Append(customData).ToString());
             Tools.stringBuilderPool.Recover(sb);
 
-            SummonEntity(pos, EntityID.Drop, guid, true, null, param.ToString());
+            SummonEntity(pos, EntityID.Drop, null, true, null, param.ToString());
         }
 
         [Button]
@@ -719,11 +737,21 @@ namespace GameCore
                 {
                     BlockSave_Location location = save.locations[i];
 
-                    Map.instance.SetBlock(new(location.x + xDelta, location.y + yDelta), save.isBg, block, location.cd, false);
+                    Map.instance.SetBlock(new(location.x + xDelta, location.y + yDelta), save.isBg, block, location.cd, false, false);
 
                     //定时 Sleep 防止游戏卡死
                     if (i % waitScale == 0)
                         yield return null;
+                }
+            }
+
+
+
+            foreach (var chunk in Map.instance.chunks)
+            {
+                foreach (var block in chunk.blocks)
+                {
+                    block?.OnUpdate();
                 }
             }
 
@@ -823,8 +851,16 @@ namespace GameCore
 
                 foreach (var g in islandGeneration.biome.blocks)
                 {
-                    if (g == null || !g.initialized)
+                    if (g == null)
+                    {
+                        Debug.Log($"生成岛屿时发现了一个空的方块生成规则");
                         continue;
+                    }
+                    if (!g.initialized)
+                    {
+                        Debug.Log($"生成岛屿时发现了一个未初始化的方块生成规则 {g.id}");
+                        continue;
+                    }
 
                     if (g.type == "direct")
                         directBlocksTemp.Add(g);
@@ -881,7 +917,7 @@ namespace GameCore
                             if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
                             {
                                 if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                   islandGeneration.regionGeneration.region.GetBlock(x + g.attached.offset.x, y + g.attached.offset.y, g.attached.isBackground).save?.blockId == g.attached.blockId
+                                   islandGeneration.regionGeneration.region.GetBlock(centerPoint.x + x + g.attached.offset.x, centerPoint.y + y + g.attached.offset.y, g.attached.isBackground).save?.blockId == g.attached.blockId
                                     )
                                 {
                                     foreach (var range in g.ranges)
@@ -972,24 +1008,22 @@ namespace GameCore
                 }
 
                 //遍历每个点
-                for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
+                foreach (var g in postProcessBlocks)
                 {
-                    for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
+                    for (int x = islandGeneration.minPoint.x; x < islandGeneration.maxPoint.x; x++)
                     {
-                        foreach (var g in postProcessBlocks)
+                        for (int y = islandGeneration.minPoint.y; y < islandGeneration.maxPoint.y; y++)
                         {
                             if (Tools.Prob100(g.rules.probability, islandGeneration.regionGeneration.random))
                             {
                                 if (string.IsNullOrWhiteSpace(g.attached.blockId) ||
-                                    islandGeneration.regionGeneration.region.GetBlock(x + g.attached.offset.x, y + g.attached.offset.y, g.attached.isBackground).save?.blockId == g.attached.blockId
+                                    islandGeneration.regionGeneration.region.GetBlock(centerPoint.x + x + g.attached.offset.x, centerPoint.y + y + g.attached.offset.y, g.attached.isBackground).save?.blockId == g.attached.blockId
                                     )
                                 {
-                                    foreach (var range in g.ranges)
-                                    {
-                                        if (!wallHighestPointFunction.TryGetValue(x, out int highestY))
-                                            highestY = 0;
+                                    if (!wallHighestPointFunction.TryGetValue(x, out int highestY))
+                                        highestY = 0;
 
-                                        var formulaAlgebra = new FormulaAlgebra()
+                                    var formulaAlgebra = new FormulaAlgebra()
                                         {
                                             {
                                                 "@bottom", islandGeneration.minPoint.y
@@ -1005,6 +1039,9 @@ namespace GameCore
                                             }
                                         };
 
+
+                                    foreach (var range in g.ranges)
+                                    {
                                         if (string.IsNullOrWhiteSpace(range.minFormula) ||
                                             string.IsNullOrWhiteSpace(range.maxFormula) ||
                                             y.IInRange(

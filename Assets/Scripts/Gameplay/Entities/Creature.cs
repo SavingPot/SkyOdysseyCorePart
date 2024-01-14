@@ -397,7 +397,7 @@ namespace GameCore
 
         public void Jump()
         {
-            rb.SetVelocityY(GetJumpVelocity(35));   //设置 Y 速度
+            rb.SetVelocityY(GetJumpVelocity(30));   //设置 Y 速度
         }
 
         public float GetJumpVelocity(float jumpVelocity)

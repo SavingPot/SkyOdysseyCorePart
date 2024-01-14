@@ -142,7 +142,7 @@ namespace GameCore.High
             }
         }
 
-        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion)
+        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion, bool executeBlockUpdate)
         {
             foreach (var block in blocks)
             {
@@ -150,11 +150,11 @@ namespace GameCore.High
                 {
                     if (editRegion && Server.isServer)
                     {
-                        Vector2Int blockChunkPos = this.MapToRegionPos(block.pos);
+                        Vector2Int blockRegionPos = this.MapToRegionPos(block.pos);
 
                         //在区域中删除
                         Region region = GFiles.world.GetOrAddRegion(regionIndex);
-                        region.RemovePos(block.data.id, blockChunkPos.x, blockChunkPos.y, block.isBackground);
+                        region.RemovePos(block.data.id, blockRegionPos.x, blockRegionPos.y, block.isBackground);
                     }
 
                     map.blockPool.Recover(block);
@@ -164,15 +164,20 @@ namespace GameCore.High
                 }
             }
 
+            if (executeBlockUpdate)
+            {
+                map.UpdateAt(pos, isBackground);
+            }
+
             GameCallbacks.OnRemoveBlock(pos, isBackground, editRegion, false);
         }
 
-        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion)
+        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData blockData, string customData, bool editRegion, bool executeBlockUpdate)
         {
-            if (block == null)
+            if (blockData == null)
                 return null;
 
-            Block b = map.blockPool.Get(pos, isBackground, block, customData);
+            Block b = map.blockPool.Get(pos, isBackground, blockData, customData);
 
             if (editRegion && Server.isServer)
             {
@@ -180,7 +185,12 @@ namespace GameCore.High
 
                 //在区域中添加
                 Region region = GFiles.world.GetOrAddRegion(regionIndex);
-                region.AddPos(block.id, blockRegionPos.x, blockRegionPos.y, isBackground);
+                region.AddPos(blockData.id, blockRegionPos.x, blockRegionPos.y, isBackground);
+            }
+
+            if (executeBlockUpdate)
+            {
+                map.UpdateAt(b.pos, b.isBackground);
             }
 
             GameCallbacks.OnAddBlock(pos, isBackground, b, this);

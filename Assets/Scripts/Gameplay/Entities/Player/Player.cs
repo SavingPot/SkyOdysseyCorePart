@@ -345,7 +345,7 @@ namespace GameCore
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion;
-        public const float playerDefaultGravity = 7f;
+        public const float playerDefaultGravity = 6f;
 
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);
         public static float deathLowestColorFloat = 0.45f;
@@ -514,6 +514,11 @@ namespace GameCore
             inventory?.DoBehaviours();
 
             RefreshInventory();
+
+#if DEBUG
+            if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
+                deathTimer = 0;
+#endif
         }
 
         protected virtual void AliveLocalUpdate()
@@ -542,14 +547,17 @@ namespace GameCore
                         !block.data.GetTag("ori:liquid").hasTag)
                     {
                         ExcavateBlock(block);
+
+                        //设置时间
+                        itemUseTime = Tools.time;
                     }
                     else if (PlayerControls.ClickingAttack(this))
                     {
                         OnStartAttack();
-                    }
 
-                    //设置时间
-                    itemUseTime = Tools.time;
+                        //设置时间
+                        itemUseTime = Tools.time;
+                    }
                 }
 
                 /* ---------------------------------- 抛弃物品 ---------------------------------- */
@@ -691,7 +699,7 @@ namespace GameCore
                 if (other == null)
                     break;
 
-                if (other.TryGetComponent<Drop>(out var drop))
+                if (other.TryGetComponent<Drop>(out var drop) && !drop.isDead)
                 {
                     //TODO 不要检测整个背包，而是检测这个物品能否放入
                     if (inventory.IsFull())
@@ -720,7 +728,7 @@ namespace GameCore
 
                 //从头上吐出物品
                 Vector2 pos = head ? head.transform.position : transform.localPosition;
-                GM.instance.SummonDrop(pos, item.data.id, count, item.customData.ToString());
+                GM.instance.SummonDrop(pos, item.data.id, count, item.customData?.ToString());
             }
         }
 
@@ -935,7 +943,7 @@ namespace GameCore
         public override void OnDeathServer() { }
         public override void OnDeathClient()
         {
-            deathTimer = Tools.time;//TODO: Fix:   + 20;  
+            deathTimer = Tools.time + 25;
 
             //设置颜色
             foreach (var sr in spriteRenderers)
@@ -1397,10 +1405,13 @@ namespace GameCore
 
 
 
-            
 
-            if (isLocalPlayer && !isDead)
+
+            if (isLocalPlayer)
             {
+                if (isDead)
+                    move = 0;
+
                 //设置速度
                 rb.velocity = GetMovementVelocity(new(move, 0));
 
@@ -1975,10 +1986,14 @@ namespace GameCore
 
                 foreach (var player in all)
                 {
+                    if (player.isDead)
+                        continue;
+
                     bool isMoving = player.isMoving;
                     float thirstValue = player.thirstValue;
                     float hungerValue = player.hungerValue;
                     float happinessValue = player.happinessValue;
+                    float health = player.health;
 
                     float thirstValueDelta = frameTime / 40;
                     if (isMoving) thirstValueDelta += frameTime / 40;
@@ -1993,6 +2008,11 @@ namespace GameCore
                     if (thirstValue <= 30) happinessValueDelta += frameTime / 30;
                     if (hungerValue <= 30) happinessValueDelta += frameTime / 20;
                     player.happinessValue = happinessValue - happinessValueDelta;
+
+                    if (health < 100)
+                    {
+                        player.health = health + Mathf.Min(frameTime / 5, player.maxHealth - health);
+                    }
 
                     //每三秒扣一次血
                     if (Tools.time >= playerHungerThirstHurtTimer)

@@ -1089,7 +1089,7 @@ namespace GameCore
                     {
                         rebornButton.button.interactable = false;
                         rebornTimerText.gameObject.SetActive(true);
-                        rebornTimerText.text.text = (player.deathTimer - Tools.time).ToString();
+                        rebornTimerText.text.text = ((int)(player.deathTimer - Tools.time)).ToString();
                     }
                 };
             }

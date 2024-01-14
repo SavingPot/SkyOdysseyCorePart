@@ -166,6 +166,11 @@ namespace GameCore
             Client.Send<NMDestroyBlock>(new(chunk.regionIndex, pos, isBackground));
         }
 
+        public void RemoveFromMap()
+        {
+            Client.Send<NMRemoveBlock>(new(pos, isBackground));
+        }
+
         [RuntimeInitializeOnLoadMethod]
         static void BindMethod()
         {

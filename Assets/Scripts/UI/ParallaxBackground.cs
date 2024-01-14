@@ -15,16 +15,6 @@ namespace GameCore.UI
 
         private void Update()
         {
-            Color color = new(
-                GM.instance.globalLight.color.r * GM.instance.globalLight.intensity,
-                GM.instance.globalLight.color.g * GM.instance.globalLight.intensity,
-                GM.instance.globalLight.color.b * GM.instance.globalLight.intensity);
-
-            foreach (var sr in renderers)
-            {
-                sr.color = color;
-            }
-
             var cameraPos = Tools.instance.mainCamera.transform.position;
 
             transform.position = new(cameraPos.x * parallaxFactor + positionDelta.x, cameraPos.y * parallaxFactor + positionDelta.y);
