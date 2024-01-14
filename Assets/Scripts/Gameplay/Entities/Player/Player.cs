@@ -641,8 +641,7 @@ namespace GameCore
         public static Action<Player> GravitySet = caller =>
         {
             if (!caller.generatedFirstRegion ||
-                GM.instance.generatingExistingRegion ||
-                GM.instance.generatingNewRegions.Any(p => p == PosConvert.WorldPosToRegionIndex(caller.transform.position)))  //获取区域序号不用 caller.regionIndex 是因为只有区域加载成功, caller.regionIndex才会正式改编
+                !GM.instance.generatedExistingRegions.Any(p => p.index == PosConvert.WorldPosToRegionIndex(caller.transform.position)))  //获取区域序号不用 caller.regionIndex 是因为只有区域加载成功, caller.regionIndex才会正式改编
             {
                 caller.gravity = 0;
                 return;
