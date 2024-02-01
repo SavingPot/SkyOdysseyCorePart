@@ -10,3 +10,4 @@ obj
 GameLauncher/Android
 GameLauncher/Windows
 Assets/StreamingAssets/sole_assets/mods/ori
+Application.dataPath/StreamingAssets/sole_assets/mods/ori
