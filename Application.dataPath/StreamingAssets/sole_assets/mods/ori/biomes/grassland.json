@@ -1,0 +1,59 @@
+{
+    "json_format": "0.6.2",
+    "ori:biome": {
+        "id": "ori:grassland",
+        "difficulty": 1,
+        "size_scope": {
+            "min": [
+                45,
+                45
+            ],
+            "max": [
+                70,
+                70
+            ]
+        },
+        "structure": [
+            {
+                "id": "ori:cave"
+            }
+        ],
+        "blocks": [
+            {
+                "ranges": [
+                    "@surface + 1"
+                ],
+                "block": "ori:grass_block"
+            },
+            {
+                "prefab": "ori:dirt_surface"
+            },
+            {
+                "prefab": "ori:ores"
+            },
+            {
+                "prefab": "ori:pools"
+            },
+            {
+                "prefab": "ori:universal_surface"
+            },
+            {
+                "type": "post_process",
+                "block": "ori:grass",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 70
+                }
+            },
+            {
+                "prefab": "ori:plants_temperate_zone"
+            }
+        ],
+        "entities": {}
+    }
+}

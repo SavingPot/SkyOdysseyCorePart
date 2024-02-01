@@ -22,7 +22,7 @@ namespace GameCore.UI
         public bool wasReleasedThisFrame;
         public bool isDragging;
         public bool isPressed;
-        public bool pointerStaying;
+        public bool isPointerStaying;
 
         protected override void Start()
         {
@@ -31,12 +31,21 @@ namespace GameCore.UI
             //this.HideClickAction();
         }
 
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            isDragging = false;
+            isPressed = false;
+            isPointerStaying = false;
+        }
+
         private void Update()
         {
             if (isPressed)
                 OnPointerHoldAction();
 
-            if (pointerStaying)
+            if (isPointerStaying)
                 OnPointerStayAction();
 
             wasPressedThisFrame = false;
@@ -83,7 +92,7 @@ namespace GameCore.UI
 
         public override void OnPointerEnter(PointerEventData eventData)
         {
-            pointerStaying = true;
+            isPointerStaying = true;
             base.OnPointerEnter(eventData);
 
             OnPointerEnterAction(eventData);
@@ -91,7 +100,7 @@ namespace GameCore.UI
 
         public override void OnPointerExit(PointerEventData eventData)
         {
-            pointerStaying = false;
+            isPointerStaying = false;
             base.OnPointerExit(eventData);
 
             OnPointerExitAction(eventData);

@@ -58,9 +58,6 @@ namespace GameCore
         private static StreamWriter logStreamWriter;
         public const ushort defaultPort = 24442;
 
-        public static string logsPath { get; internal set; }
-        public static bool writeLogsToFile { get; set; } = true;
-
         #region Default or Unknown
         public const string requiredErrorMessage = "此变量必须被赋值否则会出问题!~";
         #endregion
@@ -84,7 +81,6 @@ namespace GameCore
 #endif
 
 
-        public static readonly List<(string, LogType)> totalLogTexts = new();
         public static System.Random staticRandom = new();
 
 
@@ -97,26 +93,29 @@ namespace GameCore
 
         public static void TimeTest(Action action)
         {
-            Stopwatch watch = new();
-            watch.Start();
+            Stopwatch watch = Stopwatch.StartNew();
 
             action();
 
             watch.Stop();
             long usedTime = watch.ElapsedMilliseconds;
 
-            Debug.Log(usedTime);
+            Debug.Log($"本次的时间测试结果：共耗时 {usedTime}ms ({usedTime / 1000f}s)");
         }
 
         public static void TimeTest(Action action, long testTime)
         {
-            TimeTest(() =>
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (long i = 0; i < testTime; i++)
             {
-                for (long i = 0; i < testTime; i++)
-                {
-                    action();
-                }
-            });
+                action();
+            }
+
+            watch.Stop();
+            long usedTime = watch.ElapsedMilliseconds;
+
+            Debug.Log($"本次的时间测试结果：共耗时 {usedTime}ms ({usedTime / 1000f}s), 每个操作平均耗时 {usedTime / testTime}ms");
         }
 
         public static void TimeTest(params Action[] actions)
@@ -143,12 +142,6 @@ namespace GameCore
             //注册回调
             SceneManager.activeSceneChanged += SceneChanged;
             GControls.OnDownFullScreen += FullScreen;
-
-#if DEBUG
-            Debug.unityLogger.logEnabled = true;
-#else
-            Debug.unityLogger.logEnabled = false;
-#endif
         }
 
         private void OnGUI()
@@ -250,29 +243,6 @@ namespace GameCore
             }
         }
 
-        [ChineseName("当收到日志时")]
-        internal void OnHandleLog(string logString, string _, LogType type)
-        {
-            if (!writeLogsToFile)
-                return;
-
-            switch (type)
-            {
-                case LogType.Warning:
-                    LogWarningToFile(logString + "\n" + HighlightedStackTraceForMarkdown());
-                    break;
-
-                case LogType.Error:
-                case LogType.Exception:
-                    LogErrorToFile(logString + "\n" + HighlightedStackTraceForMarkdown());
-                    break;
-
-                default:
-                    LogToFile(logString);
-                    break;
-            }
-        }
-
 
         public Vector2 World2ToUI(Vector3 wpos, Component uiParent, Camera camera)
         {
@@ -291,33 +261,10 @@ namespace GameCore
 
         public static string GetFileConvertedDate() => DateTime.Today.ToShortDateString().Replace('/', '_');
 
-        public static void LogTextToFile(object content, LogType type)
-        {
-            string str = content.ToString();
-
-            totalLogTexts.Add(new(str, type));
-
-            try
-            {
-                using StreamWriter writer = new(logsPath, true, Encoding.UTF8);
-                writer.WriteLine($"***\n{str}");
-            }
-            catch
-            {
-
-            }
-        }
-
         public static string TimeInDay()
         {
             return DateTime.Now.ToString("[HH:mm:ss]");
         }
-
-        public static void LogToFile(object obj) => LogTextToFile($"{TimeInDay()}: {obj}", LogType.Log);
-
-        public static void LogWarningToFile(object obj) => LogTextToFile($"{TimeInDay()}: 警告: {obj}", LogType.Warning);
-
-        public static void LogErrorToFile(object obj) => LogTextToFile($"{TimeInDay()}: 错误: {obj}", LogType.Error);
 
 
         #region 其他

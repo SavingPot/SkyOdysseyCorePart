@@ -1,0 +1,27 @@
+{
+    "json_format": "0.4.8",
+    "ori:entity": {
+        "id": "ori:pig",
+        "summon": {
+            "default_probability": 70,
+            "time_earliest": 8,
+            "time_latest": 18
+        },
+        "drops": [
+            {
+                "id": "ori:pig_chop",
+                "count": 3
+            }
+        ],
+        "physics": {
+            "collider": {
+                "size": [
+                    1.2,
+                    1
+                ]
+            },
+            "gravity": 14
+        },
+        "max_health": 120
+    }
+}

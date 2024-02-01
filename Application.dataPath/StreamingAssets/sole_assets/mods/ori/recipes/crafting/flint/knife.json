@@ -1,0 +1,24 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:flint_knife",
+        "items": [
+            {
+                "id": "ori:stick",
+                "count": 1
+            },
+            {
+                "id": "ori:straw_rope",
+                "count": 1
+            },
+            {
+                "id": "ori:flint",
+                "count": 1
+            }
+        ],
+        "result": {
+            "id": "ori:flint_knife",
+            "count": 1
+        }
+    }
+}

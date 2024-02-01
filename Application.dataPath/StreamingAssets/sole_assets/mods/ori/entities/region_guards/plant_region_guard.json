@@ -1,0 +1,8 @@
+{
+    "json_format": "0.4.8",
+    "ori:entity": {
+        "id": "ori:plant_region_guard",
+        "max_health": 200,
+        "lifetime": 3600
+    }
+}

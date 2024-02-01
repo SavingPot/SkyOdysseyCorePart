@@ -1,0 +1,17 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:dead_tree",
+        "display": {
+            "texture_id": "ori:dead_tree",
+            "description": "ori:description.dead_tree"
+        },
+        "property": {
+            "hardness": 0.25,
+            "tags": [
+                "ori:plant"
+            ],
+            "collidible": false
+        }
+    }
+}

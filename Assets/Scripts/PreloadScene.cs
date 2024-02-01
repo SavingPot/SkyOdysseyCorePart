@@ -22,7 +22,7 @@ namespace GameCore
 #endif
 
 #if UNITY_ANDROID
-            // void Request(string str)
+            // static void Request(string str)
             // {
             //     if (!AndroidRuntimePermissions.CheckPermission(str))
             //     {

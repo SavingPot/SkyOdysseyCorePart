@@ -1,0 +1,11 @@
+{
+    "json_format": "0.7.8",
+    "ori:spell": {
+        "id": "ori:spark",
+        "cost": 1,
+        "description": "ori:description.spark",
+        "tags": [
+            "ori:loot.wooden_chest"
+        ]
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:rose",
+        "display": {
+            "texture_id": "ori:rose",
+            "description": "ori:description.rose"
+        },
+        "property": {
+            "hardness": 0.025,
+            "tags": [
+                "ori:plant"
+            ],
+            "collidible": false
+        }
+    }
+}

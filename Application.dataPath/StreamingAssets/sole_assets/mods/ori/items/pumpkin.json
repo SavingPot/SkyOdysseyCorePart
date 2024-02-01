@@ -1,0 +1,12 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:pumpkin",
+        "texture": "ori:pumpkin",
+        "tags": [
+            "ori:food",
+            "ori:edible=15"
+        ],
+        "description": "ori:description.pumpkin"
+    }
+}

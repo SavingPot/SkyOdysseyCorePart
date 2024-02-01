@@ -35,7 +35,7 @@ namespace GameCore
             };
         }
 
-        public static Tween DOLocalRotateZ(this Transform trans, float z, float duration) => trans.DOLocalRotate(new(0, 0, z), duration);
+        public static Tween DOLocalRotateZ(this Transform trans, float z, float duration, RotateMode mode = RotateMode.Fast) => trans.DOLocalRotate(new(0, 0, z), duration, mode);
 
         //public static Tween DORotateAroundZ(this Transform trans, Vector2 point, float angle, float duration)
         //{

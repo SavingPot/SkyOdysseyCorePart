@@ -1,0 +1,10 @@
+{
+    "json_format": "0.4.8",
+    "ori:entity": {
+        "id": "ori:plant_region_guard_sapling",
+        "physics": {
+            "gravity": 0
+        },
+        "lifetime": 10
+    }
+}

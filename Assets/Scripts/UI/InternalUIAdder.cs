@@ -20,10 +20,8 @@ using static GameCore.SerializationSurrogates;
 
 namespace GameCore.UI
 {
-    public class InternalUIAdder : MonoBehaviour
+    public class InternalUIAdder : SingletonClass<InternalUIAdder>
     {
-        public static InternalUIAdder instance { get; private set; }
-
         public class Mod_Info_WithPath
         {
             public string path;
@@ -53,14 +51,57 @@ namespace GameCore.UI
 
 
 
-        private void Awake()
+        /* -------------------------------------------------------------------------- */
+        /*                                     状态文本                                     */
+        /* -------------------------------------------------------------------------- */
+        public static float statusTextFadeOutTime = 5;
+        public float statusTextFadeOutWaitedTime;
+        public bool preparingToFadeOutStatusText;
+        public TextIdentity statusText;
+
+
+
+
+        public void SetStatusText(string text)
         {
-            if (instance)
+            statusText.AfterRefreshing += t => t.text.text = text;
+            statusText.RefreshUI();
+
+            //杀死淡出动画
+            Tools.KillTweensOf(statusText.text);
+
+            //播放淡入动画
+            if (statusText.text.color.a == 1)
+                statusText.text.SetAlpha(0);
+            GameUI.FadeIn(statusText.text);
+
+            //准备播放淡出动画
+            statusTextFadeOutWaitedTime = 0;
+
+            if (!preparingToFadeOutStatusText)
             {
-                Debug.LogWarning("存在两个实例, 很可能导致异常");
+                StartCoroutine(PrepareToFadeOutStatusText());
+            }
+        }
+
+        IEnumerator PrepareToFadeOutStatusText()
+        {
+            preparingToFadeOutStatusText = true;
+
+            //等待淡出间隔
+            while (statusTextFadeOutWaitedTime < statusTextFadeOutTime)
+            {
+                statusTextFadeOutWaitedTime += Performance.frameTime;
+
+                yield return null;
             }
 
-            instance = this;
+            //杀死淡入动画
+            Tools.KillTweensOf(statusText.text);
+
+            statusText.text.SetAlpha(1);
+            GameUI.FadeOut(statusText.text);
+            preparingToFadeOutStatusText = false;
         }
 
         public void RefreshWorldFiles()
@@ -101,8 +142,24 @@ namespace GameCore.UI
             }
         }
 
-        public async void Start()
+        protected async override void Start()
         {
+            base.Start();
+
+            #region 状态文本
+            {
+                statusText = GameUI.AddText(UPC.down, "ori:text.player_status");
+                statusText.SetAPosY(80);
+                statusText.SetSizeDeltaY(40);
+                statusText.text.SetFontSize(18);
+                statusText.text.raycastTarget = false;
+                statusText.gameObject.SetActive(false);
+                statusText.OnUpdate += t => GameUI.SetUILayerToFirst(t);
+            }
+            #endregion
+
+
+
             switch (GScene.name)
             {
                 case SceneNames.MainMenu:
@@ -146,9 +203,10 @@ namespace GameCore.UI
 
                             Sprite[] sprites = new[]
                             {
-                            ModFactory.CompareTexture("ori:loading_house_0").sprite,
-                            ModFactory.CompareTexture("ori:loading_house_1").sprite,
-                        };
+                                ModFactory.CompareTexture("ori:loading_house_0").sprite,
+                                ModFactory.CompareTexture("ori:loading_house_1").sprite,
+                            };
+                            
                             var _ = EasyAnim.PlaySprites(1.5f, sprites, sprite =>
                             {
                                 if (houseImage)
@@ -321,7 +379,9 @@ namespace GameCore.UI
                         {
                             if (worldNameField.field.text.IsNullOrWhiteSpace())
                             {
-                                Debug.LogError("世界名不能为空，创建失败");
+                                var message = "世界名不能为空，创建失败";
+                                SetStatusText(message);
+                                Debug.LogError(message);
                                 return;
                             }
 
@@ -329,7 +389,9 @@ namespace GameCore.UI
                             {
                                 if (worldFile.worldName == worldNameField.field.text)
                                 {
-                                    Debug.LogError("存在一个同名世界，创建失败");
+                                    var message = "存在一个同名世界，创建失败";
+                                    SetStatusText(message);
+                                    Debug.LogError(message);
                                     return;
                                 }
                             }
@@ -454,6 +516,8 @@ namespace GameCore.UI
 
                                 //将更改后的设置应用到文件
                                 GFiles.SaveAllDataToFiles();
+
+                                SetStatusText("保存了设置文件");
                             });
 
                             GameUI.GenerateSkinShow(data, b.transform);
@@ -488,6 +552,8 @@ namespace GameCore.UI
 
                                 //将更改后的设置应用到文件
                                 GFiles.SaveAllDataToFiles();
+
+                                SetStatusText("保存了设置文件");
                             });
                             svLanguages.AddChild(b);
                         }

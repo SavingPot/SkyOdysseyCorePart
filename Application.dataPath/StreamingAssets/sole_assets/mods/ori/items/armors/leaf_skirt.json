@@ -1,0 +1,16 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:leaf_skirt",
+        "texture": "ori:leaf_skirt",
+        "tags": [
+            "ori:skirt"
+        ],
+        "description": "ori:description.leaf_skirt",
+        "legging": {
+            "defense": 1,
+            "left_leg": "ori:leaf_skirt.left_leg",
+            "right_leg": "ori:leaf_skirt.right_leg"
+        }
+    }
+}

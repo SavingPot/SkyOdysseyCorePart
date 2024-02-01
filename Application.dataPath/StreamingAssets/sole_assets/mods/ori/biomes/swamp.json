@@ -1,0 +1,73 @@
+{
+    "json_format": "0.6.2",
+    "ori:biome": {
+        "id": "ori:swamp",
+        "difficulty": 6,
+        "size_scope": {
+            "min": [
+                45,
+                45
+            ],
+            "max": [
+                70,
+                70
+            ]
+        },
+        "structure": [
+            {
+                "id": "ori:cave"
+            }
+        ],
+        "blocks": [
+            {
+                "type": "perlin",
+                "fluctuation": {
+                    "frequency": 2.5,
+                    "height": 2.5
+                },
+                "start_y": "@surface + 1",
+                "blocks": [
+                    {
+                        "range": "@highest_noise => @highest_noise",
+                        "block": "ori:grass_block",
+                        "isBackground": false
+                    },
+                    {
+                        "range": "@lowest_noise => @highest_noise - 1",
+                        "block": "ori:dirt",
+                        "isBackground": false
+                    }
+                ]
+            },
+            {
+                "prefab": "ori:dirt_surface"
+            },
+            {
+                "prefab": "ori:ores"
+            },
+            {
+                "prefab": "ori:pools"
+            },
+            {
+                "prefab": "ori:universal_surface"
+            },
+            {
+                "type": "post_process",
+                "block": "ori:grass",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 80
+                }
+            },
+            {
+                "prefab": "ori:plants_temperate_zone"
+            }
+        ],
+        "entities": {}
+    }
+}

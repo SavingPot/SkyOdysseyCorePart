@@ -1,0 +1,12 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:wooden_bow",
+        "texture": "ori:wooden_bow",
+        "tags": [
+            "ori:bow",
+            "ori:loot.barrel"
+        ],
+        "use_cd": 0.4
+    }
+}

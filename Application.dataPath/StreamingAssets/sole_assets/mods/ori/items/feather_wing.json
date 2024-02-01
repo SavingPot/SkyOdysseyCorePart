@@ -1,0 +1,14 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:feather_wing",
+        "texture": "ori:feather_wing",
+        "damage": 10,
+        "tags": [],
+        "description": "ori:description.feather_wing",
+        "breastplate": {
+            "defense": 1,
+            "body": "ori:feather_wing.body"
+        }
+    }
+}

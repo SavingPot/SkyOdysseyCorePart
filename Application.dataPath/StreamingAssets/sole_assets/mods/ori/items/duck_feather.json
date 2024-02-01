@@ -1,0 +1,12 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:duck_feather",
+        "texture": "ori:duck_feather",
+        "damage": 1,
+        "tags": [
+            "ori:feather"
+        ],
+        "description": "ori:description.duck_feather"
+    }
+}

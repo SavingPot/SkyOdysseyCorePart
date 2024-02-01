@@ -4,8 +4,10 @@ using Sirenix.OdinInspector;
 using SP.Tools;
 using SP.Tools.Unity;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -123,6 +125,8 @@ namespace GameCore
 
         #region 缓存/目录
         public static string dataPath { get; private set; }
+        public static string directoryLogsPath { get; private set; }
+        public static string currentLogsFilePath { get; private set; }
         public static string soleAssetsPath { get; private set; }
         public static string modsPath { get; private set; }
 
@@ -139,6 +143,14 @@ namespace GameCore
         public static string coreMainDllPath;
         public static string[] coreDlls { get; private set; }
         #endregion
+
+
+
+        public static readonly List<(string, LogType)> totalLogTexts = new();
+
+        public static bool writeLogsToFile { get; set; } = true;
+
+
 
 
 
@@ -182,17 +194,11 @@ namespace GameCore
 
 
 
-            /* -------------------------------- 初始化 Tools ------------------------------- */
-            Instantiate(toolsPrefab);
-            Application.logMessageReceivedThreaded += Tools.instance.OnHandleLog; //包括主线程与所有子进程
-
-
-
             /* ---------------------------------- 获取目录 ---------------------------------- */
             dataPath = Application.persistentDataPath;
-            Tools.logsPath = Path.Combine(GInit.dataPath, "logs", $"{Tools.GetFileConvertedDate()}_{gameVersion}.md");
-            File.Delete(Tools.logsPath);
-            cachePath = Path.Combine(dataPath, "cache");
+            directoryLogsPath = Path.Combine(dataPath, "logs");
+            currentLogsFilePath = Path.Combine(directoryLogsPath, $"{Tools.GetFileConvertedDate()}_{gameVersion}.md");
+            cachePath = Application.temporaryCachePath;
             modsPath = Path.Combine(dataPath, "mods");
             IOTools.CreateDirectoryIfNone(modsPath);
             playerSkinPath = Path.Combine(dataPath, "player_skins");
@@ -200,6 +206,28 @@ namespace GameCore
             savesPath = Path.Combine(dataPath, "saves");
             settingsPath = Path.Combine(savesPath, "settings_data.json");
             worldPath = Path.Combine(savesPath, "worlds");
+
+
+
+            /* ---------------------------------- 管理日志 ---------------------------------- */
+#if DEBUG
+            Debug.unityLogger.logEnabled = true;
+#else
+            Debug.unityLogger.logEnabled = false;
+#endif
+
+            IOTools.CreateDirectoryIfNone(directoryLogsPath); //创建日志目录
+
+            if (File.Exists(currentLogsFilePath))
+                File.Delete(currentLogsFilePath); //删除原有日志
+            File.Create(currentLogsFilePath);
+            
+            Application.logMessageReceivedThreaded += OnHandleLog; //包括主线程与所有子进程
+
+
+
+            /* -------------------------------- 初始化 Tools ------------------------------- */
+            Instantiate(toolsPrefab);
 
 
 
@@ -255,7 +283,7 @@ namespace GameCore
                 coreDlls[i] = gameDlls[i];
             }
 
-            coreDlls[^1] = Path.Combine(soleAssetsPath, "mods", "original", "scripts", "OriginalEntities.dll").ToCSharpPath();
+            coreDlls[^1] = Path.Combine(soleAssetsPath, "mods", "ori", "scripts", "ori.dll");
 
 
 
@@ -301,6 +329,61 @@ namespace GameCore
 
             base.Awake();
         }
+
+
+
+
+
+
+        [ChineseName("当收到日志时")]
+        internal void OnHandleLog(string logString, string _, LogType type)
+        {
+            if (!writeLogsToFile)
+                return;
+
+            switch (type)
+            {
+                case LogType.Warning:
+                    LogWarningToFile(logString + "\n" + Tools.HighlightedStackTraceForMarkdown());
+                    break;
+
+                case LogType.Error:
+                case LogType.Exception:
+                    LogErrorToFile(logString + "\n" + Tools.HighlightedStackTraceForMarkdown());
+                    break;
+
+                default:
+                    LogToFile(logString);
+                    break;
+            }
+        }
+
+
+
+
+        public static void LogTextToFile(object content, LogType type)
+        {
+            string str = content.ToString();
+
+            totalLogTexts.Add(new(str, type));
+
+            try
+            {
+                using StreamWriter writer = new(currentLogsFilePath, true, Encoding.UTF8);
+                writer.WriteLine($"***\n{str}");
+            }
+            catch
+            {
+
+            }
+        }
+
+        public static void LogToFile(object obj) => LogTextToFile($"{Tools.TimeInDay()}: {obj}", LogType.Log);
+
+        public static void LogWarningToFile(object obj) => LogTextToFile($"{Tools.TimeInDay()}: 警告: {obj}", LogType.Warning);
+
+        public static void LogErrorToFile(object obj) => LogTextToFile($"{Tools.TimeInDay()}: 错误: {obj}", LogType.Error);
+
 
 
         public static void Quit()

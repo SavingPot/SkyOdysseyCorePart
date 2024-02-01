@@ -23,6 +23,20 @@ namespace GameCore
         public static AudioSourcePool sourcePool = new(ManagerAudio.instance.transform);
 
 
+        public static AudioData GetAudio(string id)
+        {
+            foreach (var audio in audios)
+            {
+                if (audio.id == id)
+                {
+                    return audio;
+                }
+            }
+
+            return null;
+        }
+
+
 
         [ChineseName("设置混音器音量")] public static void SetMixerVolume(AudioMixerGroup audioMixerGroup, float value) => audioMixerGroup.audioMixer.SetFloat("MixerVolume", value);
 

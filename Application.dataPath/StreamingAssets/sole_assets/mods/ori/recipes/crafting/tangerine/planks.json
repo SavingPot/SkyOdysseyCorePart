@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:tangerine_planks",
+        "items": [
+            {
+                "id": "ori:tangerine_log"
+            }
+        ],
+        "result": {
+            "id": "ori:tangerine_planks",
+            "count": 3
+        }
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:mana_stone",
+        "texture": "ori:mana_stone",
+        "description": "ori:description.mana_stone",
+        "tags": [
+            "ori:loot.wooden_chest"
+        ]
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:wooden_bowl_with_salad",
+        "items": [
+            {
+                "id": "ori:wooden_bowl_with_water"
+            },
+            {
+                "tags": [
+                    "ori:plant"
+                ],
+                "count": 2
+            }
+        ],
+        "result": {
+            "id": "ori:wooden_bowl_with_salad"
+        }
+    }
+}

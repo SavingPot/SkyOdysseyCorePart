@@ -90,7 +90,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public static void BindHumanAnimations(Creature creature)
         {
-            float attackAnimTime = 0.2f;
+            float attackAnimTime = 0.3f;
 
 
             creature.animWeb = new();
@@ -145,16 +145,16 @@ namespace GameCore
 
             #region 攻击
             {
-                float rot = 55f;
+                float rot = -70f;
 
                 creature.animWeb.AddAnim("attack_leftarm", 1, new AnimFragment[] {
-                    new LocalRotationZAnimFragment(creature.leftArm.transform, rot, attackAnimTime, Ease.InOutSine),
-                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, attackAnimTime, Ease.InOutSine)
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, rot, 0f, Ease.Linear,RotateMode.Fast),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, -360 - rot, attackAnimTime, Ease.InOutSine,RotateMode.LocalAxisAdd)
                 }, 0);
 
                 creature.animWeb.AddAnim("attack_rightarm", 1, new AnimFragment[] {
-                    new LocalRotationZAnimFragment(creature.rightArm.transform, rot, attackAnimTime, Ease.InOutSine),
-                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, attackAnimTime, Ease.InOutSine)
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, rot, 0f, Ease.Linear,RotateMode.Fast),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, -360 - rot, attackAnimTime, Ease.InOutSine,RotateMode.LocalAxisAdd)
                 }, 0);
             }
             #endregion
@@ -230,8 +230,8 @@ namespace GameCore
             creature.animWeb.CreateConnectionFromTo("idle", "run", () => creature.isMoving);
             creature.animWeb.CreateConnectionFromTo("run", "idle", () => !creature.isMoving);
 
-            creature.animWeb.CreateConnectionFromTo("attack_leftarm", "idle", () => true, attackAnimTime * 2, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
-            creature.animWeb.CreateConnectionFromTo("attack_rightarm", "idle", () => true, attackAnimTime * 2, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
+            creature.animWeb.CreateConnectionFromTo("attack_leftarm", "idle", () => true, attackAnimTime, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
+            creature.animWeb.CreateConnectionFromTo("attack_rightarm", "idle", () => true, attackAnimTime, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
 
             creature.animWeb.SwitchPlayingTo("idle", 0);
         }
@@ -372,7 +372,7 @@ namespace GameCore
 
 
 
-        protected virtual void OnStartAttack()
+        public virtual void OnStartAttack()
         {
 
         }

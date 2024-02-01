@@ -1,0 +1,15 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:iron_hoe",
+        "texture": "ori:iron_hoe",
+        "damage": 20,
+        "excavation_strength": 75,
+        "tags": [
+            "ori:hoe"
+        ],
+        "description": "ori:description.iron_hoe",
+        "use_cd": 0.2,
+        "extra_distance": 0.2
+    }
+}

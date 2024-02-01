@@ -1,0 +1,22 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:cooking_pot",
+        "items": [
+            {
+                "tags": [
+                    "ori:planks"
+                ],
+                "count": 2
+            },
+            {
+                "id": "ori:iron_ore",
+                "count": 1
+            }
+        ],
+        "result": {
+            "id": "ori:cooking_pot",
+            "count": 1
+        }
+    }
+}

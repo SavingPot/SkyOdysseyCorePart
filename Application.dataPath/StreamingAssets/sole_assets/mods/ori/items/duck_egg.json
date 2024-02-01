@@ -1,0 +1,10 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:duck_egg",
+        "texture": "ori:duck_egg",
+        "tags": [
+            "ori:egg"
+        ]
+    }
+}

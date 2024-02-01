@@ -1,0 +1,11 @@
+{
+    "json_format": "0.6.4",
+    "ori:mod_info": {
+        "id": "ori",
+        "enabled": true,
+        "display": {
+            "description": "ori:mod_description",
+            "name": "ori:mod_name"
+        }
+    }
+}

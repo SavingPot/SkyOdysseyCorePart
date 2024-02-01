@@ -1,0 +1,120 @@
+{
+    "json_format": "0.6.4",
+    "ori:structure": {
+        "id": "ori:mangrove_tree",
+        "generation": {
+            "probability": 12,
+            "must_enough": false,
+            "require": [
+                {
+                    "id": "ori:grass_block",
+                    "pos": [
+                        0,
+                        0
+                    ]
+                }
+            ]
+        },
+        "blocks": {
+            "fixed": [
+                {
+                    "id": "ori:mangrove_log",
+                    "pos": [
+                        0,
+                        1,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_log",
+                    "pos": [
+                        0,
+                        2,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_log",
+                    "pos": [
+                        0,
+                        3,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_log",
+                    "pos": [
+                        0,
+                        4,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_log",
+                    "pos": [
+                        0,
+                        5,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_log",
+                    "pos": [
+                        0,
+                        6,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_leaf",
+                    "pos": [
+                        -1,
+                        7,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_leaf",
+                    "pos": [
+                        -1,
+                        8,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_leaf",
+                    "pos": [
+                        0,
+                        7,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_leaf",
+                    "pos": [
+                        0,
+                        8,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_leaf",
+                    "pos": [
+                        1,
+                        7,
+                        1
+                    ]
+                },
+                {
+                    "id": "ori:mangrove_leaf",
+                    "pos": [
+                        1,
+                        8,
+                        1
+                    ]
+                }
+            ]
+        },
+        "entities": {}
+    }
+}

@@ -4,29 +4,74 @@ using UnityEditor.Callbacks;
 using SP.Tools;
 using System.IO;
 using System.Linq;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
+
+public class VersionBuildPreprocess : IPreprocessBuildWithReport
+{
+    internal static string oriEditorPath = Path.Combine(Application.dataPath, "StreamingAssets", "sole_assets", "mods", "ori");
+    public int callbackOrder { get { return 0; } }
+
+
+    public void OnPreprocessBuild(BuildReport report)
+    {
+        Debug.Log("开始预处理");
+
+        // 获取构建信息
+        BuildSummary summary = report.summary;
+        //summary.outputPath：构建的输出路径。
+        //summary.platform：构建的目标平台。
+        //summary.options：构建的选项。
+        //summary.result：构建的结果（成功、失败等）。
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                在这里执行打包前处理的操作                               */
+        /* -------------------------------------------------------------------------- */
+
+
+
+        //删除编辑器里的 ori
+        if (Directory.Exists(oriEditorPath))
+            IOTools.DeleteDir(oriEditorPath);
+
+        switch (summary.platform)
+        {
+            case BuildTarget.Android:
+                {
+                    //把 ori 复制到编辑器里
+                    var oriSourcePath = "D:/MakeGames/GameProject/ori_copy_for_editor/sole_assets/mods/ori";
+
+                    IOTools.CopyDir(oriSourcePath, oriEditorPath);
+                }
+                break;
+        }
+    }
+}
 
 public class VersionBuildPostProcess
 {
     static readonly string[] dllsToDelete = new[]
     {
-        "Sirenix.OdinInspector.Attributes",
-        "Sirenix.Serialization.Config",
-        "Sirenix.Serialization",
-        "Sirenix.Utilities",
-        "System.Drawing",
-        "Unity.Services.Core.Analytics",
-        "Unity.Services.Core.Configuration",
-        "Unity.Services.Core.Device",
-        "Unity.Services.Core",
-        "Unity.Services.Core.Environments",
-        "Unity.Services.Core.Environments.Internal",
-        "Unity.Services.Core.Internal",
-        "Unity.Services.Core.Networking",
-        "Unity.Services.Core.Registration",
-        "Unity.Services.Core.Scheduler",
-        "Unity.Services.Core.Telemetry",
-        "Unity.Services.Core.Threading"
-    };
+            "Sirenix.OdinInspector.Attributes",
+            "Sirenix.Serialization.Config",
+            "Sirenix.Serialization",
+            "Sirenix.Utilities",
+            "System.Drawing",
+            "Unity.Services.Core.Analytics",
+            "Unity.Services.Core.Configuration",
+            "Unity.Services.Core.Device",
+            "Unity.Services.Core",
+            "Unity.Services.Core.Environments",
+            "Unity.Services.Core.Environments.Internal",
+            "Unity.Services.Core.Internal",
+            "Unity.Services.Core.Networking",
+            "Unity.Services.Core.Registration",
+            "Unity.Services.Core.Scheduler",
+            "Unity.Services.Core.Telemetry",
+            "Unity.Services.Core.Threading"
+        };
 
     [PostProcessBuild(1000)]
     public static void OnPostProcessBuild(BuildTarget target, string pathToBuiltProject)

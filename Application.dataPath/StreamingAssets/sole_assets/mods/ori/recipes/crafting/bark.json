@@ -1,0 +1,16 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:bark",
+        "items": [
+            {
+                "tags": [
+                    "ori:log"
+                ]
+            }
+        ],
+        "result": {
+            "id": "ori:bark"
+        }
+    }
+}

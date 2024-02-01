@@ -9,11 +9,22 @@ using Newtonsoft.Json.Linq;
 
 namespace GameCore
 {
-    public interface IInventoryOwner
+    public interface IInventoryOwner : IItemContainer
     {
+        Transform transform { get; }
         void OnInventoryItemChange(Inventory newValue, string index);
         Inventory GetInventory();
         void SetInventory(Inventory value); //! 需要对传入的 value 参数进行 ResumeFromStream
+        SpriteRenderer usingItemRenderer { get; }
+        void SetUsingItemRendererLocalPositionAndScale(Vector2 localPosition, Vector2 localScale);
+    }
+
+    public interface IItemContainer
+    {
+        Item[] items { get; set; }
+
+        Item GetItem(string index);
+        void SetItem(string index, Item value);
     }
 
     [Serializable]
@@ -199,13 +210,7 @@ namespace GameCore
 
         public void CreateBehaviour(Item datum, string index, out ItemBehaviour behaviour)
         {
-            if (datum == null)
-            {
-                behaviour = null;
-                return;
-            }
-
-            if (datum.data.behaviourType == null)
+            if (datum == null || datum.data.behaviourType == null)
             {
                 behaviour = null;
                 return;
@@ -252,7 +257,7 @@ namespace GameCore
                     break;
             }
 
-            owner?.OnInventoryItemChange(this,index);
+            owner?.OnInventoryItemChange(this, index);
         }
 
         public void SetItem(int index, Item value)

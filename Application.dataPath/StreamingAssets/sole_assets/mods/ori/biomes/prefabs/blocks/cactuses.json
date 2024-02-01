@@ -1,0 +1,86 @@
+{
+    "json_format": "0.7.0",
+    "prefab": {
+        "id": "ori:cactuses",
+        "content": [
+            {
+                "type": "post_process",
+                "block": "ori:cactus",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:sand"
+                },
+                "rules": {
+                    "probability": 10
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:cactus",
+                "ranges": [
+                    "@highest_point + 2"
+                ],
+                "attached": {
+                    "id": "ori:cactus"
+                },
+                "rules": {
+                    "probability": 40
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:cactus",
+                "ranges": [
+                    "@highest_point + 3"
+                ],
+                "attached": {
+                    "id": "ori:cactus"
+                },
+                "rules": {
+                    "probability": 20
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:flowering_cactus",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:sand"
+                },
+                "rules": {
+                    "probability": 1
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:flowering_cactus",
+                "ranges": [
+                    "@highest_point + 2"
+                ],
+                "attached": {
+                    "id": "ori:cactus"
+                },
+                "rules": {
+                    "probability": 4.5
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:flowering_cactus",
+                "ranges": [
+                    "@highest_point + 3"
+                ],
+                "attached": {
+                    "id": "ori:cactus"
+                },
+                "rules": {
+                    "probability": 4.5
+                }
+            }
+        ]
+    }
+}

@@ -111,6 +111,7 @@ namespace GameCore
     {
         public readonly Transform transform;
         public readonly float endValue;
+        public readonly RotateMode mode;
 
         public override bool SetValue(float progress)
         {
@@ -124,13 +125,14 @@ namespace GameCore
 
         public override Tween GenerateTween()
         {
-            return transform.DOLocalRotateZ(endValue, duration);
+            return transform.DOLocalRotateZ(endValue, duration, mode);
         }
 
-        public LocalRotationZAnimFragment(Transform transform, float endValue, float duration, Ease ease) : base(duration, ease)
+        public LocalRotationZAnimFragment(Transform transform, float endValue, float duration, Ease ease, RotateMode mode = RotateMode.Fast) : base(duration, ease)
         {
             this.transform = transform;
             this.endValue = endValue;
+            this.mode = mode;
         }
     }
 }

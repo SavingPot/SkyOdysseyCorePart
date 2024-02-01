@@ -1,0 +1,46 @@
+{
+    "json_format": "0.6.2",
+    "ori:biome": {
+        "id": "ori:center",
+        "difficulty": 0,
+        "size_scope": {
+            "min": [
+                60,
+                60
+            ],
+            "max": [
+                60,
+                60
+            ]
+        },
+        "blocks": [
+            {
+                "type": "perlin",
+                "fluctuation": {
+                    "frequency": 6,
+                    "height": 3.5
+                },
+                "start_y": "@surface + 1",
+                "blocks": [
+                    {
+                        "range": "@highest_noise => @highest_noise",
+                        "block": "ori:grass_block",
+                        "isBackground": false
+                    },
+                    {
+                        "range": "@lowest_noise => @highest_noise - 1",
+                        "block": "ori:dirt",
+                        "isBackground": false
+                    }
+                ]
+            },
+            {
+                "prefab": "ori:dirt_surface"
+            },
+            {
+                "prefab": "ori:ores"
+            }
+        ],
+        "entities": {}
+    }
+}

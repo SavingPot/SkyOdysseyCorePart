@@ -1,0 +1,14 @@
+{
+    "json_format": "0.6.0",
+    "ori:cooking_recipe": {
+        "id": "ori:potato_cake",
+        "items": [
+            {
+                "id": "ori:potato"
+            }
+        ],
+        "result": {
+            "id": "ori:potato_cake"
+        }
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:clay_furnace",
+        "items": [
+            {
+                "id": "ori:clay",
+                "count": 4
+            }
+        ],
+        "result": {
+            "id": "ori:clay_furnace"
+        }
+    }
+}

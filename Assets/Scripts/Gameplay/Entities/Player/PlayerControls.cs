@@ -10,7 +10,7 @@ namespace GameCore
         {
             return GControls.mode switch
             {
-                ControlMode.Touchscreen => p.pui != null && p.pui.moveJoystick ? p.pui.moveJoystick.Horizontal : 0,
+                ControlMode.Touchscreen => p.pui != null && p.pui.touchScreenMoveJoystick ? p.pui.touchScreenMoveJoystick.Horizontal : 0,
                 ControlMode.Gamepad => GControls.leftStickVec.x,
                 _ => GControls.GetAD()
             };
@@ -20,7 +20,7 @@ namespace GameCore
         {
             return GControls.mode switch
             {
-                ControlMode.Touchscreen => p.pui != null && p.pui.moveJoystick.Vertical >= 0.65f,
+                ControlMode.Touchscreen => p.pui != null && p.pui.touchScreenMoveJoystick.Vertical >= 0.65f,
                 ControlMode.KeyboardAndMouse => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame,
                 ControlMode.Gamepad => GControls.leftStickVec.y >= 0.65f,
                 _ => false
@@ -31,7 +31,7 @@ namespace GameCore
         {
             return GControls.mode switch
             {
-                ControlMode.Touchscreen => p.pui != null && p.pui.moveJoystick.Vertical >= 0.65f,
+                ControlMode.Touchscreen => p.pui != null && p.pui.touchScreenMoveJoystick.Vertical >= 0.65f,
                 ControlMode.KeyboardAndMouse => Keyboard.current != null && Keyboard.current.spaceKey.isPressed,
                 ControlMode.Gamepad => GControls.leftStickVec.y >= 0.65f,
                 _ => false
@@ -55,7 +55,7 @@ namespace GameCore
 
         public static Func<Player, bool> UseItem = (p) => GControls.mode switch
             {
-                ControlMode.Touchscreen => p.pui != null && p.pui.useItemButton.button.wasPressedThisFrame,
+                ControlMode.Touchscreen => p.pui != null && p.pui.touchScreenUseItemButton.button.wasPressedThisFrame,
                 ControlMode.KeyboardAndMouse => Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame,
                 ControlMode.Gamepad => Gamepad.current != null && Gamepad.current.leftTrigger.wasPressedThisFrame,
                 _ => false
@@ -63,15 +63,15 @@ namespace GameCore
 
         public static Func<Player, bool> PlaceBlockUnderPlayer = (p) => GControls.mode switch
             {
-                ControlMode.Touchscreen => throw new NotImplementedException(),
+                ControlMode.Touchscreen => p.pui != null && p.pui.touchScreenPlaceBlockUnderPlayerButton.button.wasPressedThisFrame,
                 ControlMode.KeyboardAndMouse => Keyboard.current != null && Keyboard.current.sKey.wasPressedThisFrame,
-                ControlMode.Gamepad => throw new NotImplementedException(),
+                ControlMode.Gamepad => Gamepad.current != null && Gamepad.current.aButton.wasPressedThisFrame,
                 _ => false
             };
 
         public static Func<Player, bool> SkipDialog = (p) => GControls.mode switch
         {
-            ControlMode.Touchscreen => false,// p.pui != null && p.pui.useItemButton.button.wasPressedThisFrame,
+            ControlMode.Touchscreen => p.pui != null && p.pui.dialogPanel.button.isPressed,
             ControlMode.KeyboardAndMouse => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame,
             ControlMode.Gamepad => Gamepad.current != null && Gamepad.current.aButton.wasPressedThisFrame,
             _ => false
@@ -79,26 +79,18 @@ namespace GameCore
 
         public static Func<Player, Vector2Int> DialogOptions = (p) => GControls.mode switch
         {
-            ControlMode.Touchscreen => Vector2Int.zero,// p.pui != null && p.pui.useItemButton.button.wasPressedThisFrame,
+            ControlMode.Touchscreen => throw new NotImplementedException(),// p.pui != null && p.pui.useItemButton.button.wasPressedThisFrame,
             ControlMode.KeyboardAndMouse => GControls.GetWASDVec(),
             ControlMode.Gamepad => GControls.GetLeftStickVecInt(),
             _ => Vector2Int.zero
         };
 
-        public static Func<Player, bool> IsControllingBackground = (caller) =>
-        {
-            switch (GControls.mode)
+        public static Func<Player, bool> IsControllingBackground = (p) => GControls.mode switch
             {
-                case ControlMode.KeyboardAndMouse:
-                    return Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
-
-                case ControlMode.Gamepad:
-                    return Gamepad.current != null && Gamepad.current.rightStickButton.isPressed;
-
-                default:
-                    return false;
-            }
-        };
+                ControlMode.KeyboardAndMouse => Keyboard.current != null && Keyboard.current.ctrlKey.isPressed,
+                ControlMode.Gamepad => Gamepad.current != null && Gamepad.current.rightStickButton.isPressed,
+                _ => false,
+            };
 
         public static Func<Player, bool> SwitchToItem1 = (p) => Keyboard.current != null && Keyboard.current.digit1Key.wasPressedThisFrame;
 
@@ -146,7 +138,7 @@ namespace GameCore
 
         public static Func<Player, bool> HoldingAttack = (p) => GControls.mode switch
             {
-                ControlMode.Touchscreen => p.pui != null && p.pui.attackButton && p.pui.attackButton.button.isPressed,
+                ControlMode.Touchscreen => p.pui != null && p.pui.touchScreenAttackButton && p.pui.touchScreenAttackButton.button.isPressed,
                 ControlMode.KeyboardAndMouse => Mouse.current?.leftButton?.isPressed ?? false,
                 ControlMode.Gamepad => Gamepad.current?.rightTrigger?.isPressed ?? false,
                 _ => false
@@ -154,7 +146,7 @@ namespace GameCore
 
         public static Func<Player, bool> ClickingAttack = (p) => GControls.mode switch
             {
-                ControlMode.Touchscreen => p.pui != null && p.pui.attackButton && p.pui.attackButton.button.wasPressedThisFrame,
+                ControlMode.Touchscreen => p.pui != null && p.pui.touchScreenAttackButton && p.pui.touchScreenAttackButton.button.wasPressedThisFrame,
                 ControlMode.KeyboardAndMouse => Mouse.current?.leftButton?.wasPressedThisFrame ?? false,
                 ControlMode.Gamepad => Gamepad.current?.rightTrigger?.wasPressedThisFrame ?? false,
                 _ => false

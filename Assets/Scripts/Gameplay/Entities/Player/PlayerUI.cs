@@ -109,17 +109,6 @@ namespace GameCore
 
 
         /* -------------------------------------------------------------------------- */
-        /*                                     状态                                     */
-        /* -------------------------------------------------------------------------- */
-        public TextIdentity statusText;
-
-        public static float statusTextFadeOutTime = 5;
-        public float statusTextFadeOutWaitedTime;
-        public bool preparingToFadeOutStatusText;
-
-
-
-        /* -------------------------------------------------------------------------- */
         /*                                     重生                                     */
         /* -------------------------------------------------------------------------- */
         public PanelIdentity rebornPanel;
@@ -209,13 +198,16 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    手机端操纵                                   */
         /* -------------------------------------------------------------------------- */
-        public Joystick moveJoystick;
-        public Joystick cursorJoystick;
-        public ImageIdentity cursorImage;
-        public ButtonIdentity attackButton;
-        public ImageIdentity useItemButtonImage;
-        public ButtonIdentity useItemButton;
-        public ButtonIdentity craftingButton;
+        public Joystick touchScreenMoveJoystick;
+        public Joystick touchScreenCursorJoystick;
+        public ImageIdentity touchScreenCursorImage;
+        public ButtonIdentity touchScreenAttackButton;
+        public ImageIdentity touchScreenUseItemButtonImage;
+        public ButtonIdentity touchScreenUseItemButton;
+        public ButtonIdentity touchScreenPlaceBlockUnderPlayerButton;
+        public ButtonIdentity touchScreenPauseButton;
+        public ButtonIdentity touchScreenCraftingButton;
+        public ButtonIdentity touchScreenShowTaskButton;
 
 
 
@@ -224,7 +216,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     对话                                     */
         /* -------------------------------------------------------------------------- */
-        public PanelIdentity dialogPanel;
+        public ButtonIdentity dialogPanel;
         public ImageIdentity dialogHead;
         public TextIdentity dialogNameText;
         public TextIdentity dialogText;
@@ -347,7 +339,7 @@ namespace GameCore
             if (GScene.name != SceneNames.GameScene)
                 return;
 
-            if (!pausePanel)
+            if (!pausePanel || GameUI.page?.ui == dialogPanel)
                 return;
 
             if ((GameUI.page == null || !GameUI.page.ui) && GameUI.page.ui != pausePanel)
@@ -576,63 +568,108 @@ namespace GameCore
             /*                                    虚拟指针                                    */
             /* -------------------------------------------------------------------------- */
             {
-                cursorImage = GameUI.AddImage(UPC.middle, "ori:image.player_cursor", "ori:player_cursor", GameUI.worldSpaceCanvas.gameObject);
-                cursorImage.rt.sizeDelta = Vector2.one;
+                touchScreenCursorImage = GameUI.AddImage(UPC.middle, "ori:image.player_cursor", "ori:player_cursor", GameUI.worldSpaceCanvas.gameObject);
+                touchScreenCursorImage.rt.sizeDelta = Vector2.one;
             }
 
             /* -------------------------------------------------------------------------- */
             /*                                    添加摇杆                                    */
             /* -------------------------------------------------------------------------- */
             {
-                moveJoystick = Joystick.Create("PlayerMoveJoystick", "ori:image.player_move_joystick_background", "ori:image.player_move_joystick_handle");
+                touchScreenMoveJoystick = Joystick.Create("PlayerMoveJoystick", "ori:image.player_move_joystick_background", "ori:image.player_move_joystick_handle");
 
-                cursorJoystick = Joystick.Create("PlayerCursorJoystick", "ori:image.player_cursor_joystick_background", "ori:image.player_cursor_joystick_handle");
-                cursorJoystick.SetAnchorMinMax(UPC.lowerRight);
-                cursorJoystick.SetAPos(-moveJoystick.rectTransform.anchoredPosition.x, moveJoystick.rectTransform.anchoredPosition.y);
+                touchScreenCursorJoystick = Joystick.Create("PlayerCursorJoystick", "ori:image.player_cursor_joystick_background", "ori:image.player_cursor_joystick_handle");
+                touchScreenCursorJoystick.SetAnchorMinMax(UPC.lowerRight);
+                touchScreenCursorJoystick.SetAPos(-touchScreenMoveJoystick.rectTransform.anchoredPosition.x, touchScreenMoveJoystick.rectTransform.anchoredPosition.y);
             }
 
             /* -------------------------------------------------------------------------- */
             /*                                     攻击                                     */
             /* -------------------------------------------------------------------------- */
             {
-                attackButton = GameUI.AddButton(UPC.lowerRight, "ori:button.player_attack", GameUI.canvas.transform, "ori:player_attack_button");
-                Component.Destroy(attackButton.buttonText.gameObject);
-                attackButton.sd = phoneUniversalSize;
-                attackButton.SetAPosOnBySizeLeft(cursorJoystick, 150);
-                attackButton.AddAPosY(75);
-                attackButton.button.HideClickAction();
-                attackButton.button.onClick.RemoveAllListeners();
+                touchScreenAttackButton = GameUI.AddButton(UPC.lowerRight, "ori:button.player_attack", GameUI.canvas.transform, "ori:player_attack_button");
+                Component.Destroy(touchScreenAttackButton.buttonText.gameObject);
+                touchScreenAttackButton.sd = phoneUniversalSize;
+                touchScreenAttackButton.SetAPosOnBySizeLeft(touchScreenCursorJoystick, 150);
+                touchScreenAttackButton.AddAPosY(75);
+                touchScreenAttackButton.button.HideClickAction();
+                touchScreenAttackButton.button.onClick.RemoveAllListeners();
             }
 
             /* -------------------------------------------------------------------------- */
             /*                                     使用                                     */
             /* -------------------------------------------------------------------------- */
             {
-                useItemButton = GameUI.AddButton(UPC.lowerRight, "ori:button.player_use_item", GameUI.canvas.transform, "ori:player_use_item_button");
-                Component.Destroy(useItemButton.buttonText.gameObject);
-                useItemButton.sd = phoneUniversalSize;
-                useItemButton.SetAPosOnBySizeDown(attackButton, 50);
-                useItemButton.button.HideClickAction();
-                useItemButton.button.onClick.RemoveAllListeners();
+                touchScreenUseItemButton = GameUI.AddButton(UPC.lowerRight, "ori:button.player_use_item", GameUI.canvas.transform, "ori:player_use_item_button");
+                Component.Destroy(touchScreenUseItemButton.buttonText.gameObject);
+                touchScreenUseItemButton.sd = phoneUniversalSize;
+                touchScreenUseItemButton.SetAPosOnBySizeDown(touchScreenAttackButton, 50);
+                touchScreenUseItemButton.button.HideClickAction();
+                touchScreenUseItemButton.button.onClick.RemoveAllListeners();
 
-                useItemButtonImage = GameUI.AddImage(UPC.middle, "ori:image.player_use_item_icon", null, useItemButton);
-                useItemButtonImage.sd = useItemButton.sd * 0.5f;
+                touchScreenUseItemButtonImage = GameUI.AddImage(UPC.middle, "ori:image.player_use_item_icon", null, touchScreenUseItemButton);
+                touchScreenUseItemButtonImage.sd = touchScreenUseItemButton.sd * 0.5f;
+            }
+
+            /* -------------------------------------------------------------------------- */
+            /*                                     在脚下放方块                                     */
+            /* -------------------------------------------------------------------------- */
+            {
+                touchScreenPlaceBlockUnderPlayerButton = GameUI.AddButton(UPC.lowerRight, "ori:button.player_place_block_under_player", GameUI.canvas.transform, "ori:player_place_block_under_player_button");
+                Component.Destroy(touchScreenPlaceBlockUnderPlayerButton.buttonText.gameObject);
+                touchScreenPlaceBlockUnderPlayerButton.sd = phoneUniversalSize;
+                touchScreenPlaceBlockUnderPlayerButton.SetAPosOnBySizeLeft(touchScreenUseItemButton, 50);
+                touchScreenPlaceBlockUnderPlayerButton.button.HideClickAction();
+                touchScreenPlaceBlockUnderPlayerButton.button.onClick.RemoveAllListeners();
+            }
+
+            /* -------------------------------------------------------------------------- */
+            /*                                     暂停                                     */
+            /* -------------------------------------------------------------------------- */
+            {
+                touchScreenPauseButton = GameUI.AddButton(UPC.upperRight, "ori:button.player_pause", GameUI.canvas.transform, "ori:player_pause_button");
+                touchScreenPauseButton.buttonText.gameObject.SetActive(false);
+                touchScreenPauseButton.image.rectTransform.sizeDelta = new(75, 75);
+                touchScreenPauseButton.image.rectTransform.anchoredPosition = new(-70, -75);
+                touchScreenPauseButton.button.HideClickAction();
+                touchScreenPauseButton.button.onClick.RemoveAllListeners();
+                touchScreenPauseButton.OnClickBind(() =>
+                {
+                    PauseGame();
+                });
             }
 
             /* -------------------------------------------------------------------------- */
             /*                                     合成                                     */
             /* -------------------------------------------------------------------------- */
             {
-                craftingButton = GameUI.AddButton(UPC.upperRight, "ori:button.player_crafting", GameUI.canvas.transform, "ori:player_crafting_button");
-                craftingButton.buttonText.gameObject.SetActive(false);
-                craftingButton.image.rectTransform.sizeDelta = new(75, 75);
-                craftingButton.image.rectTransform.anchoredPosition = new(-70, -75);
-                craftingButton.button.HideClickAction();
-                craftingButton.button.onClick.RemoveAllListeners();
-                craftingButton.OnClickBind(() =>
+                touchScreenCraftingButton = GameUI.AddButton(UPC.upperRight, "ori:button.player_crafting", GameUI.canvas.transform, "ori:player_crafting_button");
+                touchScreenCraftingButton.buttonText.gameObject.SetActive(false);
+                touchScreenCraftingButton.image.rectTransform.sizeDelta = new(75, 75);
+                touchScreenCraftingButton.SetAPosOnBySizeDown(touchScreenPauseButton, 20);
+                touchScreenCraftingButton.button.HideClickAction();
+                touchScreenCraftingButton.button.onClick.RemoveAllListeners();
+                touchScreenCraftingButton.OnClickBind(() =>
                 {
-                    if (backpackMask)
+                    if (backpackMask && GameUI.page?.ui != dialogPanel)
                         player.ShowOrHideBackpackAndSetSidebarToCrafting();
+                });
+            }
+
+            /* -------------------------------------------------------------------------- */
+            /*                                     任务                                     */
+            /* -------------------------------------------------------------------------- */
+            {
+                touchScreenShowTaskButton = GameUI.AddButton(UPC.upperRight, "ori:button.player_show_task", GameUI.canvas.transform, "ori:player_show_task_button");
+                touchScreenShowTaskButton.buttonText.gameObject.SetActive(false);
+                touchScreenShowTaskButton.image.rectTransform.sizeDelta = new(75, 75);
+                touchScreenShowTaskButton.SetAPosOnBySizeDown(touchScreenCraftingButton, 20);
+                touchScreenShowTaskButton.button.HideClickAction();
+                touchScreenShowTaskButton.button.onClick.RemoveAllListeners();
+                touchScreenShowTaskButton.OnClickBind(() =>
+                {
+                    if (backpackMask && GameUI.page?.ui != dialogPanel)
+                        ShowHideTaskView();
                 });
             }
 
@@ -642,10 +679,14 @@ namespace GameCore
             /*                                    对话                                    */
             /* -------------------------------------------------------------------------- */
             {
-                dialogPanel = GameUI.AddPanel("ori:panel.dialog");
+                dialogPanel = GameUI.AddButton(new(0, 0, 1, 0.4f), "ori:panel.dialog");
                 dialogPanel.gameObject.SetActive(false);
-                dialogPanel.SetAnchorMinMax(0, 0, 1, 0.4f);
-                dialogPanel.panelImage.SetColor(0.15f, 0.15f, 0.15f, 0.6f);
+                dialogPanel.image.sprite = null;
+                dialogPanel.image.SetColor(0.15f, 0.15f, 0.15f, 0.6f);
+                dialogPanel.button.HideClickAction();
+                dialogPanel.button.onClick.RemoveAllListeners();
+                dialogPanel.sd = Vector2.zero;
+                GameObject.Destroy(dialogPanel.buttonText.gameObject);
 
                 dialogHead = GameUI.AddImage(UPC.upperLeft, "ori:image.dialog_head", null, dialogPanel);
                 dialogHead.SetSizeDelta(160, 160);
@@ -1094,16 +1135,6 @@ namespace GameCore
                 };
             }
             #endregion
-
-            #region 状态文本
-            {
-                statusText = GameUI.AddText(UPC.down, "ori:text.player_status");
-                statusText.SetAPosY(quickInventorySlots[0].button.ap.y / 2 + quickInventorySlots[0].button.sd.y / 2 + statusText.sd.y / 2 + 20);
-                statusText.SetSizeDeltaY(40);
-                statusText.text.SetFontSize(18);
-                statusText.gameObject.SetActive(false);
-            }
-            #endregion
         }
 
         public enum SidebarType : byte
@@ -1243,50 +1274,46 @@ namespace GameCore
 
             if (GControls.mode == ControlMode.Touchscreen)
             {
-                SetUIHighest(moveJoystick);
-                SetUIHighest(cursorJoystick);
-                SetUIHighest(cursorImage);
-                SetUIHighest(attackButton);
-                SetUIHighest(useItemButton);
-                SetUIHighest(craftingButton);
+                SetUIHighest(touchScreenMoveJoystick);
+                SetUIHighest(touchScreenCursorJoystick);
+                SetUIHighest(touchScreenCursorImage);
+                SetUIHighest(touchScreenAttackButton);
+                SetUIHighest(touchScreenUseItemButton);
+                SetUIHighest(touchScreenPlaceBlockUnderPlayerButton);
+                SetUIHighest(touchScreenPauseButton);
+                SetUIHighest(touchScreenCraftingButton);
+                SetUIHighest(touchScreenShowTaskButton);
 
-                useItemButtonImage.image.sprite = player.TryGetUsingItem()?.data?.texture?.sprite;
-                useItemButtonImage.image.color = useItemButtonImage.image.sprite ? Color.white : Color.clear;
+                touchScreenUseItemButtonImage.image.sprite = player.TryGetUsingItem()?.data?.texture?.sprite;
+                touchScreenUseItemButtonImage.image.color = touchScreenUseItemButtonImage.image.sprite ? Color.white : Color.clear;
 
-                if (Player.PlayerCanControl(player) && cursorImage)
+                if (touchScreenCursorJoystick.Horizontal != 0 || touchScreenCursorJoystick.Vertical != 0)
                 {
-                    cursorImage.rt.anchoredPosition = new(
-                        cursorImage.rt.anchoredPosition.x + cursorJoystick.Horizontal * GFiles.settings.playerCursorSpeed * Performance.frameTime,
-                        cursorImage.rt.anchoredPosition.y + cursorJoystick.Vertical * GFiles.settings.playerCursorSpeed * Performance.frameTime
-                    );
+                    float radius = player.useRadius;
+
+                    touchScreenCursorImage.image.enabled = true;
+                    touchScreenCursorImage.rt.localPosition = new(
+                        player.transform.position.x + touchScreenCursorJoystick.Horizontal * radius,
+                        player.transform.position.y + touchScreenCursorJoystick.Vertical * radius);
+
+                    player.OnHoldAttack();
                 }
-
-                float maxX = player.transform.position.x + 10;
-                float maxY = player.transform.position.y + 10;
-                float minX = player.transform.position.x - 10;
-                float minY = player.transform.position.y - 10;
-                float max = (Mathf.Min(player.transform.position.x, player.transform.position.y) - Mathf.Min(GameUI.canvasScaler.referenceResolution.x, GameUI.canvasScaler.referenceResolution.y)) / 3;
-                float min = -max;
-
-                /* --------------------------------- 限制在范围内 --------------------------------- */
-                if (cursorImage.transform.position.x > maxX)
-                    cursorImage.transform.position = new(maxX, cursorImage.transform.position.y);
-                else if (cursorImage.transform.position.x < minX)
-                    cursorImage.transform.position = new(minX, cursorImage.transform.position.y);
-
-                if (cursorImage.transform.position.y > maxY)
-                    cursorImage.transform.position = new(cursorImage.transform.position.x, maxY);
-                else if (cursorImage.transform.position.y < minY)
-                    cursorImage.transform.position = new(cursorImage.transform.position.x, minY);
+                else
+                {
+                    touchScreenCursorImage.image.enabled = false;
+                }
             }
             else
             {
-                SetUIDisabled(moveJoystick);
-                SetUIDisabled(cursorJoystick);
-                SetUIDisabled(cursorImage);
-                SetUIDisabled(attackButton);
-                SetUIDisabled(useItemButton);
-                SetUIDisabled(craftingButton);
+                SetUIDisabled(touchScreenMoveJoystick);
+                SetUIDisabled(touchScreenCursorJoystick);
+                SetUIDisabled(touchScreenCursorImage);
+                SetUIDisabled(touchScreenAttackButton);
+                SetUIDisabled(touchScreenUseItemButton);
+                SetUIDisabled(touchScreenPlaceBlockUnderPlayerButton);
+                SetUIDisabled(touchScreenPauseButton);
+                SetUIDisabled(touchScreenCraftingButton);
+                SetUIDisabled(touchScreenShowTaskButton);
             }
 
             #endregion
@@ -1313,6 +1340,10 @@ namespace GameCore
             ui.AddTask("ori:get_log", "ori:task.get_log", "ori:get_dirt", new[] { $"{BlockID.OakLog}/=/10/=/null" });
 
             ui.AddTask("ori:get_meat", "ori:task.get_meat", "ori:get_dirt", null);
+            ui.AddTask("ori:get_egg", "ori:task.get_egg", "ori:get_meat", null);
+            ui.AddTask("ori:get_potato", "ori:task.get_potato", "ori:get_meat", null);
+            ui.AddTask("ori:get_onion", "ori:task.get_onion", "ori:get_meat", null);
+            ui.AddTask("ori:get_watermelon", "ori:task.get_watermelon", "ori:get_meat", null);
 
             ui.AddTask("ori:get_feather", "ori:task.get_feather", "ori:get_dirt", new[] { $"{ItemID.ChickenFeather}/=/5/=/null" });
             ui.AddTask("ori:get_feather_wing", "ori:task.get_feather_wing", "ori:get_feather", null);
@@ -1491,7 +1522,7 @@ namespace GameCore
 
         IEnumerator TaskCompleteTimer()
         {
-            yield return new WaitForSeconds(7.5f);
+            yield return new WaitForSeconds(5f);
 
             if (taskCompleteBackground)
                 GameUI.Disappear(taskCompleteBackground);

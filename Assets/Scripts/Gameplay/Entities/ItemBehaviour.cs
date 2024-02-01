@@ -46,14 +46,14 @@ namespace GameCore
             }
         }
 
-        public virtual bool Use()
+        public virtual bool Use(Vector2 point)
         {
             if (owner is Player player)
             {
                 //放置方块
-                if (instance.data.isBlock && player.InUseRadius() && !player.map.HasBlock(PosConvert.WorldToMapPos(player.cursorWorldPos), player.isControllingBackground))
+                if (instance.data.isBlock && player.InUseRadius(point) && !player.map.HasBlock(PosConvert.WorldToMapPos(point), player.isControllingBackground))
                 {
-                    UseAsBlock(PosConvert.WorldToMapPos(player.cursorWorldPos), player.isControllingBackground);
+                    UseAsBlock(PosConvert.WorldToMapPos(point), player.isControllingBackground);
 
                     return true;
                 }
@@ -153,9 +153,11 @@ namespace GameCore
 
         }
 
-        public virtual void Render()
+        public virtual void Rendering(SpriteRenderer sr)
         {
+            sr.sprite = instance.data.texture.sprite;
 
+            owner.SetUsingItemRendererLocalPositionAndScale(Vector2.zero, Vector2.one);
         }
 
         public ItemBehaviour(IInventoryOwner owner, Item instance, string inventoryIndex)

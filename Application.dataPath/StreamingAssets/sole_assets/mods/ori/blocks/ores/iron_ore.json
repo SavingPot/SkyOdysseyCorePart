@@ -1,0 +1,15 @@
+{
+    "json_format": "0.6.0",
+    "ori:block": {
+        "id": "ori:iron_ore",
+        "display": {
+            "texture_id": "ori:iron_ore"
+        },
+        "property": {
+            "hardness": 8,
+            "tags": [
+                "ori:ore=10"
+            ]
+        }
+    }
+}

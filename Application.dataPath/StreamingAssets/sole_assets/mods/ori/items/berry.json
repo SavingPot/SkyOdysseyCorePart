@@ -1,0 +1,15 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:berry",
+        "texture": "ori:berry",
+        "tags": [
+            "ori:food",
+            "ori:edible=8",
+            "ori:drinkable=5",
+            "ori:plant",
+            "ori:loot.barrel"
+        ],
+        "description": "ori:description.berry"
+    }
+}

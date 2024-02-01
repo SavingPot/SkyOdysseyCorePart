@@ -295,6 +295,7 @@ namespace GameCore
 
         [HideInInspector] public bool isPlayer;
         [HideInInspector] public bool isNotPlayer;
+        [HideInInspector] public bool isNotNPC;
         [HideInInspector] public float timeToAutoDestroy;
         Type classType;
 
@@ -398,6 +399,7 @@ namespace GameCore
             netIdentity = GetComponent<NetworkIdentity>();
             isPlayer = this is Player;
             isNotPlayer = !isPlayer;
+            isNotNPC = this is not NPC;
             classType = GetType();
             rb = GetComponent<Rigidbody2D>();
             mainCollider = GetComponent<BoxCollider2D>();
@@ -452,7 +454,7 @@ namespace GameCore
             if (regionIndex != newRegionIndex) regionIndex = newRegionIndex;
 
             //自动销毁
-            if (isNotPlayer)
+            if (isNotPlayer && isNotNPC)
             {
                 if (Tools.time >= timeToAutoDestroy)
                 {

@@ -1,0 +1,17 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:feather_wing",
+        "items": [
+            {
+                "tags": [
+                    "ori:feather"
+                ],
+                "count": 30
+            }
+        ],
+        "result": {
+            "id": "ori:feather_wing"
+        }
+    }
+}

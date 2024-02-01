@@ -1,0 +1,14 @@
+{
+    "json_format": "0.6.0",
+    "ori:cooking_recipe": {
+        "id": "ori:chicken_soup",
+        "items": [
+            {
+                "id": "ori:chicken_drumstick"
+            }
+        ],
+        "result": {
+            "id": "ori:chicken_soup"
+        }
+    }
+}

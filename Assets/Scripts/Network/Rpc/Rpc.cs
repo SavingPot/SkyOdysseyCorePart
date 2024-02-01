@@ -3,20 +3,15 @@ using Mirror;
 using MonoMod.Utils;
 using SP.Tools;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq.Expressions;
-using System.Reflection;
-using System;
-using UnityEngine;
 using System.Linq;
 using System.Reflection.Emit;
-using Mono.Cecil.Cil;
-using System.ComponentModel;
-using GameCore.Converters;
+using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
-using System.IO;
-using System.IO.Compression;
-using GameCore.High;
+using System;
+using UnityEngine;
 
 namespace GameCore
 {
@@ -250,7 +245,7 @@ namespace GameCore
 
             using MemoryStream ms = new();
             binaryFormatter.Serialize(ms, obj);
-            return LZ4.Compress(ms.ToArray());
+            return ms.ToArray();
         }
 
         public static object BytesToObject(byte[] data)
@@ -261,7 +256,7 @@ namespace GameCore
                 return null;
             }
             
-            using MemoryStream ms = new(LZ4.Decompress(data));
+            using MemoryStream ms = new(data);
             return binaryFormatter.Deserialize(ms);
         }
 

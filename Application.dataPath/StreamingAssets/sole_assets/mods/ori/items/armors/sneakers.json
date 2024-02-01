@@ -1,0 +1,15 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:sneakers",
+        "texture": "ori:sneakers",
+        "damage": 10,
+        "tags": [],
+        "description": "ori:description.sneakers",
+        "boots": {
+            "defense": 1,
+            "left_foot": "ori:sneakers.left_leg",
+            "right_foot": "ori:sneakers.right_leg"
+        }
+    }
+}

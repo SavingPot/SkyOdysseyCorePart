@@ -16,6 +16,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.UI;
 using static GameCore.PlayerUI;
 using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
@@ -26,7 +27,7 @@ namespace GameCore
     /// 玩家的逻辑脚本
     /// </summary>
     [ChineseName("玩家"), EntityBinding(EntityID.Player), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
-    public class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IHumanUsingItemRenderer, IOnInventoryItemChange, IItemContainer, IInventoryOwner
+    public class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IHumanUsingItemRenderer, IOnInventoryItemChange, IInventoryOwner
     {
         /* -------------------------------------------------------------------------- */
         /*                                     接口                                     */
@@ -143,12 +144,27 @@ namespace GameCore
                             pui.CompleteTask("ori:get_stick");
                             break;
 
+                        case ItemID.Potato:
+                            pui.CompleteTask("ori:get_potato");
+                            break;
+
+                        case ItemID.Onion:
+                            pui.CompleteTask("ori:get_onion");
+                            break;
+
+                        case ItemID.Watermelon:
+                            pui.CompleteTask("ori:get_watermelon");
+                            break;
+
                         default:
                             if (item.data.GetTag("ori:log").hasTag)
                                 pui.CompleteTask("ori:get_log");
 
                             if (item.data.GetTag("ori:meat").hasTag)
                                 pui.CompleteTask("ori:get_meat");
+
+                            if (item.data.GetTag("ori:egg").hasTag)
+                                pui.CompleteTask("ori:get_egg");
 
                             if (item.data.GetTag("ori:feather").hasTag)
                                 pui.CompleteTask("ori:get_feather");
@@ -171,7 +187,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         [BoxGroup("属性"), LabelText("经验")] public int experience;
         [LabelText("是否控制背景"), BoxGroup("状态")] public bool isControllingBackground;
-        [BoxGroup("属性"), LabelText("挖掘范围")] public float excavationRadius = 2.75f;
+        [BoxGroup("属性"), LabelText("挖掘范围")] public float excavationRadius = 2.8f;
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
         [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
@@ -313,12 +329,19 @@ namespace GameCore
 
         [BoxGroup("属性"), LabelText("使用时间")]
         public float itemUseTime;
+        public float useRadius => excavationRadius + (TryGetUsingItem()?.data?.extraDistance ?? 0);
 
 
 
 
 
         [HideInInspector] public SpriteRenderer usingItemRenderer { get; set; }
+
+        public void SetUsingItemRendererLocalPositionAndScale(Vector2 localPosition, Vector2 localScale)
+        {
+            usingItemRenderer.transform.localPosition = new(0.1f + localPosition.x, -0.5f + localPosition.y);
+            usingItemRenderer.transform.SetScale(0.5f * localScale.x, 0.5f * localScale.y);
+        }
 
         #endregion
 
@@ -341,7 +364,7 @@ namespace GameCore
         public static int playerLayer { get; private set; }
         public static int playerLayerMask { get; private set; }
         public static int playerOnGroundLayerMask { get; private set; }
-        public static float itemPickUpRadius = 1.5f;
+        public static float itemPickUpRadius = 1.75f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion;
@@ -449,8 +472,7 @@ namespace GameCore
 
             usingItemRenderer.sortingOrder = 9;
 
-            usingItemRenderer.transform.localPosition = new(0.1f, -0.5f);
-            usingItemRenderer.transform.SetScale(0.5f, 0.5f);
+            SetUsingItemRendererLocalPositionAndScale(Vector2.zero,Vector2.one);
 
             BindHumanAnimations(this);
             animWeb.CreateConnectionFromTo("slight_rightarm_lift", "idle", () => true, 0.15f * 2, 0);
@@ -521,6 +543,8 @@ namespace GameCore
 #endif
         }
 
+        public bool HasUseCDPast() => Tools.time >= itemUseTime + (TryGetUsingItem()?.data?.useCD ?? ItemData.defaultUseCD);
+
         protected virtual void AliveLocalUpdate()
         {
             if (PlayerCanControl(this))
@@ -532,32 +556,9 @@ namespace GameCore
                     Jump();
 
                 /* ----------------------------------- 挖掘与攻击 ----------------------------------- */
-                if (PlayerControls.HoldingAttack(this))
+                if (PlayerControls.HoldingAttack(this))  //检测物品的使用CD
                 {
-                    //如果还在 攻击CD 就返回
-                    if (itemUseTime + (TryGetUsingItem()?.data?.useCD ?? ItemData.defaultUseCD) > Tools.time)
-                    {
-                        return;
-                    }
-
-                    //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的 && 方块不是液体
-                    if (InUseRadius() &&
-                        map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
-                        block.gameObject.activeInHierarchy &&
-                        !block.data.GetTag("ori:liquid").hasTag)
-                    {
-                        ExcavateBlock(block);
-
-                        //设置时间
-                        itemUseTime = Tools.time;
-                    }
-                    else if (PlayerControls.ClickingAttack(this))
-                    {
-                        OnStartAttack();
-
-                        //设置时间
-                        itemUseTime = Tools.time;
-                    }
+                    OnHoldAttack();
                 }
 
                 /* ---------------------------------- 抛弃物品 ---------------------------------- */
@@ -609,10 +610,23 @@ namespace GameCore
                 }
                 #endregion
 
+                //通过触屏点击来使用物品
+                if (GControls.mode == ControlMode.Touchscreen && Touchscreen.current != null)
+                {
+                    TouchControl tc = Touchscreen.current.touches[0];
+
+                    if (tc.press.wasPressedThisFrame)
+                    {
+                        var touchWorldPos = Tools.instance.mainCamera.ScreenToWorldPoint(tc.position.ReadValue());
+
+                        UseItem(touchWorldPos);
+                    }
+                }
+
                 //如果按右键
                 if (PlayerControls.UseItem(this))
                 {
-                    UseItem(this);
+                    UseItem(cursorWorldPos);
                 }
 
                 //如果按S
@@ -679,7 +693,7 @@ namespace GameCore
             #region 背包
             if (PlayerControls.Backpack(this))
             {
-                if (pui != null)
+                if (pui != null && GameUI.page?.ui != pui.dialogPanel)
                 {
                     ShowOrHideBackpackAndSetSidebarToCrafting();
                 }
@@ -742,52 +756,8 @@ namespace GameCore
             string itemName = GameUI.CompareText(TryGetUsingItem()?.data?.id).text;
             if (itemName.IsNullOrWhiteSpace())
                 itemName = GameUI.CompareText("ori:empty_item").text;
-            SetStatusText(GameUI.CompareText("ori:switch_item").text.Replace("{item_id}", itemName));
-        }
 
-        public void SetStatusText(string text)
-        {
-            if (pui == null)
-                return;
-
-            pui.statusText.AfterRefreshing += t => t.text.text = text;
-            pui.statusText.RefreshUI();
-
-            //杀死淡出动画
-            Tools.KillTweensOf(pui.statusText.text);
-
-            //播放淡入动画
-            if (pui.statusText.text.color.a == 1)
-                pui.statusText.text.SetAlpha(0);
-            GameUI.FadeIn(pui.statusText.text);
-
-            //准备播放淡出动画
-            pui.statusTextFadeOutWaitedTime = 0;
-
-            if (!pui.preparingToFadeOutStatusText)
-            {
-                StartCoroutine(PrepareToFadeOutStatusText());
-            }
-        }
-
-        IEnumerator PrepareToFadeOutStatusText()
-        {
-            pui.preparingToFadeOutStatusText = true;
-
-            //等待淡出间隔
-            while (pui.statusTextFadeOutWaitedTime < PlayerUI.statusTextFadeOutTime)
-            {
-                pui.statusTextFadeOutWaitedTime += Performance.frameTime;
-
-                yield return null;
-            }
-
-            //杀死淡入动画
-            Tools.KillTweensOf(pui.statusText.text);
-
-            pui.statusText.text.SetAlpha(1);
-            GameUI.FadeOut(pui.statusText.text);
-            pui.preparingToFadeOutStatusText = false;
+            InternalUIAdder.instance.SetStatusText(GameUI.CompareText("ori:switch_item").text.Replace("{item_id}", itemName));
         }
 
         //// public void AutoGenerateRegion()
@@ -872,10 +842,8 @@ namespace GameCore
             }
         }
 
-        public static Action<Player> UseItem = caller =>
+        public void UseItem(Vector2 point)
         {
-            var cursorPos = caller.cursorWorldPos;
-
             foreach (var entity in EntityCenter.all)
             {
                 /* --------------------------------- 筛选出 NPC -------------------------------- */
@@ -885,30 +853,30 @@ namespace GameCore
                 NPC npc = (NPC)entity;
 
                 /* ------------------------------- 如果在两倍的互动范围内  ------------------------------- */
-                if ((entity.transform.position.x - caller.transform.position.x).Abs() < npc.interactionSize.x &&
-                    (entity.transform.position.y - caller.transform.position.y).Abs() < npc.interactionSize.y &&
-                    npc.mainCollider.IsInCollider(caller.cursorWorldPos))
+                if ((npc.transform.position.x - transform.position.x).Abs() < npc.interactionSize.x &&
+                    (npc.transform.position.y - transform.position.y).Abs() < npc.interactionSize.y &&
+                    npc.mainCollider.IsInCollider(point))
                 {
-                    npc.PlayerInteraction(caller);
+                    npc.PlayerInteraction(this);
                     return;
                 }
             }
 
             //与方块交互
-            if (caller.InUseRadius() &&
-                caller.map.TryGetBlock(PosConvert.WorldToMapPos(cursorPos), caller.isControllingBackground, out Block block) &&
-                block.PlayerInteraction(caller))
+            if (InUseRadius(point) &&
+                map.TryGetBlock(PosConvert.WorldToMapPos(point), isControllingBackground, out Block block) &&
+                block.PlayerInteraction(this))
             {
 
             }
             //使用物品
             else
             {
-                ItemBehaviour usingItemBehaviour = caller.TryGetUsingItemBehaviour();
+                ItemBehaviour usingItemBehaviour = TryGetUsingItemBehaviour();
 
-                if (usingItemBehaviour != null) usingItemBehaviour.Use();
+                if (usingItemBehaviour != null) usingItemBehaviour.Use(point);
             }
-        };
+        }
 
 
         protected override void OnEnable()
@@ -1011,8 +979,8 @@ namespace GameCore
             //缓存物品栏以保证性能
             var inventoryTemp = inventory;
 
-            /* --------------------------------- 刷新手部物品 --------------------------------- */
-            usingItemRenderer.sprite = inventoryTemp.TryGetItem(usingItemIndex)?.data?.texture?.sprite;
+            /* --------------------------------- 渲染手部物品 --------------------------------- */
+            inventoryTemp.TryGetItemBehaviour(usingItemIndex)?.Rendering(usingItemRenderer);
 
             /* --------------------------------- 刷新头盔的贴图 -------------------------------- */
             if (Item.IsHelmet(inventoryTemp.helmet))
@@ -1064,11 +1032,9 @@ namespace GameCore
         }
 
         /// <returns>鼠标是否在使用范围内</returns>
-        public bool InUseRadius() => InUseRadius(cursorWorldPos);
-
         public bool InUseRadius(Vector2 vec) => InUseRadius(transform.position, vec);
 
-        public bool InUseRadius(Vector2 vec1, Vector2 vec2) => Vector2.Distance(vec1, vec2) <= excavationRadius + (TryGetUsingItem()?.data?.extraDistance ?? 0);
+        public bool InUseRadius(Vector2 vec1, Vector2 vec2) => Vector2.Distance(vec1, vec2) <= useRadius;
 
         #region 挖掘方块
         private void ExcavateBlock(Block block)
@@ -1089,6 +1055,7 @@ namespace GameCore
                     GControls.GamepadVibrationSlighter(0.1f);
             }
 
+            //设置时间
             itemUseTime = Tools.time;
         }
         #endregion
@@ -1468,11 +1435,11 @@ namespace GameCore
 
                 //* 如果是触摸屏, 则检测光标和玩家的相对位置
                 case ControlMode.Touchscreen:
-                    if (p.pui.moveJoystick && p.pui.cursorJoystick)
+                    if (p.pui.touchScreenMoveJoystick && p.pui.touchScreenCursorJoystick)
                     {
-                        if (p.pui.cursorImage.rt.localPosition.x < p.transform.position.x)
+                        if (p.pui.touchScreenCursorImage.rt.localPosition.x < p.transform.position.x)
                             p.SetOrientation(false);
-                        else if (p.pui.cursorImage.rt.localPosition.x > p.transform.position.x)
+                        else if (p.pui.touchScreenCursorImage.rt.localPosition.x > p.transform.position.x)
                             p.SetOrientation(true);
                     }
                     break;
@@ -1499,7 +1466,7 @@ namespace GameCore
                 return GControls.mode switch
                 {
                     //* 如果是触摸屏, 返回光标位置
-                    ControlMode.Touchscreen => pui.cursorImage.rectTransform.anchoredPosition,
+                    ControlMode.Touchscreen => pui.touchScreenCursorImage.rectTransform.position,
 
                     //* 如果是键鼠, 返回鼠标位置
                     ControlMode.KeyboardAndMouse => Tools.instance.GetMouseWorldPos(),
@@ -1512,9 +1479,31 @@ namespace GameCore
             }
         }
 
-        protected override void OnStartAttack() => OnStartAttack(false, true);
+        public void OnHoldAttack()
+        {
+            if (!HasUseCDPast())
+                return;
 
-        protected void OnStartAttack(bool left, bool right)
+            //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的 && 方块不是液体
+            if (InUseRadius(cursorWorldPos) &&
+                map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
+                block.gameObject.activeInHierarchy &&
+                !block.data.GetTag("ori:liquid").hasTag)
+            {
+                ExcavateBlock(block);
+            }
+            //如果是刚刚点的攻击或者是触摸屏模式（触摸屏摇杆）
+            else if (PlayerControls.ClickingAttack(this) || GControls.mode == ControlMode.Touchscreen)
+            {
+                OnStartAttack();
+
+                itemUseTime = Tools.time;
+            }
+        }
+
+        public override void OnStartAttack() => OnStartAttack(cursorWorldPos, false, true);
+
+        public void OnStartAttack(Vector2 point, bool left, bool right)
         {
             if (!isLocalPlayer || isDead)
                 return;
@@ -1554,7 +1543,6 @@ namespace GameCore
                 }
             }
 
-            itemUseTime = Tools.time;
             ServerOnStartAttack(left, right);
         }
 
@@ -1744,14 +1732,6 @@ namespace GameCore
 
         public Item GetItem(string index) => items[Convert.ToInt32(index)];
         public void SetItem(string index, Item value) => items[Convert.ToInt32(index)] = value;
-    }
-
-    public interface IItemContainer
-    {
-        Item[] items { get; set; }
-
-        Item GetItem(string index);
-        void SetItem(string index, Item value);
     }
 
     public static class ItemContainerExtensions

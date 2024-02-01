@@ -25,6 +25,7 @@ namespace GameCore
         public const string IronKnife = "ori:iron_knife";
         public const string IronSword = "ori:iron_sword";
         public const string ManaStone = "ori:mana_stone";
+        public const string Potato = "ori:potato";
         public const string Onion = "ori:onion";
         public const string PlantFiber = "ori:plant_fiber";
         public const string RoastScallion = "ori:roast_scallion";

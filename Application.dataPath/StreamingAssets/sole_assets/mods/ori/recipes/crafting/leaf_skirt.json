@@ -1,0 +1,17 @@
+{
+    "json_format": "0.6.0",
+    "ori:crafting_recipe": {
+        "id": "ori:leaf_skirt",
+        "items": [
+            {
+                "tags": [
+                    "ori:leaf"
+                ],
+                "count": 2
+            }
+        ],
+        "result": {
+            "id": "ori:leaf_skirt"
+        }
+    }
+}

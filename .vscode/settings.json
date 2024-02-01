@@ -57,6 +57,7 @@
         "fileexplorer",
         "filemanager",
         "inital",
+        "Preprocess",
         "rwstopwatch"
     ],
     "dotnet.preferCSharpExtension": true,

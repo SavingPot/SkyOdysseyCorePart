@@ -1,0 +1,164 @@
+{
+    "json_format": "0.7.0",
+    "prefab": {
+        "id": "ori:plants_tropic",
+        "content": [
+            {
+                "type": "post_process",
+                "block": "ori:onion_crop",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 1
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:potato_crop",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 1
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:watermelon_crop",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 0.8
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:pumpkin_crop",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 0.8
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:dog_tail_grass",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 3
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:rose",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 5
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:daisy",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 1.5
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:berry_bush",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 3.5
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:bush",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:savannah_grass_block"
+                },
+                "rules": {
+                    "probability": 7
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:sugar_cane",
+                "ranges": [
+                    "@highest_point + 1"
+                ],
+                "attached": {
+                    "id": "ori:grass_block"
+                },
+                "rules": {
+                    "probability": 3
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:sugar_cane",
+                "ranges": [
+                    "@highest_point + 2"
+                ],
+                "attached": {
+                    "id": "ori:sugar_cane"
+                },
+                "rules": {
+                    "probability": 20
+                }
+            },
+            {
+                "type": "post_process",
+                "block": "ori:sugar_cane",
+                "ranges": [
+                    "@highest_point + 3"
+                ],
+                "attached": {
+                    "id": "ori:sugar_cane"
+                },
+                "rules": {
+                    "probability": 25
+                }
+            }
+        ]
+    }
+}

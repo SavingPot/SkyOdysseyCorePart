@@ -832,77 +832,109 @@ namespace GameCore
                 return null;
             }
 
-            var format = GetCorrectJsonFormatByJObject(jo);
+
+
+            var jt = jo["ori:item"];
+
+            if (jt == null)
+            {
+                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: 有一个物品 json 不包含 \"ori:item\" 对象");
+                return null;
+            }
+
+
+
+
 
             ItemData newItem = new();
+            var format = GetCorrectJsonFormatByJObject(jo);
+            var helmet = jt["helmet"];
+            var breastplate = jt["breastplate"];
+            var legging = jt["legging"];
+            var boots = jt["boots"];
 
-            if (GameTools.CompareVersions(format, "0.6.0", Operators.lessOrEqual))
+
+
+
+
+            if (GameTools.CompareVersions(format, "0.7.8", Operators.less))
             {
-                newItem.id = jo["ori:item"]?["id"]?.ToString();
-                newItem.texture = new(jo["ori:item"]?["texture"]?.ToString());
-                newItem.damage = jo["ori:item"]?["damage"]?.ToInt() ?? ItemData.defaultDamage;
-                newItem.excavationStrength = jo["ori:item"]?["excavation_strength"]?.ToInt() ?? ItemData.defaultExcavationStrength;
-                newItem.useCD = jo["ori:item"]?["use_cd"]?.ToFloat() ?? ItemData.defaultUseCD;
-                newItem.description = jo["ori:item"]?["description"]?.ToString();
-                newItem.extraDistance = jo["ori:item"]?["extra_distance"]?.ToString()?.ToFloat() ?? 0;
-
-                if (jo["ori:item"]?["helmet"] != null)
-                {
-                    newItem.Helmet = new()
-                    {
-                        defense = jo["ori:item"]?["helmet"]?["defense"]?.ToInt() ?? 1
-                    };
-
-                    string headId = jo["ori:item"]?["helmet"]?["head"]?.ToString();
-                    if (!string.IsNullOrWhiteSpace(headId)) newItem.Helmet.head = new(headId);
-                }
-
-                if (jo["ori:item"]?["breastplate"] != null)
-                {
-                    newItem.Breastplate = new()
-                    {
-                        defense = jo["ori:item"]?["breastplate"]?["defense"]?.ToInt() ?? 1
-                    };
-
-                    string bodyId = jo["ori:item"]?["breastplate"]?["body"]?.ToString();
-                    string leftArmId = jo["ori:item"]?["breastplate"]?["left_arm"]?.ToString();
-                    string rightArmId = jo["ori:item"]?["breastplate"]?["right_arm"]?.ToString();
-                    if (!string.IsNullOrWhiteSpace(bodyId)) newItem.Breastplate.body = new(bodyId);
-                    if (!string.IsNullOrWhiteSpace(leftArmId)) newItem.Breastplate.leftArm = new(leftArmId);
-                    if (!string.IsNullOrWhiteSpace(rightArmId)) newItem.Breastplate.rightArm = new(rightArmId);
-                }
-
-                if (jo["ori:item"]?["legging"] != null)
-                {
-                    newItem.Legging = new()
-                    {
-                        defense = jo["ori:item"]?["legging"]?["defense"]?.ToInt() ?? 1
-                    };
-
-                    string leftLegId = jo["ori:item"]?["legging"]?["left_leg"]?.ToString();
-                    string rightLegId = jo["ori:item"]?["legging"]?["right_leg"]?.ToString();
-                    if (!string.IsNullOrWhiteSpace(leftLegId)) newItem.Legging.leftLeg = new(leftLegId);
-                    if (!string.IsNullOrWhiteSpace(rightLegId)) newItem.Legging.rightLeg = new(rightLegId);
-                }
-
-                if (jo["ori:item"]?["boots"] != null)
-                {
-                    newItem.Boots = new()
-                    {
-                        defense = jo["ori:item"]?["boots"]?["defense"]?.ToInt() ?? 1
-                    };
-
-                    string leftFootId = jo["ori:item"]?["boots"]?["left_foot"]?.ToString();
-                    string rightFootId = jo["ori:item"]?["boots"]?["right_foot"]?.ToString();
-                    if (!string.IsNullOrWhiteSpace(leftFootId)) newItem.Boots.leftFoot = new(leftFootId);
-                    if (!string.IsNullOrWhiteSpace(rightFootId)) newItem.Boots.rightFoot = new(rightFootId);
-                }
-
-                jo["ori:item"]?["tags"]?.For(i =>
-                {
-                    newItem.tags.Add(i.ToString());
-                });
+                newItem.texture = new(jt["texture"]?.ToString());
             }
+            else
+            {
+                var display = jt["display"];
+
+                newItem.texture = new(display?["texture"]?.ToString());
+            }
+
+
+
+
+
+            newItem.id = jt["id"]?.ToString();
+            newItem.damage = jt["damage"]?.ToInt() ?? ItemData.defaultDamage;
+            newItem.excavationStrength = jt["excavation_strength"]?.ToInt() ?? ItemData.defaultExcavationStrength;
+            newItem.useCD = jt["use_cd"]?.ToFloat() ?? ItemData.defaultUseCD;
+            newItem.description = jt["description"]?.ToString();
+            newItem.extraDistance = jt["extra_distance"]?.ToString()?.ToFloat() ?? 0;
+
+            if (helmet != null)
+            {
+                newItem.Helmet = new()
+                {
+                    defense = helmet["defense"]?.ToInt() ?? 1
+                };
+
+                string headId = helmet["head"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(headId)) newItem.Helmet.head = new(headId);
+            }
+
+            if (breastplate != null)
+            {
+                newItem.Breastplate = new()
+                {
+                    defense = breastplate["defense"]?.ToInt() ?? 1
+                };
+
+                string bodyId = breastplate["body"]?.ToString();
+                string leftArmId = breastplate["left_arm"]?.ToString();
+                string rightArmId = breastplate["right_arm"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(bodyId)) newItem.Breastplate.body = new(bodyId);
+                if (!string.IsNullOrWhiteSpace(leftArmId)) newItem.Breastplate.leftArm = new(leftArmId);
+                if (!string.IsNullOrWhiteSpace(rightArmId)) newItem.Breastplate.rightArm = new(rightArmId);
+            }
+
+            if (legging != null)
+            {
+                newItem.Legging = new()
+                {
+                    defense = legging?["defense"]?.ToInt() ?? 1
+                };
+
+                string leftLegId = legging?["left_leg"]?.ToString();
+                string rightLegId = legging?["right_leg"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(leftLegId)) newItem.Legging.leftLeg = new(leftLegId);
+                if (!string.IsNullOrWhiteSpace(rightLegId)) newItem.Legging.rightLeg = new(rightLegId);
+            }
+
+            if (boots != null)
+            {
+                newItem.Boots = new()
+                {
+                    defense = boots["defense"]?.ToInt() ?? 1
+                };
+
+                string leftFootId = boots["left_foot"]?.ToString();
+                string rightFootId = boots["right_foot"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(leftFootId)) newItem.Boots.leftFoot = new(leftFootId);
+                if (!string.IsNullOrWhiteSpace(rightFootId)) newItem.Boots.rightFoot = new(rightFootId);
+            }
+
+            jt["tags"]?.For(i =>
+            {
+                newItem.tags.Add(i.ToString());
+            });
 
             return newItem;
         }

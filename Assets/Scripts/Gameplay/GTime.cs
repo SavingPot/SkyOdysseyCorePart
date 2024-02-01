@@ -1,5 +1,6 @@
 using GameCore.High;
 using System;
+using System.Collections.Generic;
 using Unity.Burst;
 using UnityEngine;
 
@@ -8,8 +9,21 @@ namespace GameCore
     public static class GTime
     {
         public const string varPrefix = nameof(GameCore) + "." + nameof(GTime) + ".";
+        public static List<EventForTime> EventsForTime = new();
+        public static List<EventForStageSwitch> EventsForSwitchToAfternoon = new();
+        public static List<EventForStageSwitch> EventsForSwitchToTomorrow = new()
+        {
+            new(true, () => {
+                for (int i = 0; i < EventsForTime.Count; i++)
+                {
+                    var bind = EventsForTime[i];
+                    bind.hasNotCalledToday = true;
 
-        #region 时间系统
+                    EventsForTime[i] = bind;
+                }
+            })
+        };
+
         #region 变量
 
         [SyncGetter] static bool isMorning_get() => default; [SyncSetter] static void isMorning_set(bool value) { }
@@ -25,6 +39,26 @@ namespace GameCore
         {
             _time12Format = GetTime12ByStandard(time);
             _time24Format = GetTime24By12(time12Format);
+
+            for (int i = EventsForTime.Count - 1; i >= 0; i--)
+            {
+                var bind = EventsForTime[i];
+
+                if (bind.hasNotCalledToday && _time24Format >= bind.time)
+                {
+                    bind.action();
+                    bind.hasNotCalledToday = false;
+
+                    if (!bind.repeat)
+                    {
+                        EventsForTime.RemoveAt(i);
+                    }
+                    else
+                    {
+                        EventsForTime[i] = bind;
+                    }
+                }
+            }
         }
 
         public static float timeSpeed = 1;
@@ -116,12 +150,36 @@ namespace GameCore
             {
                 temp = timeOneDay / 2;
                 isMorning = false;
+
+                for (int i = EventsForSwitchToAfternoon.Count - 1; i >= 0; i--)
+                {
+                    var bind = EventsForSwitchToAfternoon[i];
+
+                    bind.action();
+
+                    if (!bind.repeat)
+                    {
+                        EventsForSwitchToAfternoon.RemoveAt(i);
+                    }
+                }
             }
             //如果是下午并且时间超过了午夜, 就把时间系统调到早上
             if (!isMorning && temp < 0)
             {
                 temp = 0;
                 isMorning = true;
+
+                for (int i = EventsForSwitchToTomorrow.Count - 1; i >= 0; i--)
+                {
+                    var bind = EventsForSwitchToTomorrow[i];
+
+                    bind.action();
+
+                    if (!bind.repeat)
+                    {
+                        EventsForSwitchToTomorrow.RemoveAt(i);
+                    }
+                }
             }
 
             time = temp;
@@ -137,6 +195,52 @@ namespace GameCore
                 return time >= earliest || time <= latest;
         }
         #endregion
-        #endregion
+
+
+
+        public static void BindTimeEvent(float time, bool repeat, Action action)
+        {
+            EventsForTime.Add(new(time, repeat, action));
+        }
+
+        public static void BindSwitchToAfternoonEvent(bool repeat, Action action)
+        {
+            EventsForSwitchToAfternoon.Add(new(repeat, action));
+        }
+
+        public static void BindSwitchToTomorrowEvent(bool repeat, Action action)
+        {
+            EventsForSwitchToTomorrow.Add(new(repeat, action));
+        }
+
+
+
+        public struct EventForTime
+        {
+            public float time;
+            public bool repeat;
+            public Action action;
+            internal bool hasNotCalledToday;
+
+            public EventForTime(float time, bool repeat, Action action)
+            {
+                this.time = time;
+                this.repeat = repeat;
+                this.action = action;
+                hasNotCalledToday = true;
+            }
+        }
+
+        public struct EventForStageSwitch
+        {
+            public bool repeat;
+            public Action action;
+
+            public EventForStageSwitch(bool repeat, Action action)
+            {
+                this.repeat = repeat;
+                this.action = action;
+            }
+        }
     }
 }

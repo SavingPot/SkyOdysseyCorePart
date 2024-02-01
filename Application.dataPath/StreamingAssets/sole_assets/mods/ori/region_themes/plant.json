@@ -1,0 +1,11 @@
+{
+    "json_format": "0.7.8",
+    "ori:region_theme": {
+        "id": "ori:plant",
+        "distribution": 0,
+        "biomes": [
+            "ori:grassland",
+            "ori:oak_forest"
+        ]
+    }
+}

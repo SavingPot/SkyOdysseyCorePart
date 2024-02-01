@@ -1,0 +1,13 @@
+{
+    "json_format": "0.5.1",
+    "ori:item": {
+        "id": "ori:fried_snow",
+        "texture": "ori:fried_snow",
+        "tags": [
+            "ori:food",
+            "ori:edible=6",
+            "ori:drinkable=8"
+        ],
+        "description": "ori:description.fried_snow"
+    }
+}

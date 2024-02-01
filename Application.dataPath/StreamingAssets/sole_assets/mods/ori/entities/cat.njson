@@ -1,0 +1,25 @@
+{
+    "json_format": "0.4.6",
+    "ori:entity": {
+        "summon": {
+            "biomes_black_list": ["ori:desert"],
+            "summon_in_unknown": {
+                "value": true,
+                "probability": 0.1
+            }
+        },
+        "inherent_components": {
+            "ori:id": "ns:cat",
+            "ori:health": {
+                "default": 35,
+                "max": 35,
+                "recovery_time": 5
+            },
+            "ori:drops": [
+                {
+                    "id": "ori:orange"
+                }
+            ]
+        }
+    }
+}

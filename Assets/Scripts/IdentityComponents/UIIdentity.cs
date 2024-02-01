@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 namespace GameCore
 {
     [DisallowMultipleComponent]
+    //TODO: 把 Identity 全部删除，换成实现接口，Image、ImageIdentity->GameImage, Panel、PanelIdentity->GamePanel, 模仿 GameButton 的处理方法
     public class UIIdentity : IdentityComponent, IRectTransform
     {
         private RectTransform _rectTransform;

@@ -45,5 +45,9 @@ namespace GameCore
         public const string Wolf1 = "ori:wolf_1";
         public const string ZombieAttack = "ori:zombie_attack";
         public const string ZombieSpare = "ori:zombie_spare";
+        public const string Swim0 = "ori:swim_0";
+        public const string Swim1 = "ori:swim_1";
+        public const string Swim2 = "ori:swim_2";
+        public const string Swim3 = "ori:swim_3";
     }
 }
