@@ -53,13 +53,13 @@ namespace GameCore
             joystick.transform.SetParent(GameUI.canvas.transform);
             joystick.image = joystick.gameObject.AddComponent<Image>();
             joystick.image.rectTransform.sizeDelta = Vector2.zero;
-            joystick.image.rectTransform.anchorMin = UPC.lowerLeft;
-            joystick.image.rectTransform.anchorMax = UPC.lowerLeft;
+            joystick.image.rectTransform.anchorMin = UPC.LowerLeft;
+            joystick.image.rectTransform.anchorMax = UPC.LowerLeft;
             joystick.image.rectTransform.anchoredPosition = new(300, 200);
 
             //添加摇杆贴图
-            joystick.background = GameUI.AddImage(UPC.middle, bgId, bgTexture, joystick.transform);
-            joystick.handle = GameUI.AddImage(UPC.middle, handleId, handleTexture, joystick.background);
+            joystick.background = GameUI.AddImage(UPC.Middle, bgId, bgTexture, joystick.transform);
+            joystick.handle = GameUI.AddImage(UPC.Middle, handleId, handleTexture, joystick.background);
 
             //修改摇杆大小
             Vector2 sizeV = new(size, size);

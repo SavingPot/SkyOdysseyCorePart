@@ -545,14 +545,14 @@ namespace GameCore.UI
             Vector2 rightFootSD = new(rightLegSD.x * 1.35f, rightLegSD.x * 1.35f / skin.rightFoot.texture.width * skin.rightFoot.texture.height);
             Vector2 leftFootSD = new(leftLegSD.x * 1.35f, leftLegSD.x * 1.35f / skin.leftFoot.texture.width * skin.leftFoot.texture.height);
 
-            var body = InitI("body", UPC.middle, skin.body, BodyPartType.Body, bodySD, Vector2.zero, parent);
-            var head = InitI("head", UPC.up, skin.head, BodyPartType.Head, headSD, new(-0.8f, headSD.y / 2 - 2.5f), body.transform);
-            var rightArm = InitI("rightArm", UPC.upperLeft, skin.rightArm, BodyPartType.RightArm, rightArmSD, new(rightArmSD.x / 10, -rightArmSD.y / 2 - 3f), body.transform);
-            var leftArm = InitI("leftArm", UPC.upperRight, skin.leftArm, BodyPartType.LeftArm, leftArmSD, new(-leftArmSD.x / 10, -leftArmSD.y / 2 - 3f), body.transform);
-            var rightLeg = InitI("rightLeg", UPC.lowerLeft, skin.rightLeg, BodyPartType.RightLeg, rightLegSD, new(rightLegSD.x / 2, -rightLegSD.y / 2), body.transform);
-            var leftLeg = InitI("leftLeg", UPC.lowerRight, skin.leftLeg, BodyPartType.LeftLeg, leftLegSD, new(-leftLegSD.x / 2, -leftLegSD.y / 2), body.transform);
-            var rightFoot = InitI("rightFoot", UPC.down, skin.rightFoot, BodyPartType.RightFoot, rightFootSD, new(0, -rightFootSD.y / 2), rightLeg.transform);
-            var leftFoot = InitI("leftFoot", UPC.down, skin.leftFoot, BodyPartType.LeftFoot, leftFootSD, new(0, -leftFootSD.y / 2), leftLeg.transform);
+            var body = InitI("body", UPC.Middle, skin.body, BodyPartType.Body, bodySD, Vector2.zero, parent);
+            var head = InitI("head", UPC.Up, skin.head, BodyPartType.Head, headSD, new(-0.8f, headSD.y / 2 - 2.5f), body.transform);
+            var rightArm = InitI("rightArm", UPC.UpperLeft, skin.rightArm, BodyPartType.RightArm, rightArmSD, new(rightArmSD.x / 10, -rightArmSD.y / 2 - 3f), body.transform);
+            var leftArm = InitI("leftArm", UPC.UpperRight, skin.leftArm, BodyPartType.LeftArm, leftArmSD, new(-leftArmSD.x / 10, -leftArmSD.y / 2 - 3f), body.transform);
+            var rightLeg = InitI("rightLeg", UPC.LowerLeft, skin.rightLeg, BodyPartType.RightLeg, rightLegSD, new(rightLegSD.x / 2, -rightLegSD.y / 2), body.transform);
+            var leftLeg = InitI("leftLeg", UPC.LowerRight, skin.leftLeg, BodyPartType.LeftLeg, leftLegSD, new(-leftLegSD.x / 2, -leftLegSD.y / 2), body.transform);
+            var rightFoot = InitI("rightFoot", UPC.Down, skin.rightFoot, BodyPartType.RightFoot, rightFootSD, new(0, -rightFootSD.y / 2), rightLeg.transform);
+            var leftFoot = InitI("leftFoot", UPC.Down, skin.leftFoot, BodyPartType.LeftFoot, leftFootSD, new(0, -leftFootSD.y / 2), leftLeg.transform);
 
             rightLeg.transform.SetAsFirstSibling();
             leftLeg.transform.SetAsFirstSibling();
@@ -587,9 +587,9 @@ namespace GameCore.UI
             Transform parent)
         {
             var barBg = AddImage(positionCurrent, bgId, backgroundSprite, parent);
-            var barFull = AddImage(UPC.stretchMiddle, fullId, contentSprite, barBg);
-            var mascot = AddImage(UPC.left, mascotId, mascotSprite, barBg);
-            var progressText = AddText(UPC.middle, textId, barBg);
+            var barFull = AddImage(UPC.StretchMiddle, fullId, contentSprite, barBg);
+            var mascot = AddImage(UPC.Left, mascotId, mascotSprite, barBg);
+            var progressText = AddText(UPC.Middle, textId, barBg);
 
             barBg.sd = barScale;
             barBg.image.SetColorBrightness(0.35f);
@@ -627,7 +627,7 @@ namespace GameCore.UI
         {
             //初始化 UI
             var panel = AddPanel(panelId);
-            var text = AddText(UPC.middle, textId, panel);
+            var text = AddText(UPC.Middle, textId, panel);
 
             //将面板设为黑色
             panel.panelImage.SetColorBrightness(0);

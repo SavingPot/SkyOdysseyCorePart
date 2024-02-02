@@ -966,7 +966,7 @@ namespace GameCore
                 Destroy(nameText.gameObject);
 
             //初始化新的 nameText
-            nameText = GameUI.AddText(UPC.middle, "ori:player_name_" + newValue, playerCanvas);
+            nameText = GameUI.AddText(UPC.Middle, "ori:player_name_" + newValue, playerCanvas);
             nameText.rectTransform.AddLocalPosY(30f);
             nameText.text.SetFontSize(7);
             nameText.text.text = newValue;
