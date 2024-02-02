@@ -63,7 +63,7 @@ namespace GameCore
                 pui.inventoryItemView.CustomMethod("refresh", null);
 
                 //刷新制造界面
-                pui.craftingResultView.CustomMethod("refresh", null);
+                pui.craftingView.CustomMethod("refresh", null);
 
                 //完成成就
                 if (!Item.Null(item))

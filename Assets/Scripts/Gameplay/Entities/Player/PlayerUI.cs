@@ -158,8 +158,8 @@ namespace GameCore
         /* ----------------------------------- 合成 ----------------------------------- */
         public Dictionary<CraftingRecipe, List<Dictionary<int, ushort>>> craftingResults = new();
         public CraftingInfoShower craftingInfoShower;
-        public BackpackPanel craftingResultPanel;
-        public ScrollViewIdentity craftingResultView;
+        public BackpackPanel craftingPanel;
+        public ScrollViewIdentity craftingView;
 
 
 
@@ -839,7 +839,7 @@ namespace GameCore
                 #region 合成
 
                 //制作结果
-                (craftingResultPanel, craftingResultView) = GenerateItemViewBackpackPanel("ori:crafting", "ori:switch_button.crafting", 70, Vector2.zero, Vector2.zero);
+                (craftingPanel, craftingView) = GenerateItemViewBackpackPanel("ori:crafting", "ori:switch_button.crafting", 70, Vector2.zero, Vector2.zero);
 
                 {
                     int borderSize = 10;
@@ -856,7 +856,7 @@ namespace GameCore
 
                     stuffView.SetSizeDelta(backgroundImage.sd.x - 15, 45);
                     stuffView.SetAPosY(-stuffView.sd.y / 2 - borderSize - 5);
-                    stuffView.gridLayoutGroup.cellSize = new(30, 30);
+                    stuffView.gridLayoutGroup.cellSize = new(35, 35);
                     stuffView.scrollRect.vertical = false;
                     stuffView.scrollRect.horizontal = false;
 
@@ -865,7 +865,7 @@ namespace GameCore
 
                     resultsView.SetSizeDelta(stuffView.sd);
                     resultsView.SetAPosY(arrow.ap.y - arrow.sd.y / 2 - resultsView.sd.y - innerInterval);
-                    resultsView.gridLayoutGroup.cellSize = new(30, 30);
+                    resultsView.gridLayoutGroup.cellSize = stuffView.gridLayoutGroup.cellSize;
                     resultsView.scrollRect.vertical = false;
                     resultsView.scrollRect.horizontal = false;
 
@@ -883,14 +883,14 @@ namespace GameCore
 
 
 
-                craftingResultView.CustomMethod += (type, _) =>
+                craftingView.CustomMethod += (type, _) =>
                     {
                         type ??= "refresh";
 
                         if (type == "refresh")
                         {
                             //获取本地玩家的所有物品
-                            craftingResultView.Clear();
+                            craftingView.Clear();
                             craftingResults = Player.GetCraftingRecipesThatCanBeCrafted(player.inventory.slots);
 
                             foreach (var pair in craftingResults)
@@ -938,7 +938,7 @@ namespace GameCore
                                 //图标
                                 var image = GameUI.AddImage(UPC.Middle, $"ori:image.player_crafting_recipe_{cr.id}", "ori:item_tab", button);
                                 image.image.sprite = itemGot.texture.sprite;
-                                image.sd = craftingResultView.gridLayoutGroup.cellSize * 0.75f;
+                                image.sd = craftingView.gridLayoutGroup.cellSize * 0.75f;
 
                                 //文本
                                 button.buttonText.rectTransform.SetAsLastSibling();
@@ -950,7 +950,7 @@ namespace GameCore
                                     t.text.text = $"{GameUI.CompareText(itemGot.id)?.text}x{cr.result.count}";
                                 };
 
-                                craftingResultView.AddChild(button);
+                                craftingView.AddChild(button);
                             }
                         }
                     };
@@ -2013,7 +2013,7 @@ namespace GameCore
 
                     //图标
                     var stuffBackground = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.stuff_background_{recipe.id}", "ori:item_tab");
-                    var stuffIcon = GameUI.AddImage(UPC.Middle, $"ori:button.crafting_info_shower.stuff_{stuffPair.Key}",null, stuffBackground);
+                    var stuffIcon = GameUI.AddImage(UPC.Middle, $"ori:button.crafting_info_shower.stuff_{stuffPair.Key}", null, stuffBackground);
                     var stuffText = GameUI.AddText(UPC.Middle, $"ori:text.crafting_info_shower.stuff_{recipe.id}", stuffBackground);
 
                     stuffIcon.SetSizeDelta(stuffView.gridLayoutGroup.cellSize);
