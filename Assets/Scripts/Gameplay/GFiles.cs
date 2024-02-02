@@ -266,7 +266,7 @@ namespace GameCore
         public string id;
         public string customData;
         public Vector2 pos;
-        public float? health;
+        public int? health;
         public string saveId;
     }
 

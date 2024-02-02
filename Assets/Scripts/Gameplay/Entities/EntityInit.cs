@@ -179,7 +179,7 @@ namespace GameCore
                     }
                     else if (pair.propertyPath == healthVarId)
                     {
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : (float)save.health));
+                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : save.health.Value));
                     }
                     else if (pair.propertyPath == hungerValueVarId)
                     {

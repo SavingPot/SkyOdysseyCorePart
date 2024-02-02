@@ -594,7 +594,7 @@ namespace GameCore
     [Serializable]
     public class ItemData_Armor
     {
-        public float defense;
+        public int defense;
     }
     [Serializable]
     public class ItemData_Helmet : ItemData_Armor
@@ -624,7 +624,7 @@ namespace GameCore
     [Serializable]
     public class ItemData : IdClassBase, ITags
     {
-        public const float defaultDamage = 5;
+        public const int defaultDamage = 5;
         public const ushort defaultMaxCount = 32;
         public static float defaultExcavationStrength = 40;
         public static float defaultUseCD = 0.2f;
@@ -634,7 +634,7 @@ namespace GameCore
         [NonSerialized] public Type behaviourType;
         [NonSerialized, LabelText("贴图数据")] public TextureData texture;
 
-        [NonSerialized, LabelText("伤害")] public float damage = defaultDamage;
+        [NonSerialized, LabelText("伤害")] public int damage = defaultDamage;
         [NonSerialized, LabelText("方块")] public bool isBlock;
         [NonSerialized, LabelText("最大数量")] public ushort maxCount = defaultMaxCount;
         [NonSerialized, LabelText("挖掘强度")] public float excavationStrength = defaultExcavationStrength;

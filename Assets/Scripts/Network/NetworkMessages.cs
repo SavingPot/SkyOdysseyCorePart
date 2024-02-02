@@ -73,9 +73,9 @@ namespace GameCore.High
         public string saveId;
         public string customData;
         public bool saveIntoRegion;
-        public float? health;
+        public int? health;
 
-        public NMSummon(Vector3 pos, string entityId, string saveId, bool saveIntoRegion, float? health, string customData)
+        public NMSummon(Vector3 pos, string entityId, string saveId, bool saveIntoRegion, int? health, string customData)
         {
             this.pos = pos;
             this.entityId = entityId;

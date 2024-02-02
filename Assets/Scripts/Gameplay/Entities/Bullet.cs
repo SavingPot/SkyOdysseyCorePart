@@ -8,7 +8,7 @@ namespace GameCore
     public class Bullet : Entity
     {
         public bool destroyOnHit = true;
-        public float damage;
+        public int damage;
         public uint ownerId;
         [HideInInspector] public Collider2D[] besideObjectsDetected = new Collider2D[15];
 

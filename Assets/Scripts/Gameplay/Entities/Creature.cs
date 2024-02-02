@@ -145,7 +145,7 @@ namespace GameCore
 
             #region 攻击
             {
-                float rot = -70f;
+                float rot = -140f;
 
                 creature.animWeb.AddAnim("attack_leftarm", 1, new AnimFragment[] {
                     new LocalRotationZAnimFragment(creature.leftArm.transform, rot, 0f, Ease.Linear,RotateMode.Fast),
@@ -363,7 +363,7 @@ namespace GameCore
                     //generatedFirstRegion 是防止初始区域 y<0 导致直接摔死
                     if (damageValue >= 2)
                     {
-                        TakeDamage(damageValue);
+                        TakeDamage((int)damageValue);
                     }
                 }
             }

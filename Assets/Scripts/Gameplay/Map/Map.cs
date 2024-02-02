@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using GameCore.High;
 using Newtonsoft.Json;
@@ -5,6 +6,7 @@ using Sirenix.OdinInspector;
 using SP.Tools.Unity;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -256,6 +258,7 @@ namespace GameCore
         public Dictionary<Vector2Int, Chunk> chunkTable = new();
         public List<Block> blocksToCheckHealths = new();
 
+
         protected override void Awake()
         {
             base.Awake();
@@ -302,6 +305,30 @@ namespace GameCore
                     if (Tools.time >= block.lastDamageTime + 7.5f)
                     {
                         block.SetHealth(block.health + deltaHealth);
+                    }
+                }
+            }
+
+
+
+            /* --------------------------------- 开关区块的显示 -------------------------------- */
+            if (!tools.mainCamera)
+                return;
+
+            foreach (var chunk in chunks)
+            {
+                if (chunk.IsOutOfView())
+                {
+                    if (chunk.totalRendererEnabled)
+                    {
+                        chunk.DisableRenderers();
+                    }
+                }
+                else
+                {
+                    if (!chunk.totalRendererEnabled)
+                    {
+                        chunk.EnableRenderers();
                     }
                 }
             }

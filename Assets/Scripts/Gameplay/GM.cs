@@ -614,7 +614,7 @@ namespace GameCore
         }
 
         [Button]
-        public void SummonEntity(Vector3 pos, string id, string saveId = null, bool saveIntoRegion = true, float? health = null, string customData = null)
+        public void SummonEntity(Vector3 pos, string id, string saveId = null, bool saveIntoRegion = true, int? health = null, string customData = null)
         {
             saveId ??= Tools.randomGUID;
 

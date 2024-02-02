@@ -1531,7 +1531,7 @@ namespace GameCore
                     //如果成功获取了目标
                     if (target)
                     {
-                        float damage = TryGetUsingItem()?.data?.damage ?? ItemData.defaultDamage;
+                        int damage = TryGetUsingItem()?.data?.damage ?? ItemData.defaultDamage;
                         target.TakeDamage(damage, 0.3f, transform.position, transform.position.x < target.transform.position.x ? Vector2.right * 12 : Vector2.left * 12);
 
                         //如果使用手柄就震动一下
@@ -1587,7 +1587,7 @@ namespace GameCore
             pui.thirstBarFull.image.fillAmount = thirstValue / maxThirstValue;
             pui.hungerBarFull.image.fillAmount = hungerValue / maxHungerValue;
             pui.happinessBarFull.image.fillAmount = happinessValue / maxHappinessValue;
-            pui.healthBarFull.image.fillAmount = health / maxHealth;
+            pui.healthBarFull.image.fillAmount = (float)health / maxHealth;
         }
 
 
@@ -1972,7 +1972,7 @@ namespace GameCore
                     float thirstValue = player.thirstValue;
                     float hungerValue = player.hungerValue;
                     float happinessValue = player.happinessValue;
-                    float health = player.health;
+                    int health = player.health;
 
                     float thirstValueDelta = frameTime / 40;
                     if (isMoving) thirstValueDelta += frameTime / 40;
@@ -1990,7 +1990,7 @@ namespace GameCore
 
                     if (health < 100)
                     {
-                        player.health = health + Mathf.Min(frameTime / 5, player.maxHealth - health);
+                        player.health = health + Mathf.FloorToInt(Mathf.Min(frameTime / 5, player.maxHealth - health));
                     }
 
                     //每三秒扣一次血

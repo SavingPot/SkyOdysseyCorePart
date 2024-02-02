@@ -220,13 +220,13 @@ namespace GameCore
                 entity.colliderSize = jo["ori:entity"]?["physics"]?["collider"]?["size"]?.ToVector2() ?? Vector2.one;
                 entity.colliderOffset = jo["ori:entity"]?["physics"]?["collider"]?["offset"]?.ToVector2() ?? Vector2.zero;
                 entity.gravity = jo["ori:entity"]?["physics"]?["gravity"]?.ToFloat() ?? 7;
-                entity.maxHealth = jo["ori:entity"]?["max_health"]?.ToFloat() ?? Entity.defaultHealth;
+                entity.maxHealth = jo["ori:entity"]?["max_health"]?.ToInt() ?? Entity.DEFAULT_HEALTH;
                 entity.lifetime = jo["ori:entity"]?["lifetime"]?.ToFloat() ?? EntityData.defaultLifetime;
 
                 entity.searchRadius = jo["ori:entity"]?["search_radius"]?.ToObject<ushort>() ?? 25;
                 entity.searchRadiusSqr = entity.searchRadius * entity.searchRadius;
                 entity.normalAttackRadius = jo["ori:entity"]?["normal_attack_radius"]?.ToFloat() ?? 2;
-                entity.normalAttackDamage = jo["ori:entity"]?["normal_attack_damage"]?.ToFloat() ?? 15;
+                entity.normalAttackDamage = jo["ori:entity"]?["normal_attack_damage"]?.ToInt() ?? 15;
                 entity.normalAttackCD = jo["ori:entity"]?["normal_attack_cd"]?.ToFloat() ?? 2;
 
                 entity.summon.region = jo["ori:entity"]?["summon"]?["region"]?.ToString();

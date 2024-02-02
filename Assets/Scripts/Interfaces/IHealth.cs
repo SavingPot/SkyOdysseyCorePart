@@ -2,6 +2,6 @@ namespace GameCore.High
 {
     public interface IHealth
     {
-        float health { get; set; }
+        int health { get; set; }
     }
 }

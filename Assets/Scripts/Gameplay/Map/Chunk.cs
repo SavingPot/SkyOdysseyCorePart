@@ -36,7 +36,6 @@ namespace GameCore.High
         public int regionMiddleX;
         public int regionMiddleY;
 
-        public bool outOfView { get; private set; }
 
         #region 实现接口
         public Tools tools => Tools.instance;
@@ -54,7 +53,7 @@ namespace GameCore.High
             regionMiddleY = Region.GetMiddleY(regionIndex);
         }
 
-        public bool OutOfView()
+        public bool IsOutOfView()
         {
             return left > tools.viewRightSideWorldPos || right < tools.viewLeftSideWorldPos || down > tools.viewUpSideWorldPos || up < tools.viewDownSideWorldPos;
             //return tools.IsInView2D(leftUpPoint) || tools.IsInView2D(leftDownPoint) || tools.IsInView2D(rightUpPoint) || tools.IsInView2D(rightDownPoint);
@@ -63,29 +62,6 @@ namespace GameCore.High
         private void Start()
         {
             EnableRenderers();
-        }
-
-        private void Update()
-        {
-            if (!tools.mainCamera)
-                return;
-
-            outOfView = OutOfView();
-
-            if (outOfView)
-            {
-                if (totalRendererEnabled)
-                {
-                    DisableRenderers();
-                }
-            }
-            else
-            {
-                if (!totalRendererEnabled)
-                {
-                    EnableRenderers();
-                }
-            }
         }
 
         public void RecoverTotalRegion()
@@ -98,17 +74,17 @@ namespace GameCore.High
 
         [Button("打开所有渲染器")] public void EnableRenderers() => SetRenderersEnabled(this, true);
 
-        public static Action<Chunk, bool> SetRenderersEnabled = (chunk, e) =>
+        public static Action<Chunk, bool> SetRenderersEnabled = (chunk, value) =>
         {
             foreach (Block block in chunk.blocks)
             {
                 if (block != null && block.sr)
                 {
-                    block.sr.enabled = e;
+                    block.sr.enabled = value;
                 }
             }
 
-            chunk.totalRendererEnabled = e;
+            chunk.totalRendererEnabled = value;
         };
 
         public Block GetBlock(Vector2Int mapPos, bool isBackground)

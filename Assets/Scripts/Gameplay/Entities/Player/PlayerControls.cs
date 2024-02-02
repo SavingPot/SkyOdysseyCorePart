@@ -22,7 +22,7 @@ namespace GameCore
             {
                 ControlMode.Touchscreen => p.pui != null && p.pui.touchScreenMoveJoystick.Vertical >= 0.65f,
                 ControlMode.KeyboardAndMouse => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame,
-                ControlMode.Gamepad => GControls.leftStickVec.y >= 0.65f,
+                ControlMode.Gamepad => GControls.leftStickVec.y >= 0.62f,
                 _ => false
             };
         };

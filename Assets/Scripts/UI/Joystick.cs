@@ -46,7 +46,7 @@ namespace GameCore
 
         public RectTransform rectTransform => image.rectTransform;
 
-        public static Joystick Create(string name, string bgId, string handleId, float size = 200, string bgTexture = "ori:player_joystick_background", string handleTexture = "ori:player_joystick_handle")
+        public static Joystick Create(string name, string bgId, string handleId, float size = 180, string bgTexture = "ori:player_joystick_background", string handleTexture = "ori:player_joystick_handle")
         {
             Joystick joystick = new GameObject(name).AddComponent<Joystick>();
 

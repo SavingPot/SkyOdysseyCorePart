@@ -233,8 +233,8 @@ namespace GameCore
         #endregion
 
         #region 最大血量
-        [SyncGetter] float maxHealth_get() => default; [SyncSetter] void maxHealth_set(float value) { }
-        [Sync(nameof(OnMaxHealthChangeMethod)), SyncDefaultValue(100f)] public float maxHealth { get => maxHealth_get(); set => maxHealth_set(value); }
+        [SyncGetter] int maxHealth_get() => default; [SyncSetter] void maxHealth_set(int value) { }
+        [Sync(nameof(OnMaxHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int maxHealth { get => maxHealth_get(); set => maxHealth_set(value); }
 
         void OnMaxHealthChangeMethod()
         {
@@ -244,14 +244,14 @@ namespace GameCore
         #endregion
 
         #region 血量
-        [SyncGetter] float health_get() => default; [SyncSetter] void health_set(float value) { }
-        [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(100f)] public float health { get => health_get(); set => health_set(value); }
+        [SyncGetter] int health_get() => default; [SyncSetter] void health_set(int value) { }
+        [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health { get => health_get(); set => health_set(value); }
 
         private void OnHealthChangeMethod()
         {
             OnHealthChange();
         }
-        public static float defaultHealth = 100;
+        public const int DEFAULT_HEALTH = 100;
         public Action OnHealthChange = () => { };
         #endregion
 
@@ -541,21 +541,40 @@ namespace GameCore
             }
         }
 
-        public virtual void TakeDamage(float damage) => TakeDamage(damage, 0.1f, transform.position, Vector2.zero);
+        public virtual void TakeDamage(int damage) => TakeDamage(damage, 0.1f, transform.position, Vector2.zero);
 
-        public void TakeDamage(float damage, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
+        public void TakeDamage(int damage, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
         {
             if (hurtable)
                 ServerTakeDamage(damage, invincibleTime, hurtPos, impactForce, null);
         }
 
         [ServerRpc]
-        void ServerTakeDamage(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
+        void ServerTakeDamage(int damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
         {
             if (isDead || isHurting)
                 return;
 
-            damage = Mathf.Floor(damage);
+
+            //通过防御值计算实际伤害
+            if (this is IInventoryOwner owner)
+            {
+                var inventory = owner.GetInventory();
+
+                if (inventory != null)
+                {
+                    int defense =
+                        (inventory.helmet?.data?.Helmet?.defense ?? 0) +
+                        (inventory.breastplate?.data?.Breastplate?.defense ?? 0) +
+                        (inventory.legging?.data?.Legging?.defense ?? 0) +
+                        (inventory.boots?.data?.Boots?.defense ?? 0);
+
+                    //防御值与伤害减免值 1:1
+                    damage -= defense;
+                }
+            }
+
+
 
             //扣血刷新无敌时间
             health -= damage;
@@ -633,13 +652,13 @@ namespace GameCore
 
 
         #region 重生
-        public void Reborn(float newHealth, Vector2? newPos)
+        public void Reborn(int newHealth, Vector2? newPos)
         {
             ServerReborn(newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
         }
 
         [ServerRpc]
-        public void ServerReborn(float newHealth, Vector2 newPos, NetworkConnection caller)
+        public void ServerReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
         {
             health = newHealth;
             isDead = false;
@@ -656,7 +675,7 @@ namespace GameCore
         }
 
         [ClientRpc]
-        public void ClientReborn(float newHealth, Vector2 newPos, NetworkConnection caller)
+        public void ClientReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
         {
             OnRebornClient(newHealth, newPos, caller);
 
@@ -869,12 +888,12 @@ namespace GameCore
         [LabelText("重力")] public float gravity;
         [LabelText("碰撞箱大小")] public Vector2 colliderSize;
         [LabelText("碰撞箱偏移")] public Vector2 colliderOffset;
-        [LabelText("最大血量")] public float maxHealth;
+        [LabelText("最大血量")] public int maxHealth;
         [LabelText("自动清除周期")] public float lifetime = defaultLifetime;
         [LabelText("搜索半径")] public ushort searchRadius;
         [LabelText("搜索半径平方")] public int searchRadiusSqr;
         [LabelText("普通攻击半径")] public float normalAttackRadius;
-        [LabelText("普通攻击伤害")] public float normalAttackDamage;
+        [LabelText("普通攻击伤害")] public int normalAttackDamage;
         [LabelText("普通攻击CD")] public float normalAttackCD;
         public static float defaultLifetime = 60 * 3;
         public Type behaviourType;

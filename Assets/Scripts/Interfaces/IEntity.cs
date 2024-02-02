@@ -6,7 +6,7 @@ using Mirror;
 
 namespace GameCore
 {
-    public interface IEntity : IDeath, IHealth, ITakeDamage
+    public interface IEntity : IDeath, IHealth
     {
         public static T GetEntityByNetId<T>(uint netIdToFind) where T : Component, IEntity
         {
