@@ -27,6 +27,7 @@ namespace GameCore
             Debug.Log($"场景变为: {name} ({index})");
 
             SpriteRendererPool.stack.Clear();
+            LitSpriteRendererPool.stack.Clear();
 
             if (Client.isClient)
             {

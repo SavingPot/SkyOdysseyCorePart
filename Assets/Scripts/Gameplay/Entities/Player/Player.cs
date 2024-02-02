@@ -63,9 +63,7 @@ namespace GameCore
                 pui.inventoryItemView.CustomMethod("refresh", null);
 
                 //刷新制造界面
-                pui.craftingResultView.CustomMethod(null, null);
-                pui.craftingStuffView.CustomMethod(null, null);
-                pui.craftingSelectedItemTitleText.RefreshUI();
+                pui.craftingResultView.CustomMethod("refresh", null);
 
                 //完成成就
                 if (!Item.Null(item))
@@ -694,7 +692,7 @@ namespace GameCore
             {
                 if (pui != null && GameUI.page?.ui != pui.dialogPanel)
                 {
-                    ShowOrHideBackpackAndSetSidebarToCrafting();
+                    pui.ShowOrHideBackpackAndSetPanelToInventory();
                 }
             }
             #endregion
@@ -784,62 +782,6 @@ namespace GameCore
         ////     }
         //// }
 
-        public readonly Dictionary<string, (Action Appear, Action Disappear)> backpackSidebarTable = new();
-        public string usingBackpackSidebar = string.Empty;
-
-        public void SetBackpackSidebar(string id)
-        {
-            if (backpackSidebarTable.TryGetValue(usingBackpackSidebar, out var value))
-            {
-                value.Disappear();
-            }
-
-            if (backpackSidebarTable.TryGetValue(id, out value))
-            {
-                value.Appear();
-                usingBackpackSidebar = id;
-                return;
-            }
-
-
-            Debug.LogError($"未找到侧边栏 {id}");
-        }
-
-        public void ShowOrHideBackpackAndSetSidebarToCrafting()
-        {
-            //Backpack 是整个界面
-            //Inventory 是中间的所有物品
-            //QuickInventory 是不打开背包时看到的几格物品栏
-
-            ShowOrHideBackpackAndSetSideBarTo("ori:craft");
-        }
-
-        public void ShowOrHideBackpackAndSetSideBarTo(string sidebarId)
-        {
-            if (!pui.backpackMask.gameObject.activeSelf)
-                SetBackpackSidebar(sidebarId);
-
-            ShowOrHideBackpack();
-        }
-
-        public void ShowOrHideBackpack()
-        {
-            //启用状态 -> 禁用
-            if (pui.backpackMask.gameObject.activeSelf)
-            {
-                ItemInfoShower.Hide();
-                ItemDragger.CancelDragging();
-                GameUI.SetPage(null);
-                GAudio.Play(AudioID.CloseBackpack);
-            }
-            //禁用状态 -> 启用
-            else
-            {
-                GameUI.SetPage(pui.backpackMask);
-                OnInventoryItemChange(inventory, null);
-                GAudio.Play(AudioID.OpenBackpack);
-            }
-        }
 
         public void UseItem(Vector2 point)
         {
