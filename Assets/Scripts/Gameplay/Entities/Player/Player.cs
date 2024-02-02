@@ -472,10 +472,9 @@ namespace GameCore
 
             usingItemRenderer.sortingOrder = 9;
 
-            SetUsingItemRendererLocalPositionAndScale(Vector2.zero,Vector2.one);
+            SetUsingItemRendererLocalPositionAndScale(Vector2.zero, Vector2.one);
 
             BindHumanAnimations(this);
-            animWeb.CreateConnectionFromTo("slight_rightarm_lift", "idle", () => true, 0.15f * 2, 0);
 
 
 
@@ -980,7 +979,16 @@ namespace GameCore
             var inventoryTemp = inventory;
 
             /* --------------------------------- 渲染手部物品 --------------------------------- */
-            inventoryTemp.TryGetItemBehaviour(usingItemIndex)?.Rendering(usingItemRenderer);
+            var usingBehaviour = inventoryTemp.TryGetItemBehaviour(usingItemIndex);
+
+            if (usingBehaviour == null)
+            {
+                usingItemRenderer.sprite = null;
+            }
+            else
+            {
+                usingBehaviour.Rendering(usingItemRenderer);
+            }
 
             /* --------------------------------- 刷新头盔的贴图 -------------------------------- */
             if (Item.IsHelmet(inventoryTemp.helmet))
@@ -1044,8 +1052,8 @@ namespace GameCore
 
             if (block != null)
             {
-                if (!animWeb.GetAnim("slight_rightarm_lift", 0).isPlaying)
-                    animWeb.SwitchPlayingTo("slight_rightarm_lift");
+                if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)
+                    animWeb.SwitchPlayingTo("attack_rightarm");
 
                 block.TakeDamage(excavationStrength);
 
@@ -1804,19 +1812,21 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                //修正 JObject                                */
             /* -------------------------------------------------------------------------- */
-            entity.customData ??= new();
+            var customData = entity.customData ?? new();
 
-            if (entity.customData["ori:inventory"] == null)
-                entity.customData.AddObject("ori:inventory");
-            if (entity.customData["ori:inventory"]["data"] == null)
+            if (customData["ori:inventory"] == null)
+                customData.AddObject("ori:inventory");
+            if (customData["ori:inventory"]["data"] == null)
             {
-                entity.customData["ori:inventory"].AddProperty("data", JsonTools.ToJToken(new Inventory(slotCount, entity)));
+                customData["ori:inventory"].AddProperty("data", JsonTools.ToJToken(new Inventory(slotCount, entity)));
             }
+
+            entity.customData = customData;
 
             /* -------------------------------------------------------------------------- */
             /*                                    缓存数据                                    */
             /* -------------------------------------------------------------------------- */
-            var data = entity.customData["ori:inventory"]["data"];
+            var data = customData["ori:inventory"]["data"];
 
             /* -------------------------------------------------------------------------- */
             /*                                    读取数据                                    */

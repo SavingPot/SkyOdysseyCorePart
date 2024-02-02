@@ -145,7 +145,7 @@ namespace GameCore
 
             #region 攻击
             {
-                float rot = -140f;
+                float rot = -165f;
 
                 creature.animWeb.AddAnim("attack_leftarm", 1, new AnimFragment[] {
                     new LocalRotationZAnimFragment(creature.leftArm.transform, rot, 0f, Ease.Linear,RotateMode.Fast),
@@ -155,23 +155,6 @@ namespace GameCore
                 creature.animWeb.AddAnim("attack_rightarm", 1, new AnimFragment[] {
                     new LocalRotationZAnimFragment(creature.rightArm.transform, rot, 0f, Ease.Linear,RotateMode.Fast),
                     new LocalRotationZAnimFragment(creature.rightArm.transform, -360 - rot, attackAnimTime, Ease.InOutSine,RotateMode.LocalAxisAdd)
-                }, 0);
-            }
-            #endregion
-
-            #region 抬手
-            {
-                float time = 0.15f; //!Player的绑定部分使用到了这个时间
-                float rot = 35f;
-
-                creature.animWeb.AddAnim("slight_leftarm_lift", 1, new AnimFragment[] {
-                    new LocalRotationZAnimFragment(creature.leftArm.transform, rot, time, Ease.InOutSine),
-                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, time, Ease.InOutSine)
-                }, 0);
-
-                creature.animWeb.AddAnim("slight_rightarm_lift", 1, new AnimFragment[] {
-                    new LocalRotationZAnimFragment(creature.rightArm.transform, rot, time, Ease.InOutSine),
-                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, time, Ease.InOutSine)
                 }, 0);
             }
             #endregion

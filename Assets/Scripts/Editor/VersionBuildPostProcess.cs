@@ -34,7 +34,10 @@ public class VersionBuildPreprocess : IPreprocessBuildWithReport
 
         //删除编辑器里的 ori
         if (Directory.Exists(oriEditorPath))
+        {
             IOTools.DeleteDir(oriEditorPath);
+            File.Delete($"{oriEditorPath}.meta");
+        }
 
         switch (summary.platform)
         {

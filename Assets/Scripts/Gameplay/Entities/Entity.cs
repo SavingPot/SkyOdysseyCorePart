@@ -184,8 +184,17 @@ namespace GameCore
         /*                                     生成属性                                     */
         /* -------------------------------------------------------------------------- */
         [BoxGroup("生成属性"), LabelText("初始化器")] public EntityInit Init { get; internal set; }
-        public JObject customData;
         [BoxGroup("变量ID"), LabelText("变量唯一ID")] public uint varInstanceId => Init.netId;
+
+
+        [SyncGetter] JObject customData_get() => default; [SyncSetter] void customData_set(JObject value) { }
+        [Sync(nameof(TempCustomData))] public JObject customData { get => _customData; set => customData_set(value); }
+        private JObject _customData;
+
+        void TempCustomData()
+        {
+            _customData = customData_get();
+        }
 
 
 
@@ -570,7 +579,7 @@ namespace GameCore
                         (inventory.boots?.data?.Boots?.defense ?? 0);
 
                     //防御值与伤害减免值 1:1
-                    damage -= defense;
+                    damage = Mathf.Max(damage - defense, 1);
                 }
             }
 

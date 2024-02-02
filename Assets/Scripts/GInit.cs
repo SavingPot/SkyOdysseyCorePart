@@ -186,6 +186,9 @@ namespace GameCore
             Physics2D.queriesStartInColliders = false; //使射线不返回发射器本身
             Loom.Initialize();
 
+            if (platform == RuntimePlatform.Android)
+                Application.targetFrameRate = (int)Math.Ceiling(Screen.currentResolution.refreshRateRatio.value);
+
 
 
             /* --------------------------------- 加载默认资源 --------------------------------- */
@@ -221,7 +224,7 @@ namespace GameCore
             if (File.Exists(currentLogsFilePath))
                 File.Delete(currentLogsFilePath); //删除原有日志
             File.Create(currentLogsFilePath);
-            
+
             Application.logMessageReceivedThreaded += OnHandleLog; //包括主线程与所有子进程
 
 
