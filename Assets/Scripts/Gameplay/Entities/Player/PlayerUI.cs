@@ -59,13 +59,6 @@ namespace GameCore
 
 
 
-        /* -------------------------------------------------------------------------- */
-        /*                                     暂停                                     */
-        /* -------------------------------------------------------------------------- */
-        public PanelIdentity pausePanel;
-        public PanelIdentity pausePanelMask;
-
-
 
         /* -------------------------------------------------------------------------- */
         /*                                     聊天                                     */
@@ -137,34 +130,43 @@ namespace GameCore
 
 
         #region 背包界面
-        
+
         public List<BackpackPanel> backpackPanels = new();
         public string currentBackpackPanel = string.Empty;
-
-        /* -------------------------------------------------------------------------- */
-        /*                                     背包                                    */
-        /* -------------------------------------------------------------------------- */
         public PanelIdentity backpackMask;
         public ImageIdentity backpackPanelBackground;
-        public readonly InventorySlotUI[] quickInventorySlots;
+        public Color backpackColor = Color.white;
 
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     物品栏                                    */
+        /* -------------------------------------------------------------------------- */
         public InventorySlotUI[] inventorySlotsUIs = new InventorySlotUI[Player.inventorySlotCount];
         public InventorySlotUI inventoryHelmetUI;
         public InventorySlotUI inventoryBreastplateUI;
         public InventorySlotUI inventoryLeggingUI;
         public InventorySlotUI inventoryBootsUI;
-
-        /* ----------------------------------- 背包 ----------------------------------- */
+        public readonly InventorySlotUI[] quickInventorySlots;
         public BackpackPanel inventoryItemPanel;
         public ScrollViewIdentity inventoryItemView;
-        public Color backpackColor = Color.white;
 
 
-        /* ----------------------------------- 合成 ----------------------------------- */
+        /* -------------------------------------------------------------------------- */
+        /*                                     合成                                     */
+        /* -------------------------------------------------------------------------- */
         public Dictionary<CraftingRecipe, List<Dictionary<int, ushort>>> craftingResults = new();
         public CraftingInfoShower craftingInfoShower;
         public BackpackPanel craftingPanel;
         public ScrollViewIdentity craftingView;
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     暂停                                     */
+        /* -------------------------------------------------------------------------- */
+        public PanelIdentity pausePanel;
+        public PanelIdentity pausePanelMask;
+
 
         #endregion
 
