@@ -22,7 +22,6 @@ namespace GameCore
         public delegate void OnVarValueChangeCallback(NMSyncVar nm, byte[] oldValue);
 
         public static OnVarValueChangeCallback OnVarValueChange = (_, _) => { };
-        public static Action<NMRegisterSyncVar> OnRegisterVar = a => { };
 
         public static readonly Dictionary<string, NMSyncVar> vars = new();
 
@@ -51,20 +50,14 @@ namespace GameCore
 
 
         #region 注册变量
-        /// <summary>
-        /// 注册同步变量, 只能在服务端调用
-        /// </summary>
-        /// <param name="varId"></param>
-        public static void RegisterVar(string varId, bool clientCanSet, byte[] defaultValue)
-        => RegisterVar(new(varId, clientCanSet, defaultValue));
 
         /// <summary>
         /// 注册同步变量, 只能在服务端调用
         /// </summary>
         /// <param name="varId"></param>
-        public static void RegisterVar(NMRegisterSyncVar var)
+        public static void RegisterVar(string varId, bool clientCanSet, byte[] defaultValue)
         {
-            if (var.varId.IsNullOrWhiteSpace())
+            if (varId.IsNullOrWhiteSpace())
             {
                 Debug.LogError("不可以注册空变量");
                 return;
@@ -76,6 +69,8 @@ namespace GameCore
                 return;
             }
 
+            NMRegisterSyncVar var = new(varId, clientCanSet, defaultValue);
+
             //保证服务器立马注册
             LocalRegisterSyncVar(var);
 
@@ -86,13 +81,7 @@ namespace GameCore
         /// 取消注册同步变量, 只能在服务端调用
         /// </summary>
         /// <param name="varId"></param>
-        public static void UnregisterVar(string varId) => UnregisterVar(new NMUnregisterSyncVar(varId));
-
-        /// <summary>
-        /// 取消注册同步变量, 只能在服务端调用
-        /// </summary>
-        /// <param name="var"></param>
-        public static void UnregisterVar(NMUnregisterSyncVar var)
+        public static void UnregisterVar(string varId)
         {
             if (!Server.isServer)
             {
@@ -100,20 +89,9 @@ namespace GameCore
                 return;
             }
 
-            Server.Send(var);
+            Server.Send(new NMUnregisterSyncVar(varId));
         }
 
-        /// <summary>
-        /// 取消注册同步变量, 只能在服务端调用
-        /// </summary>
-        /// <param name="var"></param>
-        public static void UnregisterVarCore(NMUnregisterSyncVar var)
-        {
-            if (!vars.Remove(var.varId))
-            {
-                Debug.LogError($"取消注册同步变量 {var.varId} 失败");
-            }
-        }
         #endregion
 
         public static async void StartAutoSync()
@@ -660,18 +638,18 @@ namespace GameCore
                 ClearVars();
             };
 
+            NetworkCallbacks.OnStartServer += () =>
+            {
+                StartAutoSync();
+            };
+
             static void ClearVars()
             {
                 vars.Clear();
                 Debug.Log($"已清空 SyncPacker 同步变量");
             }
 
-            NetworkCallbacks.OnStartServer += () =>
-            {
-                StartAutoSync();
-            };
-
-            void OnClientGetNMSyncVar(NMSyncVar nm)
+            static void OnClientGetNMSyncVar(NMSyncVar nm)
             {
                 //如果自己是服务器就不要同步
                 if (Server.isServer)
@@ -691,7 +669,7 @@ namespace GameCore
                 //Debug.LogError($"同步变量 {var.varId} 的值为 {var.varValue} 失败");
             }
 
-            void OnServerGetNMSyncVar(NetworkConnectionToClient conn, NMSyncVar nm)
+            static void OnServerGetNMSyncVar(NetworkConnectionToClient conn, NMSyncVar nm)
             {
                 if (vars.TryGetValue(nm.varId, out var var))
                 {
@@ -704,13 +682,21 @@ namespace GameCore
                 }
             }
 
-            void OnClientGetNMRegisterSyncVar(NMRegisterSyncVar nm)
+            static void OnClientGetNMRegisterSyncVar(NMRegisterSyncVar nm)
             {
                 //服务器会提前进行注册, 不需要重复注册
                 if (Server.isServer)
                     return;
 
                 LocalRegisterSyncVar(nm);
+            }
+
+            static void OnClientGetNMUnregisterVar(NMUnregisterSyncVar var)
+            {
+                if (!vars.Remove(var.varId))
+                {
+                    Debug.LogError($"取消注册同步变量 {var.varId} 失败");
+                }
             }
 
             NetworkCallbacks.OnTimeToServerCallback += () =>
@@ -720,7 +706,7 @@ namespace GameCore
             NetworkCallbacks.OnTimeToClientCallback += () =>
             {
                 Client.Callback<NMRegisterSyncVar>(OnClientGetNMRegisterSyncVar);
-                Client.Callback<NMUnregisterSyncVar>(UnregisterVarCore);
+                Client.Callback<NMUnregisterSyncVar>(OnClientGetNMUnregisterVar);
                 Client.Callback<NMSyncVar>(OnClientGetNMSyncVar);
             };
         }
@@ -729,12 +715,15 @@ namespace GameCore
         {
             //Debug.Log($"注册了{var.varId}");
 
-            if (!vars.TryAdd(var.varId, new(var.varId, var.defaultValue, var.clientCanSet)))
+            if (vars.TryAdd(var.varId, new(var.varId, var.defaultValue, var.clientCanSet)))
+            {
+                //TODO: 缓存默认值
+            }
+            else
             {
                 Debug.LogError($"注册 {var.varId} 失败, 其已存在");
             }
             //Debug.Log($"注册了同步变量 {var.varId}");
-            OnRegisterVar(var);
         }
     }
 }
