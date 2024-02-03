@@ -15,6 +15,7 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using DG.Tweening;
+using System.Security.Cryptography.X509Certificates;
 
 namespace GameCore
 {
@@ -164,8 +165,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     暂停                                     */
         /* -------------------------------------------------------------------------- */
-        public PanelIdentity pausePanel;
-        public PanelIdentity pausePanelMask;
+        public BackpackPanel pausePanel;
 
 
         #endregion
@@ -189,13 +189,14 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    任务系统                                    */
         /* -------------------------------------------------------------------------- */
+        public BackpackPanel taskPanel;
         public ScrollViewIdentity taskView;
         public ImageIdentity taskCompleteBackground;
         public ImageIdentity taskCompleteIcon;
         public TextIdentity taskCompleteText;
 
         public List<TaskData> tasks = new();
-        public TaskNode taskNode;
+        public TaskNode rootTaskNode;
 
         public void AddTask(string id, string icon, string parent, string[] rewards)
         {
@@ -343,20 +344,6 @@ namespace GameCore
 
 
 
-        public void PauseGame()
-        {
-            if (GScene.name != SceneNames.GameScene)
-                return;
-
-            if (!pausePanel || GameUI.page?.ui == dialogPanel)
-                return;
-
-            if ((GameUI.page == null || !GameUI.page.ui) && GameUI.page.ui != pausePanel)
-                GameUI.SetPage(pausePanel);
-            else
-                GameUI.SetPageBack();
-        }
-
         public void LeftGame()
         {
             //保存数据
@@ -370,7 +357,7 @@ namespace GameCore
                 ScreenTools.CaptureSquare(GFiles.world.worldImagePath, () =>
                 {
                     GameUI.canvas.gameObject.SetActive(true);
-                    GameUI.FadeIn(pausePanelMask.panelImage, true, 1, new(() =>
+                    (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
                     {
                         //清除方块防止警告
                         if (Map.HasInstance())
@@ -379,16 +366,22 @@ namespace GameCore
                         }
 
                         ManagerNetwork.instance.StopHost();
-                    }));
+                    }), null);
+
+                    panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
+                    panel.CustomMethod("fade_in", null);
                 });
             }
             //如果是单纯的客户端
             else
             {
-                GameUI.FadeIn(pausePanelMask.panelImage, true, 1, new(() =>
+                (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
                 {
                     Client.Disconnect();
-                }));
+                }), null);
+
+                panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
+                panel.CustomMethod("fade_in", null);
             }
         }
 
@@ -425,29 +418,6 @@ namespace GameCore
             instance = this;
             this.player = player;
 
-            /* -------------------------------------------------------------------------- */
-            /*                                    暂停界面                                    */
-            /* -------------------------------------------------------------------------- */
-
-            pausePanel = GameUI.AddPanel("ori:panel.pause", GameUI.canvas.transform, true);
-            pausePanelMask = GameUI.AddPanel("ori:panel.pause.mask", pausePanel, true);
-
-            pausePanel.panelImage.SetColorBrightness(0.175f);
-            pausePanel.panelImage.SetAlpha(0.65f);
-            pausePanel.OnUpdate += x => GameUI.SetUILayerToTop(x);
-
-            pausePanelMask.panelImage.color = new(0, 0, 0, 0);
-            pausePanelMask.OnUpdate += x => GameUI.SetUILayerToTop(x);
-
-            ButtonIdentity continueGame = GameUI.AddButton(UPC.Middle, "ori:button.pause_continue_game", pausePanel).OnClickBind(() =>
-            {
-                GameUI.SetPage(null);
-            });
-            ButtonIdentity quitGame = GameUI.AddButton(UPC.Middle, "ori:button.pause_quit_game", pausePanel).OnClickBind(LeftGame);
-
-            continueGame.rt.AddLocalPosY(30);
-            quitGame.rt.AddLocalPosY(-30);
-
 
 
             /* -------------------------------------------------------------------------- */
@@ -483,88 +453,6 @@ namespace GameCore
             };
 
 
-
-            /* -------------------------------------------------------------------------- */
-            /*                                    任务系统                                    */
-            /* -------------------------------------------------------------------------- */
-
-            /* ----------------------------------- 生成任务视图 ----------------------------------- */
-            //生成面板, 设置颜色为深灰色半透明
-            taskView = GameUI.AddScrollView(UPC.StretchDouble, "ori:view.task");
-            taskView.scrollViewImage.color = new(0.2f, 0.2f, 0.2f, 0.6f);
-            taskView.rt.sizeDelta = Vector2.zero;
-            taskView.gameObject.SetActive(false);
-            taskView.scrollRect.horizontal = true;   //允许水平拖拽
-            taskView.scrollRect.movementType = ScrollRect.MovementType.Unrestricted;   //不限制拖拽
-            taskView.scrollRect.scrollSensitivity = 0;   //不允许滚轮控制
-            taskView.content.localScale = new(0.08f, 0.08f, 1);   //缩小界面
-            taskView.content.anchoredPosition = new(GameUI.canvasScaler.referenceResolution.x / 2, GameUI.canvasScaler.referenceResolution.y / 2);  //将任务居中
-            taskView.viewportMask.enabled = false;   //关闭显示剔除
-            UnityEngine.Object.Destroy(taskView.gridLayoutGroup);   //删除自动排序器
-            UnityEngine.Object.Destroy(taskView.scrollRect.verticalScrollbar.gameObject);   //删除滚动条
-
-            taskView.OnUpdate += _ =>
-            {
-                GameUI.SetUILayerToTop(taskView);
-            };
-
-            /* -------------------------------- 生成任务完成图像 -------------------------------- */
-            taskCompleteBackground = GameUI.AddImage(UPC.UpperLeft, "ori:image.task_complete_background", "ori:task_complete");
-            taskCompleteBackground.SetSizeDelta(320, 100);
-            taskCompleteBackground.SetAPos(taskCompleteBackground.sd.x / 2, -taskCompleteBackground.sd.y / 2);
-            taskCompleteBackground.gameObject.SetActive(false);
-            taskCompleteBackground.OnUpdate += _ =>
-            {
-                GameUI.SetUILayerToTop(taskView);
-            };
-
-            taskCompleteIcon = GameUI.AddImage(UPC.Left, "ori:image.task_complete_icon", null, taskCompleteBackground);
-            taskCompleteIcon.SetSizeDelta(taskCompleteBackground.sd.y, taskCompleteBackground.sd.y);
-            taskCompleteIcon.SetAPosX(taskCompleteIcon.sd.x / 2);
-
-            taskCompleteText = GameUI.AddText(UPC.Middle, "ori:text.task_complete", taskCompleteBackground);
-            taskCompleteText.sd = taskCompleteBackground.sd;
-            taskCompleteText.text.margin = new(taskCompleteIcon.sd.x + 5, 5, 5, 5);
-            taskCompleteText.autoCompareText = false;
-
-            /* ---------------------------------- 绑定任务 ---------------------------------- */
-            BindTasks(this);
-
-            /* --------------------------------- 生成任务节点 --------------------------------- */
-            foreach (var item in tasks)
-            {
-                //是根任务
-                if (string.IsNullOrWhiteSpace(item.parent))
-                {
-                    taskNode = Do_Internal(item);
-                    break;
-                }
-            }
-
-            TaskNode Do_Internal(TaskData data)
-            {
-                TaskNode temp = new(data);
-
-                foreach (var task in tasks)
-                {
-                    //如果是 current 的子任务
-                    if (task.parent == data.id)
-                    {
-                        temp.nodes.Add(Do_Internal(task));
-                    }
-                }
-
-                return temp;
-            }
-
-            /* --------------------------------- 显示任务节点 --------------------------------- */
-            RefreshTasks(true);
-
-            /* --------------------------------- 加载已有任务 --------------------------------- */
-            foreach (var task in player.completedTasks)
-            {
-                CompleteTask(task.id, false, task.hasGotRewards);
-            }
 
 
 
@@ -678,7 +566,7 @@ namespace GameCore
                 touchScreenShowTaskButton.OnClickBind(() =>
                 {
                     if (backpackMask && GameUI.page?.ui != dialogPanel)
-                        ShowHideTaskView();
+                        ShowOrHideBackpackAndSetPanelToTask();
                 });
             }
 
@@ -715,7 +603,7 @@ namespace GameCore
                 };
             }
 
-            #region 添加主物品栏与左右手按钮
+            #region 添加快速物品栏
             {
                 //物品栏格子数
                 int quickInventorySlotCount = Player.quickInventorySlotCount;
@@ -783,6 +671,7 @@ namespace GameCore
                 backpackMask = GameUI.AddPanel("ori:panel.backpack_mask");
                 backpackMask.panelImage.color = new Color32(50, 50, 50, 80);
                 backpackMask.gameObject.SetActive(false);
+                backpackMask.OnUpdate += x => GameUI.SetUILayerToFirst(x);
 
                 backpackPanelBackground = GameUI.AddImage(UPC.Middle, "ori:image.backpack_panel_background", null, backpackMask);
                 backpackPanelBackground.SetSizeDelta(700, Player.backpackPanelHeight);
@@ -859,6 +748,8 @@ namespace GameCore
                     ImageIdentity arrow = GameUI.AddImage(UPC.Up, "ori:image.crafting_info_shower_arrow", "ori:crafting_info_shower_arrow", backgroundImage);
                     ScrollViewIdentity resultsView = GameUI.AddScrollView(UPC.Up, "ori:scrollview.crafting_info_shower_results", backgroundImage);
                     TextIdentity maximumCraftingTimesText = GameUI.AddText(UPC.LowerRight, "ori:text.crafting_info_shower.maximum_crafting_times", backgroundImage);
+
+                    backgroundImage.OnUpdate += x => GameUI.SetUILayerToTop(x);
 
                     backgroundImage.SetSizeDelta(300, 200);
                     backgroundImage.image.raycastTarget = false;
@@ -963,6 +854,99 @@ namespace GameCore
                             }
                         }
                     };
+
+                #endregion
+
+                #region 暂停界面
+
+                pausePanel = GenerateBackpackPanel("ori:pause", "ori:switch_button.pause");
+
+                ButtonIdentity continueGame = GameUI.AddButton(UPC.Middle, "ori:button.pause_continue_game", pausePanel.panel).OnClickBind(() =>
+                {
+                    GameUI.SetPage(null);
+                });
+                ButtonIdentity quitGame = GameUI.AddButton(UPC.Middle, "ori:button.pause_quit_game", pausePanel.panel).OnClickBind(LeftGame);
+
+                continueGame.rt.AddLocalPosY(30);
+                quitGame.rt.AddLocalPosY(-30);
+
+                #endregion
+
+                #region 任务系统
+
+                /* ----------------------------------- 生成任务视图 ----------------------------------- */
+                //生成面板, 设置颜色为深灰色半透明
+                taskPanel = GenerateBackpackPanel("ori:tasks", "ori:switch_button.tasks");
+                taskView = GameUI.AddScrollView(UPC.StretchDouble, "ori:view.task", taskPanel);
+                taskView.scrollViewImage.color = new(0.2f, 0.2f, 0.2f, 0.6f);
+                taskView.rt.sizeDelta = Vector2.zero;
+                taskView.content.anchoredPosition = new(GameUI.canvasScaler.referenceResolution.x / 2, GameUI.canvasScaler.referenceResolution.y / 2);  //将任务居中
+                taskView.scrollRect.horizontal = true;   //允许水平拖拽
+                taskView.scrollRect.movementType = ScrollRect.MovementType.Unrestricted;   //不限制拖拽
+                taskView.scrollRect.scrollSensitivity = 0;   //不允许滚轮控制
+                taskView.gameObject.AddComponent<RectMask2D>();   //添加新的遮罩
+                UnityEngine.Object.Destroy(taskView.viewportMask);   //删除自带的遮罩
+                UnityEngine.Object.Destroy(taskView.gridLayoutGroup);   //删除自动排序器
+                UnityEngine.Object.Destroy(taskView.scrollRect.horizontalScrollbar.gameObject);   //删除水平滚动条
+                UnityEngine.Object.Destroy(taskView.scrollRect.verticalScrollbar.gameObject);   //删除水平滚动条
+
+                /* -------------------------------- 生成任务完成图像 -------------------------------- */
+                taskCompleteBackground = GameUI.AddImage(UPC.UpperLeft, "ori:image.task_complete_background", "ori:task_complete");
+                taskCompleteBackground.SetSizeDelta(320, 100);
+                taskCompleteBackground.SetAPos(taskCompleteBackground.sd.x / 2, -taskCompleteBackground.sd.y / 2);
+                taskCompleteBackground.gameObject.SetActive(false);
+                taskCompleteBackground.OnUpdate += _ =>
+                {
+                    GameUI.SetUILayerToTop(taskView);
+                };
+
+                taskCompleteIcon = GameUI.AddImage(UPC.Left, "ori:image.task_complete_icon", null, taskCompleteBackground);
+                taskCompleteIcon.SetSizeDelta(taskCompleteBackground.sd.y, taskCompleteBackground.sd.y);
+                taskCompleteIcon.SetAPosX(taskCompleteIcon.sd.x / 2);
+
+                taskCompleteText = GameUI.AddText(UPC.Middle, "ori:text.task_complete", taskCompleteBackground);
+                taskCompleteText.sd = taskCompleteBackground.sd;
+                taskCompleteText.text.margin = new(taskCompleteIcon.sd.x + 5, 5, 5, 5);
+                taskCompleteText.autoCompareText = false;
+
+                /* ---------------------------------- 绑定任务 ---------------------------------- */
+                BindTasks(this);
+
+                /* --------------------------------- 生成任务节点 --------------------------------- */
+                foreach (var item in tasks)
+                {
+                    //是根任务
+                    if (string.IsNullOrWhiteSpace(item.parent))
+                    {
+                        rootTaskNode = AddChildrenNodesToNode(item);
+                        break;
+                    }
+                }
+
+                TaskNode AddChildrenNodesToNode(TaskData data)
+                {
+                    TaskNode temp = new(data);
+
+                    foreach (var task in tasks)
+                    {
+                        //如果是 current 的子任务
+                        if (task.parent == data.id)
+                        {
+                            temp.nodes.Add(AddChildrenNodesToNode(task));
+                        }
+                    }
+
+                    return temp;
+                }
+
+                /* --------------------------------- 显示任务节点 --------------------------------- */
+                RefreshTaskNodesDisplay(true);
+
+                /* --------------------------------- 加载已有任务 --------------------------------- */
+                foreach (var task in player.completedTasks)
+                {
+                    CompleteTask(task.id, false, task.hasGotRewards);
+                }
 
                 #endregion
             }
@@ -1077,49 +1061,7 @@ namespace GameCore
 
 
 
-
-        public class BackpackPanel
-        {
-            public string id;
-            public PanelIdentity panel;
-            public ImageIdentity switchButtonBackground;
-            public ButtonIdentity switchButton;
-            public Action Activate;
-            public Action Deactivate;
-
-            public BackpackPanel(string id, PanelIdentity panel, ImageIdentity switchButtonBackground, ButtonIdentity switchButton, Action Activate, Action Deactivate)
-            {
-                this.id = id;
-                this.panel = panel;
-                this.switchButtonBackground = switchButtonBackground;
-                this.switchButton = switchButton;
-                this.Activate = Activate;
-                this.Deactivate = Deactivate;
-            }
-        }
-
-        public (BackpackPanel panel, ScrollViewIdentity itemView) GenerateItemViewBackpackPanel(
-            string id,
-            string switchButtonTexture,
-            float cellSize,
-            Vector2 viewSize,
-            Vector2 cellSpacing,
-            Action OnActivate = null,
-            Action OnDeactivate = null,
-            string texture = "ori:backpack_inventory_background")
-        {
-            (var modId, var panelName) = Tools.SplitModIdAndName(id);
-
-            var panel = GenerateBackpackPanel(id, switchButtonTexture, OnActivate, OnDeactivate, texture);
-            var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
-            view.transform.SetParent(panel.panel.rt, false);
-            view.SetAnchorMinMax(UPC.StretchDouble);
-            view.content.anchoredPosition = Vector2.zero;
-            view.content.sizeDelta = Vector2.zero;
-            Component.Destroy(view.viewportImage);
-
-            return (panel, view);
-        }
+        #region  背包界面
 
         public BackpackPanel GenerateBackpackPanel(
             string id,
@@ -1203,6 +1145,29 @@ namespace GameCore
             Debug.LogError($"未找到背包界面 {id}, 销毁失败");
         }
 
+        public (BackpackPanel panel, ScrollViewIdentity itemView) GenerateItemViewBackpackPanel(
+            string id,
+            string switchButtonTexture,
+            float cellSize,
+            Vector2 viewSize,
+            Vector2 cellSpacing,
+            Action OnActivate = null,
+            Action OnDeactivate = null,
+            string texture = "ori:backpack_inventory_background")
+        {
+            (var modId, var panelName) = Tools.SplitModIdAndName(id);
+
+            var panel = GenerateBackpackPanel(id, switchButtonTexture, OnActivate, OnDeactivate, texture);
+            var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
+            view.transform.SetParent(panel.panel.rt, false);
+            view.SetAnchorMinMax(UPC.StretchDouble);
+            view.content.anchoredPosition = Vector2.zero;
+            view.content.sizeDelta = Vector2.zero;
+            Component.Destroy(view.viewportImage);
+
+            return (panel, view);
+        }
+
         public void SetBackpackPanel(string id)
         {
             foreach (var item in backpackPanels)
@@ -1222,21 +1187,28 @@ namespace GameCore
             Debug.LogError($"未找到背包界面 {id}, 设置背包界面失败");
         }
 
-        public void ShowOrHideBackpackAndSetPanelToInventory()
-        {
-            //Backpack 是整个界面
-            //Inventory 是中间的所有物品
-            //QuickInventory 是不打开背包时看到的几格物品栏
-
-            ShowOrHideBackpackAndSetPanelTo("ori:inventory");
-        }
-
         public void ShowOrHideBackpackAndSetPanelTo(string backpackPanelId)
         {
-            if (!backpackMask.gameObject.activeSelf)
+            if (GameUI.page.ui == backpackMask)
+            {
+                //如果处于背包界面，并且是指定面板，就关闭
+                if (currentBackpackPanel == backpackPanelId)
+                {
+                    ShowOrHideBackpack();
+                    GameUI.SetPage(null);
+                }
+                //如果处于背包界面，且不是指定面板，就切换到指定面板
+                else
+                {
+                    SetBackpackPanel(backpackPanelId);
+                }
+            }
+            //如果不处于背包界面，就打开并切换到指定面板
+            else if (GameUI.page == null || !GameUI.page.ui)
+            {
+                ShowOrHideBackpack();
                 SetBackpackPanel(backpackPanelId);
-
-            ShowOrHideBackpack();
+            }
         }
 
         public void ShowOrHideBackpack()
@@ -1257,6 +1229,36 @@ namespace GameCore
                 GAudio.Play(AudioID.OpenBackpack);
             }
         }
+
+        public void ShowOrHideBackpackAndSetPanelToInventory()
+        {
+            //Backpack 是整个界面
+            //Inventory 是中间的所有物品
+            //QuickInventory 是不打开背包时看到的几格物品栏
+
+            ShowOrHideBackpackAndSetPanelTo("ori:inventory");
+        }
+
+        public void ShowOrHideBackpackAndSetPanelToCrafting()
+        {
+            ShowOrHideBackpackAndSetPanelTo("ori:crafting");
+        }
+
+        public void ShowOrHideBackpackAndSetPanelToTask()
+        {
+            ShowOrHideBackpackAndSetPanelTo("ori:tasks");
+        }
+
+        public void PauseGame()
+        {
+            //如果 没有界面&不在暂停页面
+            if ((GameUI.page == null || !GameUI.page.ui) && GameUI.page.ui != pausePanel.panel)
+                ShowOrHideBackpackAndSetPanelTo("ori:pause");
+            else
+                GameUI.SetPage(null);
+        }
+
+        #endregion
 
 
 
@@ -1327,37 +1329,47 @@ namespace GameCore
             }
 
             /* ----------------------------------- 检测按键 ----------------------------------- */
-            switch (GControls.mode)
+            //TODO: PlayerControls ify
+            if (GameUI.page?.ui != dialogPanel)
             {
-                case ControlMode.KeyboardAndMouse:
-                    if (Keyboard.current != null)
-                    {
-                        if (Keyboard.current.escapeKey.wasReleasedThisFrame)
-                            PauseGame();
+                switch (GControls.mode)
+                {
+                    case ControlMode.KeyboardAndMouse:
+                        if (Keyboard.current != null)
+                        {
+                            if (Keyboard.current.cKey.wasReleasedThisFrame)
+                                ShowOrHideBackpackAndSetPanelToCrafting();
 
-                        if (Keyboard.current.enterKey.wasReleasedThisFrame)
-                            Chat();
+                            if (Keyboard.current.escapeKey.wasReleasedThisFrame)
+                                PauseGame();
 
-                        if (Keyboard.current.tKey.wasReleasedThisFrame)
-                            ShowHideTaskView();
-                    }
+                            if (Keyboard.current.enterKey.wasReleasedThisFrame)
+                                Chat();
 
-                    break;
+                            if (Keyboard.current.tKey.wasReleasedThisFrame)
+                                ShowOrHideBackpackAndSetPanelToTask();
+                        }
 
-                case ControlMode.Gamepad:
-                    if (Gamepad.current != null)
-                    {
-                        if (Gamepad.current.startButton.wasReleasedThisFrame)
-                            PauseGame();
+                        break;
 
-                        if (Gamepad.current.dpad.down.wasReleasedThisFrame)
-                            Chat();
+                    case ControlMode.Gamepad:
+                        if (Gamepad.current != null)
+                        {
+                            if (Gamepad.current.yButton.wasReleasedThisFrame)
+                                ShowOrHideBackpackAndSetPanelToCrafting();
 
-                        if (Gamepad.current.dpad.up.wasReleasedThisFrame)
-                            ShowHideTaskView();
-                    }
+                            if (Gamepad.current.startButton.wasReleasedThisFrame)
+                                PauseGame();
 
-                    break;
+                            if (Gamepad.current.dpad.down.wasReleasedThisFrame)
+                                Chat();
+
+                            if (Gamepad.current.dpad.up.wasReleasedThisFrame)
+                                ShowOrHideBackpackAndSetPanelToTask();
+                        }
+
+                        break;
+                }
             }
 
             #region 手机操控
@@ -1409,18 +1421,6 @@ namespace GameCore
             #endregion
         }
 
-        public void ShowHideTaskView()
-        {
-            if (GameUI.page.ui == taskView)
-            {
-                GameUI.SetPageBack();
-            }
-            else if (GameUI.page == null || !GameUI.page.ui)
-            {
-                GameUI.SetPage(taskView);
-            }
-        }
-
         public static Action<PlayerUI> BindTasks = ui =>
         {
             ui.AddTask("ori:get_dirt", "ori:task.get_dirt", null, new[] { $"{BlockID.Dirt}/=/25/=/null" });
@@ -1461,26 +1461,32 @@ namespace GameCore
             ui.AddTask("ori:get_bark_vest", "ori:task.get_bark_vest", "ori:get_bark", null);
         };
 
-        public void RefreshTasks(bool init)
+        public void RefreshTaskNodesDisplay(bool init)
         {
             if (init)
                 taskView.Clear();
 
-            RefreshTasks_Internal(taskNode, null, new(), init);
+            RefreshChildrenTaskNodesDisplay(rootTaskNode, null, new(), init);
         }
 
-        private void RefreshTasks_Internal(TaskNode current, TaskNode parentNode, List<TaskNode> siblingNodes, bool init)
+        private void RefreshChildrenTaskNodesDisplay(TaskNode current, TaskNode parentNode, List<TaskNode> siblingNodes, bool init)
         {
             /* ----------------------------------- 初始化 ---------------------------------- */
             if (init)
-                RefreshTasks_Internal_Init(current, parentNode, siblingNodes);
+                TaskNodeDisplay_InitButton(current, parentNode, siblingNodes);
 
             /* ---------------------------------- 设置图标 ---------------------------------- */
             current.icon.SetID($"ori:image.task_node.{current.data.id}");
             current.icon.image.sprite = ModFactory.CompareTexture(current.data.icon).sprite;
 
             /* ---------------------------------- 设置颜色 ---------------------------------- */
-            current.icon.image.color = current.button.image.color = current.completed ? (current.hasGotRewards ? Color.white : Tools.HexToColor("#00FFD6")) : new(0.5f, 0.5f, 0.5f, 0.75f);
+            current.icon.image.color = current.button.image.color =
+                        current.completed ?
+                            (current.hasGotRewards ?
+                                Color.white :  //完成了且领取了奖励
+                                Tools.HexToColor("#00FFD6")) :  //完成了且没领取奖励
+                            new(0.5f, 0.5f, 0.5f, 0.75f);  //没完成
+
             if (current.line) current.line.image.color = current.icon.image.color;
 
             /* ---------------------------------- 添加到节点组 & 初始化子节点 --------------------------------- */
@@ -1489,14 +1495,14 @@ namespace GameCore
             List<TaskNode> childrenNodes = new();
             foreach (var node in current.nodes)
             {
-                RefreshTasks_Internal(node, current, childrenNodes, init);
+                RefreshChildrenTaskNodesDisplay(node, current, childrenNodes, init);
             }
         }
 
-        private void RefreshTasks_Internal_Init(TaskNode node, TaskNode parentNode, List<TaskNode> siblingNodes)
+        private void TaskNodeDisplay_InitButton(TaskNode node, TaskNode parentNode, List<TaskNode> siblingNodes)
         {
             /* ---------------------------------- 初始化按钮 --------------------------------- */
-            int space = 90;
+            int space = 40;
             node.button = GameUI.AddButton(UPC.Middle, $"ori:button.task_node.{node.data.id}", GameUI.canvas.transform, "ori:square_button");
             node.parent = parentNode;
             node.button.SetSizeDelta(space, space);   //设置按钮大小
@@ -1542,7 +1548,7 @@ namespace GameCore
                 player.completedTasks = completedTasksTemp;
 
                 node.hasGotRewards = true;
-                RefreshTasks(false);
+                RefreshTaskNodesDisplay(false);
             });
 
             /* ---------------------------------- 设置父物体 --------------------------------- */
@@ -1554,20 +1560,42 @@ namespace GameCore
             /* -------------------------------- 根据父节点更改位置 ------------------------------- */
             Vector2 tempVec = Vector2.zero;
             if (parentNode != null) { tempVec.y -= node.button.sd.y + space; }
+            int childrenCountOfCurrentNode = 0;
+
+            //统计自己的子任务数
+            foreach (var task in tasks)
+            {
+                if (task.parent == node.data.id)
+                {
+                    childrenCountOfCurrentNode++;
+                }
+            }
 
             /* ------------------------------- 根据同级节点更改位置 ------------------------------- */
             foreach (var siblingNode in siblingNodes)
             {
-                //更改节点位置
-                Vector2 tempVecFE = siblingNode.button.ap;
-                tempVecFE.x -= siblingNode.button.sd.x / 2 + node.button.sd.x / 2 + space;
-                siblingNode.button.ap = tempVecFE;
+                int childrenCountOfSiblingNode = 0;
+
+                //统计自己和相邻节点的子任务数
+                foreach (var task in tasks)
+                {
+                    if (task.parent == siblingNode.data.id)
+                    {
+                        childrenCountOfSiblingNode++;
+                    }
+                }
+
+                float countOfChildrenNodesThatCauseCoincidence = childrenCountOfCurrentNode / 2f + childrenCountOfSiblingNode / 2f; // 要除以 2 是因为只有一半的子节点会影响到对方
+                float deltaPos = siblingNode.button.sd.x * 0.5f + node.button.sd.x * 0.5f + space * countOfChildrenNodesThatCauseCoincidence;
+
+                //更改同级节点位置
+                siblingNode.button.ap = new(siblingNode.button.ap.x - deltaPos, siblingNode.button.ap.y);
 
                 //重新计算节点
-                InitLine(siblingNode);
+                TaskNodeDisplay_InitLine(siblingNode);
 
                 //更改本身
-                tempVec.x += siblingNode.button.sd.x / 2 + node.button.sd.x / 2 + space;
+                tempVec.x += deltaPos;
             }
 
             /* -------------------------------- 设置按钮和文本位置 ------------------------------- */
@@ -1579,10 +1607,10 @@ namespace GameCore
             node.icon.sd = node.button.sd;
 
             /* --------------------------------- 初始化连接线 --------------------------------- */
-            InitLine(node);
+            TaskNodeDisplay_InitLine(node);
         }
 
-        private static void InitLine(TaskNode node)
+        private static void TaskNodeDisplay_InitLine(TaskNode node)
         {
             if (node.parent == null)
                 return;
@@ -1622,7 +1650,7 @@ namespace GameCore
 
         public void CompleteTask(string id, bool feedback = true, bool hasGotRewards = false)
         {
-            if (CompleteTask_Internal(taskNode, id, out bool hasCompletedBefore, out TaskNode nodeCompleted) && !hasCompletedBefore && nodeCompleted != null)
+            if (CompleteTask_Internal(rootTaskNode, id, out bool hasCompletedBefore, out TaskNode nodeCompleted) && !hasCompletedBefore && nodeCompleted != null)
             {
                 if (hasGotRewards)
                 {
@@ -1645,7 +1673,7 @@ namespace GameCore
                 }
             }
 
-            RefreshTasks(false);
+            RefreshTaskNodesDisplay(false);
         }
 
         private bool CompleteTask_Internal(TaskNode current, string id, out bool hasCompletedBefore, out TaskNode nodeCompleted)
@@ -1865,6 +1893,29 @@ namespace GameCore
     /* -------------------------------------------------------------------------- */
     /*                                     公共类                                    */
     /* -------------------------------------------------------------------------- */
+
+    public class BackpackPanel : IRectTransform
+    {
+        public string id;
+        public PanelIdentity panel;
+        public ImageIdentity switchButtonBackground;
+        public ButtonIdentity switchButton;
+        public Action Activate;
+        public Action Deactivate;
+
+        public BackpackPanel(string id, PanelIdentity panel, ImageIdentity switchButtonBackground, ButtonIdentity switchButton, Action Activate, Action Deactivate)
+        {
+            this.id = id;
+            this.panel = panel;
+            this.switchButtonBackground = switchButtonBackground;
+            this.switchButton = switchButton;
+            this.Activate = Activate;
+            this.Deactivate = Deactivate;
+        }
+
+        public RectTransform rectTransform => panel.rectTransform;
+    }
+
     public class InventorySlotUI
     {
         public ButtonIdentity button;
@@ -2098,6 +2149,8 @@ namespace GameCore
                 //ImageIdentity damageIcon = GameUI.AddImage(UPC.UpperLeft, "ori:image.item_info_shower.damage_icon", "ori:item_info_shower_damage", backgroundImage);
                 TextIdentity detailText = GameUI.AddText(UPC.UpperLeft, "ori:text.item_info_shower.detail", backgroundImage);
 
+                backgroundImage.OnUpdate += x => GameUI.SetUILayerToTop(x);
+
                 nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
                 detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
                 detailText.text.paragraphSpacing = 15;
@@ -2215,6 +2268,7 @@ namespace GameCore
                 image.OnUpdate += i =>
                 {
                     i.ap = GControls.cursorPosInMainCanvas;
+                    GameUI.SetUILayerToTop(i);
                 };
 
                 image.image.raycastTarget = false;

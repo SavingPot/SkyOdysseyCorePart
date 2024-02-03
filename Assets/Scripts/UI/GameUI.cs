@@ -623,7 +623,7 @@ namespace GameCore.UI
             return (barBg, barFull, mascot, progressText);
         }
 
-        public static KeyValuePair<PanelIdentity, TextIdentity> GenerateMask(string panelId, string textId, UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
+        public static (PanelIdentity panel, TextIdentity text) GenerateMask(string panelId, string textId, UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
         {
             //初始化 UI
             var panel = AddPanel(panelId);
@@ -655,6 +655,17 @@ namespace GameCore.UI
 
             return new(panel, text);
         }
+
+        public static (PanelIdentity panel, TextIdentity text) RegionGenerationMask(UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
+        {
+            return GenerateMask("ori:panel.wait_generating_the_region", "ori:text.wait_generating_the_region", afterFadingIn, afterFadingOut);
+        }
+
+        public static (PanelIdentity panel, TextIdentity text) LeavingGameMask(UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
+        {
+            return GenerateMask("ori:panel.mask.left_game", "ori:text.leaving_game", afterFadingIn, afterFadingOut);
+        }
+
         #endregion
 
         public static void SetUILayer(UIIdentity ui, int layer)

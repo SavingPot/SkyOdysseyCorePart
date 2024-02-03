@@ -300,9 +300,9 @@ namespace GameCore
             ManagerNetwork.instance.StartHostForAddress(port);
 
             bool panelFadeOk = false;
-            var kvp = RegionGenerationMask((_, _) => panelFadeOk = true, null);
-            var panel = kvp.Key;
-            var text = kvp.Value;
+            var tuple = GameUI.RegionGenerationMask((_, _) => panelFadeOk = true, null);
+            var panel = tuple.panel;
+            var text = tuple.text;
             panel.CustomMethod("fade_in", null);
 
             /* -------------------------------------------------------------------------- */
@@ -383,9 +383,10 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                   等待加载区域                                   */
             /* -------------------------------------------------------------------------- */
-            kvp = RegionGenerationMask((_, _) => panelFadeOk = true, null);
-            panel = kvp.Key;
-            text = kvp.Value;
+            //到下一个场景了，要重新创建一个遮罩
+            tuple = GameUI.RegionGenerationMask((_, _) => panelFadeOk = true, null);
+            panel = tuple.panel;
+            text = tuple.text;
             panel.panelImage.SetAlpha(1);
 
             GameCallbacks.AfterGeneratingExistingRegion += InternalAfterGeneratingExistingRegion;
@@ -412,17 +413,14 @@ namespace GameCore
             }
         }
 
-        public static KeyValuePair<PanelIdentity, TextIdentity> RegionGenerationMask(UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
-        {
-            return GameUI.GenerateMask("ori:panel.wait_generating_the_region", "ori:text.wait_generating_the_region", afterFadingIn, afterFadingOut);
-        }
+
 
         public static void StartGameClient(string address, ushort port)
         {
             bool panelFadeOk = false;
-            var kvp = GameUI.GenerateMask("ori:panel.wait_joining_the_server", "ori:text.wait_joining_the_server", (_, _) => panelFadeOk = true, null);
-            var panel = kvp.Key;
-            var text = kvp.Value;
+            var tuple = GameUI.GenerateMask("ori:panel.wait_joining_the_server", "ori:text.wait_joining_the_server", (_, _) => panelFadeOk = true, null);
+            var panel = tuple.panel;
+            var text = tuple.text;
             panel.CustomMethod("fade_in", null);
 
             ManagerNetwork.instance.StartClientForAddress(address, port);
@@ -443,18 +441,19 @@ namespace GameCore
                 }
 
                 #region 声明并等待场景加载
-                kvp = RegionGenerationMask(null, null);
-                panel = kvp.Key;
-                text = kvp.Value;
+                tuple = GameUI.RegionGenerationMask(null, null);
+                panel = tuple.panel;
+                text = tuple.text;
 
                 string nextSceneName = GScene.nextSceneName;
                 GScene.NextAsync();
                 await UniTask.WaitUntil(() => GScene.name == nextSceneName);
                 #endregion
 
-                kvp = RegionGenerationMask(null, null);
-                panel = kvp.Key;
-                text = kvp.Value;
+                //到下一个场景了，要重新创建一个遮罩
+                tuple = GameUI.RegionGenerationMask(null, null);
+                panel = tuple.panel;
+                text = tuple.text;
 
                 panel.OnUpdate += pg =>
                 {
