@@ -136,6 +136,11 @@ namespace GameCore
 
 
 
+        #region 背包界面
+        
+        public List<BackpackPanel> backpackPanels = new();
+        public string currentBackpackPanel = string.Empty;
+
         /* -------------------------------------------------------------------------- */
         /*                                     背包                                    */
         /* -------------------------------------------------------------------------- */
@@ -160,6 +165,8 @@ namespace GameCore
         public CraftingInfoShower craftingInfoShower;
         public BackpackPanel craftingPanel;
         public ScrollViewIdentity craftingView;
+
+        #endregion
 
 
 
@@ -1089,9 +1096,6 @@ namespace GameCore
             }
         }
 
-        public List<BackpackPanel> backpackPanels = new();
-        public string currentBackpackPanel = string.Empty;
-
         public (BackpackPanel panel, ScrollViewIdentity itemView) GenerateItemViewBackpackPanel(
             string id,
             string switchButtonTexture,
@@ -1102,9 +1106,7 @@ namespace GameCore
             Action OnDeactivate = null,
             string texture = "ori:backpack_inventory_background")
         {
-            var parts = id.Split(':');
-            var modId = parts[0];
-            var panelName = parts[1];
+            (var modId, var panelName) = Tools.SplitModIdAndName(id);
 
             var panel = GenerateBackpackPanel(id, switchButtonTexture, OnActivate, OnDeactivate, texture);
             var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
@@ -1124,9 +1126,7 @@ namespace GameCore
             Action OnDeactivate = null,
             string texture = "ori:backpack_inventory_background")
         {
-            var parts = id.Split(':');
-            var modId = parts[0];
-            var panelName = parts[1];
+            (var modId, var panelName) = Tools.SplitModIdAndName(id);
 
 
             /* -------------------------------------------------------------------------- */
@@ -1193,6 +1193,7 @@ namespace GameCore
                 if (item.id == id)
                 {
                     GameObject.Destroy(item.panel.gameObject);
+                    backpackPanels.Remove(item);
                     return;
                 }
             }

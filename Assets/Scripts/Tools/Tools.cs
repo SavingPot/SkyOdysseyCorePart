@@ -329,6 +329,12 @@ namespace GameCore
         /// </summary>
         public static Color randomColor => new(Random.value, Random.value, Random.value);
 
+        public static (string modId, string name) SplitModIdAndName(string id)
+        {
+            var splitted = id.Split(':');
+            return (splitted[0], splitted[1]);
+        }
+
         /// <summary>
         /// 全屏.
         /// FullScreen.
