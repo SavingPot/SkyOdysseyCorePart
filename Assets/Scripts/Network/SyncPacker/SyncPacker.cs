@@ -829,6 +829,9 @@ namespace GameCore
             static void OnServerGetNMSyncVar(NetworkConnectionToClient conn, NMSyncVar nm)
             {
                 //TODO: 安全检查: if (!nm.clientCanSet&&conn.owned)
+                //排除服务器自己
+                if (conn == Server.localConnection)
+                    return;
 
                 //实例变量
                 if (nm.instance != uint.MaxValue)
@@ -854,6 +857,9 @@ namespace GameCore
                         return;
                     }
                 }
+
+                //广播给其他客户端
+                Server.Send(nm);
             }
 
             static void OnClientGetNMRegisterSyncVar(NMRegisterSyncVar nm)
