@@ -262,10 +262,28 @@ namespace GameCore
 
         public static bool IsUserType(Type type)
         {
-            //1. System 或其子命名空间
-            //2. Unity
-            //3. Mirror
-            return type.Namespace != "System" && (!type.Namespace?.StartsWith("System.") ?? false) && type.Namespace != "UnityEngine" && type.Namespace != "Mirror";
+            //1. type 不为空
+            if (type == null)
+                return false;
+
+            //2. type 无命名空间
+            if (type.Namespace.IsNullOrWhiteSpace())
+                return true;
+
+            //3. 不是 System 或其子命名空间
+            //4. 不是 UnityEngine 或其子命名空间
+            //5. 不是 Mirror 或其子命名空间
+            //5. 不是 DG.Tweening 或其子命名空间
+            //5. 不是 TMPro 命名空间
+            //5. 不是 SP.Tools 命名空间
+            //5. 不是 SP.Tools.Unity 命名空间
+            return !type.Namespace.StartsWith("System") &&
+                   !type.Namespace.StartsWith("UnityEngine") &&
+                   !type.Namespace.StartsWith("Mirror") &&
+                   !type.Namespace.StartsWith("DG.Tweening") &&
+                   type.Namespace != "TMPro" &&
+                   type.Namespace != "SP.Tools.Unity" &&
+                   type.Namespace != "SP.Tools";
         }
 
 

@@ -607,6 +607,11 @@ namespace GameCore
 
                             #endregion
 
+
+
+
+
+
                             #region 默认值处理 & 绑定注册
                             if (!property.GetMethod.IsStatic)
                             {

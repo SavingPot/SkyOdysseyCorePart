@@ -1187,9 +1187,9 @@ namespace GameCore
 
 
         [ConnectionRpc]
-        void ConnectionGenerateRegionTotal(Region region, int regionToGenerateBlocksCount, bool isFirstGeneration, NetworkConnection caller)
+        void ConnectionGenerateRegionTotal(Region regionToGenerate, int regionToGenerateBlocksCount, bool isFirstGeneration, NetworkConnection caller)
         {
-            regionGenerationRegion = region;
+            regionGenerationRegion = regionToGenerate;
             regionGenerationBlocksCount = regionToGenerateBlocksCount;
             regionGenerationIsFirstGeneration = isFirstGeneration;
         }
