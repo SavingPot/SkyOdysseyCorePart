@@ -606,7 +606,8 @@ namespace GameCore
                             });
 
                             #endregion
-                            #region 修改属性
+
+                            #region 默认值处理 & 绑定注册
                             if (!property.GetMethod.IsStatic)
                             {
                                 //? 实例变量的默认值处理在 Entity 中
