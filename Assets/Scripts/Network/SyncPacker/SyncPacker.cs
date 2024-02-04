@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using System;
 using UnityEngine;
+using System.Linq;
 
 namespace GameCore
 {
@@ -19,11 +20,14 @@ namespace GameCore
     //TODO: 这个类的性能对游戏性能影响巨大!!!!!!!!!!!!!!!!! 一定要好好优化
     public static class SyncPacker
     {
-        public delegate void OnVarValueChangeCallback(NMSyncVar nm, byte[] oldValue);
+        public delegate void FirstTempValueDelegate(string id, Entity instance, byte[] newValueBytes);
+        public delegate void OnValueChangeCallback(string id, Entity instance, byte[] oldValueBytes, byte[] newValueBytes);
 
-        public static OnVarValueChangeCallback OnVarValueChange = (_, _) => { };
+        public static FirstTempValueDelegate FirstTempValue;
+        public static OnValueChangeCallback OnValueChange;
 
-        public static readonly Dictionary<string, NMSyncVar> vars = new();
+        public static readonly Dictionary<string, NMSyncVar> staticVars = new();
+        public static readonly Dictionary<string, Dictionary<uint, NMSyncVar>> instanceVars = new();
 
         /// <summary>
         /// 发送同步变量的间隔
@@ -55,7 +59,7 @@ namespace GameCore
         /// 注册同步变量, 只能在服务端调用
         /// </summary>
         /// <param name="varId"></param>
-        public static void RegisterVar(string varId, bool clientCanSet, byte[] defaultValue)
+        public static void RegisterVar(string varId, uint instance, bool clientCanSet, byte[] defaultValue)
         {
             if (varId.IsNullOrWhiteSpace())
             {
@@ -69,10 +73,21 @@ namespace GameCore
                 return;
             }
 
-            NMRegisterSyncVar var = new(varId, clientCanSet, defaultValue);
+            NMRegisterSyncVar var = new(varId, instance, clientCanSet, defaultValue);
 
             //保证服务器立马注册
-            LocalRegisterSyncVar(var);
+#if DEBUG
+            try
+            {
+#endif
+                LocalRegisterSyncVar(var);
+#if DEBUG
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"注册变量 {varId} 失败: {ex}");
+            }
+#endif
 
             Server.Send(var);
         }
@@ -81,7 +96,7 @@ namespace GameCore
         /// 取消注册同步变量, 只能在服务端调用
         /// </summary>
         /// <param name="varId"></param>
-        public static void UnregisterVar(string varId)
+        public static void UnregisterVar(string varId, uint instance)
         {
             if (!Server.isServer)
             {
@@ -89,7 +104,7 @@ namespace GameCore
                 return;
             }
 
-            Server.Send(new NMUnregisterSyncVar(varId));
+            Server.Send(new NMUnregisterSyncVar(varId, instance));
         }
 
         #endregion
@@ -118,41 +133,58 @@ namespace GameCore
                 return;
             }
 
-            List<string> sets = new();
+            List<string> staticSets = new();
+            List<(string, uint)> instanceSets = new();
 
-            foreach (KeyValuePair<string, NMSyncVar> entry in vars)
+            static bool ShouldNotBeSend(NMSyncVar var)
             {
                 //如果同步变量的值发生未改变就不同步
-                if (Equals(entry.Value.valueLastSync, entry.Value.value))
+                return Equals(var.valueLastSync, var.value);
+            }
+
+            foreach (var entry in staticVars)
+            {
+                if (ShouldNotBeSend(entry.Value))
                     continue;
 
                 //将新值发送给所有客户端
                 Server.Send(entry.Value);
-
-                sets.Add(entry.Key);
+                staticSets.Add(entry.Key);
             }
 
-            foreach (var set in sets)
+            foreach (var entry in instanceVars)
             {
-                NMSyncVar temp = vars[set];
-                temp.valueLastSync = temp.value;
-                vars[set] = temp;
+                foreach (var item in entry.Value)
+                {
+                    if (ShouldNotBeSend(item.Value))
+                        continue;
+
+                    //将新值发送给所有客户端
+                    Server.Send(item.Value);
+                    instanceSets.Add((entry.Key, item.Key));
+                }
             }
-        }
 
-        public static bool HasVar(string varId)
-        {
-#if DEBUG
-            if (string.IsNullOrEmpty(varId))
-                return false;
-#endif
+            foreach (var set in staticSets)
+            {
+                NMSyncVar temp = staticVars[set];
+                temp.valueLastSync = temp.value;
+                staticVars[set] = temp;
+            }
 
-            return vars.ContainsKey(varId);
+            foreach (var set in instanceSets)
+            {
+                NMSyncVar temp = instanceVars[set.Item1][set.Item2];
+                temp.valueLastSync = temp.value;
+                instanceVars[set.Item1][set.Item2] = temp;
+            }
         }
 
         //TODO: string varId -> long var;
-        public static bool SetValue(string varId, byte[] value)
+        public static bool SetValue(string varId, Entity instance, byte[] value)
         {
+            NMSyncVar var;
+
 #if DEBUG
             if (string.IsNullOrEmpty(varId))
             {
@@ -160,13 +192,32 @@ namespace GameCore
                 return false;
             }
 
-            if (!vars.TryGetValue(varId, out NMSyncVar var))
+            if (instance)
             {
-                Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(RegisterVar)}(string) 来注册同步变量\n注意! 也可能是您修改了同步变量的属性名称, 但没有修改其配套的读取方法和写入方法导致的!");
-                return false;
+                if (!instanceVars.TryGetValue(varId, out var table))
+                {
+                    Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(RegisterVar)}(string) 来注册同步变量\n注意! 也可能是您修改了同步变量的属性名称, 但没有修改其配套的读取方法和写入方法导致的!");
+                    return false;
+                }
+                else if (!table.TryGetValue(instance.netId, out var))
+                {
+                    Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(RegisterVar)}(string) 来注册同步变量\n注意! 也可能是您修改了同步变量的属性名称, 但没有修改其配套的读取方法和写入方法导致的!");
+                    return false;
+                }
+            }
+            else
+            {
+                if (!staticVars.TryGetValue(varId, out var))
+                {
+                    Debug.LogWarning($"设置同步变量 {varId} 失败, 原因是没有找到, 也许还没有注册过这个变量或者是正在注册当中? 可以使用 {nameof(SyncPacker)}.{nameof(RegisterVar)}(string) 来注册同步变量\n注意! 也可能是您修改了同步变量的属性名称, 但没有修改其配套的读取方法和写入方法导致的!");
+                    return false;
+                }
             }
 #else
-            NMSyncVar var = vars[varId];
+            if (instance)
+                var = instanceVars[varId][instance.netId];
+            else
+                var = staticVars[varId];
 #endif
 
             //只有服务器拥有设置的权力
@@ -183,8 +234,12 @@ namespace GameCore
             //服务器直接赋值
             if (Server.isServer)
             {
-                vars[varId] = var;
-                OnVarValueChange.Invoke(var, oldValue);
+                if (instance)
+                    instanceVars[varId][instance.netId] = var;
+                else
+                    staticVars[varId] = var;
+
+                OnValueChange(var.varId, instance, oldValue, value);
             }
             //客户端发送给服务器赋值
             else
@@ -201,19 +256,59 @@ namespace GameCore
 
 
 
-        public static Func<string, uint, string> InstanceGetterId;
-        public static Func<string, uint, string> InstanceSetterId;
 
-        public static Func<string, string> StaticGetterId;
+
+
+        static void StaticOnValueChangeBind<T>(byte[] newValueBytes, FieldInfo tempField)
+        {
+            T newValue = Rpc.BytesToObject<T>(newValueBytes);
+            tempField.SetValue(null, newValue);
+        }
+
+        static void StaticOnValueChangeBindWithHook<T>(byte[] oldValueBytes, byte[] newValueBytes, FieldInfo tempField, MethodInfo hookMethod)
+        {
+            T newValue = Rpc.BytesToObject<T>(newValueBytes);
+            tempField.SetValue(null, newValue);
+
+            hookMethod.Invoke(null, new object[] { oldValueBytes });
+        }
+
+
+        static void InstanceOnValueChangeBind<T>(byte[] newValueBytes, FieldInfo tempField, Entity entity)
+        {
+            T newValue = Rpc.BytesToObject<T>(newValueBytes);
+            tempField.SetValue(entity, newValue);
+        }
+
+        static void InstanceOnValueChangeBindWithHook<T>(byte[] oldValueBytes, byte[] newValueBytes, FieldInfo tempField, MethodInfo hookMethod, Entity entity)
+        {
+            T newValue = Rpc.BytesToObject<T>(newValueBytes);
+            tempField.SetValue(entity, newValue);
+
+            hookMethod.Invoke(entity, new object[] { oldValueBytes });
+        }
+
+
+
+
+
+
+
+
+
+
+
+        //TODO;合并这两个委托
+        public static Func<string, string> InstanceSetterId;
         public static Func<string, string> StaticSetterId;
 
         public static Action StaticVarsRegister;
-        public static Action<IVarInstanceID> InstanceVarsRegister;
+        public static Action<Entity> InstanceVarsRegister;//TODO
 
         private static readonly StringBuilder stringBuilder = new();
 
 
-        public static bool _InstanceSet(IVarInstanceID __instance, object value, MethodBase __originalMethod)
+        public static bool _InstanceSet(Entity __instance, object value, MethodBase __originalMethod)
         {
             stringBuilder.Clear();
             stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
@@ -226,7 +321,7 @@ namespace GameCore
                     Debug.LogError($"调用实例同步变量赋值器 {path} 时出错! 实例为空");
                 var varInstanceId = __instance.varInstanceId;
                 var bytes = Rpc.ObjectToBytes(value);
-                SetValue(InstanceSetterId(path, varInstanceId), bytes);
+                SetValue(InstanceSetterId(path), __instance, bytes);
             }
             catch (Exception ex)
             {
@@ -234,51 +329,7 @@ namespace GameCore
                 throw;
             }
 #else
-            SetValue(InstanceSetterId(stringBuilder.ToString(), __instance.varInstanceId), Rpc.ObjectToBytes(value));
-#endif
-
-            return false;
-        }
-
-        public static bool _InstanceGet(IVarInstanceID __instance, ref object __result, MethodBase __originalMethod)
-        {
-            stringBuilder.Clear();
-            stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
-
-#if DEBUG
-            try
-            {
-                var path = stringBuilder.ToString();
-                if (__instance == null)
-                    Debug.LogError($"调用实例同步变量赋值器 {path} 时出错! 实例为空");
-                var varInstanceId = __instance.varInstanceId;
-                var varId = InstanceGetterId(path, varInstanceId);
-
-
-                if (string.IsNullOrEmpty(varId))
-                {
-                    Debug.LogError($"寻找的同步变量 ID 为空");
-                    return false;
-                }
-
-                if (!vars.TryGetValue(varId, out var syncVar))
-                {
-                    Debug.LogError($"未找到同步变量 {varId}");
-                    return false;
-                }
-
-
-
-
-                __result = Rpc.BytesToObject(syncVar.value);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-                throw;
-            }
-#else
-            __result = Rpc.BytesToObject(vars[InstanceGetterId(stringBuilder.ToString(), __instance.varInstanceId)].value);
+            SetValue(InstanceSetterId(stringBuilder.ToString()), __instance, Rpc.ObjectToBytes(value));
 #endif
 
             return false;
@@ -291,22 +342,17 @@ namespace GameCore
             stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
 
             //TODO: 直接编译 StaticSetValue, 一步到位, 而不再是 StaticSetterId
-            SetValue(StaticSetterId(stringBuilder.ToString()), Rpc.ObjectToBytes(value));
+            SetValue(StaticSetterId(stringBuilder.ToString()), null, Rpc.ObjectToBytes(value));
 
             return false;
         }
 
-        public static bool _StaticGet(ref object __result, MethodBase __originalMethod)
+
+
+        public static void _OnVarValueChangeError(string id)
         {
-            stringBuilder.Clear();
-            stringBuilder.Append(__originalMethod.DeclaringType.FullName).Append('.').Append(__originalMethod.Name);
-
-            __result = Rpc.BytesToObject(vars[StaticGetterId(stringBuilder.ToString())].value);
-
-            return false;
+            Debug.LogError($"调用 SyncVar {id} 的值绑定失败!");
         }
-
-
 
         public static string _GetIDError(string id)
         {
@@ -314,11 +360,6 @@ namespace GameCore
             return null;
         }
 
-        public static string _GetReturnTypeError(string id)
-        {
-            Debug.LogError($"获取 返回值 {id} 失败!");
-            return null;
-        }
 
         public static void Init()
         {
@@ -329,26 +370,25 @@ namespace GameCore
 
             /* --------------------------------- 获取定义的方法 --------------------------------- */
             var _InstanceSet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._InstanceSet)}");
-            var _InstanceGet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._InstanceGet)}");
-
             var _StaticSet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._StaticSet)}");
-            var _StaticGet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._StaticGet)}");
+            var RegisterVar = typeof(SyncPacker).GetMethod(nameof(SyncPacker.RegisterVar), new Type[] { typeof(string), typeof(bool), typeof(byte[]) });
+            var RpcBytesToObject = typeof(Rpc).GetMethod(nameof(Rpc.BytesToObject), 0, new Type[] { typeof(byte[]) });
 
-            var GetInstanceID = typeof(SyncPacker).GetMethod("GetInstanceID", new Type[] { typeof(string), typeof(uint) });
-            var RegisterVar = typeof(SyncPacker).GetMethod("RegisterVar", new Type[] { typeof(string), typeof(bool), typeof(byte[]) });
+            ParameterExpression firstTempValue_id = Expression.Parameter(typeof(string), "id");
+            ParameterExpression firstTempValue_instance = Expression.Parameter(typeof(Entity), "instance");
+            ParameterExpression firstTempValue_newValueBytes = Expression.Parameter(typeof(byte[]), "newValueBytes");
 
-            ParameterExpression instanceGetterIdParam_getter = Expression.Parameter(typeof(string), "id");
-            ParameterExpression instanceGetterIdParam_instance = Expression.Parameter(typeof(uint), "instanceId");
+            ParameterExpression onValueChangeParam_id = Expression.Parameter(typeof(string), "id");
+            ParameterExpression onValueChangeParam_instance = Expression.Parameter(typeof(Entity), "instance");
+            ParameterExpression onValueChangeParam_oldValueBytes = Expression.Parameter(typeof(byte[]), "oldValueBytes");
+            ParameterExpression onValueChangeParam_newValueBytes = Expression.Parameter(typeof(byte[]), "newValueBytes");
+
             ParameterExpression instanceSetterIdParam_setter = Expression.Parameter(typeof(string), "id");
-            ParameterExpression instanceSetterIdParam_instance = Expression.Parameter(typeof(uint), "instanceId");
-
-            ParameterExpression staticGetterIdParam_getter = Expression.Parameter(typeof(string), "id");
             ParameterExpression staticSetterIdParam_setter = Expression.Parameter(typeof(string), "id");
 
-            List<SwitchCase> instanceGetterIdCases = new();
+            List<SwitchCase> firstTempValueCases = new();
+            List<SwitchCase> onValueChangeCases = new();
             List<SwitchCase> instanceSetterIdCases = new();
-
-            List<SwitchCase> staticGetterIdCases = new();
             List<SwitchCase> staticSetterIdCases = new();
 
             Action staticVarsRegisterMethods = () => { };
@@ -362,139 +402,225 @@ namespace GameCore
                 foreach (var type in ass.GetTypes())
                 {
                     //排除无用的程序集, 加快加载
-                    if (type.Namespace == "System" || type.Namespace == "UnityEngine" || type.Namespace == "Mirror" || type.IsGenericType)
+                    if (!ModFactory.IsUserType(type) || type.IsGenericType)
                         continue;
 
+                    //TODO: 现在检测的耗时很高
                     //获取所有可用方法
-                    foreach (var method in type.GetAllMethods())
-                    {
-                        if (AttributeGetter.TryGetAttribute<SyncGetterAttribute>(method, out var GetterAttr))
-                        {
-                            string methodPath = $"{type.FullName}.{method.Name}";
-
-                            if (method.ReturnType.FullName == typeof(void).FullName)
-                            {
-                                Debug.LogError($"同步变量获取器 {methodPath} 返回值必须不为空, 如 byte 的同步变量设置器应为 [SyncGetterAttribute] byte byte_get() => default;");
-                                continue;
-                            }
-
-
-                            /* ---------------------------------- 编辑方法 ---------------------------------- */
-                            Harmony harmony = new($"SyncPacker.harmony.getter.{methodPath}");
-                            var splitted = methodPath.Split("_get");
-
-                            if (splitted.Length != 2)
-                            {
-                                Debug.LogError($"同步变量获取器 {methodPath} 的格式必须为 *同步变量名_get*");
-                                continue;
-                            }
-
-                            if (!method.IsStatic)
-                            {
-                                instanceGetterIdCases.Add(Expression.SwitchCase(
-                                    Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceGetterIdParam_instance),
-                                    Expression.Constant(methodPath)
-                                ));
-                                harmony.Patch(method, new HarmonyMethod(_InstanceGet));
-                            }
-                            else
-                            {
-                                staticGetterIdCases.Add(Expression.SwitchCase(
-                                    Expression.Constant(splitted[0]),
-                                    Expression.Constant(methodPath)
-                                ));
-                                harmony.Patch(method, new HarmonyMethod(_StaticGet));
-                            }
-                        }
-                        else if (AttributeGetter.TryGetAttribute<SyncSetterAttribute>(method, out var SetterAttr))
-                        {
-                            string methodPath = $"{type.FullName}.{method.Name}";
-
-                            if (method.GetParameters().Length == 0)
-                            {
-                                Debug.LogError($"同步变量设置器 {methodPath} 必须包含一个参数, 如 byte 的同步变量设置器应为 [SyncSetterAttribute] void byte_set(byte value) " + "{ }");
-                                continue;
-                            }
-
-
-                            /* ---------------------------------- 编辑方法 ---------------------------------- */
-                            Harmony harmony = new($"SyncPacker.harmony.getter.{methodPath}");
-                            var splitted = methodPath.Split("_set");
-
-                            if (splitted.Length != 2)
-                            {
-                                Debug.LogError($"同步变量设置器 {methodPath} 的格式必须为 *同步变量名_set*");
-                                continue;
-                            }
-
-                            if (!method.IsStatic)
-                            {
-                                instanceSetterIdCases.Add(Expression.SwitchCase(
-                                    Expression.Call(null, GetInstanceID, Expression.Constant(splitted[0]), instanceSetterIdParam_instance),
-                                    Expression.Constant(methodPath)
-                                ));
-                                harmony.Patch(method, new HarmonyMethod(_InstanceSet));
-                            }
-                            else
-                            {
-                                staticSetterIdCases.Add(Expression.SwitchCase(
-                                    Expression.Constant(splitted[0]),
-                                    Expression.Constant(methodPath)
-                                ));
-                                harmony.Patch(method, new HarmonyMethod(_StaticSet));
-                            }
-                        }
-                    }
-
                     foreach (var property in type.GetAllProperties())
                     {
                         if (AttributeGetter.TryGetAttribute<SyncAttribute>(property, out var att))
                         {
-                            string propertyPath = $"{type.FullName}.{property.Name}";
+                            var propertyPath = $"{type.FullName}.{property.Name}";
                             var propertyPathConst = Expression.Constant(propertyPath);
-
-                            /* ---------------------------------- 编辑方法 ---------------------------------- */
+                            var valueType = property.PropertyType;
+                            var valueTypeName = valueType.FullName;
+                            var tempFieldPath = $"{propertyPath}_temp";
+                            var tempField = type.GetFieldFromAllIncludingBases($"{property.Name}_temp");
+                            var tempFieldConst = Expression.Constant(tempField, typeof(FieldInfo));
+                            var setterMethodPath = $"{propertyPath}_set";
+                            var setterMethod = type.GetMethodFromAllIncludingBases($"{property.Name}_set");
+                            var isStaticVar = property.GetSetMethod().IsStatic;
                             Harmony harmony = new($"SyncPacker.harmony.{propertyPath}");
 
-                            //? 非静态的处理在 Entity 中
-                            if (!property.GetMethod.IsStatic)
-                            {
 
+
+
+
+                            if (propertyPath.Contains("_set"))
+                            {
+                                Debug.LogError($"同步变量 {propertyPath} 的名称包括 \"_set\", 这不被允许, 请重新创建");
+                                continue;
+                            }
+
+
+                            if (tempField == null)
+                            {
+                                Debug.LogError($"同步变量 {propertyPath} 不包含字段 {tempFieldPath}, 请重新创建");
+                                continue;
+                            }
+                            if (tempField.IsStatic != isStaticVar)
+                            {
+                                Debug.LogError($"同步变量的缓存字段 {tempFieldPath} 与其对应属性的静态/实例不符, 请重新创建");
+                                continue;
+                            }
+                            if (tempField.FieldType != valueType)
+                            {
+                                Debug.LogError($"同步变量的缓存字段 {tempFieldPath} 的类型与其对应属性不符合, 请重新创建, 如 float health 的缓存字段应为 float health_temp;");
+                                continue;
+                            }
+
+
+
+                            if (setterMethod == null)
+                            {
+                                Debug.LogError($"同步变量 {propertyPath} 不包含方法 {setterMethodPath}, 请重新创建");
+                                continue;
+                            }
+                            if (setterMethod.IsStatic != isStaticVar)
+                            {
+                                Debug.LogError($"同步变量设置器 {tempFieldPath} 与其对应属性的静态/实例不符, 请重新创建");
+                                continue;
+                            }
+                            if (setterMethod.GetParameters().Length != 1)
+                            {
+                                Debug.LogError($"同步变量设置器 {setterMethodPath} 必须有且仅有一个参数, 请重新创建, 如 float health 的同步变量设置器应为 void health_set(float value) " + "{ }");
+                                continue;
+                            }
+                            if (setterMethod.GetParameters()[0].ParameterType != valueType)
+                            {
+                                Debug.LogError($"同步变量设置器 {setterMethodPath} 的参数类型与其对应属性不符合, 请重新创建, 如 float health 的同步变量设置器应为 void health_set(float value) " + "{ }");
+                                continue;
+                            }
+
+
+
+
+
+
+
+                            #region 修改 _set 方法
+
+
+                            /* ---------------------------------- 编辑方法 ---------------------------------- */
+
+                            if (!setterMethod.IsStatic)
+                            {
+                                //* 通过 setterMethod 的名字获取变量名
+                                instanceSetterIdCases.Add(Expression.SwitchCase(
+                                    propertyPathConst,
+                                    Expression.Constant(setterMethodPath)
+                                ));
+
+                                //修改方法
+                                harmony.Patch(setterMethod, new HarmonyMethod(_InstanceSet));
                             }
                             else
                             {
-                                //* 绑定钩子
-                                if (!att.hook.IsNullOrWhiteSpace())
+                                //* 通过 setterMethod 的名字获取变量名
+                                staticSetterIdCases.Add(Expression.SwitchCase(
+                                    propertyPathConst,
+                                    Expression.Constant(setterMethodPath)
+                                ));
+
+                                //修改方法
+                                harmony.Patch(setterMethod, new HarmonyMethod(_StaticSet));
+                            }
+
+                            #endregion
+
+
+
+
+
+
+
+                            #region 绑定 值改变事件
+
+                            MethodInfo hookMethod = null;
+
+                            if (!att.hook.IsNullOrWhiteSpace())
+                            {
+                                //获取钩子方法
+                                hookMethod = !att.hook.Contains(".") ? type.GetMethodFromAllIncludingBases(att.hook) : ModFactory.SearchUserMethod(att.hook);
+
+                                //检查是否找到钩子方法
+                                if (hookMethod == null)
                                 {
-                                    //获取钩子方法
-                                    MethodInfo hookMethod = !att.hook.Contains(".") ? type.GetMethodFromAllIncludingBases(att.hook) : ModFactory.SearchUserMethod(att.hook);
-
-                                    //检查是否找到钩子方法
-                                    if (hookMethod == null)
-                                    {
-                                        Debug.LogError($"无法找到 {propertyPath} 的钩子: {att.hook}");
-                                        continue;
-                                    }
-
-                                    //绑定钩子方法
-                                    OnVarValueChange += (var, value) =>
-                                    {
-                                        if (var.varId == propertyPath)
-                                        {
-                                            hookMethod.Invoke(null, null);
-                                        }
-                                    };
+                                    Debug.LogError($"无法找到同步变量 {propertyPath} 的钩子: {att.hook}");
+                                    continue;
                                 }
+                                if (hookMethod.GetParameters().Length != 1)
+                                {
+                                    Debug.LogError($"同步变量 {propertyPath} 的钩子 {att.hook} 的参数列表必须为: byte[]");
+                                    continue;
+                                }
+                                if (hookMethod.GetParameters()[0].ParameterType != typeof(byte[]))
+                                {
+                                    Debug.LogError($"同步变量 {propertyPath} 的钩子 {att.hook} 的参数列表必须为: byte[]");
+                                    continue;
+                                }
+                            }
 
 
 
+                            //绑定初始值设置
+                            firstTempValueCases.Add(
+                                Expression.SwitchCase(
+                                        isStaticVar ?
+                                            Expression.Call(
+                                                    null,
+                                                    typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBind)).MakeGenericMethod(new Type[] { valueType }),
+                                                    firstTempValue_newValueBytes,
+                                                    tempFieldConst
+                                                ) :
+                                            Expression.Call(
+                                                    null,
+                                                    typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBind)).MakeGenericMethod(new Type[] { valueType }),
+                                                    firstTempValue_newValueBytes,
+                                                    tempFieldConst,
+                                                    firstTempValue_instance
+                                                ),
+                                        propertyPathConst
+                                    )
+                            );
+
+
+                            //绑定值改变事件
+                            onValueChangeCases.Add((isStaticVar, hookMethod == null) switch
+                            {
+                                (true, true) => Expression.SwitchCase(
+                                                Expression.Call(
+                                                        null,
+                                                        typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBind)).MakeGenericMethod(new Type[] { valueType }),
+                                                        onValueChangeParam_newValueBytes,
+                                                        tempFieldConst),
+                                                propertyPathConst),
+                                (true, false) => Expression.SwitchCase(
+                                                Expression.Call(
+                                                        null,
+                                                        typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBindWithHook)).MakeGenericMethod(new Type[] { valueType }),
+                                                        onValueChangeParam_oldValueBytes,
+                                                        onValueChangeParam_newValueBytes,
+                                                        tempFieldConst,
+                                                        Expression.Constant(hookMethod)),
+                                                propertyPathConst),
+                                (false, true) => Expression.SwitchCase(
+                                                Expression.Call(
+                                                        null,
+                                                        typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBind)).MakeGenericMethod(new Type[] { valueType }),
+                                                        onValueChangeParam_newValueBytes,
+                                                        tempFieldConst,
+                                                        onValueChangeParam_instance),
+                                                propertyPathConst),
+                                (false, false) => Expression.SwitchCase(
+                                                Expression.Call(
+                                                        null,
+                                                        typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBindWithHook)).MakeGenericMethod(new Type[] { valueType }),
+                                                        onValueChangeParam_oldValueBytes,
+                                                        onValueChangeParam_newValueBytes,
+                                                        tempFieldConst,
+                                                        Expression.Constant(hookMethod),
+                                                        onValueChangeParam_instance),
+                                                propertyPathConst)
+                            });
+
+                            #endregion
+                            #region 修改属性
+                            if (!property.GetMethod.IsStatic)
+                            {
+                                //? 实例变量的默认值处理在 Entity 中
+                                // ................
+                            }
+                            else
+                            {
                                 //* 如果是 值形式 的默认值
                                 if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(property, out var defaultValueAttribute))
                                 {
                                     //检查类型错误, 例如属性是 float 类型, 默认值却填写了 123 就会报错, 要写 123f
-                                    if (defaultValueAttribute.defaultValue != null && property.PropertyType.FullName != defaultValueAttribute.defaultValue.GetType().FullName)
+                                    if (defaultValueAttribute.defaultValue != null && valueTypeName != defaultValueAttribute.defaultValue.GetType().FullName)
                                     {
-                                        Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueAttribute.defaultValue.GetType().FullName}");
+                                        Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {valueTypeName} , 但默认值为 {defaultValueAttribute.defaultValue.GetType().FullName}");
                                         continue;
                                     }
 
@@ -502,7 +628,7 @@ namespace GameCore
                                     var value = Rpc.ObjectToBytes(defaultValueAttribute.defaultValue);
 
                                     //绑定注册
-                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, value);
+                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, uint.MaxValue, true, value);
                                 }
                                 //* 如果是 方法形式 的默认值
                                 else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(property, out var defaultValueFromMethodAttribute))
@@ -518,9 +644,9 @@ namespace GameCore
                                     }
 
                                     //检查类型错误, 例如属性是 float 类型, 默认值方法却返回 int 就会报错
-                                    if (property.PropertyType.FullName != defaultValueMethod.ReturnType.FullName)
+                                    if (valueTypeName != defaultValueMethod.ReturnType.FullName)
                                     {
-                                        Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueMethod.ReturnType.FullName}");
+                                        Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {valueTypeName} , 但默认值为 {defaultValueMethod.ReturnType.FullName}");
                                         continue;
                                     }
 
@@ -529,7 +655,7 @@ namespace GameCore
                                         //在注册时获取默认值并转为 byte[]
                                         staticVarsRegisterMethods += () =>
                                         {
-                                            SyncPacker.RegisterVar(propertyPath, true, Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null)));
+                                            SyncPacker.RegisterVar(propertyPath, uint.MaxValue, true, Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null)));
                                         };
                                     }
                                     else
@@ -538,32 +664,32 @@ namespace GameCore
                                         var value = Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null));
 
                                         //绑定注册
-                                        staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, value);
+                                        staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, uint.MaxValue, true, value);
                                     }
                                 }
                                 //* 如果是无默认值
                                 else
                                 {
-                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, true, null);
+                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(propertyPath, uint.MaxValue, true, null);
                                 }
                             }
+
+                            #endregion
                         }
                     }
                 }
             }
 
             /* ----------------------------- 定义方法体 (Switch) ----------------------------- */
-            var instanceGetIdBody = Expression.Switch(instanceGetterIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), instanceGetterIdParam_getter), instanceGetterIdCases.ToArray());
+            var firstTempValueBody = Expression.Switch(firstTempValue_id, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_OnVarValueChangeError)), firstTempValue_id), firstTempValueCases.ToArray());
+            var onValueChangeBody = Expression.Switch(onValueChangeParam_id, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_OnVarValueChangeError)), onValueChangeParam_id), onValueChangeCases.ToArray());
             var instanceSetIdBody = Expression.Switch(instanceSetterIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), instanceSetterIdParam_setter), instanceSetterIdCases.ToArray());
-
-            var staticGetIdBody = Expression.Switch(staticGetterIdParam_getter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticGetterIdParam_getter), staticGetterIdCases.ToArray());
             var staticSetIdBody = Expression.Switch(staticSetterIdParam_setter, Expression.Call(typeof(SyncPacker).GetMethod(nameof(_GetIDError)), staticSetterIdParam_setter), staticSetterIdCases.ToArray());
 
             /* ---------------------------------- 编译方法 ---------------------------------- */
-            InstanceGetterId = Expression.Lambda<Func<string, uint, string>>(instanceGetIdBody, instanceGetterIdParam_getter, instanceGetterIdParam_instance).Compile();
-            InstanceSetterId = Expression.Lambda<Func<string, uint, string>>(instanceSetIdBody, instanceSetterIdParam_setter, instanceSetterIdParam_instance).Compile();
-
-            StaticGetterId = Expression.Lambda<Func<string, string>>(staticGetIdBody, staticGetterIdParam_getter).Compile();
+            FirstTempValue = Expression.Lambda<FirstTempValueDelegate>(firstTempValueBody, $"{nameof(SyncPacker.FirstTempValue)}_Lambda", new[] { firstTempValue_id, firstTempValue_instance, firstTempValue_newValueBytes }).Compile();
+            OnValueChange = Expression.Lambda<OnValueChangeCallback>(onValueChangeBody, $"{nameof(SyncPacker.OnValueChange)}_Lambda", new[] { onValueChangeParam_id, onValueChangeParam_instance, onValueChangeParam_oldValueBytes, onValueChangeParam_newValueBytes }).Compile();
+            InstanceSetterId = Expression.Lambda<Func<string, string>>(instanceSetIdBody, instanceSetterIdParam_setter).Compile();
             StaticSetterId = Expression.Lambda<Func<string, string>>(staticSetIdBody, staticSetterIdParam_setter).Compile();
 
             StaticVarsRegister = staticVarsRegisterMethods;
@@ -581,21 +707,6 @@ namespace GameCore
             };
         }
 
-        public static string GetInstanceID(string property, uint instance)
-        {
-            return $"{property}-{instance}";
-        }
-
-        public static string GetInstanceID(StringBuilder sb, string property, uint instance)
-        {
-            sb.Append(property).Append("-").Append(instance);
-
-            //设置 varName 并注册变量
-            string value = sb.ToString();
-            sb.Clear();
-
-            return value;
-        }
 
 
 
@@ -609,19 +720,25 @@ namespace GameCore
         [RuntimeInitializeOnLoadMethod]
         private static void BindMethods()
         {
+            #region 
+
+            //当新客户端进入时使其注册静态的同步变量
             NetworkCallbacks.OnClientReady += conn =>
             {
-                //如果是自己就不注册及同步
+                //如果是自己就不反复注册
                 if (conn == Server.localConnection)
                     return;
 
-                //当新客户端进入时使其注册同步变量
-                foreach (KeyValuePair<string, NMSyncVar> entry in vars)
+                foreach (KeyValuePair<string, NMSyncVar> entry in staticVars)
                 {
+                    var var = entry.Value;
+
                     //让指定客户端重新注册同步变量
-                    conn.Send<NMRegisterSyncVar>(new(entry.Value.varId, entry.Value.clientCanSet, entry.Value.value));
+                    conn.Send<NMRegisterSyncVar>(new(var.varId, var.instance, var.clientCanSet, var.value));
                 }
             };
+
+            #endregion
 
             NetworkCallbacks.OnDisconnectFromServer += () =>
             {
@@ -645,40 +762,96 @@ namespace GameCore
 
             static void ClearVars()
             {
-                vars.Clear();
+                staticVars.Clear();
+                instanceVars.Clear();
                 Debug.Log($"已清空 SyncPacker 同步变量");
             }
 
-            static void OnClientGetNMSyncVar(NMSyncVar nm)
+            static async void OnClientGetNMSyncVar(NMSyncVar nm)
             {
                 //如果自己是服务器就不要同步
                 if (Server.isServer)
                     return;
 
-                if (vars.TryGetValue(nm.varId, out var var))
+                //实例变量
+                if (nm.instance != uint.MaxValue)
                 {
-                    var oldValue = var.value;
-                    var.value = nm.value;
-                    vars[nm.varId] = var;
-                    OnVarValueChange.Invoke(var, oldValue);
+                    if (instanceVars.TryGetValue(nm.varId, out var inner) && inner.TryGetValue(nm.instance, out var var))
+                    {
+                        //等待实体出现
+                        //TODO 注: 这里可能会导致不同步问题，请使用先入先出队列解决，将操作挂起
+                        while (Entity.GetEntityByNetIdWithCheckInvalid(var.instance) == null)
+                            await UniTask.NextFrame();
 
-                    //Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
-                    return;
+                        var oldValue = var.value;
+                        var.value = nm.value;
+                        inner[nm.instance] = var;
+                        OnValueChange(var.varId, Entity.GetEntityByNetIdWithCheckInvalid(var.instance), oldValue, var.value);
+
+                        ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
+                        return;
+                    }
+                }
+                //静态变量
+                else
+                {
+                    if (staticVars.TryGetValue(nm.varId, out var var))
+                    {
+                        var oldValue = var.value;
+                        var.value = nm.value;
+                        staticVars[nm.varId] = var;
+                        OnValueChange(var.varId, null, oldValue, var.value);
+
+                        ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
+                        return;
+                    }
                 }
 
-                //Debug.LogError($"同步变量 {var.varId} 的值为 {var.varValue} 失败");
+                ////Debug.LogError($"同步变量 {var.varId} 的值为 {var.varValue} 失败");
+            }
+
+            static void OnServerGetNMRequestInstanceVars(NetworkConnectionToClient conn, NMRequestInstanceVars _)
+            {
+                //实例变量要等进入游戏场景才可以注册
+                foreach (KeyValuePair<string, Dictionary<uint, NMSyncVar>> entry in instanceVars)
+                {
+                    foreach (var instanceEntry in entry.Value)
+                    {
+                        var var = instanceEntry.Value;
+
+                        //让指定客户端重新注册同步变量
+                        conn.Send<NMRegisterSyncVar>(new(var.varId, var.instance, var.clientCanSet, var.value));
+                    }
+                }
             }
 
             static void OnServerGetNMSyncVar(NetworkConnectionToClient conn, NMSyncVar nm)
             {
-                if (vars.TryGetValue(nm.varId, out var var))
-                {
-                    //TODO: 安全检查: if (!nm.clientCanSet&&conn.owned)
-                    var oldValue = var.value;
-                    var.value = nm.value;
-                    vars[nm.varId] = var;
+                //TODO: 安全检查: if (!nm.clientCanSet&&conn.owned)
 
-                    OnVarValueChange.Invoke(var, oldValue);
+                //实例变量
+                if (nm.instance != uint.MaxValue)
+                {
+                    if (instanceVars.TryGetValue(nm.varId, out var inner) && inner.TryGetValue(nm.instance, out var var))
+                    {
+                        var oldValue = var.value;
+                        var.value = nm.value;
+                        inner[nm.instance] = var;
+                        OnValueChange(var.varId, Entity.GetEntityByNetIdWithCheckInvalid(var.instance), oldValue, var.value);
+                        return;
+                    }
+                }
+                //静态变量
+                else
+                {
+                    if (staticVars.TryGetValue(nm.varId, out var var))
+                    {
+                        var oldValue = var.value;
+                        var.value = nm.value;
+                        staticVars[nm.varId] = var;
+                        OnValueChange(var.varId, Entity.GetEntityByNetIdWithCheckInvalid(var.instance), oldValue, var.value);
+                        return;
+                    }
                 }
             }
 
@@ -693,14 +866,27 @@ namespace GameCore
 
             static void OnClientGetNMUnregisterVar(NMUnregisterSyncVar var)
             {
-                if (!vars.Remove(var.varId))
+                //实例变量
+                if (var.instance != uint.MaxValue)
                 {
-                    Debug.LogError($"取消注册同步变量 {var.varId} 失败");
+                    if (!instanceVars.TryGetValue(var.varId, out var instanceVar) || !instanceVar.Remove(var.instance))
+                    {
+                        Debug.LogError($"取消注册同步变量 {var.varId}, {var.instance} 失败");
+                    }
+                }
+                //静态变量
+                else
+                {
+                    if (!staticVars.Remove(var.varId))
+                    {
+                        Debug.LogError($"取消注册同步变量 {var.varId} 失败");
+                    }
                 }
             }
 
             NetworkCallbacks.OnTimeToServerCallback += () =>
             {
+                Server.Callback<NMRequestInstanceVars>(OnServerGetNMRequestInstanceVars);
                 Server.Callback<NMSyncVar>(OnServerGetNMSyncVar);
             };
             NetworkCallbacks.OnTimeToClientCallback += () =>
@@ -715,13 +901,42 @@ namespace GameCore
         {
             //Debug.Log($"注册了{var.varId}");
 
-            if (vars.TryAdd(var.varId, new(var.varId, var.defaultValue, var.clientCanSet)))
+            //实例变量
+            if (var.instance != uint.MaxValue)
             {
-                //TODO: 缓存默认值
+                Dictionary<uint, NMSyncVar> table;
+
+                if (!instanceVars.ContainsKey(var.varId))
+                {
+                    table = new();
+                    instanceVars.Add(var.varId, table);
+                }
+                else
+                {
+                    table = instanceVars[var.varId];
+                }
+
+                if (table.TryAdd(var.instance, new NMSyncVar(var.varId, var.instance, var.defaultValue, var.clientCanSet)))
+                {
+                    ////FirstTempValue(var.varId, Entity.GetEntityByNetIdWithCheck(var.instance), var.defaultValue);
+                    //? 实例变量的缓存由 EntityInit 执行
+                }
+                else
+                {
+                    Debug.LogError($"注册 {var.varId}, {var.instance} 失败, 其已存在");
+                }
             }
+            //静态变量
             else
             {
-                Debug.LogError($"注册 {var.varId} 失败, 其已存在");
+                if (staticVars.TryAdd(var.varId, new(var.varId, var.instance, var.defaultValue, var.clientCanSet)))
+                {
+                    FirstTempValue(var.varId, null, var.defaultValue);
+                }
+                else
+                {
+                    Debug.LogError($"注册 {var.varId} 失败, 其已存在");
+                }
             }
             //Debug.Log($"注册了同步变量 {var.varId}");
         }

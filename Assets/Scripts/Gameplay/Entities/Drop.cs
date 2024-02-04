@@ -19,9 +19,9 @@ namespace GameCore
         public Item itemData;
 
 
-        protected override void Start()
+        protected override void Awake()
         {
-            base.Start();
+            base.Awake();
 
             hurtable = false;
 
@@ -30,6 +30,11 @@ namespace GameCore
 
             transform.localScale = new(0.5f, 0.5f);
             transform.SetLocalPosZ(-0.001f);
+        }
+
+        public override void Initialize()
+        {
+            base.Initialize();
 
             SummonSetup();
         }

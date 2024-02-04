@@ -105,9 +105,9 @@ Type.GetProperties包含基类(且实际相当于生成一个新的Property)Meth
 
 
 参数异常, 首个参数是Closure:
-这个问题可能是因为你用Expression.Lambda生成的委托是一个闭包，它捕获了一些外部的变量或常量。闭包会导致编译后的委托方法多出一个System.Runtime.CompilerServices.Closure类型的参数，用于存储捕获的变量或常量。¹²
+这个问题可能是因为你用Expression.Lambda生成的委托是一个闭包，它捕获了一些外部的变量或常量。闭包会导致编译后的委托方法多出一个System.Runtime.CompilerServices.Closure类型的参数，用于存储捕获的变量或常量
 
-如果你想动态地调用这个委托方法，你需要传递一个Closure对象作为第一个参数，而不是null。³ 你可以通过反射来获取这个对象，或者直接调用委托的DynamicInvoke方法。⁴
+如果你想动态地调用这个委托方法，你需要传递一个Closure对象作为第一个参数，而不是null。你可以通过反射来获取这个对象，或者直接调用委托的DynamicInvoke方法。
 
 例如，你可以这样修改你的代码：
 
@@ -142,13 +142,6 @@ var memberBindings = new List<MemberAssignment>();
  var result = writerMethod.Invoke(closure, new object[] { obj, writer });
 ```
 
-希望这能解决你的问题。
-
-源: 与必应的对话， 2023/5/28
-(1) c# - Compiling a lambda expression results in delegate with Closure .... https://stackoverflow.com/questions/7935306/compiling-a-lambda-expression-results-in-delegate-with-closure-argument.
-(2) DLR LambdaExpressions and the System.Runtime.CompilerServices.Closure .... https://stackoverflow.com/questions/6233792/dlr-lambdaexpressions-and-the-system-runtime-compilerservices-closure-object.
-(3) DLR - Why isn't debug information showing up in my stacktrace?. https://stackoverflow.com/questions/15593223/dlr-why-isnt-debug-information-showing-up-in-my-stacktrace.
-(4) Closure Class (System.Runtime.CompilerServices) | Microsoft Learn. https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.closure?view=netframework-4.8.1.
 
 
 

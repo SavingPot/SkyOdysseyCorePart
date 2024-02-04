@@ -27,12 +27,12 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("移速")] public float moveSpeed = 3;
         [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.18f;
         [BoxGroup("属性"), LabelText("空气摩擦力")] public float airFriction = 0.95f;
-        public AnimWeb animWeb = null;
+        public AnimWeb animWeb = null; //TODO: NetworkedAnimWeb
 
 
 
-        [SyncGetter] bool isMoving_get() => default; [SyncSetter] void isMoving_set(bool value) { }
-        [Sync, SyncDefaultValue(false)] public bool isMoving { get => isMoving_get(); set => isMoving_set(value); }
+        bool isMoving_temp; void isMoving_set(bool value) { }
+        [Sync, SyncDefaultValue(false)] public bool isMoving { get => isMoving_temp; set => isMoving_set(value); }
 
 #if UNITY_EDITOR
         [SerializeField] bool isMoving_for_editor_view;
@@ -90,6 +90,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public static void BindHumanAnimations(Creature creature)
         {
+            float slightArmAnimTime = 0.15f;
             float attackAnimTime = 0.3f;
 
 
@@ -159,6 +160,22 @@ namespace GameCore
             }
             #endregion
 
+            #region 抬手
+            {
+                float rot = 35f;
+
+                creature.animWeb.AddAnim("slight_leftarm_lift", 1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, rot, slightArmAnimTime, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.leftArm.transform, 0f, slightArmAnimTime, Ease.InOutSine)
+                }, 0);
+
+                creature.animWeb.AddAnim("slight_rightarm_lift", 1, new AnimFragment[] {
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, rot, slightArmAnimTime, Ease.InOutSine),
+                    new LocalRotationZAnimFragment(creature.rightArm.transform, 0f, slightArmAnimTime, Ease.InOutSine)
+                }, 0);
+            }
+            #endregion
+
             #region 奔跑
             {
                 float armRotateTime = 0.3f;
@@ -216,6 +233,9 @@ namespace GameCore
             creature.animWeb.CreateConnectionFromTo("attack_leftarm", "idle", () => true, attackAnimTime, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
             creature.animWeb.CreateConnectionFromTo("attack_rightarm", "idle", () => true, attackAnimTime, 0); //过渡时间为 attackAnimTime, 意思是播放完成再切换
 
+            creature.animWeb.CreateConnectionFromTo("slight_leftarm_lift", "idle", () => true, slightArmAnimTime * 2, 0);
+            creature.animWeb.CreateConnectionFromTo("slight_rightarm_lift", "idle", () => true, slightArmAnimTime * 2, 0);
+
             creature.animWeb.SwitchPlayingTo("idle", 0);
         }
 
@@ -225,21 +245,16 @@ namespace GameCore
 
         protected override void Awake()
         {
-            velocityFactor = () => moveSpeed;
-
             base.Awake();
+
+            velocityFactor = () => moveSpeed;
         }
 
-        public override void InitAfterAwake()
+        public override void Initialize()
         {
-            base.InitAfterAwake();
-
             moveSpeed = data.speed;
-        }
 
-        protected override void Start()
-        {
-            base.Start();
+            base.Initialize();
         }
 
         protected override void Update()
@@ -289,7 +304,7 @@ namespace GameCore
         protected void ServerOnStartMovement(NetworkConnection caller = null)
         {
             isMoving = true;
-            isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
+            //TODO: isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
             ClientOnStartMovement();
         }
 
@@ -313,7 +328,7 @@ namespace GameCore
         protected void ServerOnStopMovement(NetworkConnection caller = null)
         {
             isMoving = false;
-            isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
+            //TODO: isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
             ClientOnStopMovement();
         }
 

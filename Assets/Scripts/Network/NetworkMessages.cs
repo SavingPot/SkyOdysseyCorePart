@@ -125,15 +125,22 @@ namespace GameCore.High
         }
     }
 
+    public struct NMRequestInstanceVars : NetworkMessage
+    {
+        
+    }
+
     public struct NMRegisterSyncVar : NetworkMessage
     {
         public string varId;
+        public uint instance;
         public bool clientCanSet;
         public byte[] defaultValue;
 
-        public NMRegisterSyncVar(string varId, bool clientCanSet, byte[] defaultValue)
+        public NMRegisterSyncVar(string varId, uint instance, bool clientCanSet, byte[] defaultValue)
         {
             this.varId = varId;
+            this.instance = instance;
             this.clientCanSet = clientCanSet;
             this.defaultValue = defaultValue;
         }
@@ -142,23 +149,27 @@ namespace GameCore.High
     public struct NMUnregisterSyncVar : NetworkMessage
     {
         public string varId;
+        public uint instance;
 
-        public NMUnregisterSyncVar(string varId)
+        public NMUnregisterSyncVar(string varId, uint instance)
         {
             this.varId = varId;
+            this.instance = instance;
         }
     }
 
     public struct NMSyncVar : NetworkMessage
     {
         public string varId;
+        public uint instance;
         public byte[] value;
         [NonSerialized] public byte[] valueLastSync;
-        public readonly bool clientCanSet;
+        [NonSerialized] public readonly bool clientCanSet;
 
-        public NMSyncVar(string varId, byte[] value, bool clientCanSet)
+        public NMSyncVar(string varId, uint instanceId, byte[] value, bool clientCanSet)
         {
             this.varId = varId;
+            this.instance = instanceId;
             this.value = value;
             this.valueLastSync = null;
             this.clientCanSet = clientCanSet;

@@ -209,8 +209,8 @@ namespace GameCore
         #region 同步变量
 
         #region 任务
-        [SyncGetter] List<TaskStatusForSave> completedTasks_get() => default; [SyncSetter] void completedTasks_set(List<TaskStatusForSave> value) { }
-        [Sync] public List<TaskStatusForSave> completedTasks { get => completedTasks_get(); set => completedTasks_set(value); }
+        List<TaskStatusForSave> completedTasks_temp; void completedTasks_set(List<TaskStatusForSave> value) { }
+        [Sync] public List<TaskStatusForSave> completedTasks { get => completedTasks_temp; set => completedTasks_set(value); }
 
         public void AddCompletedTasks(TaskStatusForSave task)
         {
@@ -222,63 +222,65 @@ namespace GameCore
 
         #region 皮肤
 
-        [SyncGetter] Sprite skinHead_get() => default; [SyncSetter] void skinHead_set(Sprite value) { }
-        [Sync, SyncDefaultValue(null)] public Sprite skinHead { get => skinHead_get(); set => skinHead_set(value); }
-        [SyncGetter] Sprite skinBody_get() => default; [SyncSetter] void skinBody_set(Sprite value) { }
-        [Sync, SyncDefaultValue(null)] public Sprite skinBody { get => skinBody_get(); set => skinBody_set(value); }
-        [SyncGetter] Sprite skinLeftArm_get() => default; [SyncSetter] void skinLeftArm_set(Sprite value) { }
-        [Sync, SyncDefaultValue(null)] public Sprite skinLeftArm { get => skinLeftArm_get(); set => skinLeftArm_set(value); }
-        [SyncGetter] Sprite skinRightArm_get() => default; [SyncSetter] void skinRightArm_set(Sprite value) { }
-        [Sync, SyncDefaultValue(null)] public Sprite skinRightArm { get => skinRightArm_get(); set => skinRightArm_set(value); }
-        [SyncGetter] Sprite skinLeftLeg_get() => default; [SyncSetter] void skinLeftLeg_set(Sprite value) { }
-        [Sync, SyncDefaultValue(null)] public Sprite skinLeftLeg { get => skinLeftLeg_get(); set => skinLeftLeg_set(value); }
-        [SyncGetter] Sprite skinRightLeg_get() => default; [SyncSetter] void skinRightLeg_set(Sprite value) { }
-        [Sync, SyncDefaultValue(null)] public Sprite skinRightLeg { get => skinRightLeg_get(); set => skinRightLeg_set(value); }
-        [SyncGetter] Sprite skinLeftFoot_get() => default; [SyncSetter] void skinLeftFoot_set(Sprite value) { }
-        [Sync, SyncDefaultValue(null)] public Sprite skinLeftFoot { get => skinLeftFoot_get(); set => skinLeftFoot_set(value); }
-        [SyncGetter] Sprite skinRightFoot_get() => default; [SyncSetter] void skinRightFoot_set(Sprite value) { }
-        [Sync, SyncDefaultValue(null)] public Sprite skinRightFoot { get => skinRightFoot_get(); set => skinRightFoot_set(value); }
+        Sprite skinHead_temp; void skinHead_set(Sprite value) { }
+        [Sync] public Sprite skinHead { get => skinHead_temp; set => skinHead_set(value); }
+        Sprite skinBody_temp; void skinBody_set(Sprite value) { }
+        [Sync] public Sprite skinBody { get => skinBody_temp; set => skinBody_set(value); }
+        Sprite skinLeftArm_temp; void skinLeftArm_set(Sprite value) { }
+        [Sync] public Sprite skinLeftArm { get => skinLeftArm_temp; set => skinLeftArm_set(value); }
+        Sprite skinRightArm_temp; void skinRightArm_set(Sprite value) { }
+        [Sync] public Sprite skinRightArm { get => skinRightArm_temp; set => skinRightArm_set(value); }
+        Sprite skinLeftLeg_temp; void skinLeftLeg_set(Sprite value) { }
+        [Sync] public Sprite skinLeftLeg { get => skinLeftLeg_temp; set => skinLeftLeg_set(value); }
+        Sprite skinRightLeg_temp; void skinRightLeg_set(Sprite value) { }
+        [Sync] public Sprite skinRightLeg { get => skinRightLeg_temp; set => skinRightLeg_set(value); }
+        Sprite skinLeftFoot_temp; void skinLeftFoot_set(Sprite value) { }
+        [Sync] public Sprite skinLeftFoot { get => skinLeftFoot_temp; set => skinLeftFoot_set(value); }
+        Sprite skinRightFoot_temp; void skinRightFoot_set(Sprite value) { }
+        [Sync] public Sprite skinRightFoot { get => skinRightFoot_temp; set => skinRightFoot_set(value); }
 
         #endregion
 
         #region 属性
         #region 口渴值
-        [SyncGetter] float thirstValue_get() => default; [SyncSetter] void thirstValue_set(float value) { }
-        [Sync] public float thirstValue { get => thirstValue_get(); set => thirstValue_set(value); }
+
+        float thirstValue_temp; void thirstValue_set(float value) { }
+        [Sync] public float thirstValue { get => thirstValue_temp; set => thirstValue_set(value); }
         public static float defaultThirstValue = 100;
         public static float maxThirstValue = 100;
         #endregion
 
         #region 饥饿值
-        [SyncGetter] float hungerValue_get() => default; [SyncSetter] void hungerValue_set(float value) { }
-        [Sync] public float hungerValue { get => hungerValue_get(); set => hungerValue_set(value); }
+        float hungerValue_temp; void hungerValue_set(float value) { }
+        [Sync] public float hungerValue { get => hungerValue_temp; set => hungerValue_set(value); }
         public static float defaultHungerValue = 100;
         public static float maxHungerValue = 100;
+        #endregion
 
         #region 幸福值
-        [SyncGetter] float happinessValue_get() => default; [SyncSetter] void happinessValue_set(float value) { }
-        [Sync] public float happinessValue { get => happinessValue_get(); set => happinessValue_set(value); }
+        float happinessValue_temp; void happinessValue_set(float value) { }
+        [Sync] public float happinessValue { get => happinessValue_temp; set => happinessValue_set(value); }
         public static float defaultHappinessValue = 50;
         public static float maxHappinessValue = 100;
         #endregion
-        #endregion
 
-        [SyncGetter] string playerName_get() => default; [SyncSetter] void playerName_set(string value) { }
-        [Sync(nameof(OnNameChangeMethod)), SyncDefaultValue("")] public string playerName { get => playerName_get(); set => playerName_set(value); }
+        #region 玩家名
+        string playerName_temp; void playerName_set(string value) { }
+        [Sync(nameof(OnNameChangeMethod)), SyncDefaultValue("")] public string playerName { get => playerName_temp; set => playerName_set(value); }
 
-        void OnNameChangeMethod()
+        void OnNameChangeMethod(byte[] _)
         {
             OnNameChange(playerName);
         }
-        #region 物品
+        #endregion
 
-        [SyncGetter] Inventory inventory_get() => default; [SyncSetter] void inventory_set(Inventory value) { }
-        [Sync(nameof(TempInventory))] public Inventory inventory { get => _inventory; set => inventory_set(value); }
-        private Inventory _inventory;
+        #region 物品栏
+        Inventory inventory_temp; void inventory_set(Inventory value) { }
+        [Sync(nameof(TempInventory))] public Inventory inventory { get => inventory_temp; set => inventory_set(value); }
 
-        void TempInventory()
+        void TempInventory(byte[] _)
         {
-            _inventory = Inventory.ResumeFromStreamTransport(inventory_get(), this);
+            inventory_temp = Inventory.ResumeFromStreamTransport(inventory_temp, this);
         }
 
         public Inventory GetInventory() => inventory;
@@ -408,12 +410,22 @@ namespace GameCore
 
         #region Unity 回调
 
-        public override void InitAfterAwake()
+        protected override void Awake()
         {
-            base.InitAfterAwake();
+            base.Awake();
+
+            Func<float> oldValue = velocityFactor;
+            velocityFactor = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
+
+            playerCanvas = transform.Find("Canvas");
+        }
+
+        public override void Initialize()
+        {
+            base.Initialize();
 
             //把 inventory 的初始值缓存下来
-            TempInventory();
+            TempInventory(null);
 
             //加载服务器存档中的位置
             if (isServer)
@@ -428,11 +440,10 @@ namespace GameCore
                 //这一行不是必要的, inventory 通常不会为空, 但是我们要保证代码 100% 正常运行
                 inventory ??= new(inventorySlotCount, this);
             }
-        }
 
-        protected override void Start()
-        {
-            base.Start();
+
+
+
 
             if (isLocalPlayer)
             {
@@ -455,6 +466,7 @@ namespace GameCore
 
 
 
+            #region 初始化模型
             CreateModel();
             body = AddBodyPart("body", skinBody, Vector2.zero, 5, model.transform, BodyPartType.Body);
             head = AddBodyPart("head", skinHead, new(0, -0.03f), 10, body, BodyPartType.Head, new(-0.03f, -0.04f));
@@ -475,18 +487,14 @@ namespace GameCore
             BindHumanAnimations(this);
 
 
-
+            //显示名称
             OnNameChange(playerName);
+            #endregion
         }
 
-        protected override void Awake()
+        public override void AfterInitialization()
         {
-            base.Awake();
-
-            Func<float> oldValue = velocityFactor;
-            velocityFactor = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
-
-            playerCanvas = transform.Find("Canvas");
+            base.AfterInitialization();
 
             PlayerCenter.AddPlayer(this);
         }
@@ -498,13 +506,6 @@ namespace GameCore
             animWeb.Stop();
 
             PlayerCenter.RemovePlayer(this);
-        }
-
-        protected override void FixedUpdate()
-        {
-            base.FixedUpdate();
-
-            AutoSetPlayerOrientation(this);
         }
 
         public override void SetOrientation(bool right)
@@ -544,6 +545,15 @@ namespace GameCore
 
         protected virtual void AliveLocalUpdate()
         {
+            /* ----------------------------------- 背包 (不能放在 PlayerCanControl 里是因为打开背包后 PlayerCanControl 返回 false, 然后就关不掉背包了) ----------------------------------- */
+            if (PlayerControls.Backpack(this))
+            {
+                if (pui != null && GameUI.page?.ui != pui.dialogPanel)
+                {
+                    pui.ShowOrHideBackpackAndSetPanelToInventory();
+                }
+            }
+
             if (PlayerCanControl(this))
             {
                 Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
@@ -562,10 +572,11 @@ namespace GameCore
                 if (PlayerControls.ThrowItem(this))
                     ServerThrowItem(usingItemIndex.ToString(), 1);
 
-                //如果按 L
+
+                /* ----------------------------------- 睡眠 ----------------------------------- */
                 if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
                 {
-                    //睡眠
+                    //TODO: 睡眠
                 }
 
                 #region 切换物品
@@ -664,15 +675,18 @@ namespace GameCore
         protected virtual void LocalUpdate()
         {
             GravitySet(this);
+            AutoSetPlayerOrientation();
             rb.gravityScale = gravity;
 
             if (!isDead)
             {
                 AliveLocalUpdate();
+
+                transform.localRotation = Quaternion.identity;
             }
-            if (!isHurting)
+            else
             {
-                DeathRotation();
+                transform.localRotation = deathQuaternion;
             }
 
             ////AutoGenerateRegion();
@@ -682,20 +696,6 @@ namespace GameCore
 
 
             pui?.Update();
-
-
-
-
-
-            #region 背包
-            if (PlayerControls.Backpack(this))
-            {
-                if (pui != null && GameUI.page?.ui != pui.dialogPanel)
-                {
-                    pui.ShowOrHideBackpackAndSetPanelToInventory();
-                }
-            }
-            #endregion
         }
 
         protected override void ServerUpdate()
@@ -1101,27 +1101,26 @@ namespace GameCore
 
             regionGenerationRegion.blocks = regionGenerationSaves;
 
-            Debug.Log($"收到服务器回调, 正在生成已有区域 {region.index}");
+            Debug.Log($"收到服务器回调, 正在生成已有区域 {regionGenerationRegion.index}");
 
-            GM.instance.GenerateExistingRegion(region, () =>
+            GM.instance.GenerateExistingRegion(regionGenerationRegion, () =>
             {
                 if (regionGenerationIsFirstGeneration)
                 {
                     //如果先前没获取过位置, 则将玩家的位置设置到该区域出生点
-                    if (!hasSetPosBySave)
-                        transform.position = region.spawnPoint.To2();
+                    if (regionGenerationRegion.spawnPoint != Vector2Int.zero)
+                        transform.position = regionGenerationRegion.spawnPoint.To2();
 
                     fallenY = transform.position.y;
                     generatedFirstRegion = true;
                 }
+
+                //清理资源
+                askingForGeneratingRegion = false;
+                regionGenerationRegion = null;
+                regionGenerationSaves = null;
                 //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
             }, null, (ushort)(GFiles.settings.performanceLevel * (regionGenerationIsFirstGeneration ? 4 : 0.8f)));
-
-
-            //清理资源
-            askingForGeneratingRegion = false;
-            regionGenerationRegion = null;
-            regionGenerationSaves = null;
         }
 
         //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
@@ -1150,6 +1149,8 @@ namespace GameCore
                                     {
                                         var copy = region.ShallowCopy();
                                         copy.blocks = null;
+                                        if (hasSetPosBySave)
+                                            copy.spawnPoint = Vector2Int.zero;
 
                                         ConnectionGenerateRegionTotal(copy, region.blocks.Count, isFirstGeneration, caller);
 
@@ -1188,9 +1189,9 @@ namespace GameCore
         [ConnectionRpc]
         void ConnectionGenerateRegionTotal(Region region, int regionToGenerateBlocksCount, bool isFirstGeneration, NetworkConnection caller)
         {
-            this.regionGenerationBlocksCount = regionToGenerateBlocksCount;
-            this.regionGenerationIsFirstGeneration = isFirstGeneration;
             regionGenerationRegion = region;
+            regionGenerationBlocksCount = regionToGenerateBlocksCount;
+            regionGenerationIsFirstGeneration = isFirstGeneration;
         }
 
         [ConnectionRpc]
@@ -1358,15 +1359,12 @@ namespace GameCore
             moveVecLastFrame = move;
         }
 
-        public Action<Player> AutoSetPlayerOrientation = (p) =>
+        public void AutoSetPlayerOrientation()
         {
-            if (!p.isLocalPlayer)
-                return;
-
             ////诸如 && transform.localScale.x.Sign() == 1 之类的检测是为了减缓服务器压力
-            if (p.isDead)
+            if (isDead)
             {
-                p.SetOrientation(true);
+                SetOrientation(true);
                 return;
             }
 
@@ -1374,38 +1372,38 @@ namespace GameCore
             {
                 //* 如果是键鼠, 则检测鼠标和玩家的相对位置
                 case ControlMode.KeyboardAndMouse:
-                    float delta = GControls.mousePos.ToWorldPos().x - p.transform.position.x;
+                    float delta = GControls.mousePos.ToWorldPos().x - transform.position.x;
 
                     if (delta < 0)
-                        p.SetOrientation(false);
+                        SetOrientation(false);
                     else if (delta > 0)
-                        p.SetOrientation(true);
+                        SetOrientation(true);
 
                     break;
 
                 //* 如果是触摸屏, 则检测光标和玩家的相对位置
                 case ControlMode.Touchscreen:
-                    if (p.pui.touchScreenMoveJoystick && p.pui.touchScreenCursorJoystick)
+                    if (pui.touchScreenMoveJoystick && pui.touchScreenCursorJoystick)
                     {
-                        if (p.pui.touchScreenCursorImage.rt.localPosition.x < p.transform.position.x)
-                            p.SetOrientation(false);
-                        else if (p.pui.touchScreenCursorImage.rt.localPosition.x > p.transform.position.x)
-                            p.SetOrientation(true);
+                        if (pui.touchScreenCursorImage.rt.localPosition.x < transform.position.x)
+                            SetOrientation(false);
+                        else if (pui.touchScreenCursorImage.rt.localPosition.x > transform.position.x)
+                            SetOrientation(true);
                     }
                     break;
 
                 //* 如果是手柄, 则检测左摇杆
                 case ControlMode.Gamepad:
-                    float x = PlayerControls.Move(p);
+                    float x = PlayerControls.Move(this);
 
                     if (x < 0)
-                        p.SetOrientation(false);
+                        SetOrientation(false);
                     else if (x > 0)
-                        p.SetOrientation(true);
+                        SetOrientation(true);
 
                     break;
             }
-        };
+        }
         #endregion
 
         #region 攻击
@@ -1511,22 +1509,6 @@ namespace GameCore
                 animWeb.SwitchPlayingTo("attack_rightarm", 0);
         }
 
-        #endregion
-
-        #region 死亡
-
-        private void DeathRotation()
-        {
-            if (isDead)
-            {
-                //Debug.Log("Death");
-                transform.localRotation = deathQuaternion;
-            }
-            else
-            {
-                transform.localRotation = Quaternion.identity;
-            }
-        }
         #endregion
 
         public void RefreshPropertiesBar()

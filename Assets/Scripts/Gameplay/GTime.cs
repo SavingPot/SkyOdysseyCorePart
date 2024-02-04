@@ -26,16 +26,16 @@ namespace GameCore
 
         #region 变量
 
-        [SyncGetter] static bool isMorning_get() => default; [SyncSetter] static void isMorning_set(bool value) { }
-        [Sync] public static bool isMorning { get => isMorning_get(); set => isMorning_set(value); }
+        static bool isMorning_temp; static void isMorning_set(bool value) { }
+        [Sync, SyncDefaultValue(true)] public static bool isMorning { get => isMorning_temp; set => isMorning_set(value); }
 
-        [SyncGetter] static float timeOneDay_get() => default; [SyncSetter] static void timeOneDay_set(float value) { }
-        [Sync, SyncDefaultValue(1440f)] public static float timeOneDay { get => timeOneDay_get(); set => timeOneDay_set(value); }
+        static float timeOneDay_temp; static void timeOneDay_set(float value) { }
+        [Sync, SyncDefaultValue(1440f)] public static float timeOneDay { get => timeOneDay_temp; set => timeOneDay_set(value); }
 
-        [SyncGetter] static float time_get() => default; [SyncSetter] static void time_set(float value) { }
-        [Sync(nameof(TimeModify)), SyncDefaultValue(420f)] public static float time { get => time_get(); set => time_set(value); }
+        static float time_temp; static void time_set(float value) { }
+        [Sync(nameof(TimeModify)), SyncDefaultValue(420f)] public static float time { get => time_temp; set => time_set(value); }
 
-        public static void TimeModify()
+        public static void TimeModify(byte[] _)
         {
             _time12Format = GetTime12ByStandard(time);
             _time24Format = GetTime24By12(time12Format);

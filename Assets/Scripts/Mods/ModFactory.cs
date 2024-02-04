@@ -73,7 +73,7 @@ namespace GameCore
                 foreach (var type in ass.GetTypes())
                 {
                     //排除无用的程序集, 加快加载
-                    if (type.Namespace == "System" || type.Namespace == "UnityEngine")
+                    if (!IsUserType(type))
                         continue;
 
                     action(ass, type);
@@ -90,7 +90,7 @@ namespace GameCore
                 foreach (var type in ass.GetTypes())
                 {
                     //排除无用的程序集, 加快加载
-                    if (type.Namespace == "System" || type.Namespace == "UnityEngine")
+                    if (!IsUserType(type))
                         continue;
 
                     foreach (var method in type.GetMethods(trueFlags))
@@ -110,7 +110,7 @@ namespace GameCore
                 foreach (var type in ass.GetTypes())
                 {
                     //排除无用的程序集, 加快加载
-                    if (type.Namespace == "System" || type.Namespace == "UnityEngine")
+                    if (!IsUserType(type))
                         continue;
 
                     foreach (var property in type.GetProperties(trueFlags))
@@ -153,7 +153,7 @@ namespace GameCore
                 foreach (var type in ass.GetTypes())
                 {
                     //排除无用的程序集, 加快加载
-                    if (type.Namespace == "System" || type.Namespace == "UnityEngine")
+                    if (!IsUserType(type))
                         continue;
 
                     //获取所有可用方法
@@ -162,6 +162,55 @@ namespace GameCore
                         if ($"{type.FullName}.{mtd.Name}" == targetMethod)
                         {
                             return mtd;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+
+
+
+        public static FieldInfo SearchField(string targetField)
+        {
+            //遍历每个程序集中的方法
+            foreach (var ass in assemblies)
+            {
+                foreach (var type in ass.GetTypes())
+                {
+                    //获取所有可用字段
+                    foreach (var field in type.GetFields(ReflectionTools.BindingFlags_All))
+                    {
+                        if ($"{type.FullName}.{field.Name}" == targetField)
+                        {
+                            return field;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public static FieldInfo SearchUserField(string targetField)
+        {
+            //遍历每个程序集中的方法
+            foreach (var ass in assemblies)
+            {
+                foreach (var type in ass.GetTypes())
+                {
+                    //排除无用的程序集, 加快加载
+                    if (!IsUserType(type))
+                        continue;
+
+                    //获取所有可用字段
+                    foreach (var field in type.GetFields(ReflectionTools.BindingFlags_All))
+                    {
+                        if ($"{type.FullName}.{field.Name}" == targetField)
+                        {
+                            return field;
                         }
                     }
                 }
@@ -197,7 +246,7 @@ namespace GameCore
                 foreach (var type in ass.GetTypes())
                 {
                     //排除无用的程序集, 加快加载
-                    if (type.Namespace == "System" || type.Namespace == "UnityEngine")
+                    if (!IsUserType(type))
                         continue;
 
                     if (type.FullName == targetType)
@@ -209,6 +258,23 @@ namespace GameCore
 
             return null;
         }
+
+
+        public static bool IsUserType(Type type)
+        {
+            //1. System 或其子命名空间
+            //2. Unity
+            //3. Mirror
+            return type.Namespace != "System" && (!type.Namespace?.StartsWith("System.") ?? false) && type.Namespace != "UnityEngine" && type.Namespace != "Mirror";
+        }
+
+
+
+
+
+
+
+
 
 
 

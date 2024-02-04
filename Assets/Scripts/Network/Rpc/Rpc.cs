@@ -248,14 +248,25 @@ namespace GameCore
             return ms.ToArray();
         }
 
+        public static T BytesToObject<T>(byte[] data)
+        {
+            if (data == null)
+            {
+                return default;
+            }
+
+            using MemoryStream ms = new(data);
+            var obj = binaryFormatter.Deserialize(ms);
+            return obj == null ? default : (T)obj;
+        }
+
         public static object BytesToObject(byte[] data)
         {
-            //TODO: return null 可能有问题? 也许不需要进行检测?
             if (data == null)
             {
                 return null;
             }
-            
+
             using MemoryStream ms = new(data);
             return binaryFormatter.Deserialize(ms);
         }
@@ -291,6 +302,8 @@ namespace GameCore
             BindingFlags flags = ReflectionTools.BindingFlags_All;
 
             //Substep2: 获取定义的方法
+            var BytesToObject = typeof(Rpc).GetMethod(nameof(Rpc.BytesToObject), 0, new Type[] { typeof(byte[]) });
+
             var _RemoteCall = typeof(Rpc).GetMethod($"{nameof(Rpc._RemoteCall)}", flags);
 
             var _StaticRemote0 = typeof(Rpc).GetMethod($"{nameof(Rpc._StaticRemote0)}", flags);
@@ -457,7 +470,7 @@ namespace GameCore
                                         Expression.Assign(
                                             localParam_bytesToObjectTemp,
                                             Expression.Call(
-                                                typeof(Rpc).GetMethod(nameof(BytesToObject), flags),
+                                                BytesToObject,
                                                 parameterToSelect
                                             )
                                         ),

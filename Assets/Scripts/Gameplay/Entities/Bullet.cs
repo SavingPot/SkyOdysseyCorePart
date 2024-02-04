@@ -12,11 +12,16 @@ namespace GameCore
         public uint ownerId;
         [HideInInspector] public Collider2D[] besideObjectsDetected = new Collider2D[15];
 
-        protected override void Start()
+        protected override void Awake()
         {
-            base.Start();
+            base.Awake();
 
             hurtable = false;
+        }
+
+        public override void Initialize()
+        {
+            base.Initialize();
 
             try
             {

@@ -2,18 +2,6 @@ using System;
 
 namespace GameCore
 {
-    [AttributeUsage(AttributeTargets.Method)]
-    public class SyncGetterAttribute : Attribute
-    {
-
-    }
-
-    [AttributeUsage(AttributeTargets.Method)]
-    public class SyncSetterAttribute : Attribute
-    {
-
-    }
-
     [AttributeUsage(AttributeTargets.Property)]
     public class SyncAttribute : Attribute
     {

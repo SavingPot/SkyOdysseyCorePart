@@ -10,6 +10,7 @@ using System.Text;
 using System.Reflection;
 using GameCore.High;
 using Cysharp.Threading.Tasks;
+using System.Linq;
 
 namespace GameCore
 {
@@ -18,14 +19,13 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    独留变量                                    */
         /* -------------------------------------------------------------------------- */
-        [BoxGroup("变量注册"), LabelText("注册了网络变量")] public bool registeredSyncVars;
         [BoxGroup("独留变量"), LabelText("生成ID"), SyncVar] public string generationId;
         [BoxGroup("独留变量"), LabelText("服务器是否完全准备好"), SyncVar] public bool isServerCompletelyReady;
         [BoxGroup("变量注册")] public string waitingRegisteringVar;
-        public SyncPacker.OnVarValueChangeCallback[] varHooksToUnbind;
         public Entity entity;
         public bool hasGotGeneratingId => !generationId.IsNullOrWhiteSpace();
         public bool hasDestroyed { get; protected set; }
+        public bool hasRegisteredSyncVars;
 
         /* -------------------------------------------------------------------------- */
         /*                                    传出变量                                    */
@@ -36,8 +36,13 @@ namespace GameCore
 
 
         private static readonly Dictionary<Type, SyncAttributeData[]> TotalSyncVarAttributeTemps = new();
+        internal static bool isFirstEntityInit;
+
+
         public static readonly string maxHealthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.maxHealth)}";
         public static readonly string healthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.health)}";
+        public static readonly string customDataVarId = $"{typeof(Entity).FullName}.{nameof(Entity.customData)}";
+
         public static readonly string hungerValueVarId = $"{typeof(Player).FullName}.{nameof(Player.hungerValue)}";
         public static readonly string thirstValueVarId = $"{typeof(Player).FullName}.{nameof(Player.thirstValue)}";
         public static readonly string happinessValueVarId = $"{typeof(Player).FullName}.{nameof(Player.happinessValue)}";
@@ -54,6 +59,11 @@ namespace GameCore
         public static readonly string skinRightFootVarId = $"{typeof(Player).FullName}.{nameof(Player.skinRightFoot)}";
 
 
+
+
+
+
+
         private void OnDestroy()
         {
             hasDestroyed = true;
@@ -65,7 +75,7 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                  注销所有同步变量                                  */
             /* -------------------------------------------------------------------------- */
-            if (!registeredSyncVars)
+            if (!hasRegisteredSyncVars)
                 return;
 
 
@@ -78,15 +88,8 @@ namespace GameCore
 
                 foreach (SyncAttributeData pair in syncVarTemps)
                 {
-                    string id = SyncPacker.GetInstanceID(sb, pair.propertyPath, netId);
-                    SyncPacker.UnregisterVar(id);
+                    SyncPacker.UnregisterVar(pair.propertyPath, netId);
                 }
-            }
-
-            /* -------------------------------- 取消绑定变量的钩子 ------------------------------- */
-            foreach (var hook in varHooksToUnbind)
-            {
-                SyncPacker.OnVarValueChange -= hook;
             }
         }
 
@@ -138,66 +141,95 @@ namespace GameCore
 
 
 
-        async void OnValueChangeHook(NMSyncVar nm, byte[] oldValue, MethodInfo hookMethod, string varId)
-        {
-            //* 这是为了防止服务器上进行了赋值, 但是客户端还没创建这个实体
-            if (!entity)
-                await UniTask.WaitUntil(() => entity);
-
-            if (hasDestroyed)
-                return;
-
-            if (nm.varId == varId)
-                hookMethod.Invoke(entity, null);
-        }
-
         public void AutoRegisterVars()
         {
             var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
 
             //遍历每个属性
-            StringBuilder sb = new();
-            List<SyncPacker.OnVarValueChangeCallback> varHooksToUnbindTemp = new();
-
             //TODO: Improve readability and performance step and step
-            foreach (SyncAttributeData pair in syncVarTemps)
+            if (isServer)
             {
-                string id = SyncPacker.GetInstanceID(sb, pair.propertyPath, netId);
-
-                if (pair.hook != null)
+                foreach (SyncAttributeData pair in syncVarTemps)
                 {
-                    void callback(NMSyncVar nm, byte[] oldValue) => OnValueChangeHook(nm, oldValue, pair.hook, id);
-                    varHooksToUnbindTemp.Add(callback);
-                    SyncPacker.OnVarValueChange += callback;
-                }
+                    var id = pair.propertyPath;
 
-                if (isServer)
-                {
                     if (pair.propertyPath == maxHealthVarId)
                     {
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(data.maxHealth));
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(data.maxHealth));
                     }
                     else if (pair.propertyPath == healthVarId)
                     {
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : save.health.Value));
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : save.health.Value));
+                    }
+                    else if (pair.propertyPath == customDataVarId)
+                    {
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(JsonTools.LoadJObjectByString(save.customData)));
                     }
                     else if (pair.propertyPath == hungerValueVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.hungerValue));
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.hungerValue));
                     }
                     else if (pair.propertyPath == thirstValueVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.thirstValue));
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.thirstValue));
                     }
                     else if (pair.propertyPath == happinessValueVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.happinessValue));
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.happinessValue));
+                    }
+                    else if (pair.propertyPath == skinHeadVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinHead);
+                    }
+                    else if (pair.propertyPath == skinBodyVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinBody);
+                    }
+                    else if (pair.propertyPath == skinLeftArmVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftArm);
+                    }
+                    else if (pair.propertyPath == skinRightArmVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightArm);
+                    }
+                    else if (pair.propertyPath == skinLeftLegVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftLeg);
+                    }
+                    else if (pair.propertyPath == skinRightLegVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightLeg);
+                    }
+                    else if (pair.propertyPath == skinLeftFootVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftFoot);
+                    }
+                    else if (pair.propertyPath == skinRightFootVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightFoot);
                     }
                     else if (pair.propertyPath == inventoryVarId)
                     {
@@ -205,7 +237,7 @@ namespace GameCore
 
                         if (saveAsPlayer.inventory == null)
                         {
-                            SyncPacker.RegisterVar(id, true, null);
+                            SyncPacker.RegisterVar(id, netId, true, null);
                         }
                         else
                         {
@@ -213,121 +245,184 @@ namespace GameCore
                             //这一行代码的意义是如果物品栏栏位数更改了, 可以保证栏位数和预想的一致
                             saveAsPlayer.inventory.SetSlotCount(Player.inventorySlotCount);
 
-                            SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.inventory));
+                            SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.inventory));
                         }
                     }
                     else if (pair.propertyPath == completedTasksVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(saveAsPlayer.completedTasks));
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.completedTasks ?? new()));
                     }
                     else if (pair.propertyPath == playerNameVarId)
                     {
-                        SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(save.id));
-                    }
-                    else if (pair.propertyPath == skinHeadVarId)
-                    {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
-                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinHead);
-                    }
-                    else if (pair.propertyPath == skinBodyVarId)
-                    {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
-                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinBody);
-                    }
-                    else if (pair.propertyPath == skinLeftArmVarId)
-                    {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
-                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinLeftArm);
-                    }
-                    else if (pair.propertyPath == skinRightArmVarId)
-                    {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
-                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinRightArm);
-                    }
-                    else if (pair.propertyPath == skinLeftLegVarId)
-                    {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
-                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinLeftLeg);
-                    }
-                    else if (pair.propertyPath == skinRightLegVarId)
-                    {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
-                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinRightLeg);
-                    }
-                    else if (pair.propertyPath == skinLeftFootVarId)
-                    {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
-                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinLeftFoot);
-                    }
-                    else if (pair.propertyPath == skinRightFootVarId)
-                    {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
-                        SyncPacker.RegisterVar(id, true, saveAsPlayer.skinRightFoot);
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(save.id));
                     }
                     else
                     {
                         if (!pair.includeDefaultValue)
-                            SyncPacker.RegisterVar(id, true, null);
+                            SyncPacker.RegisterVar(id, netId, true, null);
                         else if (pair.defaultValueMethod == null)
-                            SyncPacker.RegisterVar(id, true, pair.defaultValue);
+                            SyncPacker.RegisterVar(id, netId, true, pair.defaultValue);
                         else
-                            SyncPacker.RegisterVar(id, true, Rpc.ObjectToBytes(pair.defaultValueMethod.Invoke(null, null)));
+                            SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(pair.defaultValueMethod.Invoke(null, null)));
                     }
                 }
             }
+            //* 如果不是服务器, 就需要等待服务器注册
+            //! 如果不等待的话会疯狂报错
+            else
+            {
+                //向服务器请求所有的实例同步变量
+                if (isFirstEntityInit)
+                {
+                    isFirstEntityInit = false;
 
-            varHooksToUnbind = varHooksToUnbindTemp.ToArray();
+                    //等一帧是为了防止别的实体还没同步
+                    MethodAgent.CallNextFrame(() =>
+                    {
+                        Client.Send(new NMRequestInstanceVars());
+                    });
+                }
+            }
 
-            //开始等待注册完毕
+            //开始等待
             StartCoroutine(IEWaitRegistering(syncVarTemps));
         }
 
         IEnumerator IEWaitRegistering(SyncAttributeData[] syncVarTemps)
         {
-            //* 如果不是服务器, 就需要等待服务器注册
-            //! 如果不等待的话会疯狂报错
+            StringBuilder sb = new();
+
+            /* --------------------------------- 等待变量注册 --------------------------------- */
             if (!isServer)
             {
-                StringBuilder sb = new();
+                yield return new WaitUntil(() => isServerCompletelyReady);
 
-                //等待注册
                 foreach (var pair in syncVarTemps)
                 {
-                    string vn = SyncPacker.GetInstanceID(sb, pair.propertyPath, netId);
+                    string id = pair.propertyPath;
+                    waitingRegisteringVar = id;
 
-                    //等待数值正确
-                    waitingRegisteringVar = vn;
-                    yield return new WaitUntil(() => SyncPacker.HasVar(vn));
+                    //等待变量被注册并将其缓存
+                    while (true)
+                    {
+                        foreach (var var in SyncPacker.instanceVars)
+                        {
+                            if (var.Key != id)
+                                continue;
+
+                            foreach (var item in var.Value)
+                            {
+                                if (item.Key == netId)
+                                {
+                                    goto nextPair;
+                                }
+                            }
+                        }
+
+                        yield return null;
+                    }
+
+                //继续检测下一个变量
+                nextPair:
+                    continue;
                 }
-
-                yield return new WaitUntil(() => isServerCompletelyReady);
             }
 
-            waitingRegisteringVar = string.Empty;
-            registeredSyncVars = true;
 
+            /* --------------------------------- 将所有变量缓存 (这些必须在一帧内完成) -------------------------------- */
 
+            //必须先创建实体组件，才可以缓存
+            CreateEntityComponent();
+
+            foreach (var pair in syncVarTemps)
+            {
+                string id = pair.propertyPath;
+                waitingRegisteringVar = id;
+
+                foreach (var var in SyncPacker.instanceVars)
+                {
+                    if (var.Key != id)
+                        continue;
+
+                    foreach (var item in var.Value)
+                    {
+                        if (item.Key == netId)
+                        {
+                            SyncPacker.FirstTempValue(id, entity, item.Value.value);
+                            goto nextPair;
+                        }
+                    }
+
+                    Debug.LogError($"实例同步变量 {id} 未被成功缓存");
+                }
+
+                Debug.LogError($"实例同步变量 {id} 未被成功缓存");
+
+            //继续缓存下一个变量
+            nextPair:
+                continue;
+            }
+
+            /* --------------------------------- 注册完成 --------------------------------- */
+            CompleteEntityComponentCreation();
+        }
+
+        void CreateEntityComponent()
+        {
             entity = generationId == EntityID.Player ? gameObject.AddComponent<Player>() : (Entity)gameObject.AddComponent(data.behaviourType);
             entity.Init = this;
             entity.data = data;
-            entity.customData = JsonTools.LoadJObjectByString(save.customData);
-            entity.InitAfterAwake();
-            isServerCompletelyReady = true;
         }
+
+        void CompleteEntityComponentCreation()
+        {
+            if (isServer)
+                isServerCompletelyReady = true;
+
+            waitingRegisteringVar = string.Empty;
+            hasRegisteredSyncVars = true;
+            entity.Initialize();
+            entity.AfterInitialization();
+        }
+
+
+
+
+
+        public static EntityInit GetEntityInitByNetIdWithoutCheck(uint netIdToFind)
+        {
+            if (netIdToFind != uint.MaxValue)
+            {
+#if DEBUG
+                //uint.MaxValue 是我设定的无效值, 如果 netIdToFind 为 uint.MaxValue 是几乎不可能找到合适的 NetworkIdentity 的
+                if (!NetworkClient.spawned.TryGetValue(netIdToFind, out NetworkIdentity identity))
+                {
+                    Debug.LogError($"无法找到 Entity {netIdToFind}");
+                    return null;
+                }
+
+                return identity.GetComponent<EntityInit>();
+#else
+                return NetworkClient.spawned[netIdToFind].GetComponent<EntityInit>();
+#endif
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
+
+
+
+
+
         internal class SyncAttributeData
         {
             public string propertyPath;
-            public MethodInfo hook;
             public bool includeDefaultValue;
             public byte[] defaultValue;
             public MethodInfo defaultValueMethod;
@@ -351,26 +446,14 @@ namespace GameCore
                 {
                     string propertyPath = $"{property.DeclaringType.FullName}.{property.Name}";
                     bool includeDefaultValue = false;
-                    MethodInfo hookMethod = null;
                     byte[] defaultValue = null;
                     MethodInfo defaultValueMethod = null;
-
-                    if (!att.hook.IsNullOrWhiteSpace())
-                    {
-                        hookMethod = !att.hook.Contains(".") ? type.GetMethodFromAllIncludingBases(att.hook) : ModFactory.SearchUserMethod(att.hook);
-
-                        if (hookMethod == null)
-                        {
-                            Debug.LogError($"无法找到同步变量 {propertyPath} 的钩子: {att.hook}");
-                            continue;
-                        }
-                    }
 
                     if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(property, out var defaultValueAtt))
                     {
                         if (defaultValueAtt.defaultValue != null && property.PropertyType.FullName != defaultValueAtt.defaultValue.GetType().FullName)
                         {
-                            Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueAtt.defaultValue.GetType().FullName}");
+                            Debug.LogError($"同步变量 {propertyPath} 错误: 返回值的类型为 {property.PropertyType.FullName} , 但默认值的类型为 {defaultValueAtt.defaultValue.GetType().FullName}");
                             continue;
                         }
                         else
@@ -393,7 +476,7 @@ namespace GameCore
 
                         if (property.PropertyType.FullName != defaultValueMethod.ReturnType.FullName)
                         {
-                            Debug.LogError($"同步变量 {propertyPath} 错误: 返回值为 {property.PropertyType.FullName} , 但默认值为 {defaultValueMethod.ReturnType.FullName}");
+                            Debug.LogError($"同步变量 {propertyPath} 错误: 返回值的类型为 {property.PropertyType.FullName} , 但默认值的类型为 {defaultValueMethod.ReturnType.FullName}");
                             continue;
                         }
 
@@ -416,7 +499,6 @@ namespace GameCore
                     ts.Add(new()
                     {
                         propertyPath = propertyPath,
-                        hook = hookMethod,
                         includeDefaultValue = includeDefaultValue,
                         defaultValue = defaultValue,
                         defaultValueMethod = defaultValueMethod,

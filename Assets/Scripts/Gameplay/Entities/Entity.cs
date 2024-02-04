@@ -187,14 +187,8 @@ namespace GameCore
         [BoxGroup("变量ID"), LabelText("变量唯一ID")] public uint varInstanceId => Init.netId;
 
 
-        [SyncGetter] JObject customData_get() => default; [SyncSetter] void customData_set(JObject value) { }
-        [Sync(nameof(TempCustomData))] public JObject customData { get => _customData; set => customData_set(value); }
-        private JObject _customData;
-
-        void TempCustomData()
-        {
-            _customData = customData_get();
-        }
+        JObject customData_temp; void customData_set(JObject value) { }
+        [Sync] public JObject customData { get => customData_temp; set => customData_set(value); }
 
 
 
@@ -220,9 +214,9 @@ namespace GameCore
 
         #region 同步变量
         #region 无敌时间
-        [SyncGetter] float invincibleTime_get() => default; [SyncSetter] void invincibleTime_set(float value) { }
-        [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime { get => invincibleTime_get(); set => invincibleTime_set(value); }
-        void OnInvincibleTimeChange()
+        float invincibleTime_temp; void invincibleTime_set(float value) { }
+        [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime { get => invincibleTime_temp; set => invincibleTime_set(value); }
+        void OnInvincibleTimeChange(byte[] _)
         {
             if (isHurting)
             {
@@ -242,40 +236,32 @@ namespace GameCore
         #endregion
 
         #region 最大血量
-        [SyncGetter] int maxHealth_get() => default; [SyncSetter] void maxHealth_set(int value) { }
-        [Sync(nameof(OnMaxHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int maxHealth { get => maxHealth_get(); set => maxHealth_set(value); }
-
-        void OnMaxHealthChangeMethod()
-        {
-            OnMaxHealthChange();
-        }
-        public Action OnMaxHealthChange = () => { };
+        public int maxHealth => data.maxHealth;
         #endregion
 
         #region 血量
-        [SyncGetter] int health_get() => default; [SyncSetter] void health_set(int value) { }
-        [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health { get => health_get(); set => health_set(value); }
-
-        private void OnHealthChangeMethod()
+        int health_temp; void health_set(int value) { }
+        [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health { get => health_temp; set => health_set(value); }
+        public const int DEFAULT_HEALTH = 100;
+        public Action OnHealthChange = () => { };
+        private void OnHealthChangeMethod(byte[] _)
         {
             OnHealthChange();
         }
-        public const int DEFAULT_HEALTH = 100;
-        public Action OnHealthChange = () => { };
         #endregion
 
         #region 已死亡
-        [SyncGetter] bool isDead_get() => default; [SyncSetter] void isDead_set(bool value) { }
-        [Sync, SyncDefaultValue(false)] public bool isDead { get => isDead_get(); set => isDead_set(value); }
+        bool isDead_temp; void isDead_set(bool value) { }
+        [Sync, SyncDefaultValue(false)] public bool isDead { get => isDead_temp; set => isDead_set(value); }
         #endregion
 
         #region 当前区域指针
-        [SyncGetter] Vector2Int regionIndex_get() => default; [SyncSetter] void regionIndex_set(Vector2Int value) { }
+        Vector2Int regionIndex_temp; void regionIndex_set(Vector2Int value) { }
+        [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex { get => regionIndex_temp; set => regionIndex_set(value); }
         static Vector2Int regionIndex_default() => Vector2Int.zero;
-        [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex { get => regionIndex_get(); set => regionIndex_set(value); }
         public Vector2Int chunkIndex;
 
-        private void OnRegionIndexChangeMethod()
+        private void OnRegionIndexChangeMethod(byte[] _)
         {
             OnRegionIndexChange(this);
         }
@@ -404,7 +390,6 @@ namespace GameCore
         #region Unity/Mirror/Entity 方法
         protected virtual void Awake()
         {
-            EntityCenter.AddEntity(this);
             netIdentity = GetComponent<NetworkIdentity>();
             isPlayer = this is Player;
             isNotPlayer = !isPlayer;
@@ -421,7 +406,7 @@ namespace GameCore
             isLocalPlayer = Client.localPlayer == this;
         }
 
-        public virtual void InitAfterAwake()
+        public virtual void Initialize()
         {
             rb.gravityScale = data.gravity;
             mainCollider.size = data.colliderSize;
@@ -430,17 +415,17 @@ namespace GameCore
             SetAutoDestroyTime();
         }
 
+        public virtual void AfterInitialization()
+        {
+            EntityCenter.AddEntity(this);
+        }
+
         protected virtual void OnDestroy()
         {
             //TODO: 移动到 EntityInit
             //Debug.Log($"实体 {name} 被删除, Datum Null = {datum == null}", gameObject);
 
             EntityCenter.RemoveEntity(this);
-        }
-
-        protected virtual void Start()
-        {
-
         }
 
         protected virtual void Update()
@@ -844,6 +829,29 @@ namespace GameCore
 #else
             return NetworkClient.spawned[netIdToFind].GetComponent<T>();
 #endif
+        }
+
+        public static Entity GetEntityByNetIdWithCheckInvalid(uint netIdToFind)
+        {
+            if (netIdToFind != uint.MaxValue)
+            {
+#if DEBUG
+                //uint.MaxValue 是我设定的无效值, 如果 netIdToFind 为 uint.MaxValue 是几乎不可能找到合适的 NetworkIdentity 的
+                if (!NetworkClient.spawned.TryGetValue(netIdToFind, out NetworkIdentity identity))
+                {
+                    Debug.LogError($"无法找到 Entity {netIdToFind}");
+                    return null;
+                }
+
+                return identity.GetComponent<Entity>();
+#else
+                return NetworkClient.spawned[netIdToFind].GetComponent<Entity>();
+#endif
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public static bool TryGetEntityByNetId<T>(uint netIdToFind, out T result) where T : Entity

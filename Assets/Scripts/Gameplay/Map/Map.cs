@@ -294,7 +294,7 @@ namespace GameCore
         private void Update()
         {
             /* ---------------------------------- 为方块回血 --------------------------------- */
-            if (Player.TryGetLocal(out Player localPlayer) && SyncPacker.vars.Count != 0 && localPlayer.TryGetRegion(out _))
+            if (Player.TryGetLocal(out Player localPlayer) &&localPlayer.Init.isServerCompletelyReady&& localPlayer.TryGetRegion(out _))
             {
                 var deltaHealth = 20f * Performance.frameTime;
 

@@ -94,6 +94,8 @@ namespace GameCore.High
         {
             Debug.Log($"连接了服务器");
 
+            EntityInit.isFirstEntityInit = true;
+
             NetworkCallbacks.OnTimeToClientCallback();
         };
         public static event Action OnDisconnectFromServer = () =>
@@ -111,7 +113,9 @@ namespace GameCore.High
         };
         public static event Action OnStopClient = () =>
         {
-            Debug.Log("退出了服务器");
+            Debug.Log("客户端关闭");
+
+            EntityInit.isFirstEntityInit = true;
         };
 
         public static void OnConnectToServerThenRemove(Action action)
