@@ -1039,6 +1039,11 @@ namespace GameCore
 
                 rebornPanel.OnUpdate += i =>
                 {
+#if UNITY_EDITOR
+                    if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
+                        player.deathTimer = 0;
+#endif
+
                     if (Tools.time >= player.deathTimer)
                     {
                         rebornButton.button.interactable = true;

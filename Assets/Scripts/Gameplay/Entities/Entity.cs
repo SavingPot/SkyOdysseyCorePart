@@ -137,30 +137,10 @@ namespace GameCore
         }
     }
 
-    //TODO: Finish
-    public interface IEntityExtensionOnGround : IEntityExtension
-    {
-        bool onGround { get; set; }
-    }
-
-    public interface IEntityExtension
-    {
-
-    }
-
     //TODO: 告别冗长代码
     [DisallowMultipleComponent]
-    public class Entity : MonoBehaviour, IEntity, IRigidbody2D, IVarInstanceID
+    public class Entity : MonoBehaviour, IRigidbody2D, IVarInstanceID, IDeath, IHealth
     {
-        /* -------------------------------------------------------------------------- */
-        /*                                     接口                                     */
-        /* -------------------------------------------------------------------------- */
-        public List<string> tags { get; }
-
-
-
-
-
         /* -------------------------------------------------------------------------- */
         /*                               Static & Const                               */
         /* -------------------------------------------------------------------------- */
@@ -185,10 +165,20 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         [BoxGroup("生成属性"), LabelText("初始化器")] public EntityInit Init { get; internal set; }
         [BoxGroup("变量ID"), LabelText("变量唯一ID")] public uint varInstanceId => Init.netId;
+        [HideInInspector] public bool isPlayer;
+        [HideInInspector] public bool isNotPlayer;
+        [HideInInspector] public bool isNotNPC;
+        [HideInInspector] public float timeToAutoDestroy;
+        Type classType;
+        public NetworkIdentity netIdentity;
+        [HideInInspector] public uint netId;
+        [HideInInspector] public bool isServer;
+        [HideInInspector] public bool isClient;
+        [HideInInspector] public bool isOwned;
+        [HideInInspector] public bool isHost;
+        [HideInInspector] public bool isLocalPlayer;
 
 
-        JObject customData_temp; void customData_set(JObject value) { }
-        [Sync] public JObject customData { get => customData_temp; set => customData_set(value); }
 
 
 
@@ -200,6 +190,7 @@ namespace GameCore
         public Rigidbody2D rb { get; set; }
         public BoxCollider2D mainCollider { get; set; }
         public bool isHurting => invincibleTime > 0;
+        public int maxHealth => data.maxHealth;
         public bool hurtable = true;
         [BoxGroup("属性"), LabelText("数据"), HideInInspector] public EntityData data = null;
         [BoxGroup("属性"), LabelText("效果")] public Dictionary<string, float> effects = new();
@@ -208,11 +199,16 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("受伤音效")] public string takeDamageAudioId = AudioID.GetHurt;
 
 
+        public const int height = 2;
+
+
+
 
 
 
 
         #region 同步变量
+
         #region 无敌时间
         float invincibleTime_temp; void invincibleTime_set(float value) { }
         [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime { get => invincibleTime_temp; set => invincibleTime_set(value); }
@@ -233,10 +229,6 @@ namespace GameCore
                 }
             }
         }
-        #endregion
-
-        #region 最大血量
-        public int maxHealth => data.maxHealth;
         #endregion
 
         #region 血量
@@ -288,16 +280,13 @@ namespace GameCore
 
         public static Action<Entity> OnRegionIndexChange = (entity) => { };
 
-        [HideInInspector] public bool isPlayer;
-        [HideInInspector] public bool isNotPlayer;
-        [HideInInspector] public bool isNotNPC;
-        [HideInInspector] public float timeToAutoDestroy;
-        Type classType;
-
         #endregion
 
-        public const int height = 2;
-        //public Dictionary<string, string> localVars = new();
+        #region 自定义数据
+        JObject customData_temp; void customData_set(JObject value) { }
+        [Sync] public JObject customData { get => customData_temp; set => customData_set(value); }
+        #endregion
+
         #endregion
 
 
@@ -308,25 +297,9 @@ namespace GameCore
 
 
 
-        /* -------------------------------------------------------------------------- */
-        /*                                   Base 覆写                                  */
-        /* -------------------------------------------------------------------------- */
-        public NetworkIdentity netIdentity;
-
-        //TODO: Temp them
-        [HideInInspector] public uint netId;
-        [HideInInspector] public bool isServer;
-        [HideInInspector] public bool isClient;
-        [HideInInspector] public bool isOwned;
-        [HideInInspector] public bool isHost;
-        [HideInInspector] public bool isLocalPlayer;
-
-
-
-
 
         /* -------------------------------------------------------------------------- */
-        /*                                Behaviour 系统                                */
+        /*                                生命周期                               */
         /* -------------------------------------------------------------------------- */
         public virtual async void OnDeathServer()
         {
@@ -873,19 +846,6 @@ namespace GameCore
 
             };
             GM.OnUpdate += EntityCenter.Update;
-        }
-
-        public static Type[] EntityExtensions;
-        public static void EntityTypeInit()
-        {
-            List<Type> EntityExtensionList = new();
-            ModFactory.EachUserType((_, type) =>
-            {
-                if (type.IsInterface && type.IsSubclassOf(typeof(IEntityExtension)))
-                {
-                    EntityExtensionList.Add(type);
-                }
-            });
         }
     }
 

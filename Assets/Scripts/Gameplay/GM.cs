@@ -1455,53 +1455,6 @@ namespace GameCore
                                 case 3:
                                     item = ModFactory.CompareItem(ItemID.Sneakers).DataToItem();
                                     break;
-
-                                default:
-                                    {
-                                        //每个格子都有 60% 的概率为空
-                                        if (Tools.Prob100(60, generation.regionGeneration.random))
-                                            continue;
-
-                                        //抽取模组
-                                        Mod mod = null;
-                                        while (mod == null)
-                                        {
-                                            mod = ModFactory.mods.Extract(generation.regionGeneration.random);
-                                            if (mod.items.Count == 0)
-                                                mod = null;
-                                        }
-
-                                        //从抽取的模组里抽取物品
-                                        ItemData itemData = null;
-                                        for (var inner = 0; inner < mod.items.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的物品
-                                        {
-                                            itemData = mod.items.Extract(generation.regionGeneration.random);
-
-                                            if (itemData == null)
-                                                continue;
-
-                                            //如果是木桶的战利品就通过
-                                            if (itemData.GetTag("ori:loot.barrel").hasTag)
-                                                break;
-                                            else
-                                                itemData = null;
-                                        }
-
-                                        /* ---------------------------------- 填充物品 ---------------------------------- */
-                                        if (itemData != null)  //如果获取失败了, 这个格子也会为空
-                                        {
-                                            //随机一定数量
-                                            ushort maxCount = (ushort)(itemData.maxCount / 4);
-                                            ushort count = (ushort)(generation.regionGeneration.random.NextDouble() * maxCount);
-                                            if (count <= 0) count = 1;
-                                            if (count > maxCount) count = maxCount;
-
-                                            item = itemData.DataToItem();
-                                            item.count = count;
-                                        }
-
-                                        break;
-                                    }
                             }
 
                             /* ---------------------------------- 填充物品 ---------------------------------- */

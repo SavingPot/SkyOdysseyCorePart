@@ -189,7 +189,6 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
         [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
-        public bool onGround;
 
         #region 区域生成
 
@@ -363,7 +362,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public static int playerLayer { get; private set; }
         public static int playerLayerMask { get; private set; }
-        public static int playerOnGroundLayerMask { get; private set; }
         public static float itemPickUpRadius = 1.75f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
@@ -559,8 +557,8 @@ namespace GameCore
                 Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
 
                 /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
-                if (onGround && PlayerControls.Jump(this))
-                    Jump();
+                if (isOnGround && PlayerControls.Jump(this))
+                    rb.SetVelocityY(GetJumpVelocity(30));
 
                 /* ----------------------------------- 挖掘与攻击 ----------------------------------- */
                 if (PlayerControls.HoldingAttack(this))  //检测物品的使用CD
@@ -1273,7 +1271,6 @@ namespace GameCore
         public void ClientReduceItemCount(string index, ushort count, NetworkConnection caller = null) => inventory.ReduceItemCount(index, count);
         #endregion
 
-        readonly Collider2D[] OnGroundHits = new Collider2D[10];
 
 
         #region 移动和转向
@@ -1290,39 +1287,6 @@ namespace GameCore
 
 
 
-            onGround = false;
-            for (int i = 0; i < OnGroundHits.Length; i++)
-            {
-                OnGroundHits[i] = default;
-            }
-            var position = transform.position;
-            Physics2D.OverlapAreaNonAlloc(
-                    new(
-                        position.x + mainCollider.offset.x - mainCollider.size.x * 0.5f,
-                        position.y + mainCollider.offset.y - mainCollider.size.y * 0.5f
-                    ),
-                    new(
-                        position.x + mainCollider.offset.x + mainCollider.size.x * 0.5f,
-                        position.y + mainCollider.offset.y - mainCollider.size.y * 0.5f - 0.2f
-                    ),
-                    OnGroundHits,
-                    playerOnGroundLayerMask);
-
-            foreach (var item in OnGroundHits)
-            {
-                if (item == null)
-                    break;
-
-                if (!item.isTrigger && Block.TryGetBlockFromCollider(item, out _))
-                {
-                    onGround = true;
-                    break;
-                }
-            }
-
-
-
-
 
             if (isLocalPlayer)
             {
@@ -1332,7 +1296,7 @@ namespace GameCore
                 //设置速度
                 rb.velocity = GetMovementVelocity(new(move, 0));
 
-                if (onGround && move == 0 && rb.velocity.x != 0)
+                if (isOnGround && move == 0 && rb.velocity.x != 0)
                 {
                     if (Mathf.Abs(rb.velocity.x) <= 0.1f)
                     {
@@ -1634,7 +1598,6 @@ namespace GameCore
 
             playerLayer = LayerMask.NameToLayer("Player");
             playerLayerMask = playerLayer.LayerMaskOnly();
-            playerOnGroundLayerMask = Block.blockLayerMask;
 
 
 

@@ -327,7 +327,6 @@ namespace GameCore
             MethodAgent.RunThread(() => ModFactory.ReloadMods(() =>
             {
                 Rpc.Init();
-                Entity.EntityTypeInit();
             }));
 
             base.Awake();

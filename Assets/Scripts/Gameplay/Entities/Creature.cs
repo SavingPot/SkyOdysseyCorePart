@@ -17,7 +17,7 @@ namespace GameCore
     /// <summary>
     /// 生物, 实体的扩展
     /// </summary>
-    public class Creature : Entity
+    public class Creature : Entity, IEntityIsOnGround
     {
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
@@ -28,6 +28,7 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.18f;
         [BoxGroup("属性"), LabelText("空气摩擦力")] public float airFriction = 0.95f;
         public AnimWeb animWeb = null; //TODO: NetworkedAnimWeb
+        public bool isOnGround { get; set; }
 
 
 
@@ -301,7 +302,7 @@ namespace GameCore
 
 
         [ServerRpc, Button]
-        protected void ServerOnStartMovement(NetworkConnection caller = null)
+        public void ServerOnStartMovement(NetworkConnection caller = null)
         {
             isMoving = true;
             //TODO: isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
@@ -309,7 +310,7 @@ namespace GameCore
         }
 
         [ClientRpc]
-        protected void ClientOnStartMovement(NetworkConnection caller = null)
+        public void ClientOnStartMovement(NetworkConnection caller = null)
         {
             OnStartMovementAction();
         }
@@ -325,7 +326,7 @@ namespace GameCore
 
 
         [ServerRpc]
-        protected void ServerOnStopMovement(NetworkConnection caller = null)
+        public void ServerOnStopMovement(NetworkConnection caller = null)
         {
             isMoving = false;
             //TODO: isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
@@ -333,7 +334,7 @@ namespace GameCore
         }
 
         [ClientRpc]
-        protected void ClientOnStopMovement(NetworkConnection caller = null)
+        public void ClientOnStopMovement(NetworkConnection caller = null)
         {
             OnStopMovementAction();
         }
@@ -346,6 +347,7 @@ namespace GameCore
         {
             base.FixedUpdate();
 
+            EntityIsOnGroundBehaviour.OnFixedUpdate(this);
             Movement();
 
             if (isLocalPlayer)
@@ -391,11 +393,6 @@ namespace GameCore
 
             //Kill 所有的动画防止警告
             animWeb?.Stop();
-        }
-
-        public void Jump()
-        {
-            rb.SetVelocityY(GetJumpVelocity(30));   //设置 Y 速度
         }
 
         public float GetJumpVelocity(float jumpVelocity)
