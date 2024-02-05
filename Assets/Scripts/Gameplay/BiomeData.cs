@@ -11,7 +11,7 @@ using SP.Tools;
 namespace GameCore
 {
     [Serializable]
-    public class BiomeData : ModClass, ITags
+    public sealed class BiomeData : ModClass, ITags
     {
         [LabelText("最小尺寸")] public Vector2Int minSize;
         [LabelText("最大尺寸")] public Vector2Int maxSize;
@@ -26,7 +26,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class BiomeData_Block_Perlin
+    public sealed class BiomeData_Block_Perlin
     {
         public float fluctuationFrequency; //起伏频率, 值越大起伏越多
         public float fluctuationHeight; //起伏高度, 值越大起伏越高
@@ -35,7 +35,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class BiomeData_Block_Perlin_Block
+    public sealed class BiomeData_Block_Perlin_Block
     {
         public string minFormula;
         public string maxFormula;
@@ -44,7 +44,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class BiomeData_Block : ModClassChild
+    public sealed class BiomeData_Block : ModClassChild
     {
         [LabelText("类型")] public string type;
         public Vector3Int[] areas;
@@ -57,26 +57,26 @@ namespace GameCore
     }
 
     [Serializable]
-    public class BiomeData_Block_Rules
+    public sealed class BiomeData_Block_Rules
     {
         public float probability;
     }
 
     [Serializable]
-    public class BiomeData_Block_Range
+    public sealed class BiomeData_Block_Range
     {
         public string minFormula;
         public string maxFormula;
     }
 
     [Serializable]
-    public class BiomeData_Structure
+    public sealed class BiomeData_Structure
     {
         public StructureData structure;
     }
 
     [Serializable]
-    public class BiomeData_FixedLayer : IdClassBase
+    public sealed class BiomeData_FixedLayer : IdClassBase
     {
         [LabelText("层")] public int layer;
         [LabelText("必须在边界")] public bool mustOnBoundary;
@@ -84,7 +84,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class BiomeData_InsertedBlock : IdClassBase
+    public sealed class BiomeData_InsertedBlock : IdClassBase
     {
         [LabelText("范围")] public List<BiomeData_InsertedBlock_Range> ranges = new();
         [LabelText("出现几率")] public float probability;
@@ -94,14 +94,14 @@ namespace GameCore
     }
 
     [Serializable]
-    public class BiomeData_InsertedBlock_Range
+    public sealed class BiomeData_InsertedBlock_Range
     {
         [LabelText("最小")] public int min;
         [LabelText("最大")] public int max;
     }
 
     [Serializable]
-    public class AttachedBlockDatum
+    public sealed class AttachedBlockDatum
     {
         [LabelText("ID")] public string blockId;
         [LabelText("偏移")] public Vector2Int offset;

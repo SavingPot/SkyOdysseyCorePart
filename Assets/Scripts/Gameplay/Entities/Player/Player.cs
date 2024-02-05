@@ -27,7 +27,7 @@ namespace GameCore
     /// 玩家的逻辑脚本
     /// </summary>
     [ChineseName("玩家"), EntityBinding(EntityID.Player), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
-    public class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IHumanUsingItemRenderer, IOnInventoryItemChange, IInventoryOwner
+    public sealed class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IOnInventoryItemChange, IInventoryOwner
     {
         /* -------------------------------------------------------------------------- */
         /*                                     接口                                     */
@@ -175,6 +175,12 @@ namespace GameCore
                 }
             }
         }
+
+
+
+
+
+
 
 
 
@@ -541,7 +547,7 @@ namespace GameCore
 
         public bool HasUseCDPast() => Tools.time >= itemUseTime + (TryGetUsingItem()?.data?.useCD ?? ItemData.defaultUseCD);
 
-        protected virtual void AliveLocalUpdate()
+        private void AliveLocalUpdate()
         {
             /* ----------------------------------- 背包 (不能放在 PlayerCanControl 里是因为打开背包后 PlayerCanControl 返回 false, 然后就关不掉背包了) ----------------------------------- */
             if (PlayerControls.Backpack(this))
@@ -670,7 +676,7 @@ namespace GameCore
             caller.gravity = playerDefaultGravity;
         };
 
-        protected virtual void LocalUpdate()
+        private void LocalUpdate()
         {
             GravitySet(this);
             AutoSetPlayerOrientation();

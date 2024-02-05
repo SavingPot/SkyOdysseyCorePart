@@ -174,8 +174,8 @@ namespace GameCore.UI
         {
             if (GFiles.settings.langId != null)
                 _currentLang = ModFactory.CompareFinalDatumText(GFiles.settings.langId);
-            if (_currentLang == null)
-                _currentLang = defaultLang;
+                
+            _currentLang ??= defaultLang;
 
             return _currentLang;
         }
@@ -222,7 +222,7 @@ namespace GameCore.UI
 
 
 
-        private static T InstantiateIdMsg<T>(T original, string id) where T : IdentityComponent
+        private static T InstantiateIdMsg<T>(T original, string id) where T : UIIdentity
         {
             T msg = GameObject.Instantiate<T>(original);
             msg.SetID(id);

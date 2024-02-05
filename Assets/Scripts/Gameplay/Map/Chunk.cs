@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace GameCore.High
 {
-    public class Chunk : MonoBehaviour
+    public sealed class Chunk : MonoBehaviour
     {
         public const int blockCountPerAxis = 24 + 1;
         public const float blockCountPerAxisReciprocal = 1f / blockCountPerAxis;

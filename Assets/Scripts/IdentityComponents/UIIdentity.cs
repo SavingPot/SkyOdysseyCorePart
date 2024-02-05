@@ -1,14 +1,14 @@
 using GameCore.High;
 using SP.Tools.Unity;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace GameCore
 {
     [DisallowMultipleComponent]
-    //TODO: 把 Identity 全部删除，换成实现接口，Image、ImageIdentity->GameImage, Panel、PanelIdentity->GamePanel, 模仿 GameButton 的处理方法
-    public class UIIdentity : IdentityComponent, IRectTransform
+    public class UIIdentity : MonoBehaviour, IStringId, IRectTransform
     {
         private RectTransform _rectTransform;
         private CanvasGroup _canvasGroup;
@@ -22,23 +22,48 @@ namespace GameCore
         public bool doRefresh = true;
 
 
+
+
+        public string id { get; set; }
+
+
+
+        ///<summary>
+        ///string1 = type(方法种类), string2 = param(参数)
+        ///</summary>
+        public Action<string, string> CustomMethod = (_, _) => { };
+
+
+
+
+
+
+
+        protected virtual void Awake()
+        {
+            IdentityCenter.uiIdentities.Add(this);
+        }
+
         protected virtual void Start()
         {
 
         }
 
-        public UIIdentity SetRefresh(bool value)
+        public virtual void SetID(string id)
         {
-            doRefresh = value;
-            return this;
+            this.id = id;
+            gameObject.name = id;
         }
 
-        protected override void Awake()
+        private void OnDestroy()
         {
-            base.Awake();
-
-            IdentityCenter.uiIdentities.Add(this);
+            IdentityCenter.Remove(this);
         }
+
+
+
+
+
 
         protected virtual void InternalRefreshUI() { }
     }
@@ -49,7 +74,7 @@ namespace GameCore
         {
             t.InternalRefreshUI();
         };
-        public event Action<T> OnUpdate = _ => { };
+        public event Action<T> OnUpdate;
 
         protected override void Start()
         {
@@ -60,15 +85,15 @@ namespace GameCore
 
         protected virtual void Update()
         {
-            MethodAgent.TryRun(() => OnUpdate((T)this), true);
+            MethodAgent.TryRun(() => OnUpdate?.Invoke((T)this), true);
         }
 
         public void RefreshUI()
         {
-            if (doRefresh)
-            {
-                MethodAgent.TryRun(() => AfterRefreshing((T)this), true);
-            }
+            if (!doRefresh)
+                return;
+
+            MethodAgent.TryRun(() => AfterRefreshing((T)this), true);
         }
     }
 }

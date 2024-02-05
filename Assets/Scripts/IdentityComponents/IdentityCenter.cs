@@ -7,7 +7,6 @@ namespace GameCore
 {
     public static class IdentityCenter
     {
-        public static readonly List<IdentityComponent> identities = new();
         public static readonly List<UIIdentity> uiIdentities = new();
         public static readonly List<ButtonIdentity> buttonIdentities = new();
         public static readonly List<PanelIdentity> panelIdentities = new();
@@ -35,8 +34,7 @@ namespace GameCore
         public static ImageTextButtonIdentity CompareInputButtonIdentity(string id) => CompareIdentity(imageTextButtonIdentities, id);
         public static ScrollViewIdentity CompareScrollViewIdentity(string id) => CompareIdentity(scrollViewIdentities, id);
 
-        public static IdentityComponent CompareIdentity(string id) => CompareIdentity(identities, id);
-        public static T CompareIdentity<T>(List<T> idMessages, string messageId) where T : IdentityComponent
+        public static T CompareIdentity<T>(List<T> idMessages, string messageId) where T : UIIdentity
         {
             var messages = idMessages.Where(p => p.id == messageId).ToArray();
 
@@ -47,81 +45,76 @@ namespace GameCore
         }
 
 
-        public static void Remove(IdentityComponent identity)
+        public static void Remove(UIIdentity identity)
         {
-            identities.Remove(identity);
-
-            if (identity is UIIdentity ui)
+            if (uiIdentities.Remove(identity))
             {
-                if (uiIdentities.Remove(ui))
+                if (identity is ButtonIdentity button)
                 {
-                    if (identity is ButtonIdentity button)
-                    {
-                        if (buttonIdentities.Remove(button))
-                            return;
-                    }
-                    else if (identity is PanelIdentity panel)
-                    {
-                        if (panelIdentities.Remove(panel))
-                            return;
-                    }
-
-                    else if (identity is InputFieldIdentity inputField)
-                    {
-                        if (inputFieldIdentities.Remove(inputField))
-                            return;
-                    }
-
-                    else if (identity is ImageIdentity image)
-                    {
-                        if (imageIdentities.Remove(image))
-                            return;
-                    }
-
-                    else if (identity is RawImageIdentity rawImage)
-                    {
-                        if (rawImageIdentities.Remove(rawImage))
-                            return;
-                    }
-
-                    else if (identity is SliderIdentity slider)
-                    {
-                        if (sliderIdentities.Remove(slider))
-                            return;
-                    }
-
-                    else if (identity is TextIdentity text)
-                    {
-                        if (textIdentities.Remove(text))
-                            return;
-                    }
-
-                    else if (identity is ToggleIdentity toggle)
-                    {
-                        if (toggleIdentities.Remove(toggle))
-                            return;
-                    }
-
-                    else if (identity is InputButtonIdentity inputButton)
-                    {
-                        if (inputButtonIdentities.Remove(inputButton))
-                            return;
-                    }
-
-                    else if (identity is ImageTextButtonIdentity imageTextButton)
-                    {
-                        if (imageTextButtonIdentities.Remove(imageTextButton))
-                            return;
-                    }
-
-                    else if (identity is ScrollViewIdentity scrollView)
-                    {
-                        if (scrollViewIdentities.Remove(scrollView))
-                            return;
-                    }
-
-                    return;
+                    if (buttonIdentities.Remove(button))
+                        return;
                 }
+                else if (identity is PanelIdentity panel)
+                {
+                    if (panelIdentities.Remove(panel))
+                        return;
+                }
+
+                else if (identity is InputFieldIdentity inputField)
+                {
+                    if (inputFieldIdentities.Remove(inputField))
+                        return;
+                }
+
+                else if (identity is ImageIdentity image)
+                {
+                    if (imageIdentities.Remove(image))
+                        return;
+                }
+
+                else if (identity is RawImageIdentity rawImage)
+                {
+                    if (rawImageIdentities.Remove(rawImage))
+                        return;
+                }
+
+                else if (identity is SliderIdentity slider)
+                {
+                    if (sliderIdentities.Remove(slider))
+                        return;
+                }
+
+                else if (identity is TextIdentity text)
+                {
+                    if (textIdentities.Remove(text))
+                        return;
+                }
+
+                else if (identity is ToggleIdentity toggle)
+                {
+                    if (toggleIdentities.Remove(toggle))
+                        return;
+                }
+
+                else if (identity is InputButtonIdentity inputButton)
+                {
+                    if (inputButtonIdentities.Remove(inputButton))
+                        return;
+                }
+
+                else if (identity is ImageTextButtonIdentity imageTextButton)
+                {
+                    if (imageTextButtonIdentities.Remove(imageTextButton))
+                        return;
+                }
+
+                else if (identity is ScrollViewIdentity scrollView)
+                {
+                    if (scrollViewIdentities.Remove(scrollView))
+                        return;
+                }
+
+                return;
             }
 
             Debug.LogWarning($"删除ID消息 {identity.id} 时失败");

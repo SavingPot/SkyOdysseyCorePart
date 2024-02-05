@@ -273,7 +273,7 @@ namespace GameCore
     //TODO: 继承自 EntityData?
     [Serializable]
     //该类只在 ManagerNetwork 的 AddPlayer 环节中创建
-    public class PlayerSave : EntitySave
+    public sealed class PlayerSave : EntitySave
     {
         public float hungerValue;
         public float thirstValue;
@@ -292,7 +292,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class GameSettings
+    public sealed class GameSettings
     {
         [LabelText("音量")]
         public VolumeSettingsDatum volume = new()

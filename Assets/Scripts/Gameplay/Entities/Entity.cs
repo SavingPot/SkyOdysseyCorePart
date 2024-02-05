@@ -857,7 +857,7 @@ namespace GameCore
     /*                                    公共类型                                    */
     /* -------------------------------------------------------------------------- */
     [Serializable]
-    public class EntityData : ModClass
+    public sealed class EntityData : ModClass
     {
         [LabelText("路径")] public string path;
         [LabelText("生成")] public EntityData_Summon summon = new();
@@ -878,7 +878,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class EntityData_Summon
+    public sealed class EntityData_Summon
     {
         [LabelText("区域")] public string region;
         [LabelText("默认几率")] public float defaultProbability;
@@ -886,7 +886,7 @@ namespace GameCore
         [LabelText("最晚时间")] public float timeLatest;
     }
 
-    public class NotSummonableAttribute : Attribute { }
+    public sealed class NotSummonableAttribute : Attribute { }
 
     public interface IHasDestroyed
     {

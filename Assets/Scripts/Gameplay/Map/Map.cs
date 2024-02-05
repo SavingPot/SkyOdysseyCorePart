@@ -13,7 +13,7 @@ using UnityEngine.Rendering.Universal;
 namespace GameCore
 {
     [Serializable]
-    public class Map : SingletonToolsClass<Map>
+    public sealed class Map : SingletonToolsClass<Map>
     {
         [Serializable]
         public class BlockPool
@@ -294,7 +294,7 @@ namespace GameCore
         private void Update()
         {
             /* ---------------------------------- 为方块回血 --------------------------------- */
-            if (Player.TryGetLocal(out Player localPlayer) &&localPlayer.Init.isServerCompletelyReady&& localPlayer.TryGetRegion(out _))
+            if (Player.TryGetLocal(out Player localPlayer) && localPlayer.Init.isServerCompletelyReady && localPlayer.TryGetRegion(out _))
             {
                 var deltaHealth = 20f * Performance.frameTime;
 

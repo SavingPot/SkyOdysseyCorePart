@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace GameCore
 {
-    public class EntityInit : NetworkBehaviour, IHasDestroyed
+    public sealed class EntityInit : NetworkBehaviour, IHasDestroyed
     {
         /* -------------------------------------------------------------------------- */
         /*                                    独留变量                                    */
@@ -24,7 +24,7 @@ namespace GameCore
         [BoxGroup("变量注册")] public string waitingRegisteringVar;
         public Entity entity;
         public bool hasGotGeneratingId => !generationId.IsNullOrWhiteSpace();
-        public bool hasDestroyed { get; protected set; }
+        public bool hasDestroyed { get; private set; }
         public bool hasRegisteredSyncVars;
 
         /* -------------------------------------------------------------------------- */

@@ -1297,7 +1297,7 @@ namespace GameCore
 
 
     [Serializable]
-    public class TextureData : IdClassBase
+    public sealed class TextureData : IdClassBase
     {
         [LabelText("纹理路径")] public string texturePath;
         [NonSerialized, LabelText("加载好的精灵")] public Sprite sprite;
@@ -1360,7 +1360,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class Mod_Info : IdClassBase, IJOFormatCore
+    public sealed class Mod_Info : IdClassBase, IJOFormatCore
     {
         [JsonProperty(propertyName: "version"), LabelText("版本")] public string version;
         public string description;
@@ -1381,7 +1381,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class FinalLang : IdClassBase
+    public sealed class FinalLang : IdClassBase
     {
         public List<GameLang_Text> texts = new();
         public string textName;

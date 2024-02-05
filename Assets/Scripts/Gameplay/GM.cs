@@ -1447,8 +1447,8 @@ namespace GameCore
 
                                     item = ModFactory.CompareItem(ItemID.SportsVest).DataToItem();
                                     break;
-                                case 2:
 
+                                case 2:
                                     item = ModFactory.CompareItem(ItemID.SportsShorts).DataToItem();
                                     break;
 

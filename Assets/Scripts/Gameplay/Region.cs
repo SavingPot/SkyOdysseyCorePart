@@ -11,7 +11,7 @@ using System.Threading;
 namespace GameCore
 {
     [Serializable]
-    public class Region
+    public sealed class Region
     {
         public Vector2Int index;
         public List<BlockSave> blocks = new();
@@ -337,7 +337,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class Vector3IntSave
+    public sealed class Vector3IntSave
     {
         public int x;
         public int y;

@@ -514,9 +514,4 @@ namespace GameCore
         [HideInInspector] T leftFoot { get; set; }
         [HideInInspector] T rightFoot { get; set; }
     }
-
-    public interface IHumanUsingItemRenderer
-    {
-        [HideInInspector] SpriteRenderer usingItemRenderer { get; set; }
-    }
 }

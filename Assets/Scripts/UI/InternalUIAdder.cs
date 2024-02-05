@@ -835,8 +835,6 @@ namespace GameCore.UI
                     GameUI.SetPage(modConfiguringPanel);
                 }, true));
 
-                lb.customVars.TryAdd("ori:mod_path", dir.path);
-
                 string newName = dir.info.name == null ? dir.info.id : GameUI.currentLang.CompareOrCreateText(dir.info.name).text;
                 string newID = dir.info.id;
                 string newDescription = dir.info.description == null ? string.Empty : GameUI.currentLang.CompareOrCreateText(dir.info.description).text;

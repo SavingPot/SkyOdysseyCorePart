@@ -9,7 +9,7 @@ using UnityEngine;
 namespace GameCore
 {
     [Serializable]
-    public class Mod
+    public sealed class Mod
     {
         [LabelText("文件夹名称")] public string folderName;
         [LabelText("路径")] public string path;

@@ -10,7 +10,7 @@ using UnityEngine;
 namespace GameCore
 {
     [Serializable]
-    public class BlockData : ModClass, IEquatable<BlockData>, ITags, IJOFormatCore
+    public sealed class BlockData : ModClass, IEquatable<BlockData>, ITags, IJOFormatCore
     {
         public static float defaultHardness = 5;
 
