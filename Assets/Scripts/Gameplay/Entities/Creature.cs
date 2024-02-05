@@ -495,23 +495,4 @@ namespace GameCore
             return part;
         }
     }
-
-
-
-
-
-    /* -------------------------------------------------------------------------- */
-    /*                                    公共类型                                    */
-    /* -------------------------------------------------------------------------- */
-    public interface IHumanBodyParts<T> where T : CreatureBodyPart
-    {
-        [HideInInspector] T head { get; set; }
-        [HideInInspector] T rightArm { get; set; }
-        [HideInInspector] T body { get; set; }
-        [HideInInspector] T leftArm { get; set; }
-        [HideInInspector] T rightLeg { get; set; }
-        [HideInInspector] T leftLeg { get; set; }
-        [HideInInspector] T leftFoot { get; set; }
-        [HideInInspector] T rightFoot { get; set; }
-    }
 }

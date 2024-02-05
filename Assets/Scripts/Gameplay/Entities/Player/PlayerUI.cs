@@ -142,7 +142,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     物品栏                                    */
         /* -------------------------------------------------------------------------- */
-        public InventorySlotUI[] inventorySlotsUIs = new InventorySlotUI[Player.inventorySlotCount];
+        public InventorySlotUI[] inventorySlotsUIs = new InventorySlotUI[Player.inventorySlotCountConst];
         public InventorySlotUI inventoryHelmetUI;
         public InventorySlotUI inventoryBreastplateUI;
         public InventorySlotUI inventoryLeggingUI;
@@ -1317,7 +1317,7 @@ namespace GameCore
                 if (slot == null)
                     return;
 
-                var item = inventoryTemp?.TryGetItem(i);
+                var item = inventoryTemp?.GetItemChecked(i);
 
                 //设置物品图标
                 slot.content.image.sprite = item?.data?.texture?.sprite;
@@ -2003,7 +2003,7 @@ namespace GameCore
 
                     if (container is Player player)
                     {
-                        player.inventory.TryGetItemBehaviour(itemIndex)?.ModifyInfo(ui);
+                        player.inventory.GetItemBehaviourChecked(itemIndex)?.ModifyInfo(ui);
                     }
                 };
                 button.button.OnPointerExitAction = _ => ItemInfoShower.Hide();

@@ -1,5 +1,4 @@
 using Cysharp.Threading.Tasks;
-using DG.Tweening;
 using GameCore.High;
 using GameCore.UI;
 using Mirror;
@@ -27,11 +26,14 @@ namespace GameCore
     /// 玩家的逻辑脚本
     /// </summary>
     [ChineseName("玩家"), EntityBinding(EntityID.Player), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
-    public sealed class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IOnInventoryItemChange, IInventoryOwner
+    public sealed class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IInventoryOwner
     {
         /* -------------------------------------------------------------------------- */
         /*                                     接口                                     */
         /* -------------------------------------------------------------------------- */
+        public const int inventorySlotCountConst = 32;
+        int IInventoryOwner.inventorySlotCount => inventorySlotCountConst;
+
         Item IItemContainer.GetItem(string index)
         {
             return inventory.GetItem(index);
@@ -54,6 +56,9 @@ namespace GameCore
             //* 如果是客户端的话, 正常情况下应当是服务器先调用了 OnInventoryItemChange, 然后客户端才调用 OnInventoryItemChange
             if (isServer)
                 SetInventory(newValue);
+
+            //刷新物品栏
+            EntityInventoryOwnerBehaviour.RefreshInventory(this);
 
             var item = inventory.GetItem(index);
 
@@ -286,6 +291,10 @@ namespace GameCore
         void TempInventory(byte[] _)
         {
             inventory_temp = Inventory.ResumeFromStreamTransport(inventory_temp, this);
+
+            //刷新物品栏
+            if (Init.isServerCompletelyReady)
+                EntityInventoryOwnerBehaviour.RefreshInventory(this);
         }
 
         public Inventory GetInventory() => inventory;
@@ -297,10 +306,10 @@ namespace GameCore
 
 
 
-        public int usingItemIndex = 0;
+        public int usingItemIndex { get; set; } = 0;
 
-        public Item TryGetUsingItem() => inventory.TryGetItem(usingItemIndex);
-        public ItemBehaviour TryGetUsingItemBehaviour() => inventory.TryGetItemBehaviour(usingItemIndex);
+        public Item TryGetUsingItem() => inventory.GetItemChecked(usingItemIndex);
+        public ItemBehaviour TryGetUsingItemBehaviour() => inventory.GetItemBehaviourChecked(usingItemIndex);
 
         #endregion
 
@@ -400,7 +409,6 @@ namespace GameCore
         [ReadOnly]
         public TextIdentity nameText;
 
-        public static byte inventorySlotCount = 32;
         public static int backpackPanelHeight = 450;
 
 
@@ -428,9 +436,6 @@ namespace GameCore
         {
             base.Initialize();
 
-            //把 inventory 的初始值缓存下来
-            TempInventory(null);
-
             //加载服务器存档中的位置
             if (isServer)
             {
@@ -440,11 +445,7 @@ namespace GameCore
                     fallenY = Init.save.pos.y;
                     hasSetPosBySave = true;
                 }
-
-                //这一行不是必要的, inventory 通常不会为空, 但是我们要保证代码 100% 正常运行
-                inventory ??= new(inventorySlotCount, this);
             }
-
 
 
 
@@ -481,12 +482,17 @@ namespace GameCore
             rightFoot = AddBodyPart("rightFoot", skinRightFoot, Vector2.zero, 3, rightLeg, BodyPartType.RightFoot);
             leftFoot = AddBodyPart("leftFoot", skinLeftFoot, Vector2.zero, 1, leftLeg, BodyPartType.LeftFoot);
 
-            //添加双手物品的显示
-            usingItemRenderer = ObjectTools.CreateSpriteObject(rightArm.transform, "item");
+            //添加手持物品的渲染器
+            EntityInventoryOwnerBehaviour.CreateUsingItemRenderer(this, rightArm.transform, 9);
 
-            usingItemRenderer.sortingOrder = 9;
+            //把 inventory 的初始值缓存下来
+            TempInventory(null);
 
-            SetUsingItemRendererLocalPositionAndScale(Vector2.zero, Vector2.one);
+            //这一行不是必要的, inventory 通常不会为空, 但是我们要保证代码 100% 正常运行
+            if (isServer)
+                inventory ??= new(((IInventoryOwner)this).inventorySlotCount, this);
+
+
 
             BindHumanAnimations(this);
 
@@ -535,9 +541,7 @@ namespace GameCore
             if (isLocalPlayer)
                 LocalUpdate();
 
-            inventory?.DoBehaviours();
-
-            RefreshInventory();
+            EntityInventoryOwnerBehaviour.OnUpdate(this);
 
 #if DEBUG
             if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
@@ -750,6 +754,9 @@ namespace GameCore
         {
             usingItemIndex = index;
 
+            //刷新物品栏
+            EntityInventoryOwnerBehaviour.RefreshUsingItemRenderer(this, inventory);
+
             //播放切换音效
             GAudio.Play(AudioID.SwitchQuickInventorySlot);
 
@@ -917,72 +924,6 @@ namespace GameCore
             nameText.text.SetFontSize(7);
             nameText.text.text = newValue;
             nameText.autoCompareText = false;
-        }
-
-        public void RefreshInventory()
-        {
-            //缓存物品栏以保证性能
-            var inventoryTemp = inventory;
-
-            /* --------------------------------- 渲染手部物品 --------------------------------- */
-            var usingBehaviour = inventoryTemp.TryGetItemBehaviour(usingItemIndex);
-
-            if (usingBehaviour == null)
-            {
-                usingItemRenderer.sprite = null;
-            }
-            else
-            {
-                usingBehaviour.Rendering(usingItemRenderer);
-            }
-
-            /* --------------------------------- 刷新头盔的贴图 -------------------------------- */
-            if (Item.IsHelmet(inventoryTemp.helmet))
-            {
-                head.armorSr.sprite = inventoryTemp.helmet.data.Helmet.head?.sprite;
-            }
-            else
-            {
-                head.armorSr.sprite = null;
-            }
-
-            /* --------------------------------- 刷新胸甲的贴图 -------------------------------- */
-            if (Item.IsBreastplate(inventoryTemp.breastplate))
-            {
-                body.armorSr.sprite = inventoryTemp.breastplate.data.Breastplate.body?.sprite;
-                leftArm.armorSr.sprite = inventoryTemp.breastplate.data.Breastplate.leftArm?.sprite;
-                rightArm.armorSr.sprite = inventoryTemp.breastplate.data.Breastplate.rightArm?.sprite;
-            }
-            else
-            {
-                body.armorSr.sprite = null;
-                leftArm.armorSr.sprite = null;
-                rightArm.armorSr.sprite = null;
-            }
-
-            /* --------------------------------- 刷新护腿的贴图 -------------------------------- */
-            if (Item.IsLegging(inventoryTemp.legging))
-            {
-                leftLeg.armorSr.sprite = inventoryTemp.legging.data.Legging.leftLeg?.sprite;
-                rightLeg.armorSr.sprite = inventoryTemp.legging.data.Legging.rightLeg?.sprite;
-            }
-            else
-            {
-                leftLeg.armorSr.sprite = null;
-                rightLeg.armorSr.sprite = null;
-            }
-
-            /* --------------------------------- 刷新鞋子的贴图 -------------------------------- */
-            if (Item.IsBoots(inventoryTemp.boots))
-            {
-                leftFoot.armorSr.sprite = inventoryTemp.boots.data.Boots.leftFoot?.sprite;
-                rightFoot.armorSr.sprite = inventoryTemp.boots.data.Boots.rightFoot?.sprite;
-            }
-            else
-            {
-                leftFoot.armorSr.sprite = null;
-                rightFoot.armorSr.sprite = null;
-            }
         }
 
         /// <returns>鼠标是否在使用范围内</returns>
@@ -1698,44 +1639,7 @@ namespace GameCore
         }
     }
 
-    public static class EntityBehaviourExtensions
-    {
-        public static void LoadInventoryFromCustomData<T>(this T entity, byte slotCount) where T : Entity, IInventoryOwner
-        {
-            /* -------------------------------------------------------------------------- */
-            /*                                //修正 JObject                                */
-            /* -------------------------------------------------------------------------- */
-            var customData = entity.customData ?? new();
-
-            if (customData["ori:inventory"] == null)
-                customData.AddObject("ori:inventory");
-            if (customData["ori:inventory"]["data"] == null)
-            {
-                customData["ori:inventory"].AddProperty("data", JsonTools.ToJToken(new Inventory(slotCount, entity)));
-            }
-
-            entity.customData = customData;
-
-            /* -------------------------------------------------------------------------- */
-            /*                                    缓存数据                                    */
-            /* -------------------------------------------------------------------------- */
-            var data = customData["ori:inventory"]["data"];
-
-            /* -------------------------------------------------------------------------- */
-            /*                                    读取数据                                    */
-            /* -------------------------------------------------------------------------- */
-            Inventory inventory = data.ToObject<Inventory>();
-            inventory.SetSlotCount(slotCount);
-            entity.SetInventory(Inventory.ResumeFromStreamTransport(inventory, entity));
-        }
-
-        public static void WriteInventoryToCustomData<T>(this T entity) where T : Entity, IInventoryOwner
-        {
-            entity.customData["ori:inventory"]["data"] = JsonTools.ToJson(entity.GetInventory());
-        }
-    }
-
-    public class PlayerSkin
+    public sealed class PlayerSkin
     {
         public string name { get; private set; }
         public string path { get; private set; }

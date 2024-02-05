@@ -1049,13 +1049,13 @@ namespace GameCore
             }
         }
 
-        static void GetEntityBehaviour(EntityData entity)
+        static void GetEntityBinding(EntityData entity)
         {
             foreach (Mod mod in mods)
             {
                 foreach (ImportType importType in mod.importTypes)
                 {
-                    //如果继承自 EntityBehaviour (包括间接继承) 并绑定了 实体json.id
+                    //如果继承自 Entity (包括间接继承) 并绑定了 实体json.id
                     if (importType.type.IsSubclassOf(typeof(Entity)) &&
                         AttributeGetter.TryGetAttribute(importType.type, out EntityBindingAttribute attribute) &&
                         attribute.id == entity.id)
@@ -1127,7 +1127,7 @@ namespace GameCore
             for (int c = 0; c < mod.entities.Count; c++)
             {
                 mod.entities[c].behaviourType = null;
-                GetEntityBehaviour(mod.entities[c]);
+                GetEntityBinding(mod.entities[c]);
             }
 
             //将物品的 type 都清空重新匹配

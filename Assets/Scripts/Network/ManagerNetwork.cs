@@ -253,7 +253,7 @@ namespace GameCore.High
                         playerSaveTemp = new PlayerSave()
                         {
                             id = nm.playerName,
-                            inventory = new(Player.inventorySlotCount, null),
+                            inventory = new(Player.inventorySlotCountConst, null),
                             hungerValue = Player.defaultHungerValue,
                             thirstValue = Player.defaultThirstValue,
                             happinessValue = Player.defaultHappinessValue,

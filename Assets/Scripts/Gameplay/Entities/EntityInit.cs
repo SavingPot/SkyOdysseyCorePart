@@ -243,7 +243,7 @@ namespace GameCore
                         {
                             //恢复物品栏
                             //这一行代码的意义是如果物品栏栏位数更改了, 可以保证栏位数和预想的一致
-                            saveAsPlayer.inventory.SetSlotCount(Player.inventorySlotCount);
+                            saveAsPlayer.inventory.SetSlotCount(Player.inventorySlotCountConst);
 
                             SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.inventory));
                         }

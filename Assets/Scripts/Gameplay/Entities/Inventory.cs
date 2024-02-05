@@ -9,24 +9,6 @@ using Newtonsoft.Json.Linq;
 
 namespace GameCore
 {
-    public interface IInventoryOwner : IItemContainer
-    {
-        Transform transform { get; }
-        void OnInventoryItemChange(Inventory newValue, string index);
-        Inventory GetInventory();
-        void SetInventory(Inventory value); //! 需要对传入的 value 参数进行 ResumeFromStream
-        SpriteRenderer usingItemRenderer { get; }
-        void SetUsingItemRendererLocalPositionAndScale(Vector2 localPosition, Vector2 localScale);
-    }
-
-    public interface IItemContainer
-    {
-        Item[] items { get; set; }
-
-        Item GetItem(string index);
-        void SetItem(string index, Item value);
-    }
-
     [Serializable]
     public class Inventory
     {
@@ -129,7 +111,7 @@ namespace GameCore
         }
 
 
-        public void SetSlotCount(byte count)
+        public void SetSlotCount(int count)
         {
             //执行行为包
             if (slotsBehaviours != null)
@@ -348,7 +330,7 @@ namespace GameCore
             Debug.LogError("槽位满了");
         }
 
-        public Item TryGetItem(string index)
+        public Item GetItemChecked(string index)
         {
             return index switch
             {
@@ -356,11 +338,11 @@ namespace GameCore
                 breastplateVar => breastplate,
                 leggingVar => legging,
                 bootsVar => boots,
-                _ => TryGetItem(Convert.ToInt32(index))
+                _ => GetItemChecked(Convert.ToInt32(index))
             };
         }
 
-        public Item TryGetItem(int index)
+        public Item GetItemChecked(int index)
         {
             if (index > slots.Length - 1)
                 return null;
@@ -368,7 +350,7 @@ namespace GameCore
             return slots[index];
         }
 
-        public ItemBehaviour TryGetItemBehaviour(string index)
+        public ItemBehaviour GetItemBehaviourChecked(string index)
         {
             return index switch
             {
@@ -376,16 +358,28 @@ namespace GameCore
                 breastplateVar => breastplateBehaviour,
                 leggingVar => leggingBehaviour,
                 bootsVar => bootsBehaviour,
-                _ => TryGetItemBehaviour(Convert.ToInt32(index))
+                _ => GetItemBehaviourChecked(Convert.ToInt32(index))
             };
         }
 
-        public ItemBehaviour TryGetItemBehaviour(int index)
+        public ItemBehaviour GetItemBehaviourChecked(int index)
         {
             if (index > slotsBehaviours.Length - 1)
                 return null;
 
             return slotsBehaviours[index];
+        }
+
+        public bool TryGetItemBehaviour(int index, out ItemBehaviour result)
+        {
+            if (index > slotsBehaviours.Length - 1)
+            {
+                result = null;
+                return false;
+            }
+
+            result = slotsBehaviours[index];
+            return result != null;
         }
 
 
@@ -491,7 +485,7 @@ namespace GameCore
 
         }
 
-        public Inventory(byte slotCount, IInventoryOwner owner) : this()
+        public Inventory(int slotCount, IInventoryOwner owner) : this()
         {
             SetSlotCount(slotCount);
 
@@ -503,12 +497,6 @@ namespace GameCore
             Reduce,
             Increase
         }
-    }
-
-    public interface IOnInventoryItemChange
-    {
-        //* 为什么必须提供一个 newValue? Inventory 明明是引用类型, 我直接访问 Inventory 的变量不就好了吗? 这是受限于网络传输的需要, 详见 Player.OnInventoryItemChange
-        void OnInventoryItemChange(Inventory newValue, string index);
     }
 
     [Serializable]
