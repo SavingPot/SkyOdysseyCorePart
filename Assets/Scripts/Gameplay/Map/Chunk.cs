@@ -153,16 +153,18 @@ namespace GameCore.High
             if (blockData == null)
                 return null;
 
-            Block b = map.blockPool.Get(pos, isBackground, blockData, customData);
-
+            //编辑区域的逻辑
             if (editRegion && Server.isServer)
             {
                 Vector2Int blockRegionPos = this.MapToRegionPos(pos);
 
                 //在区域中添加
                 Region region = GFiles.world.GetOrAddRegion(regionIndex);
-                region.AddPos(blockData.id, blockRegionPos.x, blockRegionPos.y, isBackground);
+                region.AddPos(blockData.id, blockRegionPos.x, blockRegionPos.y, isBackground, false, customData);
             }
+
+            //从对象池获取方块
+            Block b = map.blockPool.Get(this, pos, isBackground, blockData, customData);
 
             if (executeBlockUpdate)
             {

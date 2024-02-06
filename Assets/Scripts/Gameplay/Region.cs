@@ -204,10 +204,11 @@ namespace GameCore
 
         public bool HasBlock(int x, int y, bool isBackground) => GetBlock(x, y, isBackground).location != null;
 
-        public BlockSave GetBlock(string blockId)
+        public BlockSave GetBlock(string blockId, bool isBackground)
         {
             foreach (var save in blocks)
-                if (save.blockId == blockId)
+                if (save.isBg == isBackground)
+                    if (save.blockId == blockId)
                     return save;
 
             return null;
@@ -216,8 +217,9 @@ namespace GameCore
         public (BlockSave save, BlockSave_Location location) GetBlock(int x, int y, bool isBackground)
         {
             foreach (var save in blocks)
-                if (save.TryGetLocation(x, y, isBackground, out var result))
-                    return (save, result);
+                if (save.isBg == isBackground)
+                    if (save.TryGetLocation(x, y, out var result))
+                        return (save, result);
 
             return (null, null);
         }
@@ -281,7 +283,7 @@ namespace GameCore
             return false;
         }
 
-        public BlockSave_Location GetLocation(int x, int y, bool isBackground)
+        public BlockSave_Location GetLocation(int x, int y)
         {
             foreach (var location in locations)
                 if (location.x == x && location.y == y)
@@ -290,9 +292,9 @@ namespace GameCore
             return null;
         }
 
-        public bool TryGetLocation(int x, int y, bool isBackground, out BlockSave_Location result)
+        public bool TryGetLocation(int x, int y, out BlockSave_Location result)
         {
-            result = GetLocation(x, y, isBackground);
+            result = GetLocation(x, y);
 
             return result != null;
         }

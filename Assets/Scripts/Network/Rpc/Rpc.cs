@@ -520,7 +520,7 @@ namespace GameCore
                                             Expression.Call(
                                                 null,
                                                 typeof(string).GetMethod(nameof(string.Format), new Type[] { typeof(string), typeof(object) }),
-                                                Expression.Constant("调用本地方法 <color=#e5c072>" + mtdPath + "</color> 时抛出了异常!!!\n具体异常如下! <color=#e5c072>异常源于本地方法或字节转换器的代码! 请根据第一行堆栈判断是否是本地方法</color>\n如果是本地方法, 请在本地方法中括上一个 MethodAgent.TryRun(action,true)\n如果不是, 请检查字节转换器\n异常将被抛出以防止破坏客户端和服务器!\n{0}"),
+                                                Expression.Constant("调用本地方法 <color=#e5c072>" + mtdPath + "</color> 时抛出了异常!!!\n具体异常如下! <color=#e5c072>异常源于本地方法或字节转换器的代码! 请根据第一行堆栈判断是否是本地方法</color>\n如果是本地方法, 请在本地方法中括上一个 MethodAgent.DebugRun(action)\n如果不是, 请检查字节转换器\n异常将被抛出以防止破坏客户端和服务器!\n{0}"),
                                                 Expression.Call(
                                                     typeof(Tools).GetMethod(nameof(Tools.HighlightedStackTrace), new Type[] { typeof(Exception) }),
                                                         localParam_exception

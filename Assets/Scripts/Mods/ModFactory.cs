@@ -628,7 +628,7 @@ namespace GameCore
 
             //Debug.Log("尝试加载新模组");
 
-            MethodAgent.TryRun(() =>
+            MethodAgent.DebugRun(() =>
             {
                 Mod newMod = new();
 
@@ -672,7 +672,7 @@ namespace GameCore
                 {
                     List<string> blockPaths = IOTools.GetFilesInFolderIncludingChildren(blocksPath, true, "json");
 
-                    for (int b = 0; b < blockPaths.Count; b++) MethodAgent.TryRun(() =>
+                    for (int b = 0; b < blockPaths.Count; b++) MethodAgent.DebugRun(() =>
                     {
                         JObject jo = JsonTools.LoadJObjectByPath(blockPaths[b]);
 
@@ -680,7 +680,7 @@ namespace GameCore
 
                         newMod.blocks.Add(bI.Key);
                         newMod.items.Add(bI.Value);
-                    }, true);
+                    });
 
                     //if (Directory.Exists(terrainTilesPath)) MethodAgent.RunInTry(() =>
                     //{
@@ -760,14 +760,14 @@ namespace GameCore
                 {
                     List<string> structurePaths = IOTools.GetFilesInFolderIncludingChildren(structurePath, true, "json");
 
-                    for (int b = 0; b < structurePaths.Count; b++) MethodAgent.TryRun(() =>
+                    for (int b = 0; b < structurePaths.Count; b++) MethodAgent.DebugRun(() =>
                     {
                         JObject jo = JsonTools.LoadJObjectByPath(structurePaths[b]);
 
                         var temp = ModLoading.LoadStructure(jo);
 
                         newMod.structures.Add(temp);
-                    }, true);
+                    });
                 }
                 #endregion
 
@@ -776,13 +776,13 @@ namespace GameCore
                 {
                     string[] regionThemesPaths = IOTools.GetFilesInFolder(regionThemesPath, true, "json");
 
-                    for (int b = 0; b < regionThemesPaths.Length; b++) MethodAgent.TryRun(() =>
+                    for (int b = 0; b < regionThemesPaths.Length; b++) MethodAgent.DebugRun(() =>
                     {
                         JObject jo = JsonTools.LoadJObjectByPath(regionThemesPaths[b]);
                         var temp = ModLoading.LoadRegionTheme(jo);
 
                         newMod.regionThemes.Add(temp);
-                    }, true);
+                    });
                 }
                 #endregion
 
@@ -793,13 +793,13 @@ namespace GameCore
                     {
                         string[] blockPrefabPaths = IOTools.GetFilesInFolder(biomeBlockPrefabPath, true, "json");
 
-                        for (int b = 0; b < blockPrefabPaths.Length; b++) MethodAgent.TryRun(() =>
+                        for (int b = 0; b < blockPrefabPaths.Length; b++) MethodAgent.DebugRun(() =>
                         {
                             JObject jo = JsonTools.LoadJObjectByPath(blockPrefabPaths[b]);
                             var temp = ModLoading.LoadBiomeBlockPrefab(jo);
 
                             newMod.biomeBlockPrefabs.Add(temp);
-                        }, true);
+                        });
                     }
                 }
 
@@ -807,13 +807,13 @@ namespace GameCore
                 {
                     string[] biomePaths = IOTools.GetFilesInFolder(biomesPath, true, "json");
 
-                    for (int b = 0; b < biomePaths.Length; b++) MethodAgent.TryRun(() =>
+                    for (int b = 0; b < biomePaths.Length; b++) MethodAgent.DebugRun(() =>
                     {
                         JObject jo = JsonTools.LoadJObjectByPath(biomePaths[b]);
                         var temp = ModLoading.LoadBiome(jo);
 
                         newMod.biomes.Add(temp);
-                    }, true);
+                    });
                 }
                 #endregion
 
@@ -822,7 +822,7 @@ namespace GameCore
                 {
                     string[] textPaths = IOTools.GetFilesInFolder(langsPath, true, "json");
 
-                    for (int b = 0; b < textPaths.Length; b++) MethodAgent.TryRun(() =>
+                    for (int b = 0; b < textPaths.Length; b++) MethodAgent.DebugRun(() =>
                     {
                         //加载文本数据
                         JObject jo = JsonTools.LoadJObjectByPath(textPaths[b]);
@@ -830,7 +830,7 @@ namespace GameCore
                         GameLang newText = ModLoading.LoadText(jo);
                         AddToFinalText(newText);
                         newMod.langs.Add(newText);
-                    }, true);
+                    });
                 }
                 #endregion
 
@@ -849,13 +849,13 @@ namespace GameCore
                 {
                     List<string> paths = IOTools.GetFilesInFolderIncludingChildren(itemsPath, true, "json");
 
-                    paths.For(p => MethodAgent.TryRun(() =>
+                    paths.For(p => MethodAgent.DebugRun(() =>
                     {
                         JObject jo = JsonTools.LoadJObjectByPath(p);
                         ItemData newItem = ModLoading.LoadItem(jo);
 
                         newMod.items.Add(newItem);
-                    }, true));
+                    }));
                 }
                 #endregion
 
@@ -864,13 +864,13 @@ namespace GameCore
                 {
                     List<string> paths = IOTools.GetFilesInFolderIncludingChildren(spellsPath, true, "json");
 
-                    paths.For(p => MethodAgent.TryRun(() =>
+                    paths.For(p => MethodAgent.DebugRun(() =>
                     {
                         JObject jo = JsonTools.LoadJObjectByPath(p);
                         Spell spell = ModLoading.LoadSpell(jo);
 
                         newMod.spells.Add(spell);
-                    }, true));
+                    }));
                 }
                 #endregion
 
@@ -879,13 +879,13 @@ namespace GameCore
                 {
                     List<string> craftingRecipesPaths = IOTools.GetFilesInFolderIncludingChildren(craftingRecipesPath, true, "json");
 
-                    craftingRecipesPaths.For(p => MethodAgent.TryRun(() =>
+                    craftingRecipesPaths.For(p => MethodAgent.DebugRun(() =>
                     {
-                        JObject jo = JsonTools.LoadJObjectByPath(p);
-                        CraftingRecipe newCR = ModLoading.LoadCraftingRecipe(jo);
+                        CraftingRecipe newCR = ModLoading.LoadCraftingRecipe(p);
 
-                        newMod.craftingRecipes.Add(newCR);
-                    }, true));
+                        if (newCR != null)
+                            newMod.craftingRecipes.Add(newCR);
+                    }));
                 }
                 #endregion
 
@@ -894,13 +894,13 @@ namespace GameCore
                 {
                     List<string> cookingRecipesPaths = IOTools.GetFilesInFolderIncludingChildren(cookingRecipesPath, true, "json");
 
-                    cookingRecipesPaths.For(p => MethodAgent.TryRun(() =>
+                    cookingRecipesPaths.For(p => MethodAgent.DebugRun(() =>
                     {
-                        JObject jo = JsonTools.LoadJObjectByPath(p);
-                        CookingRecipe newCR = ModLoading.LoadCookingRecipe(jo);
+                        CookingRecipe newCR = ModLoading.LoadCookingRecipe(p);
 
-                        newMod.cookingRecipes.Add(newCR);
-                    }, true));
+                        if (newCR != null)
+                            newMod.cookingRecipes.Add(newCR);
+                    }));
                 }
                 #endregion
 
@@ -930,14 +930,14 @@ namespace GameCore
 
                     foreach (var dllPath in dllPaths)
                     {
-                        MethodAgent.TryRun(() =>
+                        MethodAgent.DebugRun(() =>
                         {
                             //Assembly.LoadFrom 也会顺带加载需要的程序集, 这会导致程序集被多次加载, 因此使用 LoadFile
                             var ass = Assembly.LoadFile(dllPath);
 
                             assemblies.Add(ass);
                             LoadDLLInternal(ass.GetTypes(), dllPath, importTypesTemp);
-                        }, true);
+                        });
                     }
 
                     if (newMod.isOri)
@@ -954,14 +954,14 @@ namespace GameCore
                 {
                     string[] entityPaths = IOTools.GetFilesInFolderIncludingChildren(entitiesPath, true, "json").ToArray();
 
-                    Array.ForEach(entityPaths, p => MethodAgent.TryRun(() =>
+                    Array.ForEach(entityPaths, p => MethodAgent.DebugRun(() =>
                     {
                         //加载文本数据
                         JObject jo = JsonTools.LoadJObjectByPath(p);
                         EntityData newEntity = ModLoading.LoadEntity(jo, p);
 
                         newMod.entities.Add(newEntity);
-                    }, true));
+                    }));
                 }
                 #endregion
 
@@ -983,8 +983,8 @@ namespace GameCore
                 #endregion
 
                 //调用 ModEntry 的 OnModLoaded
-                MethodAgent.TryRun(() => CallOnModLoaded(mods[^1]), true);
-            }, true);
+                MethodAgent.DebugRun(() => CallOnModLoaded(mods[^1]));
+            });
         }
 
         public static Mod GetMod(string id)
@@ -1006,7 +1006,7 @@ namespace GameCore
         public static void ReconfigureAllMods()
         {
             //重配置要在主线程运行
-            MethodAgent.TryQueueOnMainThread(() =>
+            MethodAgent.DebugQueueOnMainThread(() =>
             {
                 //遍历所有模组并重新配置
                 for (int i = 0; i < mods.Length; i++)
@@ -1015,14 +1015,14 @@ namespace GameCore
                     ReconfigureMod(ref mod);
                     mods[i] = mod;
                 }
-            }, true);
+            });
         }
 
         internal static void CallOnModLoaded(Mod mod) => CallModEntryMethod(mod, me => me.OnLoaded());
 
         internal static void CallOnModReconfigured(Mod mod) => CallModEntryMethod(mod, me => me.OnReconfigured());
 
-        internal static void CallModEntryMethod(Mod mod, Action<ModEntry> call) => MethodAgent.TryQueueOnMainThread(() =>
+        internal static void CallModEntryMethod(Mod mod, Action<ModEntry> call) => MethodAgent.DebugQueueOnMainThread(() =>
         {
             if (mod.entryInstance == null)
                 GetModEntry(mod);
@@ -1033,7 +1033,7 @@ namespace GameCore
             mod.entryInstance.datum = mod;
 
             call(mod.entryInstance);
-        }, true);
+        });
 
         public static void GetModEntry(Mod mod)
         {

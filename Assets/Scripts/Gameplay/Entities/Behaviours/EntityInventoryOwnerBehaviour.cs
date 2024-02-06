@@ -10,10 +10,20 @@ namespace GameCore
             entity.GetInventory()?.DoBehaviours();
         }
 
-        public static void RefreshUsingItemRenderer<T>(T entity, Inventory inventory) where T : Entity, IInventoryOwner
+        public static void RefreshUsingItemRenderer<T>(T entity) where T : Entity, IInventoryOwner
         {
+            //缓存物品栏以保证性能
+            var inventoryTemp = entity.GetInventory();
+            if (inventoryTemp == null)
+            {
+                Debug.LogError($"实体 {entity.gameObject.name} 的物品栏为空");
+                return;
+            }
+
+
+
             /* --------------------------------- 渲染手部物品 --------------------------------- */
-            if (inventory.TryGetItemBehaviour(entity.usingItemIndex, out var usingBehaviour))
+            if (inventoryTemp.TryGetItemBehaviour(entity.usingItemIndex, out var usingBehaviour))
             {
                 usingBehaviour.Rendering(entity.usingItemRenderer);
             }
@@ -27,11 +37,18 @@ namespace GameCore
         {
             //缓存物品栏以保证性能
             var inventoryTemp = entity.GetInventory();
+            if (inventoryTemp == null)
+            {
+                Debug.LogError($"实体 {entity.gameObject.name} 的物品栏为空");
+                return;
+            }
 
-            /* --------------------------------- 渲染手部物品 --------------------------------- */
-            RefreshUsingItemRenderer(entity, inventoryTemp);
 
-            /* --------------------------------- 刷新盔甲的贴图 -------------------------------- */
+
+            //渲染手部物品
+            RefreshUsingItemRenderer(entity);
+
+            //刷新盔甲的贴图
             CreatureHumanBodyPartsBehaviour.RefreshArmors(entity, inventoryTemp.helmet?.data, inventoryTemp.breastplate?.data, inventoryTemp.legging?.data, inventoryTemp.boots?.data);
         }
 
@@ -69,6 +86,7 @@ namespace GameCore
             /*                                    读取数据                                    */
             /* -------------------------------------------------------------------------- */
             Inventory inventory = data.ToObject<Inventory>();
+            inventory ??= entity.DefaultInventory(); //这一行不是必要的, inventory 通常不会为空, 但是我们要保证代码 100% 正常运行
             inventory.SetSlotCount(entity.inventorySlotCount);
             entity.SetInventory(Inventory.ResumeFromStreamTransport(inventory, entity));
         }

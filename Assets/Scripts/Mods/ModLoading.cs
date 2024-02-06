@@ -79,6 +79,44 @@ namespace GameCore
         }
         #endregion
 
+
+
+        /// <returns>加载是否成功</returns>
+        public static bool LoadModClass<T>(string path, string entranceId, out T obj, out JToken entrance) where T : ModClass, new()
+        {
+            JObject jo = JsonTools.LoadJObjectByPath(path);
+            var format = GetCorrectJsonFormatByJObject(jo);
+            entrance = jo[entranceId];
+
+            //如果入口为空或者不是对象类型
+            if (entrance == null && entrance.Type != JTokenType.Object)
+            {
+                obj = null;
+                Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} 的 json 文件中不包含 {entranceId} 或者 {entranceId} 不是对象");
+                return false;
+            }
+
+            //如果入口中不包含id
+            if (entrance["id"] == null)
+            {
+                obj = null;
+                Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中必须包含 id");
+                return false;
+            }
+
+            //初始化结果实例
+            obj = new()
+            {
+                jsonFormat = format,
+                jo = jo,
+                id = entrance["id"].ToString()
+            };
+
+            return true;
+        }
+
+
+
         public static Mod_Info LoadInfo(JObject jo, string iconPath)
         {
             if (jo == null)
@@ -238,112 +276,56 @@ namespace GameCore
             return entity;
         }
 
-        public static CraftingRecipe LoadCraftingRecipe(JObject jo)
+        public static CraftingRecipe LoadCraftingRecipe(string path)
         {
-            if (jo == null)
+            if (LoadModClass(path, "ori:crafting_recipe", out CraftingRecipe newRecipe, out var cr))
             {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
-
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            CraftingRecipe cr = new()
-            {
-                jsonFormat = format,
-                jo = jo
-            };
-
-            if (GameTools.CompareVersions(format, "0.6.0", Operators.thanOrEqual))
-            {
-                cr.jsonFormatWhenLoad = "0.6.0";
-
-                cr.id = ModCreate.GetStr(cr, "data.recipes.crafting.id");
-                cr.result = new(ModCreate.GetStr(cr, "data.recipes.crafting.result.id"), (ModCreate.Get(cr, "data.recipes.crafting.result.count")?.ToInt() ?? 1).ToUShort(), new());
-
-                ModCreate.GetFor(cr, "data.recipes.crafting.items", j =>
+                if (GameTools.CompareVersions(newRecipe.jsonFormat, "0.6.0", Operators.thanOrEqual))
                 {
-                    CraftingRecipe_Item item = LoadCraftingRecipe_Item(cr, j);
-                    cr.items.Add(item);
-                });
+                    newRecipe.jsonFormatWhenLoad = "0.6.0";
+
+                    newRecipe.result = new(cr["result"]["id"].ToString(), (cr["result"]["count"]?.ToInt() ?? 1).ToUShort(), new());
+
+                    List<CraftingRecipe_Item> ingredients = new();
+                    cr["ingredients"].Foreach(j =>
+                    {
+                        string id = j["id"]?.ToString();
+                        ushort count = (j["count"]?.ToInt() ?? 1).ToUShort();
+                        List<string> tags = j["tags"]?.ToObject<List<string>>() ?? new();
+
+                        ingredients.Add(new(id, count, tags));
+                    });
+                    newRecipe.ingredients = ingredients.ToArray();
+                }
             }
 
-            return cr;
+            return newRecipe;
         }
 
-        public static CraftingRecipe_Item LoadCraftingRecipe_Item(CraftingRecipe cr, JToken j)
+        public static CookingRecipe LoadCookingRecipe(string path)
         {
-            if (cr == null)
+            if (LoadModClass(path, "ori:cooking_recipe", out CookingRecipe newRecipe, out var cr))
             {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(cr)} 不能为空");
-                return null;
-            }
-            if (j == null)
-            {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(j)} 不能为空");
-                return null;
-            }
-
-            string id = ModCreate.GetStr(cr, "data.recipes.crafting.items.id", j);
-            ushort count = (ModCreate.Get(cr, "data.recipes.crafting.items.count", j)?.ToInt() ?? 1).ToUShort();
-            List<string> tags = ModCreate.Get(cr, "data.recipes.crafting.items.tags", j)?.ToObject<List<string>>() ?? new();
-
-            CraftingRecipe_Item temp = new(id, count, tags);
-            return temp;
-        }
-
-        public static CookingRecipe LoadCookingRecipe(JObject jo)
-        {
-            if (jo == null)
-            {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
-
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            CookingRecipe cr = new()
-            {
-                jsonFormat = format,
-                jo = jo
-            };
-
-            if (GameTools.CompareVersions(format, "0.6.0", Operators.thanOrEqual))
-            {
-                cr.jsonFormatWhenLoad = "0.6.0";
-
-                cr.id = ModCreate.GetStr(cr, "data.recipes.cooking.id");
-                cr.result = new(ModCreate.GetStr(cr, "data.recipes.cooking.result.id"), (ModCreate.Get(cr, "data.recipes.cooking.result.count")?.ToInt() ?? 1).ToUShort(), new());
-
-                ModCreate.GetFor(cr, "data.recipes.cooking.items", j =>
+                if (GameTools.CompareVersions(newRecipe.jsonFormat, "0.6.0", Operators.thanOrEqual))
                 {
-                    CookingRecipe_Item item = LoadCookingRecipe_Item(cr, j);
-                    cr.items.Add(item);
-                });
+                    newRecipe.jsonFormatWhenLoad = "0.6.0";
+
+                    newRecipe.result = new(cr["result"]["id"].ToString(), (cr["result"]["count"]?.ToInt() ?? 1).ToUShort(), new());
+
+                    List<CookingRecipe_Item> ingredients = new();
+                    cr["ingredients"].Foreach(j =>
+                    {
+                        string id = j["id"]?.ToString();
+                        ushort count = (j["count"]?.ToInt() ?? 1).ToUShort();
+                        List<string> tags = j["tags"]?.ToObject<List<string>>() ?? new();
+
+                        ingredients.Add(new(id, count, tags));
+                    });
+                    newRecipe.ingredients = ingredients.ToArray();
+                }
             }
 
-            return cr;
-        }
-
-        public static CookingRecipe_Item LoadCookingRecipe_Item(CookingRecipe cr, JToken j)
-        {
-            if (cr == null)
-            {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(cr)} 不能为空");
-                return null;
-            }
-            if (j == null)
-            {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(j)} 不能为空");
-                return null;
-            }
-
-            string id = ModCreate.GetStr(cr, "data.recipes.cooking.items.id", j);
-            ushort count = (ModCreate.Get(cr, "data.recipes.cooking.items.count", j)?.ToInt() ?? 1).ToUShort();
-            List<string> tags = ModCreate.Get(cr, "data.recipes.cooking.items.tags", j)?.ToObject<List<string>>() ?? new();
-
-            CookingRecipe_Item temp = new(id, count, tags);
-            return temp;
+            return newRecipe;
         }
 
         public static List<TextureData> LoadFromTextureSettings(JObject jo, string modPath)
@@ -384,7 +366,7 @@ namespace GameCore
 
                     if (File.Exists(path))
                     {
-                        MethodAgent.TryQueueOnMainThread(() =>
+                        MethodAgent.DebugQueueOnMainThread(() =>
                         {
                             temp.sprite = Tools.LoadSpriteByPath(path, tex["filter_mode"]?.ToString() switch
                             {
@@ -394,7 +376,7 @@ namespace GameCore
                             }, tex["pixel_unit"]?.ToInt() ?? 16);
 
                             datumTextures.Add(temp);
-                        }, true);
+                        });
                     }
                     else
                     {
@@ -429,7 +411,7 @@ namespace GameCore
                     return null;
                 }
 
-                for (int i = 0; i < au.Count(); i++) MethodAgent.TryRun(() =>
+                for (int i = 0; i < au.Count(); i++) MethodAgent.DebugRun(() =>
                 {
                     var auThis = au.ElementAt(i);
                     AudioData newDatum = new()
@@ -451,7 +433,7 @@ namespace GameCore
                     };
                     datumAudios.Add(newDatum);
                     MethodAgent.QueueOnMainThread(_ => ManagerAudio.instance.AddClipFromFile(newDatum));
-                }, true);
+                });
             }
 
             return datumAudios;
@@ -645,13 +627,13 @@ namespace GameCore
 
             temp.jsonFormatWhenLoad = jfToLoad;
             temp.id = jo["prefab"]?["id"]?.ToString();
-            jo["prefab"]?["content"]?.For(prefab => MethodAgent.TryRun(() =>
+            jo["prefab"]?["content"]?.For(prefab => MethodAgent.DebugRun(() =>
             {
                 var block = LoadBiomeBlock(prefab, jfToLoad);
                 block.isPrefab = true;
 
                 temp.content.Add(block);
-            }, true));
+            }));
 
             return temp;
         }

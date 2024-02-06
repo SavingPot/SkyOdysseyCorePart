@@ -155,7 +155,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     合成                                     */
         /* -------------------------------------------------------------------------- */
-        public Dictionary<CraftingRecipe, List<Dictionary<int, ushort>>> craftingResults = new();
         public CraftingInfoShower craftingInfoShower;
         public BackpackPanel craftingPanel;
         public ScrollViewIdentity craftingView;
@@ -248,31 +247,41 @@ namespace GameCore
 
         public static string[] dialogRichTextSupported = new[]
         {
-            "<color="
+            "<color=",
+            "</"
         };
 
         public async Task DisplayDialogTask()
         {
             GameUI.SetPage(dialogPanel, GameUI.DisappearType.PositionUpToDown, GameUI.AppearType.PositionDownToUp);
 
+            //遍历对话列表
             for (int i = 0; i < displayingDialog.dialogs.Count; i++)
             {
                 var current = displayingDialog.dialogs[i];
+
+                //清空对话文本
                 dialogText.text.text = string.Empty;
 
+                //获取当前对话文本
                 string fullContent = current.text;
                 char[] fullContentChars = fullContent.ToCharArray();
+
+                //更改对话者的头像和名字
                 dialogHead.image.sprite = ModFactory.CompareTexture(current.head).sprite;
                 dialogNameText.text.text = GameUI.CompareText(displayingDialog.name).text;
 
+                //遍历文本
                 for (int t = 0; t < fullContent.Length;)
                 {
                     var item = fullContent[t];
                     var charsAfterItem = new ArraySegment<char>(fullContentChars, t, fullContent.Length - t).ToArray(); //? 包括 item
                     var strAfterItem = new string(charsAfterItem);
+                    
                     string output;
                     int tDelta;
 
+                    //如果是富文本，要立刻输出好整段富文本
                     if (dialogRichTextSupported.Any(p => strAfterItem.StartsWith(p)))
                     {
                         var endIndex = strAfterItem.IndexOf('>') + 1; //? 如果不 +1, 富文本会瞬间闪烁然后消失 
@@ -280,25 +289,22 @@ namespace GameCore
                         tDelta = endIndex;
                         output = new string(new ArraySegment<char>(charsAfterItem, 0, endIndex).ToArray());
                     }
-                    else if (strAfterItem.StartsWith("</"))
-                    {
-                        var endIndex = strAfterItem.IndexOf('>') + 1; //? 如果不 +1, 富文本会瞬间闪烁然后消失
-
-                        tDelta = endIndex;
-                        output = new string(new ArraySegment<char>(charsAfterItem, 0, endIndex).ToArray());
-                    }
+                    //如果不是富文本，就正常的一个字一个字输出
                     else
                     {
                         output = item.ToString();
                         tDelta = 1;
                     }
 
+                    //输出文本
                     dialogText.text.text += output;
 
-                    float timer = Tools.time + current.waitTime;
 
+                    //判断是否达到等待时间
+                    float timer = Tools.time + current.waitTime;
                     while (Tools.time < timer)
                     {
+                        //如果点击跳过对话，则直接输出所有对话文本
                         if (PlayerControls.SkipDialog(player))
                         {
                             dialogText.text.text = fullContent;
@@ -312,10 +318,13 @@ namespace GameCore
                     t += tDelta;
                 }
 
+
+                //判断是否为连续对话或最后一个对话
                 if (current.continued || i == displayingDialog.dialogs.Count - 1)
                     goto finishContentDirectly;
 
                 finishContent:
+                //等待玩家跳过对话
                 while (!PlayerControls.SkipDialog(player))
                     await UniTask.NextFrame();
 
@@ -330,12 +339,14 @@ namespace GameCore
                 continue;
             }
 
+            //等待玩家结束对话
             while (!PlayerControls.SkipDialog(player))
                 await UniTask.NextFrame();   //等一帧, 防止连续跳过 (我猜会有这个问题:D)
 
             //等一帧防止跳跃
             await UniTask.NextFrame();
 
+            //关闭对话框
             GameUI.SetPage(null);
             displayingDialog = null;
         }
@@ -744,7 +755,7 @@ namespace GameCore
                     int innerInterval = 3;
 
                     ImageIdentity backgroundImage = GameUI.AddImage(UPC.Middle, "ori:image.crafting_info_shower_background", "ori:crafting_info_shower_background");
-                    ScrollViewIdentity stuffView = GameUI.AddScrollView(UPC.Up, "ori:scrollview.crafting_info_shower_stuff", backgroundImage);
+                    ScrollViewIdentity ingredientsView = GameUI.AddScrollView(UPC.Up, "ori:scrollview.crafting_info_shower_ingredients", backgroundImage);
                     ImageIdentity arrow = GameUI.AddImage(UPC.Up, "ori:image.crafting_info_shower_arrow", "ori:crafting_info_shower_arrow", backgroundImage);
                     ScrollViewIdentity resultsView = GameUI.AddScrollView(UPC.Up, "ori:scrollview.crafting_info_shower_results", backgroundImage);
                     TextIdentity maximumCraftingTimesText = GameUI.AddText(UPC.LowerRight, "ori:text.crafting_info_shower.maximum_crafting_times", backgroundImage);
@@ -754,18 +765,18 @@ namespace GameCore
                     backgroundImage.SetSizeDelta(300, 200);
                     backgroundImage.image.raycastTarget = false;
 
-                    stuffView.SetSizeDelta(backgroundImage.sd.x - 15, 45);
-                    stuffView.SetAPosY(-stuffView.sd.y / 2 - borderSize - 5);
-                    stuffView.gridLayoutGroup.cellSize = new(35, 35);
-                    stuffView.scrollRect.vertical = false;
-                    stuffView.scrollRect.horizontal = false;
+                    ingredientsView.SetSizeDelta(backgroundImage.sd.x - 15, 45);
+                    ingredientsView.SetAPosY(-ingredientsView.sd.y / 2 - borderSize - 5);
+                    ingredientsView.gridLayoutGroup.cellSize = new(35, 35);
+                    ingredientsView.scrollRect.vertical = false;
+                    ingredientsView.scrollRect.horizontal = false;
 
                     arrow.SetSizeDelta(40, 40);
-                    arrow.SetAPosY(stuffView.ap.y - stuffView.sd.y / 2 - arrow.sd.y - innerInterval);
+                    arrow.SetAPosY(ingredientsView.ap.y - ingredientsView.sd.y / 2 - arrow.sd.y - innerInterval);
 
-                    resultsView.SetSizeDelta(stuffView.sd);
+                    resultsView.SetSizeDelta(ingredientsView.sd);
                     resultsView.SetAPosY(arrow.ap.y - arrow.sd.y / 2 - resultsView.sd.y - innerInterval);
-                    resultsView.gridLayoutGroup.cellSize = stuffView.gridLayoutGroup.cellSize;
+                    resultsView.gridLayoutGroup.cellSize = ingredientsView.gridLayoutGroup.cellSize;
                     resultsView.scrollRect.vertical = false;
                     resultsView.scrollRect.horizontal = false;
 
@@ -777,7 +788,7 @@ namespace GameCore
                     maximumCraftingTimesText.text.raycastTarget = false;
 
 
-                    craftingInfoShower = new(player, backgroundImage, stuffView, arrow, resultsView, maximumCraftingTimesText);
+                    craftingInfoShower = new(player, backgroundImage, ingredientsView, arrow, resultsView, maximumCraftingTimesText);
                     craftingInfoShower.Hide();
                 }
 
@@ -791,42 +802,44 @@ namespace GameCore
                         {
                             //获取本地玩家的所有物品
                             craftingView.Clear();
-                            craftingResults = Player.GetCraftingRecipesThatCanBeCrafted(player.inventory.slots);
+                            var craftingResults = Player.GetCraftingRecipesThatCanBeCrafted(player.inventory.slots);
 
                             foreach (var pair in craftingResults)
                             {
-                                var cr = pair.Key;
-                                var itemGot = ModFactory.CompareItem(cr.result.id);
+                                var recipe = pair.recipe;
+                                var itemGot = ModFactory.CompareItem(recipe.result.id);
 
                                 //添加按钮
-                                var button = GameUI.AddButton(UPC.Up, $"ori:button.player_crafting_recipe_{cr.id}");
+                                var button = GameUI.AddButton(UPC.Up, $"ori:button.player_crafting_recipe_{recipe.id}");
                                 button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
-                                button.button.OnPointerEnterAction += _ => craftingInfoShower.Show(cr, pair.Value);
+                                button.button.OnPointerEnterAction += _ => craftingInfoShower.Show(recipe, pair.ingredients);
                                 button.button.OnPointerExitAction += _ => craftingInfoShower.Hide();
                                 button.OnClickBind(() =>
                                 {
-                                    if (player.inventory.IsFull())
+                                    var resultItem = ModConvert.ItemDataToItem(ModFactory.CompareItem(recipe.result.id));
+                                    resultItem.count = recipe.result.count;
+
+                                    //检查背包空间
+                                    Inventory.GetIndexesToPutItemIntoItems(player.inventory.slots, resultItem, out bool hasReachedNeededCount);
+                                    if (!hasReachedNeededCount)
                                     {
-                                        InternalUIAdder.instance.SetStatusText("背包满了，请清理背包后再合成物品");
+                                        InternalUIAdder.instance.SetStatusText("背包栏位不够了，请清理背包后再合成");
                                         return;
                                     }
 
                                     //从玩家身上减去物品
-                                    pair.Value.For(stuffToRemove =>
+                                    pair.ingredients.For(ingredientToRemove =>
                                     {
-                                        stuffToRemove.For(itemToRemove =>
+                                        ingredientToRemove.For(itemToRemove =>
                                         {
                                             player.ServerReduceItemCount(itemToRemove.Key.ToString(), itemToRemove.Value);
                                         });
                                     });
 
                                     //给予玩家物品
-                                    var resultItem = ModConvert.ItemDataToItem(ModFactory.CompareItem(pair.Key.result.id));
-                                    for (int i = 0; i < pair.Key.result.count; i++)
-                                    {
-                                        player.ServerAddItem(resultItem);
-                                    }
+                                    player.ServerAddItem(resultItem);
 
+                                    //达成效果
                                     CompleteTask("ori:craft");
                                     GAudio.Play(AudioID.Crafting);
 
@@ -836,7 +849,7 @@ namespace GameCore
                                 });
 
                                 //图标
-                                var image = GameUI.AddImage(UPC.Middle, $"ori:image.player_crafting_recipe_{cr.id}", "ori:item_tab", button);
+                                var image = GameUI.AddImage(UPC.Middle, $"ori:image.player_crafting_recipe_{recipe.id}", "ori:item_tab", button);
                                 image.image.sprite = itemGot.texture.sprite;
                                 image.sd = craftingView.gridLayoutGroup.cellSize * 0.75f;
 
@@ -847,7 +860,7 @@ namespace GameCore
                                 button.buttonText.text.SetFontSize(10);
                                 button.buttonText.AfterRefreshing += t =>
                                 {
-                                    t.text.text = $"{GameUI.CompareText(itemGot.id)?.text}x{cr.result.count}";
+                                    t.text.text = $"{GameUI.CompareText(itemGot.id)?.text}x{recipe.result.count}";
                                 };
 
                                 craftingView.AddChild(button);
@@ -956,7 +969,7 @@ namespace GameCore
             {
                 Vector4 posC = UPC.UpperRight;
                 int xExtraOffset = -40;
-                int yExtraOffset = -20;
+                int yExtraOffset = -35;
 
                 happinessBarBg = GameUI.AddImage(posC, "ori:image.happiness_bar_bg", "ori:happiness_bar");
                 happinessBarFull = GameUI.AddImage(posC, "ori:image.happiness_bar_full", "ori:happiness_bar");
@@ -976,7 +989,7 @@ namespace GameCore
 
                 static void SetIt(ImageIdentity bg, ImageIdentity full, float xOffset, float yOffset)
                 {
-                    Vector2 size = new(144, 15);
+                    Vector2 size = new(160, 40);
                     Image.Type imageType = Image.Type.Filled;
                     Image.FillMethod fillMethod = Image.FillMethod.Horizontal;
                     float bgColor = 0.5f;
@@ -1221,17 +1234,22 @@ namespace GameCore
             //启用状态 -> 禁用
             if (backpackMask.gameObject.activeSelf)
             {
+                //TODO: Fix
                 ItemInfoShower.Hide();
+                craftingInfoShower.Hide();
+                TaskInfoShower.Hide();
                 ItemDragger.CancelDragging();
+
                 GameUI.SetPage(null);
                 GAudio.Play(AudioID.CloseBackpack);
             }
             //禁用状态 -> 启用
             else
             {
-                GameUI.SetPage(backpackMask);
                 player.OnInventoryItemChange(player.inventory, null);
                 GAudio.Play(AudioID.OpenBackpack);
+
+                GameUI.SetPage(backpackMask);
             }
         }
 
@@ -1424,6 +1442,22 @@ namespace GameCore
             }
 
             #endregion
+
+
+
+
+
+
+            /* ---------------------------------- 刷新状态 ---------------------------------- */
+            RefreshPropertiesBar();
+        }
+
+        public void RefreshPropertiesBar()
+        {
+            thirstBarFull.image.fillAmount = player.thirstValue / Player.maxThirstValue;
+            hungerBarFull.image.fillAmount = player.hungerValue / Player.maxHungerValue;
+            happinessBarFull.image.fillAmount = player.happinessValue / Player.maxHappinessValue;
+            healthBarFull.image.fillAmount = (float)player.health / player.maxHealth;
         }
 
         public static Action<PlayerUI> BindTasks = ui =>
@@ -2042,16 +2076,16 @@ namespace GameCore
     {
         public Player player;
         public ImageIdentity background;
-        public ScrollViewIdentity stuffView;
+        public ScrollViewIdentity ingredientsView;
         public ImageIdentity arrow;
         public ScrollViewIdentity resultsView;
         public TextIdentity maximumCraftingTimesText;
         private readonly StringBuilder stringBuilder = new();
 
-        public void Show(CraftingRecipe recipe, List<Dictionary<int, ushort>> stuffTables)
+        public void Show(CraftingRecipe recipe, List<Dictionary<int, ushort>> ingredients)
         {
             stringBuilder.Clear();
-            stringBuilder.AppendLine(GameUI.CompareText("可合成次数(TODO)").text.Replace("{value}", recipe.items.Count.ToString()));
+            stringBuilder.AppendLine(GameUI.CompareText("可合成次数(TODO)").text.Replace("{value}", recipe.ingredients.Length.ToString()));
 
 
             Vector2 pos = GControls.cursorPosInMainCanvas;
@@ -2063,30 +2097,30 @@ namespace GameCore
             maximumCraftingTimesText.text.text = $"<color=#E0E0E0>{stringBuilder}</color>";
 
             //显示原料
-            stuffView.Clear();
-            foreach (var ele in stuffTables)
+            ingredientsView.Clear();
+            foreach (var ele in ingredients)
             {
-                foreach (var stuffPair in ele)
+                foreach (var ingredient in ele)
                 {
-                    Item itemGot = player.inventory.GetItem(stuffPair.Key);
+                    Item itemGot = player.inventory.GetItem(ingredient.Key);
 
                     //图标
-                    var stuffBackground = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.stuff_background_{recipe.id}", "ori:item_tab");
-                    var stuffIcon = GameUI.AddImage(UPC.Middle, $"ori:button.crafting_info_shower.stuff_{stuffPair.Key}", null, stuffBackground);
-                    var stuffText = GameUI.AddText(UPC.Middle, $"ori:text.crafting_info_shower.stuff_{recipe.id}", stuffBackground);
+                    var ingredientsBackground = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.ingredients_background_{recipe.id}", "ori:item_tab");
+                    var ingredientsIcon = GameUI.AddImage(UPC.Middle, $"ori:button.crafting_info_shower.ingredients_{ingredient.Key}", null, ingredientsBackground);
+                    var ingredientsText = GameUI.AddText(UPC.Middle, $"ori:text.crafting_info_shower.ingredients_{recipe.id}", ingredientsBackground);
 
-                    stuffIcon.SetSizeDelta(stuffView.gridLayoutGroup.cellSize);
-                    stuffIcon.image.sprite = Item.Null(itemGot) ? null : itemGot.data.texture.sprite;
+                    ingredientsIcon.SetSizeDelta(ingredientsView.gridLayoutGroup.cellSize);
+                    ingredientsIcon.image.sprite = Item.Null(itemGot) ? null : itemGot.data.texture.sprite;
 
-                    stuffText.autoCompareText = false;
-                    stuffText.text.enableAutoSizing = true;
-                    stuffText.text.fontSizeMin = 0;
-                    stuffText.text.text = $"{GameUI.CompareText(itemGot.data.id)?.text}x{stuffPair.Value}";
-                    stuffText.text.margin = Vector4.zero;
-                    stuffText.SetSizeDelta(stuffIcon.sd.x, 8);
-                    stuffText.SetAPosY(stuffIcon.ap.y / 2 - stuffIcon.sd.y / 2 - stuffText.sd.y / 2);
+                    ingredientsText.autoCompareText = false;
+                    ingredientsText.text.enableAutoSizing = true;
+                    ingredientsText.text.fontSizeMin = 0;
+                    ingredientsText.text.text = $"{GameUI.CompareText(itemGot.data.id)?.text}x{ingredient.Value}";
+                    ingredientsText.text.margin = Vector4.zero;
+                    ingredientsText.SetSizeDelta(ingredientsIcon.sd.x, 8);
+                    ingredientsText.SetAPosY(ingredientsIcon.ap.y / 2 - ingredientsIcon.sd.y / 2 - ingredientsText.sd.y / 2);
 
-                    stuffView.AddChild(stuffBackground);
+                    ingredientsView.AddChild(ingredientsBackground);
                 }
             }
 
@@ -2125,11 +2159,11 @@ namespace GameCore
 
 
 
-        public CraftingInfoShower(Player player, ImageIdentity background, ScrollViewIdentity stuffView, ImageIdentity arrow, ScrollViewIdentity resultsView, TextIdentity maximumCraftingTimesText)
+        public CraftingInfoShower(Player player, ImageIdentity background, ScrollViewIdentity ingredientsView, ImageIdentity arrow, ScrollViewIdentity resultsView, TextIdentity maximumCraftingTimesText)
         {
             this.player = player;
             this.background = background;
-            this.stuffView = stuffView;
+            this.ingredientsView = ingredientsView;
             this.arrow = arrow;
             this.resultsView = resultsView;
             this.maximumCraftingTimesText = maximumCraftingTimesText;

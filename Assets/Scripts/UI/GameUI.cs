@@ -548,7 +548,7 @@ namespace GameCore.UI
             var body = InitI("body", UPC.Middle, skin.body, BodyPartType.Body, bodySD, Vector2.zero, parent);
             var head = InitI("head", UPC.Up, skin.head, BodyPartType.Head, headSD, new(-0.8f, headSD.y / 2 - 2.5f), body.transform);
             var rightArm = InitI("rightArm", UPC.UpperLeft, skin.rightArm, BodyPartType.RightArm, rightArmSD, new(rightArmSD.x / 10, -rightArmSD.y / 2 - 3f), body.transform);
-            var leftArm = InitI("leftArm", UPC.UpperRight, skin.leftArm, BodyPartType.LeftArm, leftArmSD, new(-leftArmSD.x / 10, -leftArmSD.y / 2 - 3f), body.transform);
+            var leftArm = InitI("leftArm", UPC.UpperRight, skin.leftArm, BodyPartType.LeftArm, leftArmSD, Vector2.zero, body.transform);
             var rightLeg = InitI("rightLeg", UPC.LowerLeft, skin.rightLeg, BodyPartType.RightLeg, rightLegSD, new(rightLegSD.x / 2, -rightLegSD.y / 2), body.transform);
             var leftLeg = InitI("leftLeg", UPC.LowerRight, skin.leftLeg, BodyPartType.LeftLeg, leftLegSD, new(-leftLegSD.x / 2, -leftLegSD.y / 2), body.transform);
             var rightFoot = InitI("rightFoot", UPC.Down, skin.rightFoot, BodyPartType.RightFoot, rightFootSD, new(0, -rightFootSD.y / 2), rightLeg.transform);
@@ -562,6 +562,13 @@ namespace GameCore.UI
             body.transform.SetAsFirstSibling();
             rightArm.transform.SetAsFirstSibling();
             head.transform.SetAsFirstSibling();
+
+            //使得左手在身体的下面
+            leftArm.SetAnchorMinMax(UPC.Middle);
+            leftArm.transform.SetParent(body.transform.parent);
+            leftArm.SetAPosOnBySizeRight(body, -leftArmSD.x / 2);
+            leftArm.AddAPosY(- 3f);
+            body.transform.SetAsLastSibling();
 
             ImageIdentity InitI(string name, Vector4 pointer, Sprite sprite, BodyPartType type, Vector2 sd, Vector2 offset, Transform parent)
             {

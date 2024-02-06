@@ -21,7 +21,7 @@ namespace GameCore
             public Stack<GameObject> stack = new();
             private readonly Map map;
 
-            public Block Get(Vector2Int pos, bool isBackground, BlockData data, string customData)
+            public Block Get(Chunk chunk, Vector2Int pos, bool isBackground, BlockData data, string customData)
             {
                 GameObject go;
 
@@ -62,7 +62,7 @@ namespace GameCore
 
 
                 /* --------------------------------- 移动到新的区块 -------------------------------- */
-                block.chunk = map.AddChunk(PosConvert.MapPosToChunkIndex(pos));
+                block.chunk = chunk;
                 block.sr.enabled = block.chunk.totalRendererEnabled;
                 block.transform.SetParent(block.chunk.transform);
 
@@ -78,7 +78,7 @@ namespace GameCore
                 }
                 if (!addedToChunk)
                 {
-                    Debug.LogError("添加方块到区块失败, 可能是没有空位置存放方块!");
+                    Debug.LogError("添加方块到区块失败, 区块没有空位置存放方块!");
                 }
 
                 /* ---------------------------------- 设置数据 ---------------------------------- */

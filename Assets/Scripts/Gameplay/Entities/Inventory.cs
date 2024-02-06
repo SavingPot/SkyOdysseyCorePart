@@ -6,6 +6,7 @@ using System.Text;
 using SP.Tools;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Linq;
 
 namespace GameCore
 {
@@ -297,37 +298,36 @@ namespace GameCore
             SetItem(index2, temp2);
         }
 
-        public void AddItem(Item datumItem)
+        public void AddItem(Item item)
         {
             //如果有一样的, 添加数量
-            for (int i = 0; i < slots.Length; i++)
+            //TODO: 有一样的, 但数量不足
+            var indexes = GetIndexesToPutItemIntoItems(slots, item, out bool hasReachedNeededCount);
+
+            if (!hasReachedNeededCount)
             {
+                Debug.LogError("异常: 槽位满了");
+                return;
+            }
+
+            foreach (var index in indexes)
+            {
+                var i = index.Key;
+                var count = index.Value;
                 var slot = slots[i];
 
-                if (!Item.Null(slot) && Item.Same(slot, datumItem) && slot.count + datumItem.count <= slot.data.maxCount)
+                if (Item.Null(slot))
                 {
-                    slot.count += datumItem.count;
-                    slotsBehaviours[i]?.OnExit();
-                    CreateBehaviour(slot, i.ToString(), out slotsBehaviours[i]);
-                    slots[i] = slot;
-                    owner?.OnInventoryItemChange(this, i.ToString());
-                    return;
+                    slot = item.data.DataToItem();
+                    slot.count = count;
                 }
-            }
-
-            //如果有空的直接改
-            for (int i = 0; i < slots.Length; i++)
-            {
-                if (Item.Null(slots[i]))
+                else
                 {
-                    slots[i] = datumItem;
-                    CreateBehaviour(slots[i], i.ToString(), out slotsBehaviours[i]);
-                    owner?.OnInventoryItemChange(this, i.ToString());
-                    return;
+                    slot.count += count;
                 }
-            }
 
-            Debug.LogError("槽位满了");
+                slots[i] = slot;
+            }
         }
 
         public Item GetItemChecked(string index)
@@ -496,6 +496,135 @@ namespace GameCore
         {
             Reduce,
             Increase
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public static Dictionary<int, ushort> GetNeededItemIndexesFromItems(Item[] items, ItemData neededItem, uint neededCount, out bool hasReachedNeededCount)
+            => GetNeededItemIndexesFromItems(items, neededItem.id, neededItem.tags.ToArray(), neededCount, out hasReachedNeededCount);
+
+        public static Dictionary<int, ushort> GetNeededItemIndexesFromItems(Item[] items, string neededId, string[] neededTags, uint neededCount, out bool hasReachedNeededCount)
+        {
+            Dictionary<int, ushort> result = new();
+            ushort comparedCount = 0;
+
+
+
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                //已经匹配成功了就无须继续
+                if (comparedCount == neededCount)
+                    break;
+
+
+                var current = items[i];
+
+
+
+                void AddItemToList()
+                {
+                    //为什么要限制最大值为 neededCount - comparedCount? 因为我只需要这么多，再多就没用了
+                    ushort count = Convert.ToUInt16(Mathf.Min(current.count, neededCount - comparedCount));
+
+                    comparedCount += count;
+                    result.Add(i, count);
+                }
+
+
+
+                //如果物品为空就跳过
+                if (Item.Null(current))
+                    continue;
+
+                //如果 ID 一致则通过
+                if (current.data.id == neededId)
+                {
+                    AddItemToList();
+                    continue;
+                }
+                //如果 ID 不一致但标签匹配也通过
+                else
+                {
+                    if (neededTags.Any(neededTag => current.data.tags.Any(currentTag => currentTag == neededTag)))
+                    {
+                        AddItemToList();
+                        continue;
+                    }
+                }
+            }
+
+
+
+            hasReachedNeededCount = comparedCount == neededCount;
+            return result;
+        }
+
+        public static Dictionary<int, ushort> GetIndexesToPutItemIntoItems(Item[] items, Item item, out bool hasReachedNeededCount)
+            => GetIndexesToPutItemIntoItems(items, item.data.id, item.count, item.data.maxCount, out hasReachedNeededCount);
+        public static Dictionary<int, ushort> GetIndexesToPutItemIntoItems(Item[] items, string neededId, uint neededCount, ushort perSlotMaxCount, out bool hasReachedNeededCount)
+        {
+            Dictionary<int, ushort> result = new();
+            ushort comparedCount = 0;
+
+
+
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                //已经匹配成功了就无须继续
+                if (comparedCount == neededCount)
+                    break;
+
+
+                var current = items[i];
+
+
+
+                void AddItemToList(int space)
+                {
+                    //current.data.maxCount - current.count 也就是还可以塞下多少个同样的物品
+                    //为什么要限制最大值为 neededCount - comparedCount? 因为我只需要这么多，再多就没用了
+                    ushort count = Convert.ToUInt16(Mathf.Min(space, neededCount - comparedCount));
+
+                    comparedCount += count;
+                    result.Add(i, count);
+                }
+
+
+
+                //如果物品为空就跳过
+                if (Item.Null(current))
+                {
+                    AddItemToList(perSlotMaxCount);
+                    continue;
+                }
+
+                //如果 ID 一致则通过
+                if (current.data.id == neededId)
+                {
+                    AddItemToList(perSlotMaxCount - current.count);
+                    continue;
+                }
+            }
+
+
+
+            hasReachedNeededCount = comparedCount == neededCount;
+            return result;
         }
     }
 
@@ -744,8 +873,32 @@ namespace GameCore
     [Serializable]
     public class Recipe<T> : ModClass, IJOFormatCore where T : RecipeItem<T>
     {
-        [LabelText("物品")] public List<T> items = new();
+        [LabelText("原料")] public T[] ingredients;
         [LabelText("结果")] public T result;
+
+
+        public bool WhetherCanBeCrafted(Item[] items, out List<Dictionary<int, ushort>> ingredientTables)
+        {
+            ingredientTables = new();
+
+            foreach (var ing in ingredients)
+            {
+                var itemsToUse = Inventory.GetNeededItemIndexesFromItems(items, ing.id, ing.tags.ToArray(), ing.count, out bool hasReachedNeededCount);
+
+                if (hasReachedNeededCount)
+                {
+                    ingredientTables.Add(itemsToUse);
+                }
+                else
+                {
+                    ingredientTables = null;
+                    return false;
+                }
+            }
+
+            //如果全部原料都可以匹配就添加
+            return true;
+        }
     }
 
     [Serializable]

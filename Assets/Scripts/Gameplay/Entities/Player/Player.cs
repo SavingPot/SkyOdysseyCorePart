@@ -513,6 +513,7 @@ namespace GameCore
         {
             base.OnDestroy();
 
+            PlayerUI.instance = null;
             animWeb.Stop();
 
             PlayerCenter.RemovePlayer(this);
@@ -700,9 +701,6 @@ namespace GameCore
             ////AutoGenerateRegion();
 
             //刷新状态栏
-            RefreshPropertiesBar();
-
-
             pui?.Update();
         }
 
@@ -755,7 +753,7 @@ namespace GameCore
             usingItemIndex = index;
 
             //刷新物品栏
-            EntityInventoryOwnerBehaviour.RefreshUsingItemRenderer(this, inventory);
+            EntityInventoryOwnerBehaviour.RefreshUsingItemRenderer(this);
 
             //播放切换音效
             GAudio.Play(AudioID.SwitchQuickInventorySlot);
@@ -1072,62 +1070,59 @@ namespace GameCore
         [ServerRpc]
         private void ServerGenerateRegionCore(Vector2Int index, bool isFirstGeneration, string specificTheme, NetworkConnection caller = null)
         {
-            MethodAgent.TryRun(() =>
+            Debug.Log($"Player={netId} 请求生成区域 {index}");
+
+            MethodAgent.RunThread(() =>
             {
-                Debug.Log($"Player={netId} 请求生成区域 {index}");
+                //如果没有则生成新的区域
+                GM.instance.GenerateNewRegion(index, specificTheme);
 
-                MethodAgent.RunThread(() =>
+                lock (GFiles.world.regionData)
                 {
-                    //如果没有则生成新的区域
-                    GM.instance.GenerateNewRegion(index, specificTheme);
-
-                    lock (GFiles.world.regionData)
+                    foreach (Region region in GFiles.world.regionData)
                     {
-                        foreach (Region region in GFiles.world.regionData)
+                        if (region.index == index && region.generatedAlready)
                         {
-                            if (region.index == index && region.generatedAlready)
+                            MethodAgent.RunOnMainThread(() =>
                             {
-                                MethodAgent.RunOnMainThread(() =>
+                                //? 因为直接发送一个 region 实在太大了，所以我们不得不将他们分成一个个的 BlockSave
+                                void ConnectionGenerate()
                                 {
-                                    //? 因为直接发送一个 region 实在太大了，所以我们不得不将他们分成一个个的 BlockSave
-                                    void ConnectionGenerate()
+                                    var copy = region.ShallowCopy();
+                                    copy.blocks = null;
+                                    if (hasSetPosBySave)
+                                        copy.spawnPoint = Vector2Int.zero;
+
+                                    ConnectionGenerateRegionTotal(copy, region.blocks.Count, isFirstGeneration, caller);
+
+                                    foreach (var segment in region.blocks)
                                     {
-                                        var copy = region.ShallowCopy();
-                                        copy.blocks = null;
-                                        if (hasSetPosBySave)
-                                            copy.spawnPoint = Vector2Int.zero;
-
-                                        ConnectionGenerateRegionTotal(copy, region.blocks.Count, isFirstGeneration, caller);
-
-                                        foreach (var segment in region.blocks)
-                                        {
-                                            ConnectionGenerateRegion(segment, caller);
-                                        }
+                                        ConnectionGenerateRegion(segment, caller);
                                     }
+                                }
 
-                                    //* 如果是服务器发送的申请: 服务器生成
-                                    if (isLocalPlayer)
-                                    {
-                                        ConnectionGenerate();
-                                    }
-                                    //* 如果是客户端发送的申请: 服务器先生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
-                                    else
-                                    {
-                                        GM.instance.GenerateExistingRegion(
-                                                region,
-                                                () => ConnectionGenerate(),
-                                                () => ConnectionGenerate(),
-                                                (ushort)(GFiles.settings.performanceLevel / 2)
-                                            );
-                                    }
-                                });
+                                //* 如果是服务器发送的申请: 服务器生成
+                                if (isLocalPlayer)
+                                {
+                                    ConnectionGenerate();
+                                }
+                                //* 如果是客户端发送的申请: 服务器先生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
+                                else
+                                {
+                                    GM.instance.GenerateExistingRegion(
+                                            region,
+                                            () => ConnectionGenerate(),
+                                            () => ConnectionGenerate(),
+                                            (ushort)(GFiles.settings.performanceLevel / 2)
+                                        );
+                                }
+                            });
 
-                                break;
-                            }
+                            break;
                         }
                     }
-                });
-            }, true);
+                }
+            });
         }
 
 
@@ -1422,17 +1417,6 @@ namespace GameCore
 
         #endregion
 
-        public void RefreshPropertiesBar()
-        {
-            if (pui == null)
-                return;
-
-            pui.thirstBarFull.image.fillAmount = thirstValue / maxThirstValue;
-            pui.hungerBarFull.image.fillAmount = hungerValue / maxHungerValue;
-            pui.happinessBarFull.image.fillAmount = happinessValue / maxHappinessValue;
-            pui.healthBarFull.image.fillAmount = (float)health / maxHealth;
-        }
-
 
 
 
@@ -1441,92 +1425,46 @@ namespace GameCore
         /*                                    静态方法                                    */
         /* -------------------------------------------------------------------------- */
 
-        public static Dictionary<CraftingRecipe, List<Dictionary<int, ushort>>> GetCraftingRecipesThatCanBeCrafted(Item[] items)
+        public sealed class RecipeIngredientsTable
         {
-            Dictionary<CraftingRecipe, List<Dictionary<int, ushort>>> results = new();
+            public CraftingRecipe recipe;
+            public List<Dictionary<int, ushort>> ingredients;
 
-            ModFactory.mods.For(mod => mod.craftingRecipes.For(cr =>
+            public RecipeIngredientsTable(CraftingRecipe recipe, List<Dictionary<int, ushort>> ingredients)
             {
-                //如果全部原料都可以匹配就添加
-                if (WhetherCanBeCrafted(cr, items, out var stuff))
+                this.recipe = recipe;
+                this.ingredients = ingredients;
+            }
+        }
+
+        public static List<RecipeIngredientsTable> GetCraftingRecipesThatCanBeCrafted(Item[] items)
+        {
+            List<RecipeIngredientsTable> results = new();
+
+            ModFactory.mods.For(mod => mod.craftingRecipes.For(recipe =>
+            {
+                if (recipe.WhetherCanBeCrafted(items, out var ingredients))
                 {
-                    results.Add(cr, stuff);
+                    results.Add(new(recipe, ingredients));
                 }
             }));
 
             return results;
         }
 
-        public static bool WhetherCanBeCrafted<TItem>(Recipe<TItem> recipe, Item[] items, out List<Dictionary<int, ushort>> comparedStuff) where TItem : RecipeItem<TItem>
+        public static List<CraftingRecipe> GetCraftingRecipesThatCannotBeCrafted(Item[] items)
         {
-            if (recipe == null)
+            List<CraftingRecipe> results = new();
+
+            ModFactory.mods.For(mod => mod.craftingRecipes.For(recipe =>
             {
-                comparedStuff = null;
-                return false;
-            }
-
-            comparedStuff = new();
-
-            foreach (var crItem in recipe.items)
-            {
-                ushort comparedCount = 0;
-                Dictionary<int, ushort> itemsToUse = new();
-
-                for (int i = 0; i < items.Length; i++)
+                if (!recipe.WhetherCanBeCrafted(items, out var ingredients))
                 {
-                    if (comparedCount == crItem.count)
-                        break;
-
-                    var bpItem = items[i];
-
-                    //如果物品为空则返回
-                    if (Item.Null(bpItem))
-                        continue;
-
-                    //如果 ID 匹配则添加匹配数
-                    if (crItem.id == bpItem.data.id)
-                    {
-                        ushort count = Convert.ToUInt16(Mathf.Min(bpItem.count, crItem.count - comparedCount));
-                        comparedCount += count;
-                        itemsToUse.Add(i, count);
-
-                        continue;
-                    }
-                    //如果 标签 匹配也添加匹配数
-                    else if (crItem.tags.Count > 0)
-                    {
-                        foreach (var crItemTag in crItem.tags)
-                        {
-                            foreach (var bpItemTag in bpItem.data.tags)
-                            {
-                                //如果标签一致
-                                if (bpItemTag == crItemTag)
-                                {
-                                    ushort count = Convert.ToUInt16(Mathf.Min(bpItem.count, crItem.count - comparedCount));
-                                    comparedCount += count;
-                                    itemsToUse.Add(i, count);
-
-                                    goto nextItem;
-                                }
-                            }
-                        }
-                    }
-
-                nextItem: continue;
+                    results.Add(recipe);
                 }
+            }));
 
-                //如果匹配到的合格物品数量超过要求, 例如
-                // * 一个配方: 5鸡羽毛
-                // * 背包中: 1.一个, 两个, 三个   2.五个   3.三个, 一个, 九个
-                // * 无论是哪一种, 都可以合成, 因为 comparedCount 会 >= 5
-                if (comparedCount == crItem.count)
-                {
-                    comparedStuff.Add(itemsToUse);
-                }
-            }
-
-            //如果全部原料都可以匹配就添加
-            return comparedStuff.Count >= recipe.items.Count;
+            return results;
         }
 
         [RuntimeInitializeOnLoadMethod]
@@ -1750,6 +1688,7 @@ namespace GameCore
         public static List<Player> all = new();
         public static Action<Player> OnAddPlayer = _ => { };
         public static Action<Player> OnRemovePlayer = _ => { };
+        public static float playerHealthUpTimer;
         public static float playerHungerThirstHurtTimer;
 
         public static void AddPlayer(Player player)
@@ -1795,9 +1734,14 @@ namespace GameCore
                     if (hungerValue <= 30) happinessValueDelta += frameTime / 20;
                     player.happinessValue = happinessValue - happinessValueDelta;
 
-                    if (health < 100)
+                    //一秒回一次血
+                    if (Tools.time >= playerHealthUpTimer)
                     {
-                        player.health = health + Mathf.FloorToInt(Mathf.Min(frameTime / 5, player.maxHealth - health));
+                        if (health < 100)
+                        {
+                            playerHealthUpTimer = Tools.time + 1f;
+                            player.health = health + 1;
+                        }
                     }
 
                     //每三秒扣一次血

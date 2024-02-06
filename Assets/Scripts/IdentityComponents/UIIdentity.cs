@@ -85,7 +85,7 @@ namespace GameCore
 
         protected virtual void Update()
         {
-            MethodAgent.TryRun(() => OnUpdate?.Invoke((T)this), true);
+            MethodAgent.DebugRun(() => OnUpdate?.Invoke((T)this));
         }
 
         public void RefreshUI()
@@ -93,7 +93,7 @@ namespace GameCore
             if (!doRefresh)
                 return;
 
-            MethodAgent.TryRun(() => AfterRefreshing((T)this), true);
+            MethodAgent.DebugRun(() => AfterRefreshing((T)this));
         }
     }
 }

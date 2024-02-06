@@ -778,13 +778,13 @@ namespace GameCore.UI
                 Vector2Int delBtnSize = new(40, 40);
 
                 Transform t = chooseWorldScrollView.transform.parent;
-                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.Middle, "ori:itb.choose_world_" + worldName + "_" + i).OnClickBind(() => MethodAgent.TryRun(() =>
+                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.Middle, "ori:itb.choose_world_" + worldName + "_" + i).OnClickBind(() => MethodAgent.DebugRun(() =>
                 {
                     GameUI.Disappear(t.gameObject);
 
                     //开始并设置游戏时间
                     GM.StartGameHost(worldPath, () => GTime.time = GFiles.world.basicData.time);
-                }, true));
+                }));
 
                 var configButton = GameUI.AddButton(UPC.LowerRight, "ori:button.config_world_" + worldPath, lb, "ori:square_button");
                 configButton.rt.SetParent(lb.rt);
@@ -829,11 +829,11 @@ namespace GameCore.UI
                 int i = index;
                 var dir = modDirs[i];
 
-                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.Middle, "ori:button.edit_mod_" + dir.info.id).OnClickBind(() => MethodAgent.TryRun(() =>
+                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.Middle, "ori:button.edit_mod_" + dir.info.id).OnClickBind(() => MethodAgent.DebugRun(() =>
                 {
                     configuringModDir = dir;
                     GameUI.SetPage(modConfiguringPanel);
-                }, true));
+                }));
 
                 string newName = dir.info.name == null ? dir.info.id : GameUI.currentLang.CompareOrCreateText(dir.info.name).text;
                 string newID = dir.info.id;

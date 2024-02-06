@@ -107,16 +107,29 @@ namespace GameCore
         /// <param name="action"></param>
         /// <exception cref="ArgumentNullException"></exception>
         [ChineseName("尝试队列主线程")]
-        public static void TryQueueOnMainThread(Action action, bool logError = false, Action<Exception> onFailed = null)
+        public static void TryQueueOnMainThread(Action action, Action<Exception> onFailed = null)
         {
             if (action == null)
                 throw new ArgumentNullException(nameof(action), $"{MethodGetter.GetLastAndCurrentMethodPath()} {nameof(action)} 值不能为空");
 
-            Loom.QueueOnMainThread(_ => TryRun(action, logError, onFailed), null);
+            Loom.QueueOnMainThread(_ => TryRun(action, onFailed), null);
         }
 
-        [ChineseName("尝试运行")]
-        public static Exception TryRun(Action action, bool logError = false, Action<Exception> onFailed = null)
+        /// <summary>
+        /// 在下一帧尝试执行 Action
+        /// </summary>
+        /// <param name="action"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        [ChineseName("尝试队列主线程")]
+        public static void DebugQueueOnMainThread(Action action, Action<Exception> onFailed = null)
+        {
+            if (action == null)
+                throw new ArgumentNullException(nameof(action), $"{MethodGetter.GetLastAndCurrentMethodPath()} {nameof(action)} 值不能为空");
+
+            Loom.QueueOnMainThread(_ => DebugRun(action, onFailed), null);
+        }
+
+        public static Exception TryRun(Action action, Action<Exception> onFailed = null)
         {
             if (action == null)
                 throw new ArgumentNullException(nameof(action), $"{MethodGetter.GetLastAndCurrentMethodPath()} {nameof(action)} 值不能为空");
@@ -127,11 +140,27 @@ namespace GameCore
             }
             catch (Exception ex)
             {
-                if (logError)
-                {
-                    Debug.LogError($"{MethodGetter.GetLastAndCurrentMethodPath()}: 发生了错误, 具体内容:\n\n{Tools.HighlightedStackTrace(ex)}\n\n");
-                    onFailed?.Invoke(ex);
-                }
+                onFailed?.Invoke(ex);
+
+                return ex;
+            }
+
+            return null;
+        }
+
+        public static Exception DebugRun(Action action, Action<Exception> onFailed = null)
+        {
+            if (action == null)
+                throw new ArgumentNullException(nameof(action), $"{MethodGetter.GetLastAndCurrentMethodPath()} {nameof(action)} 值不能为空");
+
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"{MethodGetter.GetLastAndCurrentMethodPath()}: 发生了错误, 具体内容:\n\n{Tools.HighlightedStackTrace(ex)}\n\n");
+                onFailed?.Invoke(ex);
 
                 return ex;
             }
