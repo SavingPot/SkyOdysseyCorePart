@@ -174,13 +174,13 @@ namespace GameCore.UI
         {
             if (GFiles.settings.langId != null)
                 _currentLang = ModFactory.CompareFinalDatumText(GFiles.settings.langId);
-                
+
             _currentLang ??= defaultLang;
 
             return _currentLang;
         }
 
-        public static GameLang_Text CompareText(string id)
+        public static GameLang_Text CompareTextNullable(string id)
         {
             if (currentLang.TryCompareText(id, out GameLang_Text cText))
             {
@@ -204,9 +204,24 @@ namespace GameCore.UI
                     }
                 }
 
-                return new() { id = id, text = id };
+                return null;
             }
         }
+
+        public static bool TryCompareTextNullable(string id, out GameLang_Text result)
+        {
+            result = CompareTextNullable(id);
+
+            return result != null;
+        }
+
+        public static GameLang_Text CompareText(string id)
+        {
+            var nullable = CompareTextNullable(id);
+
+            return nullable ?? new() { id = id, text = id };
+        }
+
         #endregion
 
 
@@ -567,7 +582,7 @@ namespace GameCore.UI
             leftArm.SetAnchorMinMax(UPC.Middle);
             leftArm.transform.SetParent(body.transform.parent);
             leftArm.SetAPosOnBySizeRight(body, -leftArmSD.x / 2);
-            leftArm.AddAPosY(- 3f);
+            leftArm.AddAPosY(-3f);
             body.transform.SetAsLastSibling();
 
             ImageIdentity InitI(string name, Vector4 pointer, Sprite sprite, BodyPartType type, Vector2 sd, Vector2 offset, Transform parent)

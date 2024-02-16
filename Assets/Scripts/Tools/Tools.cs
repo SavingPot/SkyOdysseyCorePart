@@ -244,7 +244,7 @@ namespace GameCore
         }
 
 
-        public Vector2 World2ToUI(Vector3 wpos, Component uiParent, Camera camera)
+        public Vector2 WorldToUIPos(Vector3 wpos, Component uiParent, Camera camera)
         {
             //初始化一个屏幕坐标
             Vector2 m_tempV2 = Vector2.zero;
@@ -328,6 +328,12 @@ namespace GameCore
         /// Returns a random color.
         /// </summary>
         public static Color randomColor => new(Random.value, Random.value, Random.value);
+
+        public static string[] SplitIdBySeparator(string id)
+        {
+            var splitted = id.Split(':');
+            return splitted;
+        }
 
         public static (string modId, string name) SplitModIdAndName(string id)
         {

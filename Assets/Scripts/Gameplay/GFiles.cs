@@ -8,6 +8,8 @@ using System.IO;
 using UnityEngine;
 using SP.Tools.Unity;
 using static GameCore.PlayerUI;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GameCore
 {
@@ -89,7 +91,7 @@ namespace GameCore
                 List<Entity> entities = EntityCenter.all;
                 foreach (Entity entity in entities)
                 {
-                    entity.WriteDataToSave();
+                    entity.WriteDataToWorldSave();
                 }
 
                 //将世界数据写入文件
@@ -133,7 +135,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class World
+    public sealed class World
     {
         public static string GetImagePath(string worldPath) => Path.Combine(GetDisplayCachePath(worldPath), "image.png");
         public static string GetBasicDataPath(string worldPath) => Path.Combine(worldPath, "basic_data.json");

@@ -277,7 +277,7 @@ namespace GameCore
                     var item = fullContent[t];
                     var charsAfterItem = new ArraySegment<char>(fullContentChars, t, fullContent.Length - t).ToArray(); //? 包括 item
                     var strAfterItem = new string(charsAfterItem);
-                    
+
                     string output;
                     int tDelta;
 
@@ -820,8 +820,7 @@ namespace GameCore
                                     resultItem.count = recipe.result.count;
 
                                     //检查背包空间
-                                    Inventory.GetIndexesToPutItemIntoItems(player.inventory.slots, resultItem, out bool hasReachedNeededCount);
-                                    if (!hasReachedNeededCount)
+                                    if (!Inventory.GetIndexesToPutItemIntoItems(player.inventory.slots, resultItem, out var _))
                                     {
                                         InternalUIAdder.instance.SetStatusText("背包栏位不够了，请清理背包后再合成");
                                         return;
@@ -2241,7 +2240,10 @@ namespace GameCore
             sb.AppendLine(GameUI.CompareText("ori:item.excavation_strength").text.Replace("{value}", item.excavationStrength.ToString()));
             sb.AppendLine(GameUI.CompareText("ori:item.use_cd").text.Replace("{value}", item.useCD.ToString()));
             sb.AppendLine(string.Empty);
-            sb.Append(GameUI.CompareText(item.description).text);
+
+            //如果成功匹配到了描述文本
+            if (GameUI.TryCompareTextNullable(item.description, out var description))
+                sb.Append(description.text);
 
             return sb;
         }

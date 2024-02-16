@@ -14,6 +14,18 @@ namespace GameCore
 {
     public static class JsonTools
     {
+        private static readonly JsonSerializerSettings defaultJsonSerializerSettings = new()
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore, //忽略循环引用
+            NullValueHandling = NullValueHandling.Ignore, //忽略空值
+            DefaultValueHandling = DefaultValueHandling.Ignore, //忽略默认值
+            ContractResolver = new ReadonlyPropertiesResolver(), //忽略只读
+        };
+
+
+
+
+
         #region 检查是否合法
         private static bool IsJsonStart(ref string json)
         {
@@ -517,16 +529,12 @@ namespace GameCore
             }
         }
 
-        public static T LoadJsonByString<T>(string str)
+        public static T LoadJsonByString<T>(string str) => (T)LoadJsonByString(str, typeof(T));
+        public static object LoadJsonByString(string str, Type type)
         {
             try
             {
-                return JsonConvert.DeserializeObject<T>(str, new JsonSerializerSettings()
-                {
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore, //忽略循环引用
-                    NullValueHandling = NullValueHandling.Ignore,
-                    DefaultValueHandling = DefaultValueHandling.Ignore,
-                });
+                return JsonConvert.DeserializeObject(str, type, defaultJsonSerializerSettings);
             }
             catch (Exception ex)
             {
@@ -535,18 +543,9 @@ namespace GameCore
             }
         }
 
-        public static string ToJson(object obj, bool compress = false, bool prettyJson = false, JsonSerializerSettings jss = null, IContractResolver icr = null)
+        public static string ToJson(object obj, bool compress = false, bool prettyJson = false, JsonSerializerSettings jss = null)
         {
-            icr ??= new ReadonlyPropertiesResolver();
-
-            jss ??= new()
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore, //忽略循环引用
-                NullValueHandling = NullValueHandling.Ignore,
-                //DefaultValueHandling = DefaultValueHandling.Ignore,
-                ContractResolver = icr
-            };
-
+            jss ??= defaultJsonSerializerSettings;
             string str = JsonConvert.SerializeObject(obj, jss);
 
             //必须先格式化在压缩

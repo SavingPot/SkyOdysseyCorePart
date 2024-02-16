@@ -120,10 +120,13 @@ namespace GameCore.High
 
         public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion, bool executeBlockUpdate)
         {
+            //遍历所有方块
             foreach (var block in blocks)
             {
+                //找到对应的方块
                 if (block != null && block.pos == pos && block.isBackground == isBackground)
                 {
+                    //编辑区域存档
                     if (editRegion && Server.isServer)
                     {
                         Vector2Int blockRegionPos = this.MapToRegionPos(block.pos);
@@ -133,18 +136,22 @@ namespace GameCore.High
                         region.RemovePos(block.data.id, blockRegionPos.x, blockRegionPos.y, block.isBackground);
                     }
 
+                    //回收方块
                     map.blockPool.Recover(block);
 
+                    //调用删除方块成功的回调
                     GameCallbacks.OnRemoveBlock(pos, isBackground, editRegion, true);
                     return;
                 }
             }
 
+            //更新方块
             if (executeBlockUpdate)
             {
                 map.UpdateAt(pos, isBackground);
             }
 
+            //调用删除方块失败的回调
             GameCallbacks.OnRemoveBlock(pos, isBackground, editRegion, false);
         }
 

@@ -607,7 +607,7 @@ namespace GameCore
                 FuncSwitchItem(PlayerControls.SwitchToItem7, 7);
                 FuncSwitchItem(PlayerControls.SwitchToItem8, 8);
 
-                if (PlayerControls.SwitchToLastItem(this))
+                if (PlayerControls.SwitchToPreviousItem(this))
                 {
                     int value = usingItemIndex - 1;
 
@@ -662,7 +662,7 @@ namespace GameCore
                 isControllingBackground = PlayerControls.IsControllingBackground(this);
             }
 
-            //血量低于 10 放心跳声, 死了就不播放声音
+            //血量低于 10 就播放心跳声, 死了就不播放声音
             if (health <= 15)
             {
                 GAudio.Play(AudioID.Heartbeat, true);
@@ -717,12 +717,12 @@ namespace GameCore
 
                 if (other.TryGetComponent<Drop>(out var drop) && !drop.isDead)
                 {
-                    //TODO 不要检测整个背包，而是检测这个物品能否放入
-                    if (inventory.IsFull())
+                    //检测有没有栏位存放物品
+                    if (!Inventory.GetIndexesToPutItemIntoItems(inventory.slots, drop.item, out _))
                         return;
 
                     //TODO: 改成吸引 Drop 到玩家身旁
-                    ServerAddItem(drop.itemData);
+                    ServerAddItem(drop.item);
                     GAudio.Play(AudioID.PickUpItem);
 
                     drop.Death();
@@ -764,6 +764,24 @@ namespace GameCore
                 itemName = GameUI.CompareText("ori:empty_item").text;
 
             InternalUIAdder.instance.SetStatusText(GameUI.CompareText("ori:switch_item").text.Replace("{item_id}", itemName));
+        }
+
+        public override void WriteDataToSaveObject(EntitySave save)
+        {
+            base.WriteDataToSaveObject(save);
+
+            if (save is PlayerSave trueSave)
+            {
+                trueSave.inventory = inventory;
+                trueSave.hungerValue = hungerValue;
+                trueSave.thirstValue = thirstValue;
+                trueSave.happinessValue = happinessValue;
+                trueSave.completedTasks = completedTasks;
+            }
+            else
+            {
+                throw new();
+            }
         }
 
         //// public void AutoGenerateRegion()
@@ -937,13 +955,17 @@ namespace GameCore
 
             if (block != null)
             {
+                //播放挖掘动画
                 if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)
                     animWeb.SwitchPlayingTo("attack_rightarm");
 
+                //让方块扣血
                 block.TakeDamage(excavationStrength);
 
+                //播放音效
                 GAudio.Play(AudioID.ExcavatingBlock);
 
+                //手柄震动
                 if (GControls.mode == ControlMode.Gamepad)
                     GControls.GamepadVibrationSlighter(0.1f);
             }
@@ -953,76 +975,16 @@ namespace GameCore
         }
         #endregion
 
-        #region 配置检查
-        //[Command]
-        //private void CmdCheckMods() => MethodAgent.RunThread(() => ZipTools.Zip(Tools.modsPath, GameFiles.currentWorld.worldPath + "/temp_mods.zip", new(b =>
-        //{
-        //    string path = GameFiles.currentWorld.worldPath + "/temp_mods.zip";
-        //    TargetCheckMods(connectionToClient, Compressor.CompressString(JsonTools.ToJson(IOTools.FileToBytes(path))));
-        //    File.Delete(path);
-        //})));
-
-
-        //[TargetRpc]
-        //public void TargetCheckMods(NetworkConnection conn, string serverModJson) => MethodAgent.RunThread(() => MethodAgent.TryRun(() =>
-        //{
-        //    string path = GameFiles.currentWorld.worldPath + "/temp_mods";
-        //    IOTools.CreateDirectoryIfNone(path);
-
-        //    ZipTools.UnzipFile(ByteConverter.ToMemoryStream(JsonTools.LoadJsonByString<byte[]>(Compressor.DecompressString(serverModJson))), path, new(b =>
-        //    {
-        //        string[] modPaths = IOTools.GetFoldersInFolder(path + "/mods", true).Where(p => File.Exists(p + "/mod_info.json")).ToArray();
-        //        Dictionary<string, ModDatum_Info> differentMods = new();
-        //        List<string> compareModPaths = new();
-
-        //        foreach (var item in modPaths)
-        //        {
-        //            string infoPath = item + "/mod_info.json";
-
-        //            differentMods.Add(item, JsonTools.LoadJson<ModDatum_Info>(infoPath));
-        //        }
-
-        //        for (int i = 0; i < differentMods.Count; i++)
-        //        {
-        //            var inf = differentMods.ElementAt(i);
-
-        //            foreach (var item in ModFactory.mods)
-        //            {
-        //                if (item.info.id == inf.Value.id && item.info.version == inf.Value.version)
-        //                {
-        //                    differentMods.Remove(inf.Key);
-        //                    compareModPaths.Add(inf.Key);
-        //                }
-        //            }
-        //        }
-
-        //        if (differentMods.Count > 0)
-        //        {
-        //            Debug.Log("与服务器模组不同步, 请重进游戏");
-
-        //            foreach (var item in differentMods)
-        //                Debug.LogError("不同步的模组: " + item.Value.id);
-
-        //            foreach (var item in compareModPaths)
-        //            {
-        //                Directory.Delete(item);
-        //            }
-
-        //            Tools.MoveFolder(path + "/mods", Tools.modsPath);
-
-        //            Tools.Restart();
-        //        }
-        //    }));
-        //}, true));
-        #endregion
-
 
         #region 生成区域
 
-        //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
+        /// <summary>
+        /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
+        /// </summary>
         [Button]
         public void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme = null)
         {
+            //检查是否正在生成
             if (regionGenerationSaves != null || regionGenerationRegion != null)
             {
                 Debug.LogError("正在生成区域, 请等待");
@@ -1033,7 +995,10 @@ namespace GameCore
             askingForGeneratingRegion = true;
             regionGenerationSaves = new();
 
+            //向服务器发送请求
             ServerGenerateRegionCore(index, isFirstGeneration, specificTheme);
+
+            //等待服务器发回所有资源
             StartCoroutine(IEWaitForRegionSegments());
         }
 
@@ -1042,10 +1007,20 @@ namespace GameCore
             yield return new WaitUntil(() => regionGenerationRegion != null);
             yield return new WaitUntil(() => regionGenerationSaves.Count == regionGenerationBlocksCount);
 
+
+            //恢复方块数据 (浅拷贝时方块数据被清除了)
             regionGenerationRegion.blocks = regionGenerationSaves;
+
+
+            //如果是服务器的话要恢复实体数据 (浅拷贝时实体数据被清除了)
+            if (isServer)
+                regionGenerationRegion.entities = GetRegionToGenerate(regionGenerationRegion.index).entities;
+
 
             Debug.Log($"收到服务器回调, 正在生成已有区域 {regionGenerationRegion.index}");
 
+
+            //生成出区域
             GM.instance.GenerateExistingRegion(regionGenerationRegion, () =>
             {
                 if (regionGenerationIsFirstGeneration)
@@ -1066,7 +1041,22 @@ namespace GameCore
             }, null, (ushort)(GFiles.settings.performanceLevel * (regionGenerationIsFirstGeneration ? 4 : 0.8f)));
         }
 
-        //告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
+        public Region GetRegionToGenerate(Vector2Int index)
+        {
+            lock (GFiles.world.regionData)
+            {
+                foreach (Region region in GFiles.world.regionData)
+                {
+                    if (region.index == index && region.generatedAlready)
+                    {
+                        return region;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         [ServerRpc]
         private void ServerGenerateRegionCore(Vector2Int index, bool isFirstGeneration, string specificTheme, NetworkConnection caller = null)
         {
@@ -1077,51 +1067,46 @@ namespace GameCore
                 //如果没有则生成新的区域
                 GM.instance.GenerateNewRegion(index, specificTheme);
 
-                lock (GFiles.world.regionData)
+                //获取生成好的区域
+                var regionToGenerate = GetRegionToGenerate(index) ?? throw new();
+
+                //这些代码必须在主线程里执行
+                MethodAgent.RunOnMainThread(() =>
                 {
-                    foreach (Region region in GFiles.world.regionData)
+                    //? 因为直接发送一个 region 实在太大了，所以我们不得不将他们分成一个个的 BlockSave
+                    void ConnectionGenerate()
                     {
-                        if (region.index == index && region.generatedAlready)
+                        //? 浅拷贝区域
+                        var copy = regionToGenerate.ShallowCopy();
+                        copy.blocks = null;
+                        copy.entities = new();
+                        if (hasSetPosBySave)
+                            copy.spawnPoint = Vector2Int.zero;
+
+                        ConnectionGenerateRegionTotal(copy, regionToGenerate.blocks.Count, isFirstGeneration, caller);
+
+                        foreach (var segment in regionToGenerate.blocks)
                         {
-                            MethodAgent.RunOnMainThread(() =>
-                            {
-                                //? 因为直接发送一个 region 实在太大了，所以我们不得不将他们分成一个个的 BlockSave
-                                void ConnectionGenerate()
-                                {
-                                    var copy = region.ShallowCopy();
-                                    copy.blocks = null;
-                                    if (hasSetPosBySave)
-                                        copy.spawnPoint = Vector2Int.zero;
-
-                                    ConnectionGenerateRegionTotal(copy, region.blocks.Count, isFirstGeneration, caller);
-
-                                    foreach (var segment in region.blocks)
-                                    {
-                                        ConnectionGenerateRegion(segment, caller);
-                                    }
-                                }
-
-                                //* 如果是服务器发送的申请: 服务器生成
-                                if (isLocalPlayer)
-                                {
-                                    ConnectionGenerate();
-                                }
-                                //* 如果是客户端发送的申请: 服务器先生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
-                                else
-                                {
-                                    GM.instance.GenerateExistingRegion(
-                                            region,
-                                            () => ConnectionGenerate(),
-                                            () => ConnectionGenerate(),
-                                            (ushort)(GFiles.settings.performanceLevel / 2)
-                                        );
-                                }
-                            });
-
-                            break;
+                            ConnectionGenerateRegion(segment, caller);
                         }
                     }
-                }
+
+                    //* 如果是服务器发送的申请: 服务器生成
+                    if (isLocalPlayer)
+                    {
+                        ConnectionGenerate();
+                    }
+                    //* 如果是客户端发送的申请: 服务器先生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
+                    else
+                    {
+                        GM.instance.GenerateExistingRegion(
+                                regionToGenerate,
+                                () => ConnectionGenerate(),
+                                () => ConnectionGenerate(),
+                                (ushort)(GFiles.settings.performanceLevel / 2)
+                            );
+                    }
+                });
             });
         }
 
@@ -1373,8 +1358,8 @@ namespace GameCore
                     if (ray.transform.GetInstanceID() == transform.GetInstanceID())
                         continue;
 
-                    //这里的作用是获得攻击目标  [先尝试获取 Creature, 再尝试获取 CreatureBodyPart]
-                    if (!ray.transform.TryGetComponent<Creature>(out var target) || target.hurtable)
+                    //这里的作用是获得攻击目标  [先尝试获取 Entity, 再尝试获取 CreatureBodyPart]
+                    if (!ray.transform.TryGetComponent<Entity>(out var target) || target.hurtable)
                     {
                         if (ray.transform.TryGetComponent<CreatureBodyPart>(out var cbp) && target.hurtable)
                         {

@@ -114,7 +114,9 @@ namespace GameCore
                 if (generationId == EntityID.Player)
                     data.behaviourType = typeof(Player);
                 if (data == null)
-                    Debug.LogError("严重错误!! 该实体的 data 为空!!!!!!!", this);
+                    Debug.LogError($"严重错误!! 该实体的 {nameof(data)} 为空!!!!!!!", this);
+                if (save == null)
+                    Debug.LogError($"严重错误!! 该实体的存档数据为空!!!!!!!", this);
 
                 AutoRegisterVars();
             }));

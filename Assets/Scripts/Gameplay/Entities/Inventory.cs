@@ -302,14 +302,13 @@ namespace GameCore
         {
             //如果有一样的, 添加数量
             //TODO: 有一样的, 但数量不足
-            var indexes = GetIndexesToPutItemIntoItems(slots, item, out bool hasReachedNeededCount);
-
-            if (!hasReachedNeededCount)
+            if (!GetIndexesToPutItemIntoItems(slots, item, out var indexes))
             {
                 Debug.LogError("异常: 槽位满了");
                 return;
             }
 
+            //填入物品
             foreach (var index in indexes)
             {
                 var i = index.Key;
@@ -327,6 +326,7 @@ namespace GameCore
                 }
 
                 slots[i] = slot;
+                owner?.OnInventoryItemChange(this, i.ToString());
             }
         }
 
@@ -513,12 +513,12 @@ namespace GameCore
 
 
 
-        public static Dictionary<int, ushort> GetNeededItemIndexesFromItems(Item[] items, ItemData neededItem, uint neededCount, out bool hasReachedNeededCount)
-            => GetNeededItemIndexesFromItems(items, neededItem.id, neededItem.tags.ToArray(), neededCount, out hasReachedNeededCount);
+        public static bool GetNeededItemIndexesFromItems(Item[] items, ItemData neededItem, uint neededCount, out Dictionary<int, ushort> result)
+            => GetNeededItemIndexesFromItems(items, neededItem.id, neededItem.tags.ToArray(), neededCount, out result);
 
-        public static Dictionary<int, ushort> GetNeededItemIndexesFromItems(Item[] items, string neededId, string[] neededTags, uint neededCount, out bool hasReachedNeededCount)
+        public static bool GetNeededItemIndexesFromItems(Item[] items, string neededId, string[] neededTags, uint neededCount, out Dictionary<int, ushort> result)
         {
-            Dictionary<int, ushort> result = new();
+            Dictionary<int, ushort> resultTemp = new();
             ushort comparedCount = 0;
 
 
@@ -541,7 +541,7 @@ namespace GameCore
                     ushort count = Convert.ToUInt16(Mathf.Min(current.count, neededCount - comparedCount));
 
                     comparedCount += count;
-                    result.Add(i, count);
+                    resultTemp.Add(i, count);
                 }
 
 
@@ -569,15 +569,15 @@ namespace GameCore
 
 
 
-            hasReachedNeededCount = comparedCount == neededCount;
-            return result;
+            result = resultTemp;
+            return comparedCount == neededCount;
         }
 
-        public static Dictionary<int, ushort> GetIndexesToPutItemIntoItems(Item[] items, Item item, out bool hasReachedNeededCount)
-            => GetIndexesToPutItemIntoItems(items, item.data.id, item.count, item.data.maxCount, out hasReachedNeededCount);
-        public static Dictionary<int, ushort> GetIndexesToPutItemIntoItems(Item[] items, string neededId, uint neededCount, ushort perSlotMaxCount, out bool hasReachedNeededCount)
+        public static bool GetIndexesToPutItemIntoItems(Item[] items, Item item, out Dictionary<int, ushort> result)
+            => GetIndexesToPutItemIntoItems(items, item.data.id, item.count, item.data.maxCount, out result);
+        public static bool GetIndexesToPutItemIntoItems(Item[] items, string neededId, uint neededCount, ushort perSlotMaxCount, out Dictionary<int, ushort> result)
         {
-            Dictionary<int, ushort> result = new();
+            Dictionary<int, ushort> resultTemp = new();
             ushort comparedCount = 0;
 
 
@@ -601,7 +601,7 @@ namespace GameCore
                     ushort count = Convert.ToUInt16(Mathf.Min(space, neededCount - comparedCount));
 
                     comparedCount += count;
-                    result.Add(i, count);
+                    resultTemp.Add(i, count);
                 }
 
 
@@ -623,8 +623,8 @@ namespace GameCore
 
 
 
-            hasReachedNeededCount = comparedCount == neededCount;
-            return result;
+            result = resultTemp;
+            return comparedCount == neededCount;
         }
     }
 
@@ -654,7 +654,16 @@ namespace GameCore
         {
             if (!Null(data))
             {
-                Item trueItem = ModFactory.CompareItem(data.data.id).DataToItem();
+                ItemData trueData = ModFactory.CompareItem(data.data.id);
+
+                if (trueData == null)
+                {
+                    Debug.LogWarning($"存档中的物品数据不存在，已自动删除 (id={data.data.id})");
+                    data = null;
+                    return;
+                }
+
+                Item trueItem = trueData.DataToItem();
 
                 trueItem.count = data.count;
                 trueItem.customData = data.customData;
@@ -883,9 +892,7 @@ namespace GameCore
 
             foreach (var ing in ingredients)
             {
-                var itemsToUse = Inventory.GetNeededItemIndexesFromItems(items, ing.id, ing.tags.ToArray(), ing.count, out bool hasReachedNeededCount);
-
-                if (hasReachedNeededCount)
+                if (Inventory.GetNeededItemIndexesFromItems(items, ing.id, ing.tags.ToArray(), ing.count, out var itemsToUse))
                 {
                     ingredientTables.Add(itemsToUse);
                 }
@@ -935,7 +942,8 @@ namespace GameCore
     [Serializable]
     public class CookingRecipe : Recipe<CookingRecipe_Item>
     {
-
+        [LabelText("类型")] public string type;
+        [LabelText("需要碗")] public bool needBowl;
     }
 
     [Serializable]

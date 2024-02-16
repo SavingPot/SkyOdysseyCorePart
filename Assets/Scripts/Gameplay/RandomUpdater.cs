@@ -55,13 +55,13 @@ namespace GameCore
             Debug.LogWarning($"未找到指定更新 {id}");
         }
 
-        static Type NotSummonableAttributeType = typeof(NotSummonableAttribute);
+        static readonly Type NotSummonableAttributeType = typeof(NotSummonableAttribute);
 
         [RuntimeInitializeOnLoadMethod]
         private static void BindMethods()
         {
             #region 生成实体
-            Bind("ori:summon_entities", 4, () =>
+            Bind("ori:summon_entities", 5, () =>
             {
                 if (EntityCenter.all.Count >= 100 || !Map.HasInstance() || Map.instance.chunks.Count == 0)
                     return;

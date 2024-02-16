@@ -14,6 +14,7 @@ namespace GameCore
         public const string Campfire = "ori:campfire";
         public const string Chat = "ori:chat";
         public const string CloseBackpack = "ori:close_backpack";
+        public const string CloseDoor = "ori:close_door";
         public const string Complete = "ori:complete";
         public const string Cooking = "ori:cooking";
         public const string Crafting = "ori:crafting";
@@ -29,6 +30,7 @@ namespace GameCore
         public const string Hoe = "ori:hoe";
         public const string Ignite = "ori:ignite";
         public const string OpenBackpack = "ori:open_backpack";
+        public const string OpenDoor = "ori:open_door";
         public const string Owl1 = "ori:owl_1";
         public const string Owl2 = "ori:owl_2";
         public const string PickBerryBush = "ori:pick_berry_bush";
@@ -38,6 +40,10 @@ namespace GameCore
         public const string Reward = "ori:reward";
         public const string Rooster = "ori:rooster";
         public const string Smother = "ori:smother";
+        public const string Swim0 = "ori:swim_0";
+        public const string Swim1 = "ori:swim_1";
+        public const string Swim2 = "ori:swim_2";
+        public const string Swim3 = "ori:swim_3";
         public const string SwitchQuickInventorySlot = "ori:switch_quick_inventory_slot";
         public const string Town = "ori:town";
         public const string WearArmor = "ori:wear_armor";
@@ -45,9 +51,5 @@ namespace GameCore
         public const string Wolf1 = "ori:wolf_1";
         public const string ZombieAttack = "ori:zombie_attack";
         public const string ZombieSpare = "ori:zombie_spare";
-        public const string Swim0 = "ori:swim_0";
-        public const string Swim1 = "ori:swim_1";
-        public const string Swim2 = "ori:swim_2";
-        public const string Swim3 = "ori:swim_3";
     }
 }

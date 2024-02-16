@@ -194,7 +194,7 @@ namespace GameCore.High
                     pos = n.pos,
                     saveId = n.saveId,
                     customData = n.customData,
-                    health = n.health
+                    health = n.health,
                 };
 
                 if (n.saveIntoRegion)

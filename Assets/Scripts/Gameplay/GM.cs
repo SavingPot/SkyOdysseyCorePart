@@ -846,8 +846,6 @@ namespace GameCore
                 List<BiomeData_Block> postProcessBlocksTemp = new();
                 List<BiomeData_Block> unexpectedBlocksTemp = new();
 
-                List<(Vector2Int pos, bool isBackground)> blockAdded = new();
-
                 foreach (var g in islandGeneration.biome.blocks)
                 {
                     if (g == null)
@@ -882,7 +880,7 @@ namespace GameCore
                     //? 添加到区域生成，需要根据岛的中心位置做偏移，而在添加到岛屿生成则不需要
                     islandGeneration.regionGeneration.region.AddPos(blockId, x + centerPoint.x, y + centerPoint.y, isBackground, true, customData);
 
-                    blockAdded.Add((new(x, y), isBackground)); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
+                    islandGeneration.blockAdded.Add((new(x, y), isBackground)); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
                 }
 
                 void AddBlockInTheIslandForAreas(string blockId, int x, int y, Vector3Int[] areas)
@@ -894,13 +892,13 @@ namespace GameCore
                         Vector2Int actualPos = new(x + item.x, y + item.y);
                         bool actualIsBackground = item.z < 0;
 
-                        for (int c = 0; c < blockAdded.Count; c++)
+                        for (int c = 0; c < islandGeneration.blockAdded.Count; c++)
                         {
-                            var p = blockAdded[c];
+                            var p = islandGeneration.blockAdded[c];
                             if (p.pos == actualPos && p.isBackground == actualIsBackground)
-                                blockAdded.RemoveAt(c);
+                                islandGeneration.blockAdded.RemoveAt(c);
                         }
-                        blockAdded.Add((actualPos, actualIsBackground));
+                        islandGeneration.blockAdded.Add((actualPos, actualIsBackground));
                     }
                 }
 
@@ -992,7 +990,7 @@ namespace GameCore
                 Dictionary<int, int> wallHighestPointFunction = new();
                 Dictionary<int, int> backgroundHighestPointFunction = new();
 
-                foreach (var oneAdded in blockAdded)
+                foreach (var oneAdded in islandGeneration.blockAdded)
                 {
                     var pos = oneAdded.pos;
                     var isBackground = oneAdded.isBackground;
@@ -1347,6 +1345,7 @@ namespace GameCore
         public int surfaceExtra1;
         public bool isCenterIsland;
         public FormulaAlgebra directBlockComputationAlgebra;
+        public List<(Vector2Int pos, bool isBackground)> blockAdded;
 
 
 
@@ -1424,54 +1423,55 @@ namespace GameCore
             {
                 Vector2Int lootBlockPos = new(highest.Key, highest.Value + 1);
 
+                //如果位置被占用就跳过
+                if (generation.blockAdded.Any(added => added.pos == lootBlockPos && !added.isBackground))
+                    continue;
+
                 /* ----------------------------------- 木桶 (只有中心空岛有) ----------------------------------- */
-                if (generation.biome.id == BiomeID.Center)
+                if (generation.biome.id == BiomeID.Center && lootBlockPos.x == 15)
                 {
-                    if (lootBlockPos.x == 15)
+                    JToken[] group = new JToken[28];
+
+                    //填充每个栏位
+                    for (int i = 0; i < group.Length; i++)
                     {
-                        JToken[] group = new JToken[28];
+                        /* --------------------------------- 抽取一个物品 --------------------------------- */
+                        Item item = null;
 
-                        //填充每个栏位
-                        for (int i = 0; i < group.Length; i++)
+                        switch (i)
                         {
-                            /* --------------------------------- 抽取一个物品 --------------------------------- */
-                            Item item = null;
+                            case 0:
+                                item = ModFactory.CompareItem(BlockID.Dirt).DataToItem();
+                                item.count = 30;
+                                break;
+                            case 1:
 
-                            switch (i)
-                            {
-                                case 0:
-                                    item = ModFactory.CompareItem(BlockID.Dirt).DataToItem();
-                                    item.count = 30;
-                                    break;
-                                case 1:
+                                item = ModFactory.CompareItem(ItemID.SportsVest).DataToItem();
+                                break;
 
-                                    item = ModFactory.CompareItem(ItemID.SportsVest).DataToItem();
-                                    break;
+                            case 2:
+                                item = ModFactory.CompareItem(ItemID.SportsShorts).DataToItem();
+                                break;
 
-                                case 2:
-                                    item = ModFactory.CompareItem(ItemID.SportsShorts).DataToItem();
-                                    break;
-
-                                case 3:
-                                    item = ModFactory.CompareItem(ItemID.Sneakers).DataToItem();
-                                    break;
-                            }
-
-                            /* ---------------------------------- 填充物品 ---------------------------------- */
-                            if (item != null)  //如果获取失败了, 这个格子也会为空
-                            {
-                                group[i] = JToken.FromObject(item);
-                            }
+                            case 3:
+                                item = ModFactory.CompareItem(ItemID.Sneakers).DataToItem();
+                                break;
                         }
 
-                        JObject jo = new();
-
-                        jo.AddObject("ori:container");
-                        jo["ori:container"].AddObject("items");
-                        jo["ori:container"]["items"].AddArray("array", group);
-
-                        AddBlockInIsland(BlockID.Barrel, lootBlockPos.x, lootBlockPos.y, false, jo.ToString(Formatting.None));
+                        /* ---------------------------------- 填充物品 ---------------------------------- */
+                        if (item != null)  //如果获取失败了, 这个格子也会为空
+                        {
+                            group[i] = JToken.FromObject(item);
+                        }
                     }
+
+                    JObject jo = new();
+
+                    jo.AddObject("ori:container");
+                    jo["ori:container"].AddObject("items");
+                    jo["ori:container"]["items"].AddArray("array", group);
+
+                    AddBlockInIsland(BlockID.Barrel, lootBlockPos.x, lootBlockPos.y, false, jo.ToString(Formatting.None));
                 }
 
                 /* ----------------------------------- 木箱 ----------------------------------- */
@@ -1581,6 +1581,7 @@ namespace GameCore
         {
             this.regionGeneration = regionGeneration;
             this.isCenterIsland = isCenterIsland;
+            this.blockAdded = new();
 
             //决定群系
             if (isCenterIsland)

@@ -23,16 +23,7 @@ namespace GameCore
 
         public Region ShallowCopy()
         {
-            return new()
-            {
-                index = index,
-                blocks = blocks,
-                entities = entities,
-                regionTheme = regionTheme,
-                size = size,
-                spawnPoint = spawnPoint,
-                generatedAlready = generatedAlready,
-            };
+            return (Region)MemberwiseClone();
         }
 
         //单数!

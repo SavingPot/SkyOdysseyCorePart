@@ -15,8 +15,8 @@ namespace GameCore
         public SpriteRenderer spriteRenderer { get { if (!_spriteRenderer) _spriteRenderer = gameObject.GetOrAddComponent<SpriteRenderer>(); return _spriteRenderer; } }
 
         [BoxGroup("属性")]
-        [LabelText("物品数据")]
-        public Item itemData;
+        [LabelText("物品")]
+        public Item item;
 
 
         protected override void Awake()
@@ -46,21 +46,21 @@ namespace GameCore
             if (ConvertStringItem(customData?["ori:item_data"].ToString(), out string id, out ushort count, out string itemCustomData, out string error))
             {
                 /* ---------------------------------- 获取物品 ---------------------------------- */
-                itemData = ModConvert.ItemDataToItem(ModFactory.CompareItem(id));
+                item = ModConvert.ItemDataToItem(ModFactory.CompareItem(id));
 
-                if (itemData == null)
+                if (item == null)
                 {
                     Debug.LogError($"{nameof(Drop)}.{nameof(SummonSetup)}: 未匹配到物品 {id}");
                     return;
                 }
 
                 /* ---------------------------------- 改变属性 ---------------------------------- */
-                itemData.count = count;
-                itemData.customData = JsonTools.LoadJObjectByString(itemCustomData);
+                item.count = count;
+                item.customData = JsonTools.LoadJObjectByString(itemCustomData);
 
-                if (itemData?.data?.texture != null)
+                if (item?.data?.texture != null)
                 {
-                    spriteRenderer.sprite = itemData.data.texture.sprite;
+                    spriteRenderer.sprite = item.data.texture.sprite;
                 }
             }
             else

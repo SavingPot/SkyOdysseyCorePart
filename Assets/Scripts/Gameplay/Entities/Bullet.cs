@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -48,13 +49,19 @@ namespace GameCore
                     break;
                 }
 
-                if (obj.gameObject.TryGetComponent<Creature>(out var hit) && hit.netId != ownerId)
+                //排除自己
+                if (obj.gameObject == gameObject)
+                    continue;
+
+                //实体
+                if (obj.gameObject.TryGetComponent<Entity>(out var hit) && hit.netId != ownerId)
                 {
                     hit.TakeDamage(damage, 0.2f, transform.position, Vector2.zero);
 
                     if (destroyOnHit)
                         Death();
                 }
+                //方块
                 else if (Block.TryGetBlockFromCollider(obj, out Block block) && !block.blockCollider.isTrigger)
                 {
                     BlockCollision(block);

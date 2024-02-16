@@ -469,7 +469,7 @@ namespace GameCore.UI
                         playerNameField.field.characterLimit = 20;
                         playerNameField.OnUpdate += x => x.field.placeholder.enabled = true;
                         playerNameField.field.placeholder.rectTransform.AddPosY(playerNameField.rt.sizeDelta.y / 2 + playerNameField.field.placeholder.rectTransform.sizeDelta.y / 2);
-                        playerNameField.field.placeholder.color = Color.white;
+                        playerNameField.field.placeholder.color = Color.white;//TODO: 给世界名称也加上类似的机制
                         playerNameField.mask.enabled = false;
                         playerNameField.field.onValueChanged.AddListener(v =>
                         {

@@ -115,7 +115,7 @@ namespace GameCore
 
                     return true;
                 }
-                //护腿
+                //靴子
                 else if (instance.data.Boots != null)
                 {
                     player.ServerSwapItem(inventoryIndex, Inventory.bootsVar);

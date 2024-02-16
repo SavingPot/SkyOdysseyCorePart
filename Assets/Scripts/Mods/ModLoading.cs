@@ -87,6 +87,7 @@ namespace GameCore
             JObject jo = JsonTools.LoadJObjectByPath(path);
             var format = GetCorrectJsonFormatByJObject(jo);
             entrance = jo[entranceId];
+            var entranceIdToken = entrance["id"];
 
             //如果入口为空或者不是对象类型
             if (entrance == null && entrance.Type != JTokenType.Object)
@@ -96,11 +97,29 @@ namespace GameCore
                 return false;
             }
 
-            //如果入口中不包含id
-            if (entrance["id"] == null)
+            //如果入口中不包含 id
+            if (entranceIdToken == null)
             {
                 obj = null;
                 Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中必须包含 id");
+                return false;
+            }
+
+            var entranceIdTokenAsString = entranceIdToken.ToString();
+
+            //如果入口中 id 为空
+            if (string.IsNullOrWhiteSpace(entranceIdTokenAsString))
+            {
+                obj = null;
+                Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中的 id 为空");
+                return false;
+            }
+
+            //检查 id 的格式
+            if (Tools.SplitIdBySeparator(entranceIdTokenAsString).Length != 2)
+            {
+                obj = null;
+                Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中 id 的格式不正确, 必须为 \"mod_id:project_name\"");
                 return false;
             }
 
@@ -109,7 +128,7 @@ namespace GameCore
             {
                 jsonFormat = format,
                 jo = jo,
-                id = entrance["id"].ToString()
+                id = entranceIdTokenAsString
             };
 
             return true;
@@ -310,6 +329,8 @@ namespace GameCore
                 {
                     newRecipe.jsonFormatWhenLoad = "0.6.0";
 
+                    newRecipe.type = cr["cooking_pot"]?.ToString() ?? "ori:poach";
+                    newRecipe.needBowl = cr["need_bowl"]?.ToBool() ?? false;
                     newRecipe.result = new(cr["result"]["id"].ToString(), (cr["result"]["count"]?.ToInt() ?? 1).ToUShort(), new());
 
                     List<CookingRecipe_Item> ingredients = new();
@@ -439,71 +460,69 @@ namespace GameCore
             return datumAudios;
         }
 
-        public static KeyValuePair<BlockData, ItemData> LoadBlock(JObject jo)
+        public static KeyValuePair<BlockData, ItemData> LoadBlock(string path)
         {
-            if (jo == null)
-            {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return new(null, null);
-            }
+            ItemData newItem = null;
 
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            BlockData newBlock = new()
+            if (LoadModClass(path, "ori:block", out BlockData newBlock, out var entrance))
             {
-                jsonFormat = format,
-                jo = jo
-            };
-            ItemData newItem;
-
-            if (GameTools.CompareVersions(format, "0.6.0", Operators.less))
-            {
-                newItem = null;
-            }
-            // 0.6.0 -> 0.?.?
-            else
-            {
-                newBlock.jsonFormatWhenLoad = "0.6.0";
-                newBlock.id = jo["ori:block"]?["id"]?.ToString();
-                newBlock.defaultTexture = new(jo["ori:block"]?["display"]?["texture_id"]?.ToString());
-                newBlock.description = jo["ori:block"]?["display"]?["description"]?.ToString();
-                newBlock.lightLevel = jo["ori:block"]?["display"]?["lightLevel"]?.ToFloat() ?? 0;
-                newBlock.hardness = jo["ori:block"]?["property"]?["hardness"]?.ToFloat() ?? BlockData.defaultHardness;
-                newBlock.collidible = jo["ori:block"]?["property"]?["collidible"]?.ToBool() ?? true;
-
-                jo["ori:block"]?["property"]?["tags"]?.For(i =>
+                if (GameTools.CompareVersions(newBlock.jsonFormat, "0.6.0", Operators.less))
                 {
-                    newBlock.tags.Add(i.ToString());
-                });
-
-                newBlock.behaviourName = jo["ori:block"]?["property"]?["behaviour"]?.ToString();
-
-                if (jo["ori:block"]?["property"]?["drops"] == null)
-                    newBlock.drops.Add(new(newBlock.id, 1));
+                    newItem = null;
+                }
+                // 0.6.0 -> 0.?.?
                 else
                 {
-                    newBlock.drops = LoadDrops(jo["ori:block"]["property"]["drops"], "0.7.1");
-                }
+                    newBlock.jsonFormatWhenLoad = "0.6.0";
+                    newBlock.description = entrance["display"]?["description"]?.ToString();
+                    newBlock.lightLevel = entrance["display"]?["light_level"]?.ToFloat() ?? 0;
+                    newBlock.hardness = entrance["property"]?["hardness"]?.ToFloat() ?? BlockData.defaultHardness;
+                    newBlock.collidible = entrance["property"]?["collidible"]?.ToBool() ?? true;
+
+                    //如果不指定介绍
+                    (var jtModId, var jtProjectName) = Tools.SplitModIdAndName(newBlock.id);
+                    newBlock.description ??= $"{jtModId}:description.{jtProjectName}";
+
+                    //如果指定 texture 就是 texture, 不指定 texture 就是 id
+                    newBlock.defaultTexture = new(entrance["display"]?["texture_id"]?.ToString() ?? newBlock.id);
 
 
-                if (jo["ori:item"] == null)
-                {
-                    newItem = new(newBlock, false);
-                }
-                else
-                {
-                    newItem = LoadItem(jo);
-                    newItem.id = newBlock.id;
-                    newItem.description ??= newBlock.description;
-                    newItem.isBlock = true;
+                    entrance["property"]?["tags"]?.For(i =>
+                    {
+                        newBlock.tags.Add(i.ToString());
+                    });
 
-                    if (newItem.tags.Count == 0)
-                        newItem.tags = newBlock.tags;
+                    newBlock.behaviourName = entrance["property"]?["behaviour"]?.ToString();
 
-                    if (newItem.texture == null || newItem.texture.id == null)
-                        newItem.texture = newBlock.defaultTexture;
+                    if (entrance["property"]?["drops"] == null)
+                        newBlock.drops.Add(new(newBlock.id, 1));
+                    else
+                    {
+                        newBlock.drops = LoadDrops(entrance["property"]["drops"], "0.7.1");
+                    }
+
+
+                    if (newBlock.jo["ori:item"] == null)
+                    {
+                        newItem = new(newBlock, false);
+                    }
+                    else
+                    {
+                        newItem = LoadItem(newBlock.jo);
+                        newItem.id = newBlock.id;
+                        newItem.description ??= newBlock.description;
+                        newItem.isBlock = true;
+
+                        if (newItem.tags.Count == 0)
+                            newItem.tags = newBlock.tags;
+
+                        if (newItem.texture == null || newItem.texture.id == null)
+                            newItem.texture = newBlock.defaultTexture;
+                    }
                 }
             }
+
+
 
             return new(newBlock, newItem);
         }
@@ -839,6 +858,16 @@ namespace GameCore
 
 
 
+            newItem.id = jt["id"]?.ToString();
+            newItem.damage = jt["damage"]?.ToInt() ?? ItemData.defaultDamage;
+            newItem.excavationStrength = jt["excavation_strength"]?.ToInt() ?? ItemData.defaultExcavationStrength;
+            newItem.useCD = jt["use_cd"]?.ToFloat() ?? ItemData.defaultUseCD;
+            newItem.description = jt["description"]?.ToString();
+            newItem.extraDistance = jt["extra_distance"]?.ToString()?.ToFloat() ?? 0;
+
+
+
+
             if (GameTools.CompareVersions(format, "0.7.8", Operators.less))
             {
                 newItem.texture = new(jt["texture"]?.ToString());
@@ -850,16 +879,12 @@ namespace GameCore
                 newItem.texture = new(display?["texture"]?.ToString());
             }
 
+            //如果不指定 texture 就是 id
+            newItem.texture ??= ModFactory.CompareTexture(newItem.id);
 
 
 
 
-            newItem.id = jt["id"]?.ToString();
-            newItem.damage = jt["damage"]?.ToInt() ?? ItemData.defaultDamage;
-            newItem.excavationStrength = jt["excavation_strength"]?.ToInt() ?? ItemData.defaultExcavationStrength;
-            newItem.useCD = jt["use_cd"]?.ToFloat() ?? ItemData.defaultUseCD;
-            newItem.description = jt["description"]?.ToString();
-            newItem.extraDistance = jt["extra_distance"]?.ToString()?.ToFloat() ?? 0;
 
             if (helmet != null)
             {

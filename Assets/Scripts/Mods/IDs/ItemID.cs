@@ -9,6 +9,7 @@ namespace GameCore
         public const string CactusFlower = "ori:cactus_flower";
         public const string ChickenDrumstick = "ori:chicken_drumstick";
         public const string ChickenFeather = "ori:chicken_feather";
+        public const string ChickenSoup = "ori:chicken_soup";
         public const string DewGrass = "ori:dew_grass";
         public const string DewPotion = "ori:dew_potion";
         public const string DishInWoodenBowl = "ori:dish_in_wooden_bowl";
@@ -25,10 +26,12 @@ namespace GameCore
         public const string IronKnife = "ori:iron_knife";
         public const string IronSword = "ori:iron_sword";
         public const string ManaStone = "ori:mana_stone";
-        public const string Potato = "ori:potato";
         public const string Onion = "ori:onion";
         public const string PlantFiber = "ori:plant_fiber";
+        public const string Potato = "ori:potato";
+        public const string RawDogTailGrassNoodles = "ori:raw_dog_tail_grass_noodles";
         public const string RoastScallion = "ori:roast_scallion";
+        public const string Salad = "ori:salad";
         public const string Scallion = "ori:scallion";
         public const string ShelledDogTailGrass = "ori:shelled_dog_tail_grass";
         public const string Sneakers = "ori:sneakers";
@@ -44,9 +47,6 @@ namespace GameCore
         public const string Watermelon = "ori:watermelon";
         public const string WoodenBow = "ori:wooden_bow";
         public const string WoodenBowl = "ori:wooden_bowl";
-        public const string WoodenBowlWithChickenSoup = "ori:wooden_bowl_with_chicken_soup";
-        public const string WoodenBowlWithDogTailGrassNoodles = "ori:wooden_bowl_with_dog_tail_grass_noodles";
-        public const string WoodenBowlWithSalad = "ori:wooden_bowl_with_salad";
         public const string WoodenBowlWithWater = "ori:wooden_bowl_with_water";
         public const string WoodenSaw = "ori:wooden_saw";
     }

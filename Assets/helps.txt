@@ -7,6 +7,8 @@
 遇到Editor与运行时结果不一致时, 尝试开启Debug编译/开发导出
 
 
+
+
 Action action= () => {};
 for (int i = 0; i < 4; i++)
 {
@@ -168,6 +170,21 @@ Mirror不支持传输byte[][]
 
 ----- Json.Net -----
 使用 JToken.ToObject<T> 而不是 JToken.Value<T>
+
+public class Base
+{
+    public int a;
+}
+public class Foo : Base
+{
+    public string name;
+}
+当我们序列化 List<Base> 时, Foo.name 的信息不会被序列化, 我们要把 List<Base> 转换为 List<object>
+    !!!!!!!同时, 序列化器设置要更改!!!!!
+        private static readonly JsonSerializerSettings defaultJsonSerializerSettings = new()
+        {
+            TypeNameHandling = TypeNameHandling.Auto, //让 Json.Net 自动识别类型名
+        };
 --------------------
 
 ----- 性能 -----

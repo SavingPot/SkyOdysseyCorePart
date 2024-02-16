@@ -245,7 +245,6 @@ namespace GameCore
             {
                 foreach (var type in ass.GetTypes())
                 {
-                    //排除无用的程序集, 加快加载
                     if (!IsUserType(type))
                         continue;
 
@@ -266,7 +265,7 @@ namespace GameCore
             if (type == null)
                 return false;
 
-            //2. type 无命名空间
+            //* 2. type 无命名空间则认为   是用户类型
             if (type.Namespace.IsNullOrWhiteSpace())
                 return true;
 
@@ -674,12 +673,13 @@ namespace GameCore
 
                     for (int b = 0; b < blockPaths.Count; b++) MethodAgent.DebugRun(() =>
                     {
-                        JObject jo = JsonTools.LoadJObjectByPath(blockPaths[b]);
+                        var blockPair = ModLoading.LoadBlock(blockPaths[b]);
 
-                        var bI = ModLoading.LoadBlock(jo);
-
-                        newMod.blocks.Add(bI.Key);
-                        newMod.items.Add(bI.Value);
+                        if (blockPair.Key != null && blockPair.Value != null)
+                        {
+                            newMod.blocks.Add(blockPair.Key);
+                            newMod.items.Add(blockPair.Value);
+                        }
                     });
 
                     //if (Directory.Exists(terrainTilesPath)) MethodAgent.RunInTry(() =>
@@ -1049,22 +1049,36 @@ namespace GameCore
             }
         }
 
-        static void GetEntityBinding(EntityData entity)
+        static void GetEntityBehaviourType(EntityData entity)
         {
             foreach (Mod mod in mods)
             {
                 foreach (ImportType importType in mod.importTypes)
                 {
-                    //如果继承自 Entity (包括间接继承) 并绑定了 实体json.id
-                    if (importType.type.IsSubclassOf(typeof(Entity)) &&
-                        AttributeGetter.TryGetAttribute(importType.type, out EntityBindingAttribute attribute) &&
-                        attribute.id == entity.id)
+                    //如果检测到 EntityBindingAttribute
+                    if (AttributeGetter.TryGetAttribute(importType.type, out EntityBindingAttribute attribute))
                     {
-                        entity.behaviourType = importType.type;
-                        return;
+                        //如果继承自 Entity (包括间接继承)
+                        if (importType.type.IsSubclassOf(typeof(Entity)))
+                        {
+                            //如果 id 相同
+                            if (attribute.entityId == entity.id)
+                            {
+                                entity.behaviourType = importType.type;
+
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogError($"实体数据 {entity.id} 所绑定的实体行为类不继承于 {nameof(Entity)}");
+                            return;
+                        }
                     }
                 }
             }
+
+            Debug.LogError($"实体数据 {entity.id} 没有绑定到任何实体行为类 (请使用 EntityBindingAttribute 来绑定)");
         }
 
         static void GetItemBehaviour(ItemData item)
@@ -1124,10 +1138,10 @@ namespace GameCore
         public static void ReconfigureMod(ref Mod mod)
         {
             //将实体的 type 都清空重新匹配
-            for (int c = 0; c < mod.entities.Count; c++)
+            foreach (var entityData in mod.entities)
             {
-                mod.entities[c].behaviourType = null;
-                GetEntityBinding(mod.entities[c]);
+                entityData.behaviourType = null;
+                GetEntityBehaviourType(entityData);
             }
 
             //将物品的 type 都清空重新匹配

@@ -421,7 +421,7 @@ namespace GameCore
                 {
                     /* ---------------------------------- 生成常量 ---------------------------------- */
                     var mtdPathConst = Expression.Constant(mtdPath);
-                    var mtdInfo = Expression.Constant(new NMRpc(mtdPath, callType));
+                    var NMRpcTemp = Expression.Constant(new NMRpc(mtdPath, callType));
 
                     /* ---------------------------------- 获取参数 ---------------------------------- */
                     var totalParameters = mtd.GetParameters();   //分为真正的参数和 NetworkConnection
@@ -560,7 +560,7 @@ namespace GameCore
                                             Expression.Call(
                                                 null,
                                                 _RemoteCall,
-                                                mtdInfo,
+                                                NMRpcTemp,
                                                         remoteParam_caller,
                                                         remoteParam_parameter0,
                                                         remoteParam_parameter1,
@@ -659,7 +659,7 @@ namespace GameCore
                                             Expression.Call(
                                                 null,
                                                 _RemoteCall,
-                                                mtdInfo,
+                                                NMRpcTemp,
                                                         remoteParam_caller,
                                                         remoteParam_parameter0,
                                                         remoteParam_parameter1,

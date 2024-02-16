@@ -11,6 +11,7 @@ using SP.Tools.Unity;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TMPro;
@@ -167,6 +168,7 @@ namespace GameCore
         [BoxGroup("变量ID"), LabelText("变量唯一ID")] public uint varInstanceId => Init.netId;
         [HideInInspector] public bool isPlayer;
         [HideInInspector] public bool isNotPlayer;
+        [HideInInspector] public bool isNPC;
         [HideInInspector] public bool isNotNPC;
         [HideInInspector] public float timeToAutoDestroy;
         Type classType;
@@ -194,7 +196,7 @@ namespace GameCore
         public bool hurtable = true;
         [BoxGroup("属性"), LabelText("数据"), HideInInspector] public EntityData data = null;
         [BoxGroup("属性"), LabelText("效果")] public Dictionary<string, float> effects = new();
-        [BoxGroup("组件"), LabelText("渲染器")] public List<Renderer> renderers = new();
+        [BoxGroup("组件"), LabelText(text: "渲染器")] public List<Renderer> renderers = new();
         [BoxGroup("组件"), LabelText("精灵渲染器"), ReadOnly] public List<SpriteRenderer> spriteRenderers = new();
         [BoxGroup("属性"), LabelText("受伤音效")] public string takeDamageAudioId = AudioID.GetHurt;
 
@@ -329,7 +331,7 @@ namespace GameCore
             if (isPlayer)
                 return;
 
-            WriteDataToSave();
+            WriteDataToWorldSave();
             Destroy(gameObject);
         }
 
@@ -366,7 +368,8 @@ namespace GameCore
             netIdentity = GetComponent<NetworkIdentity>();
             isPlayer = this is Player;
             isNotPlayer = !isPlayer;
-            isNotNPC = this is not NPC;
+            isNPC = this is NPC;
+            isNotNPC = !isNPC;
             classType = GetType();
             rb = GetComponent<Rigidbody2D>();
             mainCollider = GetComponent<BoxCollider2D>();
@@ -395,9 +398,6 @@ namespace GameCore
 
         protected virtual void OnDestroy()
         {
-            //TODO: 移动到 EntityInit
-            //Debug.Log($"实体 {name} 被删除, Datum Null = {datum == null}", gameObject);
-
             EntityCenter.RemoveEntity(this);
         }
 
@@ -418,15 +418,24 @@ namespace GameCore
         {
             //更新区域序列
             var newRegionIndex = PosConvert.ChunkToRegionIndex(chunkIndex);
-            if (regionIndex != newRegionIndex) regionIndex = newRegionIndex;
+
+            //如果区域序列改变
+            if (regionIndex != newRegionIndex)
+            {
+                //把实体数据写入新的区域
+                GFiles.world.GetOrAddRegion(regionIndex).entities.Remove(Init.save);
+                GFiles.world.GetOrAddRegion(newRegionIndex).entities.Add(Init.save);
+
+                //更改值
+                regionIndex = newRegionIndex;
+            }
+
+
 
             //自动销毁
-            if (isNotPlayer && isNotNPC)
+            if (ShouldBeAutoDestroyed())
             {
-                if (Tools.time >= timeToAutoDestroy)
-                {
-                    DestroyEntityOnServer();
-                }
+                DestroyEntityOnServer();
             }
         }
 
@@ -456,6 +465,25 @@ namespace GameCore
         }
 #endif
         #endregion
+
+        public bool ShouldBeAutoDestroyed()
+        {
+            if (isPlayer || isNPC || Tools.time < timeToAutoDestroy)
+                return false;
+
+            var position = transform.position;
+
+            foreach (var player in PlayerCenter.all)
+            {
+                //如果有任意一个玩家在 15 格以内就不自动销毁实体
+                if ((player.transform.position - position).sqrMagnitude < 225)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         public void SetAutoDestroyTime()
         {
@@ -659,7 +687,14 @@ namespace GameCore
             }
         }
 
-        public void WriteDataToSave()
+        public virtual void WriteDataToSaveObject(EntitySave save)
+        {
+            save.pos = transform.position;
+            save.health = health;
+            save.customData = customData?.ToString(Formatting.None);
+        }
+
+        public void WriteDataToWorldSave()
         {
             if (GFiles.world == null)
             {
@@ -667,7 +702,6 @@ namespace GameCore
                 return;
             }
 
-            //TODO: 统一!
             if (isPlayer)
             {
                 Player player = (Player)this;
@@ -677,14 +711,7 @@ namespace GameCore
                 {
                     if (save.id == player.playerName)
                     {
-                        save.pos = player.transform.position;
-                        save.inventory = player.inventory;
-                        save.hungerValue = player.hungerValue;
-                        save.thirstValue = player.thirstValue;
-                        save.happinessValue = player.happinessValue;
-                        save.health = player.health;
-                        save.completedTasks = player.completedTasks;
-                        save.customData = player.customData?.ToString(Formatting.None);
+                        WriteDataToSaveObject(save);
 
                         return;
                     }
@@ -701,9 +728,7 @@ namespace GameCore
                         if (save.saveId == Init.save.saveId)
                         {
                             //写入数据
-                            save.pos = transform.position;
-                            save.health = health;
-                            save.customData = customData?.ToString(Formatting.None);
+                            WriteDataToSaveObject(save);
 
                             return;
                         }
