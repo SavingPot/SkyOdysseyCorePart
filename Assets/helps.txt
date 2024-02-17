@@ -2,6 +2,19 @@
 能在值改变时立刻更改显示，就不要每帧更改显示
 
 
+------- 让物体随机晃动的好解决方案 -------
+float motionDiameter;
+Vector3 originPosition;
+
+Start() => originPosition = transform.position;
+
+Update()
+{
+    Vector3 delta = new(Mathf.Perlin(Tools.time) - 0.5f, Mathf.Perlin(Tools.time + 10) - 0.5f)
+    transform.position = originPosition + delta * motionDiameter;
+}
+
+
 ------- 极度容易忽视的错误!!!!!!!!! -----------
 
 遇到Editor与运行时结果不一致时, 尝试开启Debug编译/开发导出

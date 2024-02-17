@@ -11,7 +11,7 @@ namespace GameCore
 
         public static void LoadFromJObject(ISpellContainer container, JObject jo)
         {
-            var jt = jo["original:spell_container"];
+            var jt = jo["ori:spell_container"];
             var spellString = jt["spell"].ToString();
 
             if (spellString == null)

@@ -7,7 +7,17 @@ namespace GameCore
     {
         public static void OnUpdate<T>(T entity) where T : Entity, IInventoryOwner
         {
-            entity.GetInventory()?.DoBehaviours();
+            var inventory = entity.GetInventory();
+
+            if (inventory != null)
+            {
+                //装备
+                inventory?.DoBehaviours();
+
+                //使用中的物品
+                if (inventory.TryGetItemBehaviour(entity.usingItemIndex, out var usingBehaviour))
+                    usingBehaviour.OnHand();
+            }
         }
 
         public static void RefreshUsingItemRenderer<T>(T entity) where T : Entity, IInventoryOwner

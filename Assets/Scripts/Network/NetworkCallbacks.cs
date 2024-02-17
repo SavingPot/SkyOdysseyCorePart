@@ -53,7 +53,7 @@ namespace GameCore.High
         };
         public static event Action<NetworkConnectionToClient> OnAddPlayer = b => { };
 
-        public static Action<EntityInit, EntityData, NMSummon, NetworkConnectionToClient> OnServerSummonEntity = (entity, datum, n, conn) =>
+        public static Action<EntityInit, EntityData, NMSummon, NetworkConnectionToClient> OnServerSummonEntity = (entityInit, datum, n, conn) =>
         {
             // StringBuilder sb = new(nameof(OnServerSummonEntity));
 
@@ -218,8 +218,8 @@ namespace GameCore.High
                 init.save = saveDatum;
                 init.gameObject.name = data.id;
 
-                OnServerSummonEntity(init, data, n, conn);
                 NetworkServer.Spawn(init.gameObject);
+                OnServerSummonEntity(init, data, n, conn);
                 return;
             }
 

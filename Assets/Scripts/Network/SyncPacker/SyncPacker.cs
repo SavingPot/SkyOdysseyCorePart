@@ -133,8 +133,12 @@ namespace GameCore
                 return;
             }
 
+
+
             List<string> staticSets = new();
-            List<(string, uint)> instanceSets = new();
+            List<(string id, uint instance)> instanceSets = new();
+
+
 
             static bool ShouldNotBeSend(NMSyncVar var)
             {
@@ -142,6 +146,9 @@ namespace GameCore
                 return Equals(var.valueLastSync, var.value);
             }
 
+
+
+            //遍历静态变量
             foreach (var entry in staticVars)
             {
                 if (ShouldNotBeSend(entry.Value))
@@ -152,19 +159,23 @@ namespace GameCore
                 staticSets.Add(entry.Key);
             }
 
+            //遍历实例变量
             foreach (var entry in instanceVars)
             {
                 foreach (var item in entry.Value)
                 {
                     if (ShouldNotBeSend(item.Value))
                         continue;
-
+                        
                     //将新值发送给所有客户端
                     Server.Send(item.Value);
                     instanceSets.Add((entry.Key, item.Key));
                 }
             }
 
+
+
+            //设置同步变量的旧值
             foreach (var set in staticSets)
             {
                 NMSyncVar temp = staticVars[set];
@@ -172,11 +183,11 @@ namespace GameCore
                 staticVars[set] = temp;
             }
 
-            foreach (var set in instanceSets)
+            foreach (var (id, instance) in instanceSets)
             {
-                NMSyncVar temp = instanceVars[set.Item1][set.Item2];
+                NMSyncVar temp = instanceVars[id][instance];
                 temp.valueLastSync = temp.value;
-                instanceVars[set.Item1][set.Item2] = temp;
+                instanceVars[id][instance] = temp;
             }
         }
 

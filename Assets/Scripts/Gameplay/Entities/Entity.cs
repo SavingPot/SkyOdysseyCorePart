@@ -38,9 +38,23 @@ namespace GameCore
 
     public static class EntityCenter
     {
-        public static List<Entity> all = new();
+        public static readonly List<Entity> all = new();
         public static Action<Entity> OnAddEntity = _ => { };
         public static Action<Entity> OnRemoveEntity = _ => { };
+
+        public static void BindEventOnEntitySummoned(string targetEntitySaveId, Action<Entity> action)
+        {
+            void Event(Entity entity)
+            {
+                if (entity.Init.save.saveId == targetEntitySaveId)
+                {
+                    action(entity);
+                    OnAddEntity -= Event;
+                }
+            }
+
+            OnAddEntity += Event;
+        }
 
         public static void AddEntity(Entity entity)
         {
@@ -194,6 +208,7 @@ namespace GameCore
         public bool isHurting => invincibleTime > 0;
         public int maxHealth => data.maxHealth;
         public bool hurtable = true;
+        public float previousHurtTime;
         [BoxGroup("属性"), LabelText("数据"), HideInInspector] public EntityData data = null;
         [BoxGroup("属性"), LabelText("效果")] public Dictionary<string, float> effects = new();
         [BoxGroup("组件"), LabelText(text: "渲染器")] public List<Renderer> renderers = new();
@@ -559,13 +574,13 @@ namespace GameCore
                 if (inventory != null)
                 {
                     int defense =
-                        (inventory.helmet?.data?.Helmet?.defense ?? 0) +
-                        (inventory.breastplate?.data?.Breastplate?.defense ?? 0) +
-                        (inventory.legging?.data?.Legging?.defense ?? 0) +
-                        (inventory.boots?.data?.Boots?.defense ?? 0);
+                        (inventory.helmet?.data?.Helmet?.defense ?? 0) + //头盔的防御
+                        (inventory.breastplate?.data?.Breastplate?.defense ?? 0) + //胸甲的防御
+                        (inventory.legging?.data?.Legging?.defense ?? 0) + //护腿的防御
+                        (inventory.boots?.data?.Boots?.defense ?? 0); //靴子的防御
 
-                    //防御值与伤害减免值 1:1
-                    damage = Mathf.Max(damage - defense, 1);
+                    //防御值与伤害减免值的比值为 1:1
+                    damage = Mathf.Max(damage - defense, 1); //最小为 1
                 }
             }
 
@@ -579,7 +594,10 @@ namespace GameCore
 
             if (isNotPlayer)
             {
-                rb.velocity = impactForce;
+                //应用击退效果
+                if (rb) rb.velocity = impactForce;
+
+                //如果实体受到伤害, 就延迟自动销毁的时间
                 SetAutoDestroyTime();
             }
 
@@ -597,6 +615,9 @@ namespace GameCore
             //播放受伤音频
             if (!takeDamageAudioId.IsNullOrWhiteSpace())
                 GAudio.Play(takeDamageAudioId);
+
+            //记录受伤时的时间
+            previousHurtTime = Tools.time;
 
             OnGetHurtClient(damage, invincibleTime, damageOriginPos, impactForce, caller);
 

@@ -621,6 +621,17 @@ namespace GameCore
             Client.Send<NMSummon>(new(pos, id, saveId, saveIntoRegion, health, customData));
         }
 
+        public void SummonEntityAndCallbackWhenSummoned(Vector3 pos, string id, Action<Entity> callback, string saveId = null, bool saveIntoRegion = true, int? health = null, string customData = null)
+        {
+            saveId ??= Tools.randomGUID;
+
+            //绑定回调
+            EntityCenter.BindEventOnEntitySummoned(saveId, callback);
+
+            //发送生成消息给服务器
+            Client.Send<NMSummon>(new(pos, id, saveId, saveIntoRegion, health, customData));
+        }
+
         public void SummonEntity(EntitySave save)
         {
             SummonEntity(save.pos, save.id, save.saveId, false, save.health, save.customData);
@@ -1545,17 +1556,17 @@ namespace GameCore
                             if (item.id == ItemID.ManaStone)
                             {
                                 var jo = new JObject();
-                                jo.AddObject("original:mana_container");
-                                jo["original:mana_container"].AddProperty("totalMana", generation.regionGeneration.random.Next(0, 100));
-                                jo.AddObject("original:spell_container");
-                                jo["original:spell_container"].AddProperty("spell", ExtractSpell(generation.regionGeneration.random));
+                                jo.AddObject("ori:mana_container");
+                                jo["ori:mana_container"].AddProperty("total_mana", generation.regionGeneration.random.Next(0, 100));
+                                jo.AddObject("ori:spell_container");
+                                jo["ori:spell_container"].AddProperty("spell", ExtractSpell(generation.regionGeneration.random));
                                 extendedItem.customData = jo;
                             }
                             else if (item.id == ItemID.SpellManuscript)
                             {
                                 var jo = new JObject();
-                                jo.AddObject("original:spell_container");
-                                jo["original:spell_container"].AddProperty("spell", ExtractSpell(generation.regionGeneration.random));
+                                jo.AddObject("ori:spell_container");
+                                jo["ori:spell_container"].AddProperty("spell", ExtractSpell(generation.regionGeneration.random));
                                 extendedItem.customData = jo;
                             }
 

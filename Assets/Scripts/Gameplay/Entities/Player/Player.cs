@@ -1238,11 +1238,11 @@ namespace GameCore
                 //执行 移动的启停
                 if (move == 0 && moveVecLastFrame != 0)
                 {
-                    ServerOnStopMovement();
+                    isMoving = false;
                 }
                 else if (move != 0 && moveVecLastFrame == 0)
                 {
-                    ServerOnStartMovement();
+                    isMoving = true;
                 }
             }
 
@@ -1722,7 +1722,8 @@ namespace GameCore
                     //一秒回一次血
                     if (Tools.time >= playerHealthUpTimer)
                     {
-                        if (health < 100)
+                        //受伤的八秒内不回血
+                        if (health < 100 && Tools.time > player.previousHurtTime + 8)
                         {
                             playerHealthUpTimer = Tools.time + 1f;
                             player.health = health + 1;

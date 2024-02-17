@@ -635,12 +635,6 @@ namespace GameCore
             return DOTween.To(() => timed, a => timed = a, 1, time).OnComplete(() => action());
         }
 
-        public static TweenerCore<float, float, DG.Tweening.Plugins.Options.FloatOptions> InvokeCycle(float time, UnityAction action)
-        {
-            float timed = 0;
-            return DOTween.To(() => timed, a => timed = a, 1, time).OnStepComplete(() => action()).SetLoops(-1);
-        }
-
 
 
 

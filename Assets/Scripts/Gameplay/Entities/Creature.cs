@@ -35,11 +35,6 @@ namespace GameCore
         bool isMoving_temp; void isMoving_set(bool value) { }
         [Sync, SyncDefaultValue(false)] public bool isMoving { get => isMoving_temp; set => isMoving_set(value); }
 
-#if UNITY_EDITOR
-        [SerializeField] bool isMoving_for_editor_view;
-#endif
-
-
         [HideInInspector] public CreatureBodyPart head { get; set; }
         [HideInInspector] public CreatureBodyPart rightArm { get; set; }
         [HideInInspector] public CreatureBodyPart body { get; set; }
@@ -73,14 +68,6 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("掉落的Y位置")] public float fallenY;
         public static float fallenDamageHeight = 9;
 
-
-
-
-
-        /* -------------------------------------------------------------------------- */
-        /*                                Behaviour 系统                                */
-        /* -------------------------------------------------------------------------- */
-        public virtual void Movement() { }
 
 
 
@@ -263,10 +250,6 @@ namespace GameCore
             base.Update();
 
             animWeb?.UpdateWeb();
-
-#if UNITY_EDITOR
-            isMoving_for_editor_view = isMoving;
-#endif
         }
 
         protected override void ServerUpdate()
@@ -279,12 +262,11 @@ namespace GameCore
 
 
 
+        public virtual void Movement() { }
 
         /// <summary>
         /// 注：这个方法耗时并不高，无需过度优化
         /// </summary>
-        /// <param name="movementDirection"></param>
-        /// <returns></returns>
         public Vector2 GetMovementVelocity(Vector2 movementDirection)
         {
             float max = velocityFactor();
@@ -301,45 +283,7 @@ namespace GameCore
 
 
 
-        [ServerRpc, Button]
-        public void ServerOnStartMovement(NetworkConnection caller = null)
-        {
-            isMoving = true;
-            //TODO: isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
-            ClientOnStartMovement();
-        }
 
-        [ClientRpc]
-        public void ClientOnStartMovement(NetworkConnection caller = null)
-        {
-            OnStartMovementAction();
-        }
-
-        public Action OnStartMovementAction = () => { };
-
-
-
-
-
-
-
-
-
-        [ServerRpc]
-        public void ServerOnStopMovement(NetworkConnection caller = null)
-        {
-            isMoving = false;
-            //TODO: isMoving_get(); //必须要调用 isMoving_get()，否则 isMoving 的值不会更新 (我也不知道为什么)
-            ClientOnStopMovement();
-        }
-
-        [ClientRpc]
-        public void ClientOnStopMovement(NetworkConnection caller = null)
-        {
-            OnStopMovementAction();
-        }
-
-        public Action OnStopMovementAction = () => { };
 
 
 
@@ -375,16 +319,6 @@ namespace GameCore
         public virtual void OnStartAttack()
         {
 
-        }
-
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-        }
-
-        protected override void OnDisable()
-        {
-            base.OnDisable();
         }
 
         protected override void OnDestroy()

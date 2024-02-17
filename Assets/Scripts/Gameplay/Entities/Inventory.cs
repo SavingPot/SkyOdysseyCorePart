@@ -57,6 +57,22 @@ namespace GameCore
             }
         }
 
+        /// <summary>
+        /// !!!= 当你需要 *直接* 操作物品栏里的物品, 而不是使用 Inventory 里定义好的方法时, 请务必使用这个方法 =!!!
+        /// </summary>
+        public void ExecuteOperation(Action<Inventory> operation, string inventoryIndex)
+        {
+            //检查参数
+            if (operation == null)
+                throw new ArgumentNullException(nameof(operation));
+
+            //执行
+            operation(this);
+
+            //这一行的作用是应用新的物品栏数据, 并刷新物品栏, 否则会导致更改无效
+            owner?.OnInventoryItemChange(this, inventoryIndex);
+        }
+
         public static Inventory ResumeFromStreamTransport(Inventory inventory, IInventoryOwner owner)
         {
             if (inventory == null)
