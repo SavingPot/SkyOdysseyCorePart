@@ -143,7 +143,7 @@ namespace GameCore
             static bool ShouldNotBeSend(NMSyncVar var)
             {
                 //如果同步变量的值发生未改变就不同步
-                return Equals(var.valueLastSync, var.value);
+                return var.valueLastSync == var.value;
             }
 
 
@@ -166,7 +166,7 @@ namespace GameCore
                 {
                     if (ShouldNotBeSend(item.Value))
                         continue;
-                        
+
                     //将新值发送给所有客户端
                     Server.Send(item.Value);
                     instanceSets.Add((entry.Key, item.Key));

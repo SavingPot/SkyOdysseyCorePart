@@ -341,6 +341,182 @@ namespace GameCore
 
 
 
+
+        /* -------------------------------------------------------------------------- */
+        /*                                 Entity 远程指令                                */
+        /* -------------------------------------------------------------------------- */
+        readonly Dictionary<string, Action<Entity>> remoteCommands = new();
+
+        public void RegisterRemoteCommand(string commandId, Action<Entity> action)
+        {
+            //检查 commandId
+            if (commandId.IsNullOrWhiteSpace())
+            {
+                Debug.LogError($"实体 {name} 注册了一个 {nameof(commandId)} 为空的命令");
+                return;
+            }
+
+            //检查 action
+            if (action == null)
+            {
+                Debug.LogError($"实体 {name} 注册了一个 {nameof(action)} 为空的命令");
+                return;
+            }
+
+            //检查重复
+            if (remoteCommands.ContainsKey(commandId))
+            {
+                Debug.LogError($"实体 {name} 已经注册了命令 {commandId}, 不要反复注册");
+                return;
+            }
+
+
+            //添加命令
+            remoteCommands.Add(commandId, action);
+        }
+
+        [ServerRpc]
+        public void ServerExecuteRemoteCommand(string commandId, NetworkConnection caller = null)
+        {
+            _ExecuteRemoteCommand(commandId);
+        }
+
+        [ServerRpc]
+        public void ServerToClientsExecuteRemoteCommand(string commandId, NetworkConnection caller = null)
+        {
+            _ClientsExecuteRemoteCommand(commandId, caller);
+        }
+
+        [ServerRpc]
+        public void ServerToConnectionExecuteRemoteCommand(string commandId, NetworkConnection caller = null)
+        {
+            _ConnectionExecuteRemoteCommand(commandId, caller);
+        }
+
+
+
+        [ClientRpc]
+        private void _ClientsExecuteRemoteCommand(string commandId, NetworkConnection caller = null)
+        {
+            _ExecuteRemoteCommand(commandId);
+        }
+
+        [ConnectionRpc]
+        private void _ConnectionExecuteRemoteCommand(string commandId, NetworkConnection caller = null)
+        {
+            _ExecuteRemoteCommand(commandId);
+        }
+
+        private void _ExecuteRemoteCommand(string commandId)
+        {
+            //检查命令
+            if (!remoteCommands.ContainsKey(commandId))
+            {
+                Debug.LogError($"调用失败: 实体 {name} 不存在命令 {commandId}");
+                return;
+            }
+
+            //调用
+            remoteCommands[commandId](this);
+        }
+
+
+
+
+
+
+        readonly Dictionary<string, Action<Entity, JObject>> paramRemoteCommands = new();
+
+        public void RegisterParamRemoteCommand(string commandId, Action<Entity, JObject> action)
+        {
+            //检查 commandId
+            if (commandId.IsNullOrWhiteSpace())
+            {
+                Debug.LogError($"实体 {name} 注册了一个 {nameof(commandId)} 为空的命令");
+                return;
+            }
+
+            //检查 action
+            if (action == null)
+            {
+                Debug.LogError($"实体 {name} 注册了一个 {nameof(action)} 为空的命令");
+                return;
+            }
+
+            //检查重复
+            if (paramRemoteCommands.ContainsKey(commandId))
+            {
+                Debug.LogError($"实体 {name} 已经注册了命令 {commandId}, 不要反复注册");
+                return;
+            }
+
+
+            //添加命令
+            paramRemoteCommands.Add(commandId, action);
+        }
+
+        [ServerRpc]
+        public void ServerExecuteParamRemoteCommand(string commandId, JObject param, NetworkConnection caller = null)
+        {
+            _ExecuteParamRemoteCommand(commandId, param);
+        }
+
+        [ServerRpc]
+        public void ServerToClientsExecuteParamRemoteCommand(string commandId, JObject param, NetworkConnection caller = null)
+        {
+            _ClientsExecuteParamRemoteCommand(commandId, param, caller);
+        }
+
+        [ServerRpc]
+        public void ServerToConnectionExecuteParamRemoteCommand(string commandId, JObject param, NetworkConnection caller = null)
+        {
+            _ConnectionExecuteParamRemoteCommand(commandId, param, caller);
+        }
+
+
+
+        [ClientRpc]
+        private void _ClientsExecuteParamRemoteCommand(string commandId, JObject param, NetworkConnection caller = null)
+        {
+            _ExecuteParamRemoteCommand(commandId, param);
+        }
+
+        [ConnectionRpc]
+        private void _ConnectionExecuteParamRemoteCommand(string commandId, JObject param, NetworkConnection caller = null)
+        {
+            _ExecuteParamRemoteCommand(commandId, param);
+        }
+
+        private void _ExecuteParamRemoteCommand(string commandId, JObject param)
+        {
+            //检查命令
+            if (!paramRemoteCommands.ContainsKey(commandId))
+            {
+                Debug.LogError($"调用失败: 实体 {name} 不存在命令 {commandId}");
+                return;
+            }
+
+            //调用
+            paramRemoteCommands[commandId](this, param);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         public void Recover()
         {
             if (isPlayer)

@@ -905,8 +905,8 @@ namespace GameCore
 
                         for (int c = 0; c < islandGeneration.blockAdded.Count; c++)
                         {
-                            var p = islandGeneration.blockAdded[c];
-                            if (p.pos == actualPos && p.isBackground == actualIsBackground)
+                            var (pos, isBackground) = islandGeneration.blockAdded[c];
+                            if (pos == actualPos && isBackground == actualIsBackground)
                                 islandGeneration.blockAdded.RemoveAt(c);
                         }
                         islandGeneration.blockAdded.Add((actualPos, actualIsBackground));
@@ -1493,7 +1493,7 @@ namespace GameCore
                     Parallel.For(0, group.Length, i =>
                     {
                         //每个格子都有 >=65% 的概率为空
-                        if (Tools.Prob100(70, generation.regionGeneration.random))
+                        if (Tools.Prob100(65, generation.regionGeneration.random))
                             return;
 
                         Mod mod = null;

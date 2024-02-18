@@ -55,9 +55,10 @@ namespace GameCore
 
 
         [Header("资源")]
+        [AssetsOnly, Required(Tools.requiredErrorMessage), LabelText("默认材质")] public Material defaultMat;
         [AssetsOnly, Required(Tools.requiredErrorMessage), LabelText("光照材质")] public Material spriteLitMat;
-
         public Material spriteDefaultMat => new(Shader.Find("Sprites/Default"));
+
 
 
         [SerializeField, Required(Tools.requiredErrorMessage), AssetsOnly, LabelText("未知贴图")] public Sprite spriteUnknown;
@@ -107,8 +108,14 @@ namespace GameCore
         [SerializeField]
         [Required(Tools.requiredErrorMessage)]
         [AssetsOnly]
-        [LabelText("方块的预制体")]
+        [LabelText("方块光照的预制体")]
         private Light2D blockLightPrefab;
+
+        [SerializeField]
+        [Required(Tools.requiredErrorMessage)]
+        [AssetsOnly]
+        [LabelText("光照的预制体")]
+        private Light2D lightPrefab;
 
         public EntityInit GetEntityPrefab() => entityPrefab;
         public EntityInit GetDropPrefab() => dropPrefab;
@@ -117,6 +124,7 @@ namespace GameCore
         public EntityInit GetCreaturePrefab() => creaturePrefab;
         public GameObject GetBlockPrefab() => blockPrefab;
         public Light2D GetBlockLightPrefab() => blockLightPrefab;
+        public Light2D GetLightPrefab() => lightPrefab;
 
 
 

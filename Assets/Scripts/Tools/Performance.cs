@@ -2,6 +2,7 @@ using SP.Tools;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -91,5 +92,35 @@ namespace GameCore.High
         }
 
         public static double GetMemoryRemain() => totalMemory - GetMemoryUsage();
+
+        [Conditional("Debug")]
+        public static void BeginSample(string name)
+        {
+
+        }
+
+        [Conditional("Debug")]
+        public static void EndSample()
+        {
+
+        }
+    }
+
+    public class PerformanceSampler : IDisposable
+    {
+        string samplerName;
+        Stopwatch stopwatch;
+
+        public PerformanceSampler(string samplerName)
+        {
+            this.samplerName = samplerName;
+            stopwatch = Stopwatch.StartNew();
+        }
+
+        public void Dispose()
+        {
+            stopwatch.Stop();
+            Debug.Log($"性能测试结果: {samplerName} 耗时 {stopwatch.ElapsedMilliseconds}ms");
+        }
     }
 }
