@@ -690,7 +690,28 @@ namespace GameCore
                 #region 物品栏
 
                 //背包物品视图
-                (inventoryItemPanel, inventoryItemView) = GenerateItemViewBackpackPanel("ori:inventory", "ori:switch_button.inventory", 80, Vector2.zero, Vector2.zero);
+                (inventoryItemPanel, inventoryItemView) = GenerateItemViewBackpackPanel(
+                    "ori:inventory",
+                    "ori:switch_button.inventory",
+                    80,
+                    Vector2.zero,
+                    Vector2.zero,
+                    () =>
+                    {
+                        for (int i = 0; i < inventorySlotsUIs.Length; i++)
+                        {
+                            int index = i;
+
+                            var inventorySlot = inventorySlotsUIs[index];
+
+                            inventorySlot.Refresh(player, index.ToString());
+                        }
+
+                        inventoryHelmetUI.Refresh(player, Inventory.helmetVar, item => Item.Null(item) || item.data.Helmet != null);
+                        inventoryBreastplateUI.Refresh(player, Inventory.breastplateVar, item => Item.Null(item) || item.data.Breastplate != null);
+                        inventoryLeggingUI.Refresh(player, Inventory.leggingVar, item => Item.Null(item) || item.data.Legging != null);
+                        inventoryBootsUI.Refresh(player, Inventory.bootsVar, item => Item.Null(item) || item.data.Boots != null);
+                    });
 
                 for (int i = 0; i < inventorySlotsUIs.Length; i++)
                 {
@@ -721,34 +742,87 @@ namespace GameCore
                 inventoryLeggingUI.button.SetAPosOnBySizeRight(inventoryBreastplateUI.button, 0);
                 inventoryBootsUI.button.SetAPosOnBySizeRight(inventoryLeggingUI.button, 0);
 
-                inventoryItemView.CustomMethod += (type, param) =>
-                {
-                    type ??= "refresh";
-
-                    if (type == "refresh")
-                    {
-                        for (int i = 0; i < inventorySlotsUIs.Length; i++)
-                        {
-                            int index = i;
-
-                            var inventorySlot = inventorySlotsUIs[index];
-
-                            inventorySlot.Refresh(player, index.ToString());
-                        }
-
-                        inventoryHelmetUI.Refresh(player, Inventory.helmetVar, item => Item.Null(item) || item.data.Helmet != null);
-                        inventoryBreastplateUI.Refresh(player, Inventory.breastplateVar, item => Item.Null(item) || item.data.Breastplate != null);
-                        inventoryLeggingUI.Refresh(player, Inventory.leggingVar, item => Item.Null(item) || item.data.Legging != null);
-                        inventoryBootsUI.Refresh(player, Inventory.bootsVar, item => Item.Null(item) || item.data.Boots != null);
-                    }
-                };
+                //设置背包面板
+                SetBackpackPanel("ori:inventory");
 
                 #endregion
 
                 #region 合成
 
                 //制作结果
-                (craftingPanel, craftingView) = GenerateItemViewBackpackPanel("ori:crafting", "ori:switch_button.crafting", 70, Vector2.zero, Vector2.zero);
+                (craftingPanel, craftingView) = GenerateItemViewBackpackPanel(
+                    "ori:crafting",
+                    "ori:switch_button.crafting",
+                    70,
+                    Vector2.zero,
+                    Vector2.zero,
+                    () =>
+                    {
+                        //获取本地玩家的所有物品
+                        craftingView.Clear();
+                        var craftingResults = Player.GetCraftingRecipesThatCanBeCrafted(player.inventory.slots);
+
+                        foreach (var pair in craftingResults)
+                        {
+                            var recipe = pair.recipe;
+                            var itemGot = ModFactory.CompareItem(recipe.result.id);
+
+                            //添加按钮
+                            var button = GameUI.AddButton(UPC.Up, $"ori:button.player_crafting_recipe_{recipe.id}");
+                            button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
+                            button.button.OnPointerEnterAction += _ => craftingInfoShower.Show(recipe, pair.ingredients);
+                            button.button.OnPointerExitAction += _ => craftingInfoShower.Hide();
+                            button.OnClickBind(() =>
+                            {
+                                var resultItem = ModConvert.ItemDataToItem(ModFactory.CompareItem(recipe.result.id));
+                                resultItem.count = recipe.result.count;
+
+                                //检查背包空间
+                                if (!Inventory.GetIndexesToPutItemIntoItems(player.inventory.slots, resultItem, out var _))
+                                {
+                                    InternalUIAdder.instance.SetStatusText("背包栏位不够了，请清理背包后再合成");
+                                    return;
+                                }
+
+                                //从玩家身上减去物品
+                                pair.ingredients.For(ingredientToRemove =>
+                                {
+                                    ingredientToRemove.For(itemToRemove =>
+                                    {
+                                        player.ServerReduceItemCount(itemToRemove.Key.ToString(), itemToRemove.Value);
+                                    });
+                                });
+
+                                //给予玩家物品
+                                player.ServerAddItem(resultItem);
+
+                                //达成效果
+                                CompleteTask("ori:craft");
+                                GAudio.Play(AudioID.Crafting);
+
+
+                                //制作后刷新合成界面, 原料表与标题
+                                player.OnInventoryItemChange(player.inventory, null);
+                            });
+
+                            //图标
+                            var image = GameUI.AddImage(UPC.Middle, $"ori:image.player_crafting_recipe_{recipe.id}", "ori:item_tab", button);
+                            image.image.sprite = itemGot.texture.sprite;
+                            image.sd = craftingView.gridLayoutGroup.cellSize * 0.75f;
+
+                            //文本
+                            button.buttonText.rectTransform.SetAsLastSibling();
+                            button.buttonText.rectTransform.AddLocalPosY(-20);
+                            button.buttonText.SetSizeDelta(85, 27);
+                            button.buttonText.text.SetFontSize(10);
+                            button.buttonText.AfterRefreshing += t =>
+                            {
+                                t.text.text = $"{GameUI.CompareText(itemGot.id)?.text}x{recipe.result.count}";
+                            };
+
+                            craftingView.AddChild(button);
+                        }
+                    });
 
                 {
                     int borderSize = 10;
@@ -791,81 +865,6 @@ namespace GameCore
                     craftingInfoShower = new(player, backgroundImage, ingredientsView, arrow, resultsView, maximumCraftingTimesText);
                     craftingInfoShower.Hide();
                 }
-
-
-
-                craftingView.CustomMethod += (type, _) =>
-                    {
-                        type ??= "refresh";
-
-                        if (type == "refresh")
-                        {
-                            //获取本地玩家的所有物品
-                            craftingView.Clear();
-                            var craftingResults = Player.GetCraftingRecipesThatCanBeCrafted(player.inventory.slots);
-
-                            foreach (var pair in craftingResults)
-                            {
-                                var recipe = pair.recipe;
-                                var itemGot = ModFactory.CompareItem(recipe.result.id);
-
-                                //添加按钮
-                                var button = GameUI.AddButton(UPC.Up, $"ori:button.player_crafting_recipe_{recipe.id}");
-                                button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
-                                button.button.OnPointerEnterAction += _ => craftingInfoShower.Show(recipe, pair.ingredients);
-                                button.button.OnPointerExitAction += _ => craftingInfoShower.Hide();
-                                button.OnClickBind(() =>
-                                {
-                                    var resultItem = ModConvert.ItemDataToItem(ModFactory.CompareItem(recipe.result.id));
-                                    resultItem.count = recipe.result.count;
-
-                                    //检查背包空间
-                                    if (!Inventory.GetIndexesToPutItemIntoItems(player.inventory.slots, resultItem, out var _))
-                                    {
-                                        InternalUIAdder.instance.SetStatusText("背包栏位不够了，请清理背包后再合成");
-                                        return;
-                                    }
-
-                                    //从玩家身上减去物品
-                                    pair.ingredients.For(ingredientToRemove =>
-                                    {
-                                        ingredientToRemove.For(itemToRemove =>
-                                        {
-                                            player.ServerReduceItemCount(itemToRemove.Key.ToString(), itemToRemove.Value);
-                                        });
-                                    });
-
-                                    //给予玩家物品
-                                    player.ServerAddItem(resultItem);
-
-                                    //达成效果
-                                    CompleteTask("ori:craft");
-                                    GAudio.Play(AudioID.Crafting);
-
-
-                                    //制作后刷新合成界面, 原料表与标题
-                                    player.OnInventoryItemChange(player.inventory, null);
-                                });
-
-                                //图标
-                                var image = GameUI.AddImage(UPC.Middle, $"ori:image.player_crafting_recipe_{recipe.id}", "ori:item_tab", button);
-                                image.image.sprite = itemGot.texture.sprite;
-                                image.sd = craftingView.gridLayoutGroup.cellSize * 0.75f;
-
-                                //文本
-                                button.buttonText.rectTransform.SetAsLastSibling();
-                                button.buttonText.rectTransform.AddLocalPosY(-20);
-                                button.buttonText.SetSizeDelta(85, 27);
-                                button.buttonText.text.SetFontSize(10);
-                                button.buttonText.AfterRefreshing += t =>
-                                {
-                                    t.text.text = $"{GameUI.CompareText(itemGot.id)?.text}x{recipe.result.count}";
-                                };
-
-                                craftingView.AddChild(button);
-                            }
-                        }
-                    };
 
                 #endregion
 
@@ -1080,9 +1079,26 @@ namespace GameCore
 
         #region  背包界面
 
+        public void RefreshCurrentBackpackPanel() => RefreshBackpackPanel(currentBackpackPanel);
+
+        public void RefreshBackpackPanel(string id)
+        {
+            foreach (var item in backpackPanels)
+            {
+                if (item.id == id)
+                {
+                    item.Refresh();
+                    return;
+                }
+            }
+
+            Debug.LogError($"刷新背包界面 {id} 失败：不存在该背包界面");
+        }
+
         public BackpackPanel GenerateBackpackPanel(
             string id,
             string switchButtonTexture,
+            Action Refresh = null,
             Action OnActivate = null,
             Action OnDeactivate = null,
             string texture = "ori:backpack_inventory_background")
@@ -1142,7 +1158,7 @@ namespace GameCore
                 OnDeactivate?.Invoke();
             });
 
-            BackpackPanel result = new(id, panel, switchButtonBackground, switchButton, ActualActivate, ActualDeactivate);
+            BackpackPanel result = new(id, panel, switchButtonBackground, switchButton, Refresh, ActualActivate, ActualDeactivate);
             backpackPanels.Add(result);
             return result;
         }
@@ -1168,13 +1184,14 @@ namespace GameCore
             float cellSize,
             Vector2 viewSize,
             Vector2 cellSpacing,
+            Action Refresh = null,
             Action OnActivate = null,
             Action OnDeactivate = null,
             string texture = "ori:backpack_inventory_background")
         {
             (var modId, var panelName) = Tools.SplitModIdAndName(id);
 
-            var panel = GenerateBackpackPanel(id, switchButtonTexture, OnActivate, OnDeactivate, texture);
+            var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, texture);
             var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
             view.transform.SetParent(panel.panel.rt, false);
             view.SetAnchorMinMax(UPC.StretchDouble);
@@ -1938,15 +1955,17 @@ namespace GameCore
         public PanelIdentity panel;
         public ImageIdentity switchButtonBackground;
         public ButtonIdentity switchButton;
+        public Action Refresh;
         public Action Activate;
         public Action Deactivate;
 
-        public BackpackPanel(string id, PanelIdentity panel, ImageIdentity switchButtonBackground, ButtonIdentity switchButton, Action Activate, Action Deactivate)
+        public BackpackPanel(string id, PanelIdentity panel, ImageIdentity switchButtonBackground, ButtonIdentity switchButton, Action Refresh, Action Activate, Action Deactivate)
         {
             this.id = id;
             this.panel = panel;
             this.switchButtonBackground = switchButtonBackground;
             this.switchButton = switchButton;
+            this.Refresh = Refresh;
             this.Activate = Activate;
             this.Deactivate = Deactivate;
         }

@@ -64,11 +64,8 @@ namespace GameCore
 
             if (isLocalPlayer)
             {
-                //刷新背包物品显示
-                pui.inventoryItemView.CustomMethod("refresh", null);
-
-                //刷新制造界面
-                pui.craftingView.CustomMethod("refresh", null);
+                //刷新背包面板
+                pui.RefreshCurrentBackpackPanel();
 
                 //完成成就
                 if (!Item.Null(item))
