@@ -1165,7 +1165,7 @@ namespace GameCore
             /*                                   加上区域边界                                   */
             /* -------------------------------------------------------------------------- */
 
-            //? 为什么是 "<=" 最高点, 而不是 "<" 呢?
+            //? 为什么是 "<=" 最高点, 而不是 "<" 最高点呢?
             //? 我们假设 min=(-3,-3), max=(3,3)
             //? 那么我们会循环 -3, -2, -1, 0, 1, 2
             //? 发现了吗, 3 没有被遍历到, 以此要使用 "<="
@@ -1178,6 +1178,12 @@ namespace GameCore
                         //删除边界上的任何方块
                         generation.region.RemovePos(x, y, false);
                         generation.region.RemovePos(x, y, true);
+
+                        //TODO: 门
+                        if (y == generation.maxPoint.y)
+                        {
+
+                        }
 
                         //添加边界方块
                         generation.region.AddPos(BlockID.Boundary, x, y, false, true);

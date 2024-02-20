@@ -249,13 +249,6 @@ namespace GameCore
         #endregion
 
         #region 属性
-        #region 口渴值
-
-        float thirstValue_temp; void thirstValue_set(float value) { }
-        [Sync] public float thirstValue { get => thirstValue_temp; set => thirstValue_set(value); }
-        public static float defaultThirstValue = 100;
-        public static float maxThirstValue = 100;
-        #endregion
 
         #region 饥饿值
         float hungerValue_temp; void hungerValue_set(float value) { }
@@ -446,28 +439,6 @@ namespace GameCore
 
 
 
-
-            if (isLocalPlayer)
-            {
-                //初始化玩家的 UI 界面
-                pui = new(this);
-
-                //设置相机跟随
-                Tools.instance.mainCameraController.lookAt = transform;
-                Tools.instance.mainCameraController.lookAtDelta = new(0, 2);
-                Debug.Log("本地客户端玩家是: " + gameObject.name);
-
-                //if (!isServer)
-                //    CmdCheckMods();
-
-                managerGame.weatherParticle.transform.SetParent(transform);
-                managerGame.weatherParticle.transform.localPosition = new(0, 40);
-
-                ServerGenerateRegion(regionIndex, true);
-            }
-
-
-
             #region 初始化模型
             CreateModel();
             body = AddBodyPart("body", skinBody, Vector2.zero, 5, model.transform, BodyPartType.Body);
@@ -488,6 +459,28 @@ namespace GameCore
             //这一行不是必要的, inventory 通常不会为空, 但是我们要保证代码 100% 正常运行
             if (isServer)
                 inventory ??= new(((IInventoryOwner)this).inventorySlotCount, this);
+
+
+
+
+            if (isLocalPlayer)
+            {
+                //初始化玩家的 UI 界面
+                pui = new(this);
+
+                //设置相机跟随
+                Tools.instance.mainCameraController.lookAt = transform;
+                Tools.instance.mainCameraController.lookAtDelta = new(0, 2);
+                Debug.Log("本地客户端玩家是: " + gameObject.name);
+
+                //if (!isServer)
+                //    CmdCheckMods();
+
+                managerGame.weatherParticle.transform.SetParent(transform);
+                managerGame.weatherParticle.transform.localPosition = new(0, 40);
+
+                ServerGenerateRegion(regionIndex, true);
+            }
 
 
 
@@ -771,7 +764,6 @@ namespace GameCore
             {
                 trueSave.inventory = inventory;
                 trueSave.hungerValue = hungerValue;
-                trueSave.thirstValue = thirstValue;
                 trueSave.happinessValue = happinessValue;
                 trueSave.completedTasks = completedTasks;
             }
@@ -895,7 +887,6 @@ namespace GameCore
         public override void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
             hungerValue = 20;
-            thirstValue = 20;
         }
 
         public override void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller)
@@ -1671,7 +1662,7 @@ namespace GameCore
         public static Action<Player> OnAddPlayer = _ => { };
         public static Action<Player> OnRemovePlayer = _ => { };
         public static float playerHealthUpTimer;
-        public static float playerHungerThirstHurtTimer;
+        public static float playerHungerHurtTimer;
 
         public static void AddPlayer(Player player)
         {
@@ -1697,22 +1688,16 @@ namespace GameCore
                         continue;
 
                     bool isMoving = player.isMoving;
-                    float thirstValue = player.thirstValue;
                     float hungerValue = player.hungerValue;
                     float happinessValue = player.happinessValue;
                     int health = player.health;
 
-                    float thirstValueDelta = frameTime / 40;
-                    if (isMoving) thirstValueDelta += frameTime / 40;
-                    player.thirstValue = thirstValue - thirstValueDelta;
-
-                    float hungerValueDelta = frameTime / 30;
+                    float hungerValueDelta = frameTime / 100;
                     if (isMoving) hungerValueDelta += frameTime / 40;
                     player.hungerValue = hungerValue - hungerValueDelta;
 
                     float happinessValueDelta = frameTime / 25;
                     if (isMoving) happinessValueDelta += frameTime / 10;
-                    if (thirstValue <= 30) happinessValueDelta += frameTime / 30;
                     if (hungerValue <= 30) happinessValueDelta += frameTime / 20;
                     player.happinessValue = happinessValue - happinessValueDelta;
 
@@ -1728,11 +1713,11 @@ namespace GameCore
                     }
 
                     //每三秒扣一次血
-                    if (Tools.time >= playerHungerThirstHurtTimer)
+                    if (Tools.time >= playerHungerHurtTimer)
                     {
-                        playerHungerThirstHurtTimer = Tools.time + 5;
+                        playerHungerHurtTimer = Tools.time + 5;
 
-                        if (thirstValue <= 0 || hungerValue <= 0)
+                        if (hungerValue <= 0)
                             player.TakeDamage(5);
                     }
                 }

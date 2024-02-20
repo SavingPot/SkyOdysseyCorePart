@@ -158,6 +158,44 @@ namespace GameCore
         public CraftingInfoShower craftingInfoShower;
         public BackpackPanel craftingPanel;
         public ScrollViewIdentity craftingView;
+        public List<CraftingViewButton> craftingViewButtonPool = new();
+
+        public CraftingViewButton GenerateCraftingViewButton()
+        {
+            //添加按钮
+            var button = GameUI.AddButton(UPC.Up, $"ori:button.player_crafting_recipe_{Tools.randomGUID}");
+            button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
+            craftingView.AddChild(button);
+
+            //物品图标
+            var image = GameUI.AddImage(UPC.Middle, $"ori:image.player_crafting_recipe_{Tools.randomGUID}", "ori:item_tab", button);
+            image.sd = craftingView.gridLayoutGroup.cellSize * 0.75f;
+
+            //文本
+            button.buttonText.rectTransform.SetAsLastSibling();
+            button.buttonText.rectTransform.AddLocalPosY(-20);
+            button.buttonText.SetSizeDelta(85, 27);
+            button.buttonText.text.SetFontSize(10);
+            button.buttonText.autoCompareText = false;
+
+            //推入池中
+            CraftingViewButton result = new(button, image);
+            craftingViewButtonPool.Add(result);
+
+            return result;
+        }
+
+        public class CraftingViewButton
+        {
+            public ButtonIdentity buttonIdentity;
+            public ImageIdentity imageIdentity;
+
+            public CraftingViewButton(ButtonIdentity buttonIdentity, ImageIdentity imageIdentity)
+            {
+                this.buttonIdentity = buttonIdentity;
+                this.imageIdentity = imageIdentity;
+            }
+        }
 
 
 
@@ -174,11 +212,9 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
-        public ImageIdentity thirstBarBg;
         public ImageIdentity hungerBarBg;
         public ImageIdentity happinessBarBg;
         public ImageIdentity healthBarBg;
-        public ImageIdentity thirstBarFull;
         public ImageIdentity hungerBarFull;
         public ImageIdentity happinessBarFull;
         public ImageIdentity healthBarFull;
@@ -758,72 +794,118 @@ namespace GameCore
                     Vector2.zero,
                     () =>
                     {
-                        //获取本地玩家的所有物品
-                        craftingView.Clear();
-                        var craftingResults = Player.GetCraftingRecipesThatCanBeCrafted(player.inventory.slots);
-
-                        foreach (var pair in craftingResults)
+                        //关闭原有的按钮
+                        foreach (var item in craftingViewButtonPool)
                         {
-                            var recipe = pair.recipe;
+                            if (item.buttonIdentity.gameObject.activeSelf)
+                            {
+                                item.buttonIdentity.gameObject.SetActive(false);
+                            }
+                        }
+
+                        //获取所有配方
+                        var recipes = ModFactory.GetAllCraftingRecipes();
+
+
+
+                        //遍历每个配方
+                        foreach (var recipe in recipes)
+                        {
+                            /* ----------------------------- 获取一个 ViewButton ---------------------------- */
+
+                            CraftingViewButton viewButton = null;
+
+                            foreach (var item in craftingViewButtonPool)
+                            {
+                                //如果是关闭的就采用
+                                if (!item.buttonIdentity.gameObject.activeSelf)
+                                {
+                                    item.buttonIdentity.gameObject.SetActive(true);
+                                    viewButton = item;
+                                    break;
+                                }
+                            }
+
+                            viewButton ??= GenerateCraftingViewButton();
+
+                            /* ----------------------------------------------------------------------------- */
+
+                            //获取结果
                             var itemGot = ModFactory.CompareItem(recipe.result.id);
 
-                            //添加按钮
-                            var button = GameUI.AddButton(UPC.Up, $"ori:button.player_crafting_recipe_{recipe.id}");
-                            button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
-                            button.button.OnPointerEnterAction += _ => craftingInfoShower.Show(recipe, pair.ingredients);
-                            button.button.OnPointerExitAction += _ => craftingInfoShower.Hide();
-                            button.OnClickBind(() =>
-                            {
-                                var resultItem = ModConvert.ItemDataToItem(ModFactory.CompareItem(recipe.result.id));
-                                resultItem.count = recipe.result.count;
-
-                                //检查背包空间
-                                if (!Inventory.GetIndexesToPutItemIntoItems(player.inventory.slots, resultItem, out var _))
-                                {
-                                    InternalUIAdder.instance.SetStatusText("背包栏位不够了，请清理背包后再合成");
-                                    return;
-                                }
-
-                                //从玩家身上减去物品
-                                pair.ingredients.For(ingredientToRemove =>
-                                {
-                                    ingredientToRemove.For(itemToRemove =>
-                                    {
-                                        player.ServerReduceItemCount(itemToRemove.Key.ToString(), itemToRemove.Value);
-                                    });
-                                });
-
-                                //给予玩家物品
-                                player.ServerAddItem(resultItem);
-
-                                //达成效果
-                                CompleteTask("ori:craft");
-                                GAudio.Play(AudioID.Crafting);
-
-
-                                //制作后刷新合成界面, 原料表与标题
-                                player.OnInventoryItemChange(player.inventory, null);
-                            });
-
                             //图标
-                            var image = GameUI.AddImage(UPC.Middle, $"ori:image.player_crafting_recipe_{recipe.id}", "ori:item_tab", button);
-                            image.image.sprite = itemGot.texture.sprite;
-                            image.sd = craftingView.gridLayoutGroup.cellSize * 0.75f;
+                            viewButton.imageIdentity.image.sprite = itemGot.texture.sprite;
 
-                            //文本
-                            button.buttonText.rectTransform.SetAsLastSibling();
-                            button.buttonText.rectTransform.AddLocalPosY(-20);
-                            button.buttonText.SetSizeDelta(85, 27);
-                            button.buttonText.text.SetFontSize(10);
-                            button.buttonText.AfterRefreshing += t =>
+                            //按钮
+                            viewButton.buttonIdentity.button.onClick.RemoveAllListeners();
+                            viewButton.buttonIdentity.buttonText.text.text = $"{GameUI.CompareText(itemGot.id)?.text}x{recipe.result.count}";
+
+
+
+
+                            //如果可以合成
+                            if (recipe.WhetherCanBeCrafted(player.inventory.slots, out var ingredientTables))
                             {
-                                t.text.text = $"{GameUI.CompareText(itemGot.id)?.text}x{recipe.result.count}";
-                            };
+                                //放到第一个
+                                viewButton.buttonIdentity.transform.SetAsFirstSibling();
 
-                            craftingView.AddChild(button);
+                                //图标颜色
+                                viewButton.imageIdentity.image.SetColorBrightness(1);
+
+                                //绑定方法
+                                viewButton.buttonIdentity.button.OnPointerEnterAction = _ => craftingInfoShower.Show(recipe, ingredientTables);
+                                viewButton.buttonIdentity.button.OnPointerExitAction = _ => craftingInfoShower.Hide();
+                                viewButton.buttonIdentity.button.onClick.AddListener(() =>
+                                {
+                                    var resultItem = ModConvert.ItemDataToItem(ModFactory.CompareItem(recipe.result.id));
+                                    resultItem.count = recipe.result.count;
+
+                                    //检查背包空间
+                                    if (!Inventory.GetIndexesToPutItemIntoItems(player.inventory.slots, resultItem, out var _))
+                                    {
+                                        InternalUIAdder.instance.SetStatusText("背包栏位不够了，请清理背包后再合成");
+                                        return;
+                                    }
+
+                                    //从玩家身上减去物品
+                                    ingredientTables.For(ingredientToRemove =>
+                                    {
+                                        ingredientToRemove.For(itemToRemove =>
+                                        {
+                                            player.ServerReduceItemCount(itemToRemove.Key.ToString(), itemToRemove.Value);
+                                        });
+                                    });
+
+                                    //给予玩家物品
+                                    player.ServerAddItem(resultItem);
+
+                                    //达成效果
+                                    CompleteTask("ori:craft");
+                                    GAudio.Play(AudioID.Crafting);
+
+
+                                    //制作后刷新合成界面, 原料表与标题
+                                    player.OnInventoryItemChange(player.inventory, null);
+                                });
+                            }
+                            //如果不能合成
+                            else
+                            {
+                                //放到最后
+                                viewButton.buttonIdentity.transform.SetAsLastSibling();
+
+                                //图标颜色
+                                viewButton.imageIdentity.image.SetColorBrightness(0.3f, 0.8f);
+
+                                //绑定方法
+                                viewButton.buttonIdentity.button.OnPointerEnterAction = _ => { };
+                                viewButton.buttonIdentity.button.OnPointerExitAction = _ => { };
+                            }
                         }
+
                     });
 
+                #region 生成 craftingInfoShower
                 {
                     int borderSize = 10;
                     int innerInterval = 3;
@@ -865,6 +947,7 @@ namespace GameCore
                     craftingInfoShower = new(player, backgroundImage, ingredientsView, arrow, resultsView, maximumCraftingTimesText);
                     craftingInfoShower.Hide();
                 }
+                #endregion
 
                 #endregion
 
@@ -971,11 +1054,7 @@ namespace GameCore
 
                 happinessBarBg = GameUI.AddImage(posC, "ori:image.happiness_bar_bg", "ori:happiness_bar");
                 happinessBarFull = GameUI.AddImage(posC, "ori:image.happiness_bar_full", "ori:happiness_bar");
-                SetIt(happinessBarBg, happinessBarFull, xExtraOffset, yExtraOffset * 3);
-
-                thirstBarBg = GameUI.AddImage(posC, "ori:image.thirst_bar_bg", "ori:thirst_bar");
-                thirstBarFull = GameUI.AddImage(posC, "ori:image.thirst_bar_full", "ori:thirst_bar");
-                SetIt(thirstBarBg, thirstBarFull, xExtraOffset, yExtraOffset * 2);
+                SetIt(happinessBarBg, happinessBarFull, xExtraOffset, yExtraOffset * 2);
 
                 hungerBarBg = GameUI.AddImage(posC, "ori:image.hunger_bar_bg", "ori:hunger_bar");
                 hungerBarFull = GameUI.AddImage(posC, "ori:image.hunger_bar_full", "ori:hunger_bar");
@@ -1087,7 +1166,7 @@ namespace GameCore
             {
                 if (item.id == id)
                 {
-                    item.Refresh();
+                    item.Refresh?.Invoke();
                     return;
                 }
             }
@@ -1212,6 +1291,7 @@ namespace GameCore
             {
                 if (item.id == id)
                 {
+                    item.Refresh?.Invoke();
                     item.Activate();
                     currentBackpackPanel = id;
                     return;
@@ -1470,7 +1550,6 @@ namespace GameCore
 
         public void RefreshPropertiesBar()
         {
-            thirstBarFull.image.fillAmount = player.thirstValue / Player.maxThirstValue;
             hungerBarFull.image.fillAmount = player.hungerValue / Player.maxHungerValue;
             happinessBarFull.image.fillAmount = player.happinessValue / Player.maxHappinessValue;
             healthBarFull.image.fillAmount = (float)player.health / player.maxHealth;
@@ -2393,47 +2472,57 @@ namespace GameCore
             }
         }
 
-        public static void SwapDraggingAndOldDragger(Item item, Action<Item> placement, Action cancel, Func<Item, bool> replacementCondition)
+        public static void SwapDraggingAndOldDragger(Item itemToDrag, Action<Item> placement, Action cancel, Func<Item, bool> replacementCondition)
         {
-            var oldDragger = draggingItem;
-            var draggingTemp = oldDragger.item;
-            var oldTemp = item;
+            //* 注意！
+            //* 这里的具体场景是: 我先拽了一个物品，然后又点了另一个物品
+            //* previousItem 就是被拽的物品, itemToDrag 就是被点的物品
 
-            /* ------------------------------- 如果物品不同直接交换 ------------------------------- */
-            if (Item.Null(draggingTemp) || Item.Null(oldTemp) || !Item.Same(draggingTemp, oldTemp))
+            var previousDragger = ItemDragger.draggingItem;
+            var previousItem = previousDragger.item;
+
+            /* ------------------------------- 如果物品不同 ———— 直接交换 ------------------------------- */
+            if (Item.Null(previousItem) || Item.Null(itemToDrag) || !Item.Same(previousItem, itemToDrag))
             {
-                if (replacementCondition(draggingTemp) && oldDragger.replacementCondition(oldTemp))
+                //检查可不可以交换
+                if (replacementCondition(previousItem) && previousDragger.replacementCondition(itemToDrag))
                 {
-                    oldDragger.placement(oldTemp);
-                    placement(draggingTemp);
+                    //交换物品
+                    previousDragger.placement(itemToDrag);
+                    placement(previousItem);
                 }
 
+                //取消拖拽
                 CancelDragging();
             }
-            /* ------------------------------- 如果物品相同且数量未满 ------------------------------- */
-            else if (oldTemp.count < oldTemp.data.maxCount)
+            /* ------------------------------- 如果物品相同 & 数量未满 ———— 合并 ------------------------------- */
+            else if (itemToDrag.count < itemToDrag.data.maxCount)
             {
+                //TODO
                 //如果可以数量直接添加
-                if (draggingTemp.count + oldTemp.count <= oldTemp.data.maxCount)
+                if (previousItem.count + itemToDrag.count <= itemToDrag.data.maxCount)
                 {
-                    oldTemp.count += draggingTemp.count;
+                    //增加数量
+                    itemToDrag.count += previousItem.count;
 
-                    placement(oldTemp);
-                    oldDragger.placement(null);
+                    //替换物品
+                    placement(itemToDrag);
+                    previousDragger.placement(null);
 
+                    //取消拖拽
                     CancelDragging();
                 }
+                //如果数量过多
                 else
                 {
-                    //TODO:FIx
-                    //如果数量过多先添加
-                    ushort countToExe = (ushort)Mathf.Min(draggingTemp.count, oldTemp.data.maxCount - draggingTemp.count);
+                    //计算出要执行的数量
+                    ushort countToExe = (ushort)Mathf.Min(previousItem.count, itemToDrag.data.maxCount - itemToDrag.count);
 
-                    draggingTemp.count -= countToExe;
-                    oldTemp.count += countToExe;
+                    previousItem.count -= countToExe;
+                    itemToDrag.count += countToExe;
 
-                    placement(draggingTemp);
-                    oldDragger.placement(oldTemp);
+                    placement(previousItem);
+                    previousDragger.placement(itemToDrag);
                 }
             }
         }

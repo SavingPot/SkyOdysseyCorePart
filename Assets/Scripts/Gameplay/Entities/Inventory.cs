@@ -792,7 +792,6 @@ namespace GameCore
 
 
         public ValueTag<int> Edible() => this.GetValueTagToInt("ori:edible");
-        public ValueTag<int> Drinkable() => this.GetValueTagToInt("ori:drinkable");
 
 
 

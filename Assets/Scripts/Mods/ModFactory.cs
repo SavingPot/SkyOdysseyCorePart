@@ -23,6 +23,18 @@ namespace GameCore
     [ChineseName("模组工厂")]
     public static class ModFactory
     {
+        public static List<CraftingRecipe> GetAllCraftingRecipes()
+        {
+            List<CraftingRecipe> results = new();
+
+            mods.Foreach(mod => mod.craftingRecipes.Foreach(recipe =>
+                {
+                    results.Add(recipe);
+                }));
+
+            return results;
+        }
+
         public static void EachType(Action<Assembly, Type> action)
         {
             foreach (var ass in assemblies)

@@ -255,7 +255,6 @@ namespace GameCore.High
                             id = nm.playerName,
                             inventory = new(Player.inventorySlotCountConst, null),
                             hungerValue = Player.defaultHungerValue,
-                            thirstValue = Player.defaultThirstValue,
                             happinessValue = Player.defaultHappinessValue,
                             completedTasks = new()
                         };

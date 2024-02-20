@@ -57,18 +57,6 @@ namespace GameCore
 
                     return true;
                 }
-                //多水食物
-                else if (instance.data.Edible().hasTag && instance.data.Drinkable().hasTag)
-                {
-                    player.hungerValue += instance.data.Edible().tagValue;
-                    player.thirstValue += instance.data.Drinkable().tagValue;
-
-                    player.ServerReduceItemCount(inventoryIndex, 1);
-
-                    GAudio.Play(AudioID.Eat);
-
-                    return true;
-                }
                 //进食
                 else if (instance.data.Edible().hasTag)
                 {
@@ -77,17 +65,6 @@ namespace GameCore
                     player.ServerReduceItemCount(inventoryIndex, 1);
 
                     GAudio.Play(AudioID.Eat);
-
-                    return true;
-                }
-                //饮水
-                else if (instance.data.Drinkable().hasTag)
-                {
-                    player.thirstValue += instance.data.Drinkable().tagValue;
-
-                    player.ServerReduceItemCount(inventoryIndex, 1);
-
-                    GAudio.Play(AudioID.Drink);
 
                     return true;
                 }

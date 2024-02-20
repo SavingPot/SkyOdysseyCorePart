@@ -278,7 +278,6 @@ namespace GameCore
     public sealed class PlayerSave : EntitySave
     {
         public float hungerValue;
-        public float thirstValue;
         public float happinessValue;
         public Inventory inventory;// = new();
         public List<TaskStatusForSave> completedTasks = new();
