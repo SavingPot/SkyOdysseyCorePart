@@ -1189,53 +1189,32 @@ namespace GameCore
 
 
         #region 移动和转向
-        public override void Movement()
+        public override Vector2 GetMovementDirection()
         {
-            float move;
+            float move = (!PlayerCanControl(this) || isDead) ? 0 : PlayerControls.Move(this);
 
-            if (!PlayerCanControl(this))
-                move = 0;
-            else
-                move = PlayerControls.Move(this);
-
-
-
-
-
-
-            if (isLocalPlayer)
+            //执行 移动的启停
+            if (move == 0 && moveVecLastFrame != 0)
             {
-                if (isDead)
-                    move = 0;
-
-                //设置速度
-                rb.velocity = GetMovementVelocity(new(move, 0));
-
-                if (isOnGround && move == 0 && rb.velocity.x != 0)
-                {
-                    if (Mathf.Abs(rb.velocity.x) <= 0.1f)
-                    {
-                        rb.velocity = Vector2.zero;
-                    }
-                    else
-                    {
-                        rb.velocity = GetMovementVelocity(new(-rb.velocity.x * blockFriction, 0));
-                    }
-                }
-
-                //执行 移动的启停
-                if (move == 0 && moveVecLastFrame != 0)
-                {
-                    isMoving = false;
-                }
-                else if (move != 0 && moveVecLastFrame == 0)
-                {
-                    isMoving = true;
-                }
+                isMoving = false;
+            }
+            else if (move != 0 && moveVecLastFrame == 0)
+            {
+                isMoving = true;
             }
 
             //用于在下一帧检测是不是刚刚停止或开始移动
             moveVecLastFrame = move;
+
+            Vector2 result = new(move, 0);
+
+            //地面摩擦
+            if (isOnGround && move == 0 && rb.velocity.x != 0)
+            {
+                result = new(result.x - rb.velocity.x * blockFriction, result.y);
+            }
+
+            return result;
         }
 
         public void AutoSetPlayerOrientation()

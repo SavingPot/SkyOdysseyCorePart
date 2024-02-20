@@ -17,7 +17,7 @@ namespace GameCore
     /// <summary>
     /// 生物, 实体的扩展
     /// </summary>
-    public class Creature : Entity, IEntityIsOnGround
+    public abstract class Creature : Entity, IEntityIsOnGround
     {
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
@@ -262,12 +262,13 @@ namespace GameCore
 
 
 
-        public virtual void Movement() { }
+        public abstract Vector2 GetMovementDirection();
+
 
         /// <summary>
         /// 注：这个方法耗时并不高，无需过度优化
         /// </summary>
-        public Vector2 GetMovementVelocity(Vector2 movementDirection)
+        public Vector2 GetMovementVelocityByMovementDirection(Vector2 movementDirection)
         {
             float max = velocityFactor();
             float acceleration = max * accelerationMultiple;
@@ -292,8 +293,15 @@ namespace GameCore
             base.FixedUpdate();
 
             EntityIsOnGroundBehaviour.OnFixedUpdate(this);
-            Movement();
 
+            //移动 (只有本地玩家和服务器上的非玩家实体会执行)
+            if (isLocalPlayer || (isNotPlayer && isServer))
+            {
+                var movementDirection = GetMovementDirection();
+                rb.velocity = GetMovementVelocityByMovementDirection(movementDirection);
+            }
+
+            //TODO
             if (isLocalPlayer)
             {
                 //摔落伤害

@@ -15,5 +15,7 @@ namespace GameCore
         {
 
         }
+
+        public override Vector2 GetMovementDirection() => Vector2.zero;
     }
 }

@@ -7,7 +7,7 @@ using SP.Tools.Unity;
 
 namespace GameCore
 {
-    public class Enemy : Creature, IHumanBodyParts<CreatureBodyPart>
+    public abstract class Enemy : Creature, IHumanBodyParts<CreatureBodyPart>
     {
         public Transform targetTransform;
         public float searchTime = float.NegativeInfinity;
