@@ -602,41 +602,56 @@ namespace GameCore
 
 
             //TODO: 优先堆叠，而不是随便放
+            void AddItemToList(int index, int space)
+            {
+                //current.data.maxCount - current.count 也就是还可以塞下多少个同样的物品
+                //为什么要限制最大值为 neededCount - comparedCount? 因为我只需要这么多，再多就没用了
+                ushort count = Convert.ToUInt16(Mathf.Min(space, neededCount - comparedCount));
+
+                comparedCount += count;
+                resultTemp.Add(index, count);
+            }
+
+
+
+            //第一轮先检测占用的槽位能不能堆叠
             for (int i = 0; i < items.Length; i++)
             {
                 //已经匹配成功了就无须继续
                 if (comparedCount == neededCount)
                     break;
 
-
                 var current = items[i];
 
 
 
-                void AddItemToList(int space)
-                {
-                    //current.data.maxCount - current.count 也就是还可以塞下多少个同样的物品
-                    //为什么要限制最大值为 neededCount - comparedCount? 因为我只需要这么多，再多就没用了
-                    ushort count = Convert.ToUInt16(Mathf.Min(space, neededCount - comparedCount));
-
-                    comparedCount += count;
-                    resultTemp.Add(i, count);
-                }
-
-
-
-                //如果物品为空就跳过
-                if (Item.Null(current))
-                {
-                    AddItemToList(perSlotMaxCount);
-                    continue;
-                }
-
                 //如果 ID 一致则通过
-                if (current.data.id == neededId)
+                if (current.data.id == neededId && current.count < perSlotMaxCount)
                 {
-                    AddItemToList(perSlotMaxCount - current.count);
+                    AddItemToList(i, perSlotMaxCount - current.count);
                     continue;
+                }
+            }
+
+            //如果第一轮没有找到足够的已占用槽位，就开始第二轮循环，寻找空槽位
+            if (comparedCount != neededCount)
+            {
+                for (int i = 0; i < items.Length; i++)
+                {
+                    //已经匹配成功了就无须继续
+                    if (comparedCount == neededCount)
+                        break;
+
+                    var current = items[i];
+
+
+
+                    //如果允许空槽位 & 物品为空就跳过
+                    if (Item.Null(current))
+                    {
+                        AddItemToList(i, perSlotMaxCount);
+                        continue;
+                    }
                 }
             }
 
