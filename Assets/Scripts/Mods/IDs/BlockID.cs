@@ -5,12 +5,13 @@ namespace GameCore
         public const string Barrel = "ori:barrel";
         public const string BerryBush = "ori:berry_bush";
         public const string Boundary = "ori:boundary";
+        public const string BoundaryGate = "ori:boundary_gate";
         public const string BrickClayFurnace = "ori:brick_clay_furnace";
         public const string Bush = "ori:bush";
         public const string Cactus = "ori:cactus";
         public const string Campfire = "ori:campfire";
         public const string ClayFurnace = "ori:clay_furnace";
-        public const string CookingPot = "ori:cooking_pot";
+        public const string SoupPot = "ori:soup_pot";
         public const string DeadTree = "ori:dead_tree";
         public const string Dirt = "ori:dirt";
         public const string ExtinguishedCampfire = "ori:extinguished_campfire";

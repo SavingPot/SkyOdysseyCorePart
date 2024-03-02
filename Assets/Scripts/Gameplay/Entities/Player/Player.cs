@@ -298,8 +298,8 @@ namespace GameCore
 
         public int usingItemIndex { get; set; } = 0;
 
-        public Item TryGetUsingItem() => inventory.GetItemChecked(usingItemIndex);
-        public ItemBehaviour TryGetUsingItemBehaviour() => inventory.GetItemBehaviourChecked(usingItemIndex);
+        public Item GetUsingItemChecked() => inventory.GetItemChecked(usingItemIndex);
+        public ItemBehaviour GetUsingItemBehaviourChecked() => inventory.GetItemBehaviourChecked(usingItemIndex);
 
         #endregion
 
@@ -310,7 +310,15 @@ namespace GameCore
         [Button("设置手中物品")]
         private void EditorSetUsingItem(string id = "ori:", ushort count = 1)
         {
-            var item = ModConvert.ItemDataToItem(ModFactory.CompareItem(id));
+            var data = ModFactory.CompareItem(id);
+
+            if (data == null)
+            {
+                Debug.LogWarning($"获取物品失败: 无法匹配到 id {id}");
+                return;
+            }
+
+            var item = ModConvert.ItemDataToItem(data);
             item.count = count;
 
             ServerSetItem(usingItemIndex.ToString(), item);
@@ -329,11 +337,11 @@ namespace GameCore
 
         #region 物品属性
 
-        public float excavationStrength => TryGetUsingItem()?.data?.excavationStrength ?? ItemData.defaultExcavationStrength;
+        public float excavationStrength => GetUsingItemChecked()?.data?.excavationStrength ?? ItemData.defaultExcavationStrength;
 
         [BoxGroup("属性"), LabelText("使用时间")]
         public float itemUseTime;
-        public float useRadius => excavationRadius + (TryGetUsingItem()?.data?.extraDistance ?? 0);
+        public float useRadius => excavationRadius + (GetUsingItemChecked()?.data?.extraDistance ?? 0);
 
 
 
@@ -434,6 +442,7 @@ namespace GameCore
                     transform.position = Init.save.pos;
                     fallenY = Init.save.pos.y;
                     hasSetPosBySave = true;
+                    regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos);
                 }
             }
 
@@ -479,7 +488,7 @@ namespace GameCore
                 managerGame.weatherParticle.transform.SetParent(transform);
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
 
-                ServerGenerateRegion(regionIndex, true);
+                GenerateRegion(regionIndex, true);
             }
 
 
@@ -540,7 +549,7 @@ namespace GameCore
 #endif
         }
 
-        public bool HasUseCDPast() => Tools.time >= itemUseTime + (TryGetUsingItem()?.data?.useCD ?? ItemData.defaultUseCD);
+        public bool HasUseCDPast() => Tools.time >= itemUseTime + (GetUsingItemChecked()?.data?.useCD ?? ItemData.defaultUseCD);
 
         private void AliveLocalUpdate()
         {
@@ -639,8 +648,8 @@ namespace GameCore
                 //如果按S
                 if (PlayerControls.PlaceBlockUnderPlayer(this))
                 {
-                    var usingItem = TryGetUsingItem();
-                    var behaviour = TryGetUsingItemBehaviour();
+                    var usingItem = GetUsingItemChecked();
+                    var behaviour = GetUsingItemBehaviourChecked();
 
                     if (usingItem != null && behaviour != null && usingItem.data.isBlock)
                     {
@@ -749,7 +758,7 @@ namespace GameCore
             GAudio.Play(AudioID.SwitchQuickInventorySlot);
 
             //改变状态文本
-            string itemName = GameUI.CompareText(TryGetUsingItem()?.data?.id).text;
+            string itemName = GameUI.CompareText(GetUsingItemChecked()?.data?.id).text;
             if (itemName.IsNullOrWhiteSpace())
                 itemName = GameUI.CompareText("ori:empty_item").text;
 
@@ -829,7 +838,7 @@ namespace GameCore
             //使用物品
             else
             {
-                ItemBehaviour usingItemBehaviour = TryGetUsingItemBehaviour();
+                ItemBehaviour usingItemBehaviour = GetUsingItemBehaviourChecked();
 
                 if (usingItemBehaviour != null) usingItemBehaviour.Use(point);
             }
@@ -899,6 +908,10 @@ namespace GameCore
 
             if (isLocalPlayer)
             {
+                //防止玩家重生时摔死
+                fallenY = newPos.y;
+
+                //关闭 UI
                 MethodAgent.CallUntil(() => pui != null, () => pui.rebornPanel.gameObject.SetActive(false));
             }
         }
@@ -970,7 +983,7 @@ namespace GameCore
         /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         /// </summary>
         [Button]
-        public void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme = null)
+        public void GenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme = null)
         {
             //检查是否正在生成
             if (regionGenerationSaves != null || regionGenerationRegion != null)
@@ -984,9 +997,9 @@ namespace GameCore
             regionGenerationSaves = new();
 
             //向服务器发送请求
-            ServerGenerateRegionCore(index, isFirstGeneration, specificTheme);
+            ServerGenerateRegion(index, isFirstGeneration, specificTheme);
 
-            //等待服务器发回所有资源
+            //等待服务器发回所有资源切片
             StartCoroutine(IEWaitForRegionSegments());
         }
 
@@ -1046,9 +1059,15 @@ namespace GameCore
         }
 
         [ServerRpc]
-        private void ServerGenerateRegionCore(Vector2Int index, bool isFirstGeneration, string specificTheme, NetworkConnection caller = null)
+        private void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme, NetworkConnection caller = null)
         {
             Debug.Log($"Player={netId} 请求生成区域 {index}");
+
+            //如果旧的区域没有玩家了，就回收区域
+            if (!PlayerCenter.all.Any(currentPlayer => currentPlayer.regionIndex == currentPlayer.regionIndex))
+            {
+                GM.instance.RecoverRegion(index);
+            }
 
             MethodAgent.RunThread(() =>
             {
@@ -1337,7 +1356,7 @@ namespace GameCore
                     //如果成功获取了目标
                     if (target)
                     {
-                        int damage = TryGetUsingItem()?.data?.damage ?? ItemData.defaultDamage;
+                        int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
                         target.TakeDamage(damage, 0.3f, transform.position, transform.position.x < target.transform.position.x ? Vector2.right * 12 : Vector2.left * 12);
 
                         //如果使用手柄就震动一下

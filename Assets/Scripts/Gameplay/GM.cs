@@ -319,7 +319,7 @@ namespace GameCore
 
                 if (worldLoadingTask.IsFaulted || worldLoadingTask.IsCanceled)
                 {
-                    //TODO: 游戏内反馈
+                    InternalUIAdder.instance.SetStatusText("世界加载失败");
                     Debug.LogError("世界加载失败");
                     return;
                 }
@@ -327,25 +327,34 @@ namespace GameCore
                 GFiles.world = worldLoadingTask.Result;
             }
             /* -------------------------------------------------------------------------- */
-            /*                                    检查世界                                    */
+            /*                                    检查并处理世界                                    */
             /* -------------------------------------------------------------------------- */
+            //检查世界是否为空
             if (GFiles.world == null)
             {
                 Debug.LogError($"在加入世界前检查 GFiles.world 是否为空, 否则传入 {nameof(worldDirPath)} 参数");
                 return;
             }
 
-            if (GameTools.CompareVersions(GFiles.world.basicData.gameVersion, "0.7.4", Operators.less))
+            //检查世界版本是否被永久弃用
+            if (GameTools.CompareVersions(GFiles.world.basicData.gameVersion, "0.7.8", Operators.less))
             {
-                //TODO: 游戏内反馈
-                Debug.LogError("世界版本不正确, 拒绝进入");
+                InternalUIAdder.instance.SetStatusText("世界版本被永久弃用了, 拒绝进入");
+                Debug.LogError("世界版本被永久弃用了, 拒绝进入");
                 return;
             }
 
-            /* -------------------------------------------------------------------------- */
-            /*                                    处理世界                                    */
-            /* -------------------------------------------------------------------------- */
-            Debug.Log($"正在进入世界 {GFiles.world.basicData.worldName}");
+            //检查世界的方块
+            foreach (var region in GFiles.world.regionData)
+            {
+                foreach (var blockSave in region.blocks)
+                {
+                    if (ModFactory.CompareBlockData(blockSave.blockId) == null)
+                    {
+                        //TODO: 显示有哪些方块被移除了，并让玩家自己决定要不要删除那些方块
+                    }
+                }
+            }
 
             if (GFiles.world.basicData.gameVersion != GInit.gameVersion)
             {
@@ -355,10 +364,20 @@ namespace GameCore
                 switch (GFiles.world.basicData.gameVersion)
                 {
                     default:
-                        Debug.LogError("世界版本转换失败, 拒绝加入");
+                        InternalUIAdder.instance.SetStatusText("世界版本转换失败, 拒绝进入");
+                        Debug.LogError("世界版本转换失败, 拒绝进入");
                         return;
                 }
             }
+
+
+
+
+
+
+
+
+            Debug.Log($"正在进入世界 {GFiles.world.basicData.worldName}");
 
             /* -------------------------------------------------------------------------- */
             /*                                   加载下一个场景                                  */
@@ -1069,7 +1088,17 @@ namespace GameCore
                 if (centerPoint == Vector2Int.zero)
                 {
                     var middleX = Region.GetMiddleX(generation.index);
-                    generation.region.spawnPoint = new(middleX, wallHighestPointFunction[middleX] + 3);
+                    var middleY = Region.GetMiddleY(generation.index);
+
+                    try
+                    {
+                        generation.region.spawnPoint = new(middleX, middleY + wallHighestPointFunction[0] + 3);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Log($"选取出生点时失败, 堆栈如下: {ex}");
+                        generation.region.spawnPoint = new(middleX, middleY);
+                    }
                 }
 
                 //生成战利品
@@ -1173,6 +1202,7 @@ namespace GameCore
             {
                 for (int y = generation.minPoint.y; y <= generation.maxPoint.y; y++)
                 {
+                    //检测点位是否在边界上
                     if (x == generation.minPoint.x || y == generation.minPoint.y || x == generation.maxPoint.x || y == generation.maxPoint.y)
                     {
                         //删除边界上的任何方块
@@ -1180,13 +1210,16 @@ namespace GameCore
                         generation.region.RemovePos(x, y, true);
 
                         //TODO: 门
-                        if (y == generation.maxPoint.y)
+                        if (x == 0 || y == 0)
                         {
-
+                            //添加边界方块
+                            generation.region.AddPos(BlockID.BoundaryGate, x, y, false, true);
                         }
-
-                        //添加边界方块
-                        generation.region.AddPos(BlockID.Boundary, x, y, false, true);
+                        else
+                        {
+                            //添加边界方块
+                            generation.region.AddPos(BlockID.Boundary, x, y, false, true);
+                        }
                     }
                 }
             }
@@ -1293,14 +1326,13 @@ namespace GameCore
             {
                 foreach (var mod in ModFactory.mods)
                 {
-                    foreach (var the in mod.regionThemes)
+                    foreach (var regionTheme in mod.regionThemes)
                     {
-                        if (the.distribution == index.x)
+                        if (regionTheme.distribution == index.x)
                         {
-                            theme = the;
+                            theme = regionTheme;
                             break;
                         }
-
                     }
                 }
             }
@@ -1309,7 +1341,11 @@ namespace GameCore
                 theme = ModFactory.CompareRegionTheme(specificTheme);
             }
 
-            theme ??= ModFactory.CompareRegionTheme(RegionThemeID.Plant);
+            if (theme == null)
+            {
+                Debug.LogError($"群系为空, 将生成 {RegionThemeID.Plant}");
+                theme = ModFactory.CompareRegionTheme(RegionThemeID.Plant);
+            }
 
             /* ----------------------------------- 获取区域主题对应的群系 ----------------------------------- */
             List<BiomeData> biomeList = new();

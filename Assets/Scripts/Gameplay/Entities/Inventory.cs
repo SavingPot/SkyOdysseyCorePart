@@ -589,8 +589,11 @@ namespace GameCore
             return comparedCount == neededCount;
         }
 
+
+
         public static bool GetIndexesToPutItemIntoItems(Item[] items, Item item, out Dictionary<int, ushort> result)
             => GetIndexesToPutItemIntoItems(items, item.data.id, item.count, item.data.maxCount, out result);
+
         public static bool GetIndexesToPutItemIntoItems(Item[] items, string neededId, uint neededCount, ushort perSlotMaxCount, out Dictionary<int, ushort> result)
         {
             Dictionary<int, ushort> resultTemp = new();
@@ -598,7 +601,7 @@ namespace GameCore
 
 
 
-
+            //TODO: 优先堆叠，而不是随便放
             for (int i = 0; i < items.Length; i++)
             {
                 //已经匹配成功了就无须继续

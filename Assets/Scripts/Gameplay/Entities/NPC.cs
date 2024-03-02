@@ -11,6 +11,16 @@ namespace GameCore
         //TODO: 所有实体都可用 PlayerInteraction
         public virtual Vector2 interactionSize { get; } = new(5, 5f);
 
+
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            hurtable = false;
+        }
+
+
         public virtual void PlayerInteraction(Player caller)
         {
 

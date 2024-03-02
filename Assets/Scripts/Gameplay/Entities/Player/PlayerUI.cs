@@ -1505,7 +1505,7 @@ namespace GameCore
                 SetUIHighest(touchScreenCraftingButton);
                 SetUIHighest(touchScreenShowTaskButton);
 
-                touchScreenUseItemButtonImage.image.sprite = player.TryGetUsingItem()?.data?.texture?.sprite;
+                touchScreenUseItemButtonImage.image.sprite = player.GetUsingItemChecked()?.data?.texture?.sprite;
                 touchScreenUseItemButtonImage.image.color = touchScreenUseItemButtonImage.image.sprite ? Color.white : Color.clear;
 
                 if (touchScreenCursorJoystick.Horizontal != 0 || touchScreenCursorJoystick.Vertical != 0)

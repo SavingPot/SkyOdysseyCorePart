@@ -329,7 +329,7 @@ namespace GameCore
                 {
                     newRecipe.jsonFormatWhenLoad = "0.6.0";
 
-                    newRecipe.type = cr["cooking_pot"]?.ToString() ?? "ori:poach";
+                    newRecipe.type = cr["type"]?.ToString() ?? "ori:poach";
                     newRecipe.needBowl = cr["need_bowl"]?.ToBool() ?? false;
                     newRecipe.result = new(cr["result"]["id"].ToString(), (cr["result"]["count"]?.ToInt() ?? 1).ToUShort(), new());
 
