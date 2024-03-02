@@ -1,9 +1,11 @@
 using SP.Tools;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Debug = UnityEngine.Debug;
@@ -60,6 +62,12 @@ namespace GameCore.High
         public static BatteryStatus batteryStatus => SystemInfo.batteryStatus;
         #endregion
 
+        #region 性能采样
+
+        public static ConcurrentQueue<PerformanceSampler> updateSamplers = new();
+
+        #endregion
+
         [ChineseName("输出配置信息")]
         public static void OutputComputerInfo()
         {
@@ -96,31 +104,46 @@ namespace GameCore.High
         [Conditional("Debug")]
         public static void BeginSample(string name)
         {
+            foreach (var item in updateSamplers)
+            {
+                if (item.samplerName == name)
+                {
+                    throw new NotImplementedException();
+                }
+            }
 
+            updateSamplers.Enqueue(new(name));
         }
 
         [Conditional("Debug")]
-        public static void EndSample()
+        public static void EndSample(string name)
         {
+            foreach (var item in updateSamplers)
+            {
+                if (item.thread == Thread.CurrentThread && item.samplerName == name)
+                {
+                    item.stopwatch.Stop();
+                    Debug.Log($"性能测试结果: {item.samplerName} 耗时 {item.stopwatch.ElapsedMilliseconds}ms");
+                    return;
+                }
+            }
 
-        }
-    }
-
-    public class PerformanceSampler : IDisposable
-    {
-        string samplerName;
-        Stopwatch stopwatch;
-
-        public PerformanceSampler(string samplerName)
-        {
-            this.samplerName = samplerName;
-            stopwatch = Stopwatch.StartNew();
+            throw new NotImplementedException();
         }
 
-        public void Dispose()
+        public class PerformanceSampler
         {
-            stopwatch.Stop();
-            Debug.Log($"性能测试结果: {samplerName} 耗时 {stopwatch.ElapsedMilliseconds}ms");
+            internal readonly string samplerName;
+            internal readonly Thread thread;
+            internal readonly Stopwatch stopwatch;
+
+            public PerformanceSampler(string samplerName)
+            {
+                this.samplerName = samplerName;
+
+                thread = Thread.CurrentThread;
+                stopwatch = Stopwatch.StartNew();
+            }
         }
     }
 }

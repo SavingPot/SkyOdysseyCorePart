@@ -665,7 +665,6 @@ namespace GameCore
     [Serializable]
     public class Item
     {
-        //! 添加/删除变量后记得在ByteConverters同步修改
         [LabelText("数量")] public ushort count;
         [LabelText("自定义数据")] public JObject customData;
         public ItemData data;

@@ -169,7 +169,18 @@ namespace GameCore
 
         protected override void DestroyOrSave() => DontDestroyOnLoadSingleton();
 
+        [Button]
+        static void Try(int time)
+        {
+            Performance.BeginSample("try");
 
+            for (int i = 0; i < time*2; i++)
+            {
+                i++;
+            }
+
+            Performance.EndSample("try");
+        }
 
         [UpdateChineseName]
         void Update()
