@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks.Triggers;
 using GameCore.High;
 using GameCore.UI;
 using Mirror;
@@ -197,6 +198,7 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
         [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
+        public bool isAttacking { get; private set; }
 
         #region 区域生成
 
@@ -257,6 +259,11 @@ namespace GameCore
         public static float maxHungerValue = 100;
         #endregion
 
+        #region 金币
+        int coin_temp; void coin_set(int value) { }
+        [Sync] public int coin { get => coin_temp; set => coin_set(value); }
+        #endregion
+
         #region 幸福值
         float happinessValue_temp; void happinessValue_set(float value) { }
         [Sync] public float happinessValue { get => happinessValue_temp; set => happinessValue_set(value); }
@@ -298,6 +305,12 @@ namespace GameCore
 
         public int usingItemIndex { get; set; } = 0;
 
+        public bool TryGetUsingItem(out Item item)
+        {
+            item = GetUsingItemChecked();
+
+            return item != null;
+        }
         public Item GetUsingItemChecked() => inventory.GetItemChecked(usingItemIndex);
         public ItemBehaviour GetUsingItemBehaviourChecked() => inventory.GetItemBehaviourChecked(usingItemIndex);
 
@@ -341,6 +354,7 @@ namespace GameCore
 
         [BoxGroup("属性"), LabelText("使用时间")]
         public float itemUseTime;
+        public float previousAttackTime;
         public float useRadius => excavationRadius + (GetUsingItemChecked()?.data?.extraDistance ?? 0);
 
 
@@ -348,11 +362,19 @@ namespace GameCore
 
 
         [HideInInspector] public SpriteRenderer usingItemRenderer { get; set; }
+        [HideInInspector] public BoxCollider2D usingItemCollider { get; set; }
+        [HideInInspector] public InventoryItemRendererCollision usingItemCollisionComponent { get; set; }
 
-        public void SetUsingItemRendererLocalPositionAndScale(Vector2 localPosition, Vector2 localScale)
+        public void ModifyUsingItemRendererTransform(Vector2 localPosition, Vector2 localScale, int localRotation)
         {
-            usingItemRenderer.transform.localPosition = new(0.1f + localPosition.x, -0.5f + localPosition.y);
-            usingItemRenderer.transform.SetScale(0.5f * localScale.x, 0.5f * localScale.y);
+            localScale *= 0.5f;
+            localPosition += new Vector2(0.1f, -0.5f);
+
+            usingItemRenderer.transform.SetLocalPositionAndRotation(localPosition, Quaternion.Euler(0, 0, localRotation));
+            usingItemRenderer.transform.SetScale(localScale);
+
+            //碰撞体
+            usingItemCollider.size = localScale;
         }
 
         #endregion
@@ -424,6 +446,7 @@ namespace GameCore
         {
             base.Awake();
 
+            //计算移动速度因数
             Func<float> oldValue = velocityFactor;
             velocityFactor = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
 
@@ -449,6 +472,7 @@ namespace GameCore
 
 
             #region 初始化模型
+
             CreateModel();
             body = AddBodyPart("body", skinBody, Vector2.zero, 5, model.transform, BodyPartType.Body);
             head = AddBodyPart("head", skinHead, new(0, -0.03f), 10, body, BodyPartType.Head, new(-0.03f, -0.04f));
@@ -461,6 +485,10 @@ namespace GameCore
 
             //添加手持物品的渲染器
             EntityInventoryOwnerBehaviour.CreateUsingItemRenderer(this, rightArm.transform, 9);
+
+            #endregion
+
+
 
             //把 inventory 的初始值缓存下来
             TempInventory(null);
@@ -498,7 +526,6 @@ namespace GameCore
 
             //显示名称
             OnNameChange(playerName);
-            #endregion
         }
 
         public override void AfterInitialization()
@@ -685,6 +712,7 @@ namespace GameCore
             GravitySet(this);
             AutoSetPlayerOrientation();
             rb.gravityScale = gravity;
+            isAttacking = Tools.time <= previousAttackTime + attackAnimTime;
 
             if (!isDead)
             {
@@ -706,7 +734,6 @@ namespace GameCore
         protected override void ServerUpdate()
         {
             base.ServerUpdate();
-
             Physics2D.OverlapCircleNonAlloc(transform.position, itemPickUpRadius, itemPickUpObjectsDetectedTemp);
 
             foreach (var other in itemPickUpObjectsDetectedTemp)
@@ -724,9 +751,18 @@ namespace GameCore
                     ServerAddItem(drop.item);
                     GAudio.Play(AudioID.PickUpItem);
 
+                    AddCoin(1);
+
                     drop.Death();
                 }
             }
+        }
+
+        public void AddCoin(int count)
+        {
+            coin += count;
+
+            Debug.Log("ADD COIN " + count);
         }
 
         [ServerRpc]
@@ -773,6 +809,7 @@ namespace GameCore
             {
                 trueSave.inventory = inventory;
                 trueSave.hungerValue = hungerValue;
+                trueSave.coin = coin;
                 trueSave.happinessValue = happinessValue;
                 trueSave.completedTasks = completedTasks;
             }
@@ -1322,7 +1359,9 @@ namespace GameCore
             {
                 OnStartAttack();
 
+                //设置时间
                 itemUseTime = Tools.time;
+                previousAttackTime = Tools.time;
             }
         }
 
@@ -1334,39 +1373,6 @@ namespace GameCore
                 return;
 
             base.OnStartAttack();
-
-            //向光标位置发射射线
-            if (RayTools.TryHitAll(transform.position, Tools.GetAngleVector2(transform.position, cursorWorldPos), excavationRadius, out var rays))
-            {
-                foreach (var ray in rays)
-                {
-                    //排除自己
-                    if (ray.transform.GetInstanceID() == transform.GetInstanceID())
-                        continue;
-
-                    //这里的作用是获得攻击目标  [先尝试获取 Entity, 再尝试获取 CreatureBodyPart]
-                    if (!ray.transform.TryGetComponent<Entity>(out var target) || target.hurtable)
-                    {
-                        if (ray.transform.TryGetComponent<CreatureBodyPart>(out var cbp) && target.hurtable)
-                        {
-                            target = cbp.mainBody;
-                        }
-                    }
-
-                    //如果成功获取了目标
-                    if (target)
-                    {
-                        int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
-                        target.TakeDamage(damage, 0.3f, transform.position, transform.position.x < target.transform.position.x ? Vector2.right * 12 : Vector2.left * 12);
-
-                        //如果使用手柄就震动一下
-                        if (GControls.mode == ControlMode.Gamepad)
-                            GControls.GamepadVibrationMedium();
-
-                        break;
-                    }
-                }
-            }
 
             ServerOnStartAttack(left, right);
         }
@@ -1384,6 +1390,16 @@ namespace GameCore
                 animWeb.SwitchPlayingTo("attack_leftarm", 0);
             if (rightArm)
                 animWeb.SwitchPlayingTo("attack_rightarm", 0);
+        }
+
+        public void AttackEntity(Entity entity)
+        {
+            int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
+            entity.TakeDamage(damage, 0.3f, transform.position, transform.position.x < entity.transform.position.x ? Vector2.right * 12 : Vector2.left * 12);
+
+            //如果使用手柄就震动一下
+            if (GControls.mode == ControlMode.Gamepad)
+                GControls.GamepadVibrationMedium();
         }
 
         #endregion

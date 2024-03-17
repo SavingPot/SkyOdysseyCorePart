@@ -68,7 +68,14 @@ namespace GameCore
             entity.usingItemRenderer.sortingOrder = sortingOrder;
             entity.renderers.Add(entity.usingItemRenderer);
             entity.spriteRenderers.Add(entity.usingItemRenderer);
-            entity.SetUsingItemRendererLocalPositionAndScale(Vector2.zero, Vector2.one);
+
+            entity.usingItemCollider = entity.usingItemRenderer.gameObject.AddComponent<BoxCollider2D>();
+            entity.usingItemCollider.isTrigger = true;
+
+            entity.usingItemCollisionComponent = entity.usingItemRenderer.gameObject.AddComponent<InventoryItemRendererCollision>();
+            entity.usingItemCollisionComponent.owner = entity;
+
+            entity.ModifyUsingItemRendererTransform(Vector2.zero, Vector2.one, 0);
         }
 
         public static void LoadInventoryFromCustomData<T>(T entity) where T : Entity, IInventoryOwner
@@ -110,14 +117,24 @@ namespace GameCore
     public interface IInventoryOwner : IItemContainer
     {
         Transform transform { get; }
+        void AttackEntity(Entity entity);
+        bool isAttacking { get; }
+
+
+
+        int inventorySlotCount { get; }
         void OnInventoryItemChange(Inventory newValue, string index); //* 为什么必须提供一个 newValue? Inventory 明明是引用类型, 我直接访问 Inventory 的变量不就好了吗? 这是受限于网络传输的需要, 详见 Player.OnInventoryItemChange
         Inventory GetInventory();
         void SetInventory(Inventory value); //! 需要对传入的 value 参数进行 ResumeFromStream
+        Inventory DefaultInventory() => new(inventorySlotCount, this);
+
+
+
         int usingItemIndex { get; }
         SpriteRenderer usingItemRenderer { get; set; }
-        void SetUsingItemRendererLocalPositionAndScale(Vector2 localPosition, Vector2 localScale);
-        int inventorySlotCount { get; }
-        Inventory DefaultInventory() => new(inventorySlotCount, this);
+        BoxCollider2D usingItemCollider { get; set; }
+        InventoryItemRendererCollision usingItemCollisionComponent { get; set; }
+        void ModifyUsingItemRendererTransform(Vector2 localPosition, Vector2 localScale, int localRotation);
     }
 
     public interface IItemContainer
@@ -126,5 +143,18 @@ namespace GameCore
 
         Item GetItem(string index);
         void SetItem(string index, Item value);
+    }
+
+    public class InventoryItemRendererCollision : MonoBehaviour
+    {
+        public IInventoryOwner owner;
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (owner.isAttacking && other.transform != owner.transform && other.gameObject.TryGetComponent(out Entity entity))
+            {
+                owner.AttackEntity(entity);
+            }
+        }
     }
 }

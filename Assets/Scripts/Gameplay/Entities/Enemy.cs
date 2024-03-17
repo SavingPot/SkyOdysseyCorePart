@@ -73,7 +73,7 @@ namespace GameCore
 
                         if (UObjectTools.GetComponent(targetTransform, out Entity entity))
                         {
-                            entity.TakeDamage(data.normalAttackDamage, 0.3f, transform.position, transform.position.x < targetTransform.position.x ? Vector2.right * 12 : Vector2.left * 12);
+                            AttackEntity(entity);
                         }
                     }
                 }
@@ -84,6 +84,11 @@ namespace GameCore
             }
             else
                 ReFindTarget();
+        }
+
+        public void AttackEntity(Entity entity)
+        {
+            entity.TakeDamage(data.normalAttackDamage, 0.3f, transform.position, transform.position.x < targetTransform.position.x ? Vector2.right * 12 : Vector2.left * 12);
         }
 
         public void ReFindTarget()

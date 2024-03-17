@@ -250,14 +250,7 @@ namespace GameCore.High
                     }
                     if (playerSaveTemp == null)
                     {
-                        playerSaveTemp = new PlayerSave()
-                        {
-                            id = nm.playerName,
-                            inventory = new(Player.inventorySlotCountConst, null),
-                            hungerValue = Player.defaultHungerValue,
-                            happinessValue = Player.defaultHappinessValue,
-                            completedTasks = new()
-                        };
+                        playerSaveTemp = PlayerSave.NewPlayer(nm.playerName);
 
                         GFiles.world.playerSaves.Add(playerSaveTemp);
                         Debug.LogWarning($"未在存档中匹配到玩家 {nm.playerName} 的数据, 已自动添加");

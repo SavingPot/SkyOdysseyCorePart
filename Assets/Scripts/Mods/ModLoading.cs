@@ -82,12 +82,13 @@ namespace GameCore
 
 
         /// <returns>加载是否成功</returns>
-        public static bool LoadModClass<T>(string path, string entranceId, out T obj, out JToken entrance) where T : ModClass, new()
+        public static bool LoadModClass<T>(string path, string entranceId, out T obj, out JToken entrance, bool ignoreIdCheck = false) where T : ModClass, new()
         {
             JObject jo = JsonTools.LoadJObjectByPath(path);
             var format = GetCorrectJsonFormatByJObject(jo);
             entrance = jo[entranceId];
             var entranceIdToken = entrance["id"];
+            string entranceIdTokenAsString = null;
 
             //如果入口为空或者不是对象类型
             if (entrance == null && entrance.Type != JTokenType.Object)
@@ -97,30 +98,34 @@ namespace GameCore
                 return false;
             }
 
-            //如果入口中不包含 id
-            if (entranceIdToken == null)
+            //检查 Id
+            if (!ignoreIdCheck)
             {
-                obj = null;
-                Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中必须包含 id");
-                return false;
-            }
+                //如果入口中不包含 id
+                if (entranceIdToken == null)
+                {
+                    obj = null;
+                    Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中必须包含 id");
+                    return false;
+                }
 
-            var entranceIdTokenAsString = entranceIdToken.ToString();
+                entranceIdTokenAsString = entranceIdToken.ToString();
 
-            //如果入口中 id 为空
-            if (string.IsNullOrWhiteSpace(entranceIdTokenAsString))
-            {
-                obj = null;
-                Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中的 id 为空");
-                return false;
-            }
+                //如果入口中 id 为空
+                if (string.IsNullOrWhiteSpace(entranceIdTokenAsString))
+                {
+                    obj = null;
+                    Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中的 id 为空");
+                    return false;
+                }
 
-            //检查 id 的格式
-            if (Tools.SplitIdBySeparator(entranceIdTokenAsString).Length != 2)
-            {
-                obj = null;
-                Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中 id 的格式不正确, 必须为 \"mod_id:project_name\"");
-                return false;
+                //检查 id 的格式
+                if (Tools.SplitIdBySeparator(entranceIdTokenAsString).Length != 2)
+                {
+                    obj = null;
+                    Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} json 文件的 {entranceId} 中 id 的格式不正确, 必须为 \"mod_id:project_name\"");
+                    return false;
+                }
             }
 
             //初始化结果实例
@@ -508,7 +513,7 @@ namespace GameCore
                     }
                     else
                     {
-                        newItem = LoadItem(newBlock.jo);
+                        newItem = LoadItem(path, true);
                         newItem.id = newBlock.id;
                         newItem.description ??= newBlock.description;
                         newItem.isBlock = true;
@@ -825,123 +830,116 @@ namespace GameCore
             return temp;
         }
 
-        public static ItemData LoadItem(JObject jo)
+        public static ItemData LoadItem(string path, bool ignoreIdCheck = false)
         {
-            if (jo == null)
+            if (LoadModClass(path, "ori:item", out ItemData newItem, out var jt, ignoreIdCheck))
             {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
-
-
-
-            var jt = jo["ori:item"];
-
-            if (jt == null)
-            {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: 有一个物品 json 不包含 \"ori:item\" 对象");
-                return null;
-            }
+                var helmet = jt["helmet"];
+                var breastplate = jt["breastplate"];
+                var legging = jt["legging"];
+                var boots = jt["boots"];
 
 
 
 
 
-            ItemData newItem = new();
-            var format = GetCorrectJsonFormatByJObject(jo);
-            var helmet = jt["helmet"];
-            var breastplate = jt["breastplate"];
-            var legging = jt["legging"];
-            var boots = jt["boots"];
+                newItem.damage = jt["damage"]?.ToInt() ?? ItemData.defaultDamage;
+                newItem.excavationStrength = jt["excavation_strength"]?.ToInt() ?? ItemData.defaultExcavationStrength;
+                newItem.useCD = jt["use_cd"]?.ToFloat() ?? ItemData.defaultUseCD;
+                newItem.extraDistance = jt["extra_distance"]?.ToString()?.ToFloat() ?? 0;
 
 
 
 
-
-            newItem.id = jt["id"]?.ToString();
-            newItem.damage = jt["damage"]?.ToInt() ?? ItemData.defaultDamage;
-            newItem.excavationStrength = jt["excavation_strength"]?.ToInt() ?? ItemData.defaultExcavationStrength;
-            newItem.useCD = jt["use_cd"]?.ToFloat() ?? ItemData.defaultUseCD;
-            newItem.description = jt["description"]?.ToString();
-            newItem.extraDistance = jt["extra_distance"]?.ToString()?.ToFloat() ?? 0;
-
-
-
-
-            if (GameTools.CompareVersions(format, "0.7.8", Operators.less))
-            {
-                newItem.texture = new(jt["texture"]?.ToString());
-            }
-            else
-            {
-                var display = jt["display"];
-
-                newItem.texture = new(display?["texture"]?.ToString());
-            }
-
-            //如果不指定 texture 就是 id
-            newItem.texture ??= ModFactory.CompareTexture(newItem.id);
-
-
-
-
-
-            if (helmet != null)
-            {
-                newItem.Helmet = new()
+                if (GameTools.CompareVersions(newItem.jsonFormat, "0.7.8", Operators.thanOrEqual))
                 {
-                    defense = helmet["defense"]?.ToInt() ?? 1
-                };
+                    var display = jt["display"];
+                    newItem.jsonFormatWhenLoad = "0.7.8";
 
-                string headId = helmet["head"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(headId)) newItem.Helmet.head = new(headId);
-            }
+                    if (display != null)
+                    {
+                        //如果不指定 texture 就是 id
+                        var textureJT = display["texture"];
+                        newItem.texture = new(textureJT != null ? display["texture"]?.ToString() : newItem.id);
 
-            if (breastplate != null)
-            {
-                newItem.Breastplate = new()
+                        newItem.description = display["description"]?.ToString();
+                        newItem.size = display["size"]?.ToVector2() ?? Vector2.one;
+                        newItem.offset = display["offset"]?.ToVector2() ?? Vector2.zero;
+                        newItem.rotation = display["rotation"]?.ToInt() ?? 0;
+                    }
+                }
+                else
                 {
-                    defense = breastplate["defense"]?.ToInt() ?? 1
-                };
+                    newItem.jsonFormatWhenLoad = "0.5.1";
 
-                string bodyId = breastplate["body"]?.ToString();
-                string leftArmId = breastplate["left_arm"]?.ToString();
-                string rightArmId = breastplate["right_arm"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(bodyId)) newItem.Breastplate.body = new(bodyId);
-                if (!string.IsNullOrWhiteSpace(leftArmId)) newItem.Breastplate.leftArm = new(leftArmId);
-                if (!string.IsNullOrWhiteSpace(rightArmId)) newItem.Breastplate.rightArm = new(rightArmId);
-            }
+                    newItem.texture = new(jt["texture"]?.ToString());
+                    newItem.description = jt["description"]?.ToString();
+                    newItem.size = Vector2.one;
+                    newItem.offset = Vector2.zero;
+                }
 
-            if (legging != null)
-            {
-                newItem.Legging = new()
+
+
+
+
+
+                if (helmet != null)
                 {
-                    defense = legging?["defense"]?.ToInt() ?? 1
-                };
+                    newItem.Helmet = new()
+                    {
+                        defense = helmet["defense"]?.ToInt() ?? 1
+                    };
 
-                string leftLegId = legging?["left_leg"]?.ToString();
-                string rightLegId = legging?["right_leg"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(leftLegId)) newItem.Legging.leftLeg = new(leftLegId);
-                if (!string.IsNullOrWhiteSpace(rightLegId)) newItem.Legging.rightLeg = new(rightLegId);
-            }
+                    string headId = helmet["head"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(headId)) newItem.Helmet.head = new(headId);
+                }
 
-            if (boots != null)
-            {
-                newItem.Boots = new()
+                if (breastplate != null)
                 {
-                    defense = boots["defense"]?.ToInt() ?? 1
-                };
+                    newItem.Breastplate = new()
+                    {
+                        defense = breastplate["defense"]?.ToInt() ?? 1
+                    };
 
-                string leftFootId = boots["left_foot"]?.ToString();
-                string rightFootId = boots["right_foot"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(leftFootId)) newItem.Boots.leftFoot = new(leftFootId);
-                if (!string.IsNullOrWhiteSpace(rightFootId)) newItem.Boots.rightFoot = new(rightFootId);
+                    string bodyId = breastplate["body"]?.ToString();
+                    string leftArmId = breastplate["left_arm"]?.ToString();
+                    string rightArmId = breastplate["right_arm"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(bodyId)) newItem.Breastplate.body = new(bodyId);
+                    if (!string.IsNullOrWhiteSpace(leftArmId)) newItem.Breastplate.leftArm = new(leftArmId);
+                    if (!string.IsNullOrWhiteSpace(rightArmId)) newItem.Breastplate.rightArm = new(rightArmId);
+                }
+
+                if (legging != null)
+                {
+                    newItem.Legging = new()
+                    {
+                        defense = legging?["defense"]?.ToInt() ?? 1
+                    };
+
+                    string leftLegId = legging?["left_leg"]?.ToString();
+                    string rightLegId = legging?["right_leg"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(leftLegId)) newItem.Legging.leftLeg = new(leftLegId);
+                    if (!string.IsNullOrWhiteSpace(rightLegId)) newItem.Legging.rightLeg = new(rightLegId);
+                }
+
+                if (boots != null)
+                {
+                    newItem.Boots = new()
+                    {
+                        defense = boots["defense"]?.ToInt() ?? 1
+                    };
+
+                    string leftFootId = boots["left_foot"]?.ToString();
+                    string rightFootId = boots["right_foot"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(leftFootId)) newItem.Boots.leftFoot = new(leftFootId);
+                    if (!string.IsNullOrWhiteSpace(rightFootId)) newItem.Boots.rightFoot = new(rightFootId);
+                }
+
+                jt["tags"]?.For(i =>
+                {
+                    newItem.tags.Add(i.ToString());
+                });
             }
-
-            jt["tags"]?.For(i =>
-            {
-                newItem.tags.Add(i.ToString());
-            });
 
             return newItem;
         }

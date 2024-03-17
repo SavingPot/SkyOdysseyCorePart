@@ -169,22 +169,25 @@ namespace GameCore
 
         protected override void DestroyOrSave() => DontDestroyOnLoadSingleton();
 
-        [Button]
-        static void Try(int time)
-        {
-            Performance.BeginSample("try");
-
-            for (int i = 0; i < time*2; i++)
-            {
-                i++;
-            }
-
-            Performance.EndSample("try");
-        }
-
         [UpdateChineseName]
         void Update()
         {
+            /* --------------------------- Performance 的性能采样 --------------------------- */
+            foreach (var sampler in Performance.updateSamplers)
+            {
+                if (sampler.stopwatch.IsRunning)
+                {
+                    Debug.LogError($"更新采样器 {sampler.samplerName}-{sampler.instanceId} 的计时器未停止");
+                    continue;
+                }
+
+                Debug.Log($"性能测试结果: {sampler.samplerName}-{sampler.instanceId} 耗时 {sampler.stopwatch.Elapsed.TotalMilliseconds}ms");
+            }
+
+            Performance.updateSamplers.Clear();
+
+
+
             /* ---------------------------------- 计算时间 ---------------------------------- */
             time = Time.time;
             deltaTime = Time.deltaTime;

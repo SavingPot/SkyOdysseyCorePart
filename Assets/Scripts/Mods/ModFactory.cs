@@ -863,8 +863,7 @@ namespace GameCore
 
                     paths.For(p => MethodAgent.DebugRun(() =>
                     {
-                        JObject jo = JsonTools.LoadJObjectByPath(p);
-                        ItemData newItem = ModLoading.LoadItem(jo);
+                        ItemData newItem = ModLoading.LoadItem(p);
 
                         newMod.items.Add(newItem);
                     }));

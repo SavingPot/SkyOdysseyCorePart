@@ -626,7 +626,7 @@ namespace GameCore
 
 
                 //如果 ID 一致则通过
-                if (current.data.id == neededId && current.count < perSlotMaxCount)
+                if (!Item.Null(current) && current.data.id == neededId && current.count < perSlotMaxCount)
                 {
                     AddItemToList(i, perSlotMaxCount - current.count);
                     continue;
@@ -781,7 +781,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class ItemData : IdClassBase, ITags
+    public class ItemData : ModClass, ITags
     {
         public const int defaultDamage = 5;
         public const ushort defaultMaxCount = 32;
@@ -800,6 +800,9 @@ namespace GameCore
         [NonSerialized, LabelText("使用CD")] public float useCD = defaultUseCD;
         [NonSerialized, LabelText("介绍")] public string description;
         [NonSerialized, LabelText("额外距离")] public float extraDistance;
+        [NonSerialized, LabelText("大小")] public Vector2 size;
+        [NonSerialized, LabelText("偏移")] public Vector2 offset;
+        [NonSerialized, LabelText("偏移")] public int rotation;
 
 
 
@@ -904,6 +907,8 @@ namespace GameCore
             texture = block.defaultTexture;
             excavationStrength = defaultExcavationStrength;
             description = block.description;
+            size = Vector2.one;
+            offset = Vector2.zero;
             tags = block.tags;
             //texture = block.defaultTextureLoaded;
         }

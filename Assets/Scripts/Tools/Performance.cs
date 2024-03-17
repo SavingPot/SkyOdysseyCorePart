@@ -64,7 +64,8 @@ namespace GameCore.High
 
         #region 性能采样
 
-        public static ConcurrentQueue<PerformanceSampler> updateSamplers = new();
+        public static readonly List<PerformanceSampler> updateSamplers = new();
+        public static readonly List<PerformanceSampler> longtimeSamplers = new();
 
         #endregion
 
@@ -101,29 +102,37 @@ namespace GameCore.High
 
         public static double GetMemoryRemain() => totalMemory - GetMemoryUsage();
 
-        [Conditional("Debug")]
-        public static void BeginSample(string name)
+        [Conditional("ENABLE_PERFORMANCE_SAMPLER")]
+        public static void BeginLongtimeSample(string name)
         {
-            foreach (var item in updateSamplers)
+            int instanceId = 0;
+
+            //如果存在相同名称的性能采样器，那么实例ID+1
+            foreach (var item in longtimeSamplers)
             {
                 if (item.samplerName == name)
                 {
-                    throw new NotImplementedException();
+                    instanceId = item.instanceId + 1;
                 }
             }
 
-            updateSamplers.Enqueue(new(name));
+            //推入
+            longtimeSamplers.Add(new(name, instanceId));
         }
 
-        [Conditional("Debug")]
-        public static void EndSample(string name)
+        [Conditional("ENABLE_PERFORMANCE_SAMPLER")]
+        public static void EndLongtimeSample(string name)
         {
-            foreach (var item in updateSamplers)
+            //倒序遍历
+            for (int i = longtimeSamplers.Count - 1; i >= 0; i--)
             {
-                if (item.thread == Thread.CurrentThread && item.samplerName == name)
+                var sampler = longtimeSamplers[i];
+
+                //如果线程一致
+                if (sampler.thread == Thread.CurrentThread && sampler.samplerName == name)
                 {
-                    item.stopwatch.Stop();
-                    Debug.Log($"性能测试结果: {item.samplerName} 耗时 {item.stopwatch.ElapsedMilliseconds}ms");
+                    sampler.stopwatch.Stop();
+                    Debug.Log($"性能测试结果: {sampler.samplerName}-{sampler.instanceId} 耗时 {sampler.stopwatch.Elapsed.TotalMilliseconds}ms");
                     return;
                 }
             }
@@ -131,15 +140,55 @@ namespace GameCore.High
             throw new NotImplementedException();
         }
 
-        public class PerformanceSampler
+        [Conditional("ENABLE_PERFORMANCE_SAMPLER")]
+        public static void BeginSampleUpdate(string name)
+        {
+            int instanceId = 0;
+
+            //如果存在相同名称的性能采样器，那么实例ID+1
+            foreach (var item in updateSamplers)
+            {
+                if (item.samplerName == name)
+                {
+                    instanceId = item.instanceId + 1;
+                }
+            }
+
+            //推入
+            updateSamplers.Add(new(name, instanceId));
+        }
+
+        [Conditional("ENABLE_PERFORMANCE_SAMPLER")]
+        public static void EndSampleUpdate(string name)
+        {
+            //倒序遍历
+            for (int i = updateSamplers.Count - 1; i >= 0; i--)
+            {
+                var item = updateSamplers[i];
+
+                //如果线程一致
+                if (item.samplerName == name && item.stopwatch.IsRunning)
+                {
+                    item.stopwatch.Stop();
+                    return;
+                }
+            }
+
+            throw new NotImplementedException();
+        }
+
+        //TODO: 在 Entity.Update 中调用 ( #if ENABLE_PERFORMANCE_SAMPLER )
+        public readonly struct PerformanceSampler
         {
             internal readonly string samplerName;
             internal readonly Thread thread;
             internal readonly Stopwatch stopwatch;
+            internal readonly int instanceId;
 
-            public PerformanceSampler(string samplerName)
+            public PerformanceSampler(string samplerName, int instanceId)
             {
                 this.samplerName = samplerName;
+                this.instanceId = instanceId;
 
                 thread = Thread.CurrentThread;
                 stopwatch = Stopwatch.StartNew();

@@ -279,6 +279,7 @@ namespace GameCore
     {
         public float hungerValue;
         public float happinessValue;
+        public int coin;
         public Inventory inventory;// = new();
         public List<TaskStatusForSave> completedTasks = new();
 
@@ -290,6 +291,18 @@ namespace GameCore
         [NonSerialized] public byte[] skinRightLeg;
         [NonSerialized] public byte[] skinLeftFoot;
         [NonSerialized] public byte[] skinRightFoot;
+
+        public static PlayerSave NewPlayer(string playerName)
+        {
+            return new PlayerSave()
+            {
+                id = playerName,
+                inventory = new(Player.inventorySlotCountConst, null),
+                hungerValue = Player.defaultHungerValue,
+                happinessValue = Player.defaultHappinessValue,
+                completedTasks = new()
+            }; ;
+        }
     }
 
     [Serializable]

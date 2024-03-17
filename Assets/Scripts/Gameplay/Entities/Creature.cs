@@ -54,6 +54,7 @@ namespace GameCore
 
         [LabelText("身体部位"), ReadOnly, BoxGroup("组件")]
         public List<CreatureBodyPart> bodyParts = new();
+        public static float attackAnimTime = 0.3f;
 
 
 
@@ -79,7 +80,6 @@ namespace GameCore
         public static void BindHumanAnimations(Creature creature)
         {
             float slightArmAnimTime = 0.15f;
-            float attackAnimTime = 0.3f;
 
 
             creature.animWeb = new();

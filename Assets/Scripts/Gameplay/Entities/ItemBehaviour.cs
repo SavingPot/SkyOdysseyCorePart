@@ -134,7 +134,7 @@ namespace GameCore
         {
             sr.sprite = instance.data.texture.sprite;
 
-            owner.SetUsingItemRendererLocalPositionAndScale(Vector2.zero, Vector2.one);
+            owner.ModifyUsingItemRendererTransform(instance.data.offset, instance.data.size, instance.data.rotation);
         }
 
         public ItemBehaviour(IInventoryOwner owner, Item instance, string inventoryIndex)
