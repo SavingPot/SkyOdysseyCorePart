@@ -111,6 +111,23 @@ namespace GameCore
 
 
 
+
+
+
+
+        public static int GetRegionUnlockingCost(Vector2Int index)
+        {
+            return index.x * 100 + index.y * 300;
+        }
+
+
+
+
+
+
+
+
+
         private void FixedUpdate()
         {
             //执行随机更新
@@ -616,7 +633,21 @@ namespace GameCore
         #endregion
 
         /// <summary>
-        /// 让服务器生成凋落物
+        /// 让服务器生成金币实体
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="itemId"></param>
+        [ChineseName("生成金币实体")]
+        public void SummonCoinEntity(Vector3 pos, int count)
+        {
+            var param = new JObject();
+            param.AddObject("ori:coin_entity", new JProperty("count", count));
+
+            SummonEntity(pos, EntityID.CoinEntity, null, true, null, param.ToString());
+        }
+
+        /// <summary>
+        /// 让服务器生成掉落物
         /// </summary>
         /// <param name="pos"></param>
         /// <param name="itemId"></param>
@@ -854,10 +885,10 @@ namespace GameCore
             List<Vector2Int> islandCentersTemp = new()
             {
                 Vector2Int.zero,
-                new(60, 0),
-                new(-60, 0),
-                new(0, 60),
-                new(0, -60)
+                // new(60, 0),
+                // new(-60, 0),
+                // new(0, 60),
+                // new(0, -60)
             };
 
 

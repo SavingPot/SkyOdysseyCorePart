@@ -11,6 +11,7 @@ namespace GameCore
         public const string Caterpillar = "ori:caterpillar";
         public const string Chicken = "ori:chicken";
         public const string Cicada = "ori:cicada";
+        public const string CoinEntity = "ori:coin_entity";
         public const string Cricket = "ori:cricket";
         public const string DesertSlime = "ori:desert_slime";
         public const string Drop = "ori:drop";

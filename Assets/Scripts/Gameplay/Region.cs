@@ -27,7 +27,7 @@ namespace GameCore
         }
 
         //单数!
-        public const int chunkCount = 12 + 1;
+        public const int chunkCount = 4 + 1;
         public const float chunkCountReciprocal = 1f / chunkCount;
         public const float halfChunkCount = chunkCount / 2f;
         public const float negativeHalfChunkCount = -halfChunkCount;
@@ -36,6 +36,31 @@ namespace GameCore
 
         public static Vector2Int place => placeVec;
         public static Vector2 halfPlace => halfPlaceVec;
+
+        [BurstCompile]
+        public static Vector2 GetMiddle(int indexX, int indexY)
+        {
+            int x = GetMiddleX(indexX);
+            int y = GetMiddleY(indexY);
+
+            return new(x, y);
+        }
+
+        [BurstCompile]
+        public static int GetMiddleX(int indexX)
+        {
+            int x = Region.place.x * indexX;
+
+            return x;
+        }
+
+        [BurstCompile]
+        public static int GetMiddleY(int indexY)
+        {
+            int y = Region.place.y * indexY;
+
+            return y;
+        }
 
         [BurstCompile]
         public static Vector2 GetMiddle(Vector2Int index)
@@ -200,7 +225,7 @@ namespace GameCore
             foreach (var save in blocks)
                 if (save.isBg == isBackground)
                     if (save.blockId == blockId)
-                    return save;
+                        return save;
 
             return null;
         }

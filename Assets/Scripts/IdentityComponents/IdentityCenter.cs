@@ -8,6 +8,7 @@ namespace GameCore
     public static class IdentityCenter
     {
         public static readonly List<UIIdentity> uiIdentities = new();
+        public static readonly List<TextImageIdentity> textImageIdentities = new();
         public static readonly List<ButtonIdentity> buttonIdentities = new();
         public static readonly List<PanelIdentity> panelIdentities = new();
         public static readonly List<InputFieldIdentity> inputFieldIdentities = new();

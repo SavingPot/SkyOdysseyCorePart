@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.Triggers;
+using DG.Tweening;
 using GameCore.High;
 using GameCore.UI;
 using Mirror;
@@ -199,6 +200,12 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
         public bool isAttacking { get; private set; }
+        public float playerCameraScale { get; private set; } = 1;
+        public bool isUnlockingRegion { get; private set; } = false;
+        public (SpriteRenderer sr, TextImageIdentity ti)[] unlockedRegionColorRenderers { get; private set; }
+        public Transform unlockedRegionCameraFollowTarget;
+
+
 
         #region 区域生成
 
@@ -508,6 +515,45 @@ namespace GameCore
                 //设置相机跟随
                 Tools.instance.mainCameraController.lookAt = transform;
                 Tools.instance.mainCameraController.lookAtDelta = new(0, 2);
+                Tools.instance.mainCameraController.cameraScale.Add(() => playerCameraScale);
+
+
+                unlockedRegionColorRenderers = new (SpriteRenderer, TextImageIdentity)[] {
+                    GenerateUnlockedRegionColorRenderers(),
+                    GenerateUnlockedRegionColorRenderers(),
+                    GenerateUnlockedRegionColorRenderers(),
+                    GenerateUnlockedRegionColorRenderers(),
+                };
+                unlockedRegionCameraFollowTarget = new GameObject("DO_NOT_Modify-UnlockedRegionCameraFollowTarget").transform;
+
+                static (SpriteRenderer, TextImageIdentity) GenerateUnlockedRegionColorRenderers()
+                {
+                    //渲染器
+                    var sr = new GameObject().AddComponent<SpriteRenderer>();
+                    var scale = Region.chunkCount * Chunk.blockCountPerAxis * 0.9f;
+                    sr.sprite = ModFactory.CompareTexture("ori:unlocked_region_color").sprite;
+                    sr.color = new(1, 1, 1, 0.8f);
+                    sr.sortingOrder = 100;
+                    sr.transform.localScale = new(scale, scale);
+                    sr.gameObject.SetActive(false);
+
+                    //画布
+                    var canvas = GameUI.AddWorldSpaceCanvas(sr.transform);
+                    canvas.GetComponent<RectTransform>().sizeDelta = Vector3.zero;
+                    canvas.sortingOrder = 101;
+                    canvas.transform.localScale = new(1 / scale, 1 / scale, 0);
+
+                    var textImage = GameUI.AddTextImage(UPC.Middle, $"ori:text_image.unlocked_region_color.{Tools.randomGUID}", "ori:coin", canvas.transform);
+                    textImage.SetSizeDeltaBoth(50, 50);
+                    textImage.SetTextAttach(TextImageIdentity.TextAttach.Right);
+                    textImage.text.doRefresh = false;
+                    textImage.SetAPosX(-textImage.sd.x / 2);
+
+                    return (sr, textImage);
+                }
+
+
+
                 Debug.Log("本地客户端玩家是: " + gameObject.name);
 
                 //if (!isServer)
@@ -606,6 +652,84 @@ namespace GameCore
                 /* ---------------------------------- 抛弃物品 ---------------------------------- */
                 if (PlayerControls.ThrowItem(this))
                     ServerThrowItem(usingItemIndex.ToString(), 1);
+
+                //
+                if (Keyboard.current.uKey.wasPressedThisFrame)
+                {
+                    playerCameraScale = 1;
+                }
+                if (Keyboard.current.iKey.wasPressedThisFrame)
+                {
+                    playerCameraScale *= 0.5f;
+                }
+                //
+                if (Keyboard.current.oKey.wasPressedThisFrame)
+                {
+                    playerCameraScale *= 2;
+                }
+                //
+                if (Keyboard.current.pKey.wasPressedThisFrame)
+                {
+                    if (!isUnlockingRegion)
+                    {
+                        isUnlockingRegion = true;
+
+                        //渲染器
+                        Render(0, Vector2Int.up);
+                        Render(1, Vector2Int.down);
+                        Render(2, Vector2Int.left);
+                        Render(3, Vector2Int.right);
+
+                        void Render(int index, Vector2Int regionIndexDelta)
+                        {
+                            var targetIndex = regionIndex + regionIndexDelta;
+
+                            //TODO: 客户端的世界为空，这里需要进行一些处理
+                            //如果这个区域已经解锁了，就直接返回
+                            if (GFiles.world.TryGetRegion(targetIndex, out _) || GM.instance.generatingNewRegions.Contains(targetIndex))
+                                return;
+
+
+                            var colorRenderer = unlockedRegionColorRenderers[index];
+                            colorRenderer.sr.color = new(1, 1, 1, 0.8f);
+                            colorRenderer.sr.gameObject.SetActive(true);
+                            colorRenderer.sr.transform.position = Region.GetMiddle(targetIndex);
+                            colorRenderer.ti.SetText(GM.GetRegionUnlockingCost(targetIndex));
+                        }
+
+                        //相机跟随
+                        unlockedRegionCameraFollowTarget.position = Region.GetMiddle(regionIndex);
+                        Tools.instance.mainCameraController.lookAt = unlockedRegionCameraFollowTarget;
+
+                        //相机缩放
+                        DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 0.08f, 1).SetEase(Ease.InOutSine);
+                    }
+                    else
+                    {
+                        isUnlockingRegion = false;
+
+                        //渲染器
+                        foreach (var (sr, _) in unlockedRegionColorRenderers) sr.DOFade(0, 0.5f).OnComplete(() => sr.gameObject.SetActive(false));
+
+                        //相机跟随
+                        Tools.instance.mainCameraController.lookAt = transform;
+
+                        //相机缩放
+                        DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 1, 1).SetEase(Ease.InOutSine);
+                    }
+                }
+                //TODO: 左下角显示技能点数
+                if (isUnlockingRegion)
+                {
+                    //TODO: 解锁
+                    if (Keyboard.current.upArrowKey.wasPressedThisFrame)
+                    {
+                        var targetRegionIndex = regionIndex + Vector2Int.up;
+
+                        GenerateRegion(targetRegionIndex, false);
+                        coin -= GM.GetRegionUnlockingCost(targetRegionIndex);
+                    }
+                }
 
 
                 /* ----------------------------------- 睡眠 ----------------------------------- */
@@ -751,9 +875,14 @@ namespace GameCore
                     ServerAddItem(drop.item);
                     GAudio.Play(AudioID.PickUpItem);
 
-                    AddCoin(1);
-
                     drop.Death();
+                }
+                else if (other.TryGetComponent<CoinEntity>(out var coinEntity) && !coinEntity.isDead)
+                {
+                    AddCoin(coinEntity.coinCount);
+                    GAudio.Play(AudioID.PickUpItem);
+
+                    coinEntity.Death();
                 }
             }
         }

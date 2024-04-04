@@ -29,5 +29,15 @@ namespace GameCore
             if (autoCompareText)
                 text.text = GameUI.CompareText(id).text;
         }
+
+        public void SetText(object text)
+        {
+            this.text.text = text.ToString();
+        }
+
+        public void SetText(string text)
+        {
+            this.text.text = text;
+        }
     }
 }

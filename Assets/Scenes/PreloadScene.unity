@@ -186,6 +186,7 @@ MonoBehaviour:
   ambientAudioMixer: {fileID: 24300002, guid: 216c00331587edd4cb0d81a5edb9f3cd, type: 2}
   canvasPrefab: {fileID: 3987011044123077084, guid: ab6798ddf183896459c5df028d46de53, type: 3}
   buttonPrefab: {fileID: -6208085390207933823, guid: fd6805abaae4abd4ba5d787e87465193, type: 3}
+  textImagePrefab: {fileID: 6784285211328498448, guid: cc2442dc7496c964699211c48e76fe0e, type: 3}
   panelPrefab: {fileID: -1427529596805776713, guid: 81c3f0113204b294aa0702e1469fb016, type: 3}
   inputFieldPrefab: {fileID: -8004134274671379352, guid: 025aceade24963a4ab95f8761dde7649, type: 3}
   imagePrefab: {fileID: 8655228118689503475, guid: a3b67cc247b1204438d09a803592a106, type: 3}

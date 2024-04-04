@@ -1,14 +1,23 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GameCore
 {
     public class CameraController : MonoBehaviour
     {
+        public const float defaultProjectionSize = 12;
+
+
+
         public Tools tools => Tools.instance;
         public Transform lookAt;
         public Vector2 lookAtDelta;
         private Camera cam;
         public float shakeLevel = 0;
+        public readonly List<Func<float>> cameraScale = new() { };
+
+
 
         private void Start()
         {
@@ -17,6 +26,13 @@ namespace GameCore
 
         private void Update()
         {
+            float finalCameraScale = 1;
+            foreach (var item in cameraScale)
+            {
+                finalCameraScale *= item();
+            }
+            cam.orthographicSize = defaultProjectionSize / finalCameraScale;
+
             if (lookAt)
             {
                 var delta = lookAtDelta;

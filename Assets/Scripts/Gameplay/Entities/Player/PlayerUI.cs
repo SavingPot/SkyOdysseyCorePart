@@ -103,6 +103,13 @@ namespace GameCore
 
 
         /* -------------------------------------------------------------------------- */
+        /*                                     金币                                     */
+        /* -------------------------------------------------------------------------- */
+        public TextImageIdentity coinTextImage;
+
+
+
+        /* -------------------------------------------------------------------------- */
         /*                                     重生                                     */
         /* -------------------------------------------------------------------------- */
         public PanelIdentity rebornPanel;
@@ -1098,6 +1105,16 @@ namespace GameCore
 
                     i.SetAPosX(dayNightBar.rectTransform.sizeDelta.x * progress);
                 };
+            }
+            #endregion
+
+            #region 金币
+            {
+                coinTextImage = GameUI.AddTextImage(UPC.LowerLeft, "ori:text_image.coin", "ori:coin");
+                coinTextImage.SetSizeDeltaBoth(70, 70);
+                coinTextImage.ap = coinTextImage.sd / 2;
+                coinTextImage.OnUpdate += _ => coinTextImage.SetText(player.coin);
+                coinTextImage.SetTextAttach(TextImageIdentity.TextAttach.Right);
             }
             #endregion
 

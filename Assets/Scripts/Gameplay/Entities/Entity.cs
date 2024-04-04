@@ -320,6 +320,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public virtual async void OnDeathServer()
         {
+            SummonCoins();
             SummonDrops();
 
             //? 等待一秒是为了防止客户端延迟过高导致报错
@@ -876,7 +877,13 @@ namespace GameCore
         }
         #endregion
 
-        public void SummonDrops()
+        private void SummonCoins()
+        {
+            if (data.coinCount > 0)
+                managerGame.SummonCoinEntity(transform.position, data.coinCount);
+        }
+
+        private void SummonDrops()
         {
             foreach (DropData drop in data.drops)
             {
@@ -1097,6 +1104,7 @@ namespace GameCore
         public static float defaultLifetime = 60 * 3;
         public Type behaviourType;
         [LabelText("掉落的物品")] public List<DropData> drops;
+        [LabelText("掉落的金币数")] public int coinCount;
     }
 
     [Serializable]

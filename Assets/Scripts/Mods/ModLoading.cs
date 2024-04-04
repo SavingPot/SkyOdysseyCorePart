@@ -279,6 +279,7 @@ namespace GameCore
                 entity.drops = LoadDrops(jo["ori:entity"]?["drops"], "0.7.1");
                 entity.path = entityPath;
                 entity.speed = jo["ori:entity"]?["speed"]?.ToFloat() ?? 3;
+                entity.coinCount = jo["ori:entity"]?["coin_count"]?.ToInt() ?? 1;
                 entity.colliderSize = jo["ori:entity"]?["physics"]?["collider"]?["size"]?.ToVector2() ?? Vector2.one;
                 entity.colliderOffset = jo["ori:entity"]?["physics"]?["collider"]?["offset"]?.ToVector2() ?? Vector2.zero;
                 entity.gravity = jo["ori:entity"]?["physics"]?["gravity"]?.ToFloat() ?? 7;

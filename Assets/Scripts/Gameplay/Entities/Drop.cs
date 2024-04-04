@@ -39,7 +39,7 @@ namespace GameCore
             SummonSetup();
         }
 
-        [Button("重初始化")]
+        [Button("初始化")]
         public void SummonSetup()
         {
             /* ---------------------------------- 切割字符串 --------------------------------- */

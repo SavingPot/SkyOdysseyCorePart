@@ -249,6 +249,27 @@ namespace GameCore.UI
 
         #region 添加 UI
 
+        #region 添加画布
+
+        public static Canvas AddCanvas(Transform parent = null)
+        {
+            var canvas = GameObject.Instantiate(GInit.instance.canvasPrefab, parent);
+
+            return canvas;
+        }
+
+        public static Canvas AddWorldSpaceCanvas(Transform parent = null)
+        {
+            var canvas = AddCanvas(parent);
+
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.transform.localPosition = Vector3.zero;
+
+            return canvas;
+        }
+
+        #endregion
+
         #region 添加图片
         public static ImageIdentity AddImage(Vector4 positionCurrent, string id, string spriteId, GameObject parent)
         => AddImage(positionCurrent, id, spriteId, parent.transform);
@@ -262,6 +283,33 @@ namespace GameCore.UI
         public static ImageIdentity AddImage(Vector4 positionCurrent, string id, string spriteId, Transform parent = null)
         {
             var msg = InstantiateIdMsg(GInit.instance.imagePrefab, id);
+
+            msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
+            msg.rectTransform.localPosition = Vector2.zero;
+            msg.rectTransform.anchorMin = new(positionCurrent.x, positionCurrent.y);
+            msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
+            msg.rectTransform.localScale = Vector2.one;
+
+            if (!spriteId.IsNullOrWhiteSpace())
+                msg.image.sprite = ModFactory.CompareTexture(spriteId)?.sprite;
+
+            return msg;
+        }
+        #endregion
+
+        #region 添加图问
+        public static TextImageIdentity AddTextImage(Vector4 positionCurrent, string id, string spriteId, GameObject parent)
+        => AddTextImage(positionCurrent, id, spriteId, parent.transform);
+
+        public static TextImageIdentity AddTextImage(Vector4 positionCurrent, string id, string spriteId, UIIdentity parent)
+        => AddTextImage(positionCurrent, id, spriteId, parent.transform);
+
+        public static TextImageIdentity AddTextImage(Vector4 positionCurrent, string id, string spriteId, string parentId)
+        => AddTextImage(positionCurrent, id, spriteId, IdentityCenter.ComparePanelIdentity(parentId).transform);
+
+        public static TextImageIdentity AddTextImage(Vector4 positionCurrent, string id, string spriteId, Transform parent = null)
+        {
+            var msg = InstantiateIdMsg(GInit.instance.textImagePrefab, id);
 
             msg.rectTransform.SetParent(parent == null ? canvas.transform : parent);
             msg.rectTransform.localPosition = Vector2.zero;

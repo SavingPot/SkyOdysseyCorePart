@@ -28,6 +28,7 @@ namespace GameCore
         [Header("UI")]
         [AssetsOnly, LabelText("画布预制体"), Required(Tools.requiredErrorMessage)] public Canvas canvasPrefab;
         [AssetsOnly, LabelText("按钮预制体"), Required(Tools.requiredErrorMessage)] public ButtonIdentity buttonPrefab;
+        [AssetsOnly, LabelText("图文预制体"), Required(Tools.requiredErrorMessage)] public TextImageIdentity textImagePrefab;
         [AssetsOnly, LabelText("面板预制体"), Required(Tools.requiredErrorMessage)] public PanelIdentity panelPrefab;
         [AssetsOnly, LabelText("输入框预制体"), Required(Tools.requiredErrorMessage)] public InputFieldIdentity inputFieldPrefab;
         [AssetsOnly, LabelText("图片预制体"), Required(Tools.requiredErrorMessage)] public ImageIdentity imagePrefab;

@@ -125,7 +125,7 @@ namespace SP.Tools.Unity
     [Serializable]
     public class ComponentPool<T> where T : Component
     {
-        public Stack<T> stack = new Stack<T>();
+        public Stack<T> stack = new();
 
         public virtual T Get(params object[] param)
         {

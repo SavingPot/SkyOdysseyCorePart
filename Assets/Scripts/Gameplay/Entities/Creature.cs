@@ -310,10 +310,10 @@ namespace GameCore
                     float fallingStartPoint = fallenY;
                     fallenY = transform.position.y;
                     float delta = fallingStartPoint - fallenY;
-                    float damageValue = (delta - fallenDamageHeight) * 0.9f;
+                    float damageValue = (delta - fallenDamageHeight) * 1.2f;
 
                     //generatedFirstRegion 是防止初始区域 y<0 导致直接摔死
-                    if (damageValue >= 2)
+                    if (damageValue >= 3)
                     {
                         TakeDamage((int)damageValue);
                     }

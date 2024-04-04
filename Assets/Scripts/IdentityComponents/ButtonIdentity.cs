@@ -36,6 +36,16 @@ namespace GameCore
             buttonText.id = $"{id}.text";
         }
 
+        public void SetText(object text)
+        {
+            buttonText.text.text = text.ToString();
+        }
+
+        public void SetText(string text)
+        {
+            buttonText.text.text = text;
+        }
+
         public ButtonIdentity OnClickBind(UnityAction call)
         {
             button.onClick.AddListener(call);
