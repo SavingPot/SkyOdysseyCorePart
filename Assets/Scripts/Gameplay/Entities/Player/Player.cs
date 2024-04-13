@@ -201,16 +201,60 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
         public bool isAttacking { get; private set; }
         public float playerCameraScale { get; private set; } = 1;
+
+
+
+
+
         public bool isUnlockingRegion { get; private set; } = false;
         public (SpriteRenderer sr, TextImageIdentity ti)[] unlockedRegionColorRenderers { get; private set; }
         public Transform unlockedRegionCameraFollowTarget;
+        void FadeRegionUnlockingRenderer(SpriteRenderer sr)
+        {
+            sr.DOFade(0, 0.5f).OnComplete(() => sr.gameObject.SetActive(false));
+        }
+        void RefreshRegionUnlockingRenderers()
+        {
+            //渲染器
+            Render(0, Vector2Int.up);
+            Render(1, Vector2Int.down);
+            Render(2, Vector2Int.left);
+            Render(3, Vector2Int.right);
+
+            void Render(int index, Vector2Int regionIndexDelta)
+            {
+                var targetIndex = regionIndex + regionIndexDelta;
+                var (sr, ti) = unlockedRegionColorRenderers[index];
+
+                //TODO: 客户端的世界为空，这里需要进行一些处理
+                //如果这个区域已经解锁了，就直接返回
+                if (GFiles.world.TryGetRegion(targetIndex, out _) || GM.instance.generatingNewRegions.Contains(targetIndex))
+                {
+                    FadeRegionUnlockingRenderer(sr);
+                }
+                else
+                {
+                    sr.color = new(1, 1, 1, 0.8f);
+                    sr.gameObject.SetActive(true);
+                    sr.transform.position = Region.GetMiddle(targetIndex);
+                    ti.SetText(GM.GetRegionUnlockingCost(targetIndex));
+                }
+            }
+        }
+
+
+
+
+
+
 
 
 
         #region 区域生成
 
+        Coroutine coroutineWaitingForRegionSegments;
         public bool askingForGeneratingRegion { get; private set; }
-        public float askingForGeneratingRegionTime { get; private set; } = float.NegativeInfinity;
+        public float askingForGeneratingRegionTime { get; internal set; } = float.NegativeInfinity;
         public bool generatedFirstRegion;
         private bool hasSetPosBySave;
         bool regionGenerationIsFirstGeneration;
@@ -563,6 +607,7 @@ namespace GameCore
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
 
                 GenerateRegion(regionIndex, true);
+                //GenerateNeighborRegions(); //TODO Fix
             }
 
 
@@ -675,27 +720,7 @@ namespace GameCore
                         isUnlockingRegion = true;
 
                         //渲染器
-                        Render(0, Vector2Int.up);
-                        Render(1, Vector2Int.down);
-                        Render(2, Vector2Int.left);
-                        Render(3, Vector2Int.right);
-
-                        void Render(int index, Vector2Int regionIndexDelta)
-                        {
-                            var targetIndex = regionIndex + regionIndexDelta;
-
-                            //TODO: 客户端的世界为空，这里需要进行一些处理
-                            //如果这个区域已经解锁了，就直接返回
-                            if (GFiles.world.TryGetRegion(targetIndex, out _) || GM.instance.generatingNewRegions.Contains(targetIndex))
-                                return;
-
-
-                            var colorRenderer = unlockedRegionColorRenderers[index];
-                            colorRenderer.sr.color = new(1, 1, 1, 0.8f);
-                            colorRenderer.sr.gameObject.SetActive(true);
-                            colorRenderer.sr.transform.position = Region.GetMiddle(targetIndex);
-                            colorRenderer.ti.SetText(GM.GetRegionUnlockingCost(targetIndex));
-                        }
+                        RefreshRegionUnlockingRenderers();
 
                         //相机跟随
                         unlockedRegionCameraFollowTarget.position = Region.GetMiddle(regionIndex);
@@ -709,7 +734,7 @@ namespace GameCore
                         isUnlockingRegion = false;
 
                         //渲染器
-                        foreach (var (sr, _) in unlockedRegionColorRenderers) sr.DOFade(0, 0.5f).OnComplete(() => sr.gameObject.SetActive(false));
+                        foreach (var (sr, _) in unlockedRegionColorRenderers) FadeRegionUnlockingRenderer(sr);
 
                         //相机跟随
                         Tools.instance.mainCameraController.lookAt = transform;
@@ -721,13 +746,30 @@ namespace GameCore
                 //TODO: 左下角显示技能点数
                 if (isUnlockingRegion)
                 {
+                    void UnlockRegion(Vector2Int targetIndex)
+                    {
+                        GenerateRegion(targetIndex, false);
+                        coin -= GM.GetRegionUnlockingCost(targetIndex);
+                        RefreshRegionUnlockingRenderers();
+                        ServerDestroyRegionBarriers(targetIndex);
+                    }
+
                     //TODO: 解锁
                     if (Keyboard.current.upArrowKey.wasPressedThisFrame)
                     {
-                        var targetRegionIndex = regionIndex + Vector2Int.up;
-
-                        GenerateRegion(targetRegionIndex, false);
-                        coin -= GM.GetRegionUnlockingCost(targetRegionIndex);
+                        UnlockRegion(regionIndex + Vector2Int.up);
+                    }
+                    if (Keyboard.current.downArrowKey.wasPressedThisFrame)
+                    {
+                        UnlockRegion(regionIndex + Vector2Int.down);
+                    }
+                    if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
+                    {
+                        UnlockRegion(regionIndex + Vector2Int.left);
+                    }
+                    if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
+                    {
+                        UnlockRegion(regionIndex + Vector2Int.right);
                     }
                 }
 
@@ -849,8 +891,6 @@ namespace GameCore
                 transform.localRotation = deathQuaternion;
             }
 
-            ////AutoGenerateRegion();
-
             //刷新状态栏
             pui?.Update();
         }
@@ -947,31 +987,6 @@ namespace GameCore
                 throw new();
             }
         }
-
-        //// public void AutoGenerateRegion()
-        //// {
-        ////     //缓存优化性能
-        ////     Vector2Int currentIndex = regionIndex;
-        //
-        ////     if (generatedFirstRegion && !askingForGeneratingRegion && askingForGeneratingRegionTime + 5 <= Tools.time && !GM.instance.generatingExistingRegion && !GM.instance.generatingNewRegion)// && TryGetRegion(out Region region))
-        ////     {
-        ////         Vector2Int newIndex = PosConvert.WorldPosToRegionIndex(transform.position);
-        //
-        ////         //如果变了
-        ////         if (currentIndex != newIndex)
-        ////         {
-        ////             //生成区域并刷新时间
-        ////             ServerGenerateRegion(newIndex, false);
-        ////             askingForGeneratingRegionTime = Tools.time;
-        //
-        ////             //生成完后正式切换区域序号
-        ////             if (managerGame.generatedExistingRegions.Any(p => p.index == newIndex))
-        ////             {
-        ////                 regionIndex = newIndex;
-        ////             }
-        ////         }
-        ////     }
-        //// }
 
 
         public void UseItem(Vector2 point)
@@ -1145,6 +1160,44 @@ namespace GameCore
 
         #region 生成区域
 
+        public void GenerateNeighborRegions()
+        {
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -1; j <= 1; j++)
+                {
+                    var index = regionIndex + new Vector2Int(i, j);
+                    if (index != regionIndex && !GM.instance.generatedExistingRegions.Exists(p => p.index == index))
+                    {
+                        GenerateExistingRegion(index);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
+        /// </summary>
+        [Button]
+        public void GenerateExistingRegion(Vector2Int index)
+        {
+            //检查是否正在生成
+            if (regionGenerationSaves != null || regionGenerationRegion != null)
+            {
+                return;
+            }
+
+            //初始化资源
+            askingForGeneratingRegion = true;
+            regionGenerationSaves = new();
+
+            //向服务器发送请求
+            ServerGenerateExistingRegion(index);
+
+            //等待服务器发回所有资源切片
+            coroutineWaitingForRegionSegments = StartCoroutine(IEWaitForRegionSegments());
+        }
+
         /// <summary>
         /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         /// </summary>
@@ -1166,8 +1219,9 @@ namespace GameCore
             ServerGenerateRegion(index, isFirstGeneration, specificTheme);
 
             //等待服务器发回所有资源切片
-            StartCoroutine(IEWaitForRegionSegments());
+            coroutineWaitingForRegionSegments = StartCoroutine(IEWaitForRegionSegments());
         }
+
 
         IEnumerator IEWaitForRegionSegments()
         {
@@ -1224,6 +1278,33 @@ namespace GameCore
             return null;
         }
 
+        /// <summary>
+        /// 服务器会检测指定的区域是否存在，存在就回调
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="caller"></param>
+        [ServerRpc]
+        private void ServerGenerateExistingRegion(Vector2Int index, NetworkConnection caller = null)
+        {
+            //如果正在生成就不要回调
+            if (GM.instance.generatingNewRegions.Contains(index))
+            {
+                ConnectionStopWaitingForRegionData(caller);
+                return;
+            }
+
+            if (GFiles.world.TryGetRegion(index, out Region region))
+            {
+                ConnectionGenerateDataSend(region, false, caller);
+            }
+        }
+
+        [ConnectionRpc]
+        private void ConnectionStopWaitingForRegionData(NetworkConnection caller = null)
+        {
+            StopCoroutine(coroutineWaitingForRegionSegments);
+        }
+
         [ServerRpc]
         private void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme, NetworkConnection caller = null)
         {
@@ -1246,41 +1327,41 @@ namespace GameCore
                 //这些代码必须在主线程里执行
                 MethodAgent.RunOnMainThread(() =>
                 {
-                    //? 因为直接发送一个 region 实在太大了，所以我们不得不将他们分成一个个的 BlockSave
-                    void ConnectionGenerate()
-                    {
-                        //? 浅拷贝区域
-                        var copy = regionToGenerate.ShallowCopy();
-                        copy.blocks = null;
-                        copy.entities = new();
-                        if (hasSetPosBySave)
-                            copy.spawnPoint = Vector2Int.zero;
-
-                        ConnectionGenerateRegionTotal(copy, regionToGenerate.blocks.Count, isFirstGeneration, caller);
-
-                        foreach (var segment in regionToGenerate.blocks)
-                        {
-                            ConnectionGenerateRegion(segment, caller);
-                        }
-                    }
-
                     //* 如果是服务器发送的申请: 服务器生成
                     if (isLocalPlayer)
                     {
-                        ConnectionGenerate();
+                        ConnectionGenerateDataSend(regionToGenerate, isFirstGeneration, caller);
                     }
                     //* 如果是客户端发送的申请: 服务器先生成->客户端生成   (如果 服务器和客户端 并行生成, 可能会导致 bug)
                     else
                     {
                         GM.instance.GenerateExistingRegion(
                                 regionToGenerate,
-                                () => ConnectionGenerate(),
-                                () => ConnectionGenerate(),
+                                () => ConnectionGenerateDataSend(regionToGenerate, isFirstGeneration, caller),
+                                () => ConnectionGenerateDataSend(regionToGenerate, isFirstGeneration, caller),
                                 (ushort)(GFiles.settings.performanceLevel / 2)
                             );
                     }
                 });
             });
+        }
+
+        //? 因为直接发送一个 region 实在太大了，所以我们不得不将他们分成一个个的 BlockSave
+        void ConnectionGenerateDataSend(Region regionToGenerate, bool isFirstGeneration, NetworkConnection caller)
+        {
+            //? 浅拷贝区域
+            var copy = regionToGenerate.ShallowCopy();
+            copy.blocks = null;
+            copy.entities = new();
+            if (hasSetPosBySave)
+                copy.spawnPoint = Vector2Int.zero;
+
+            ConnectionGenerateRegionTotal(copy, regionToGenerate.blocks.Count, isFirstGeneration, caller);
+
+            foreach (var segment in regionToGenerate.blocks)
+            {
+                ConnectionGenerateRegionSegment(segment, caller);
+            }
         }
 
 
@@ -1293,9 +1374,129 @@ namespace GameCore
         }
 
         [ConnectionRpc]
-        void ConnectionGenerateRegion(BlockSave block, NetworkConnection caller)
+        void ConnectionGenerateRegionSegment(BlockSave block, NetworkConnection caller)
         {
             regionGenerationSaves.Add(block);
+        }
+
+        /// <summary>
+        /// 删除区块的屏障方块，这个方法在服务器调用，作用是在存档中删除，而不是在地图中删除！
+        /// </summary>
+        /// <param name="targetRegionIndex"></param>
+        /// <param name="caller"></param>
+        [ServerRpc]
+        void ServerDestroyRegionBarriers(Vector2Int targetRegionIndex, NetworkConnection caller = null)
+        {
+            StartCoroutine(IEServerDestroyRegionBarriers(targetRegionIndex));
+        }
+        IEnumerator IEServerDestroyRegionBarriers(Vector2Int targetRegionIndex)
+        {
+            //等待目标区域生成
+            yield return new WaitUntil(() => GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex));
+
+            //获取原区域
+            var targetRegion = GFiles.world.GetRegion(targetRegionIndex);
+
+            //删除上面的屏障方块
+            if (GFiles.world.TryGetRegion(targetRegionIndex + Vector2Int.up, out var neighborRegion))
+            {
+                for (int x = targetRegion.minPoint.x + 1; x <= targetRegion.maxPoint.x - 1; x++)
+                {
+                    targetRegion.RemovePos(x, targetRegion.maxPoint.y, false);
+                    neighborRegion.RemovePos(x, targetRegion.minPoint.y, false);
+                }
+            }
+            //删除下面的屏障方块
+            if (GFiles.world.TryGetRegion(targetRegionIndex + Vector2Int.down, out neighborRegion))
+            {
+                for (int x = targetRegion.minPoint.x + 1; x <= targetRegion.maxPoint.x - 1; x++)
+                {
+                    targetRegion.RemovePos(x, targetRegion.minPoint.y, false);
+                    neighborRegion.RemovePos(x, targetRegion.maxPoint.y, false);
+                }
+            }
+            //删除左边的屏障方块
+            if (GFiles.world.TryGetRegion(targetRegionIndex + Vector2Int.left, out neighborRegion))
+            {
+                for (int y = targetRegion.minPoint.y + 1; y <= targetRegion.maxPoint.y - 1; y++)
+                {
+                    targetRegion.RemovePos(targetRegion.minPoint.x, y, false);
+                    neighborRegion.RemovePos(targetRegion.maxPoint.x, y, false);
+                }
+            }
+            //删除右边的屏障方块
+            if (GFiles.world.TryGetRegion(targetRegionIndex + Vector2Int.right, out neighborRegion))
+            {
+                for (int y = targetRegion.minPoint.y + 1; y <= targetRegion.maxPoint.y - 1; y++)
+                {
+                    targetRegion.RemovePos(targetRegion.maxPoint.x, y, false);
+                    neighborRegion.RemovePos(targetRegion.minPoint.x, y, false);
+                }
+            }
+
+            //让客户端删除屏障方块
+            var minPoint = targetRegion.RegionToMapPos(targetRegion.minPoint);
+            var maxPoint = targetRegion.RegionToMapPos(targetRegion.maxPoint);
+            ClientDestroyRegionBarriers(targetRegionIndex, minPoint, maxPoint);
+        }
+        /// <summary>
+        /// 这个方法在客户端调用，作用是在地图中删除，而不是在存档中删除！
+        /// </summary>
+        /// <param name="targetRegionIndex"></param>
+        /// <param name="minPoint"></param>
+        /// <param name="maxPoint"></param>
+        /// <param name="caller"></param>
+        [ClientRpc]
+        void ClientDestroyRegionBarriers(Vector2Int targetRegionIndex, Vector2Int minPoint, Vector2Int maxPoint, NetworkConnection caller = null)
+        {
+            //删除上面的屏障方块
+            if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.up))
+            {
+                int bottomY = maxPoint.y;
+                int topY = maxPoint.y + 1;
+
+                for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
+                {
+                    Map.instance.RemoveBlock(new(x, bottomY), false, false, true);
+                    Map.instance.RemoveBlock(new(x, topY), false, false, true);
+                }
+            }
+            //删除下面的屏障方块
+            if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.down))
+            {
+                int bottomY = minPoint.y - 1;
+                int topY = minPoint.y;
+
+                for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
+                {
+                    Map.instance.RemoveBlock(new(x, bottomY), false, false, true);
+                    Map.instance.RemoveBlock(new(x, topY), false, false, true);
+                }
+            }
+            //删除左边的屏障方块
+            if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.left))
+            {
+                int leftX = minPoint.x - 1;
+                int rightX = minPoint.x;
+
+                for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
+                {
+                    Map.instance.RemoveBlock(new(leftX, y), false, false, true);
+                    Map.instance.RemoveBlock(new(rightX, y), false, false, true);
+                }
+            }
+            //删除右边的屏障方块
+            if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.right))
+            {
+                int leftX = maxPoint.x;
+                int rightX = maxPoint.x + 1;
+
+                for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
+                {
+                    Map.instance.RemoveBlock(new(leftX, y), false, false, true);
+                    Map.instance.RemoveBlock(new(rightX, y), false, false, true);
+                }
+            }
         }
 
         #endregion

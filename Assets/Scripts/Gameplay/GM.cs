@@ -117,7 +117,7 @@ namespace GameCore
 
         public static int GetRegionUnlockingCost(Vector2Int index)
         {
-            return index.x * 100 + index.y * 300;
+            return Math.Abs(index.x) * 100 + Math.Abs(index.y) * 300;
         }
 
 
@@ -807,6 +807,7 @@ namespace GameCore
 
 
 
+            //更新所有方块
             foreach (var chunk in Map.instance.chunks)
             {
                 foreach (var block in chunk.blocks)
@@ -1413,6 +1414,8 @@ namespace GameCore
                 size = size,
                 index = index,
                 regionTheme = theme.id,
+                maxPoint = maxPoint,
+                minPoint = minPoint
             };
         }
     }

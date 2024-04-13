@@ -1777,7 +1777,7 @@ namespace GameCore
             node.line.sd = new(Vector2.Distance(buttonPoint, parentPoint), 2);   //x轴为长度, y轴为宽度
 
             /* ---------------------------------- 设置旋转角 --------------------------------- */
-            node.line.rt.localEulerAngles = new(0, 0, Tools.GetAngleFloat(buttonPoint, parentPoint) - 90);   //获取角度并旋转-90度 (我也不知道为啥)
+            node.line.rt.localEulerAngles = new(0, 0, AngleTools.GetAngleFloat(buttonPoint, parentPoint) - 90);   //获取角度并旋转-90度 (我也不知道为啥)
             if (node.button.ap.x < 0) node.line.rt.localEulerAngles = new(0, 180, node.line.rt.localEulerAngles.z);   //如果按钮在父节点左侧就水平翻转
 
             /* ---------------------------------- 设置位置 ---------------------------------- */

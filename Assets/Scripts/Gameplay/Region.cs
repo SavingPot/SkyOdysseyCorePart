@@ -19,6 +19,8 @@ namespace GameCore
         public string regionTheme;
         public Vector2Int size;
         public Vector2Int spawnPoint;
+        public Vector2Int maxPoint;
+        public Vector2Int minPoint;
         public bool generatedAlready;
 
         public Region ShallowCopy()

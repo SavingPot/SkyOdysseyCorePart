@@ -716,7 +716,7 @@ namespace GameCore
 
         public static bool Same(Item item1, Item item2)
         {
-            return item1?.data?.id == item2?.data?.id;
+            return item1?.data?.id == item2?.data?.id && item1?.customData == item2?.customData;
         }
 
         public static bool Same(Item item, string id)

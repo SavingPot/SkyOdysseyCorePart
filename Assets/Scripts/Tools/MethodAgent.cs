@@ -170,6 +170,20 @@ namespace GameCore
 
 
 
+        public static async void CallMillisecondsLater(int milliseconds, Action action)
+        {
+            await UniTask.Delay(milliseconds);
+
+            action();
+        }
+
+        public static async void CallSecondsLater(int seconds, Action action)
+        {
+            await UniTask.Delay(seconds * 1000);
+
+            action();
+        }
+
         public static async void CallFramesLater(int frameCount, Action action)
         {
             await UniTask.DelayFrame(frameCount);

@@ -50,5 +50,49 @@ namespace GameCore
         {
             return new(mapPos.x - Region.GetMiddleX(regionIndex), mapPos.y - Region.GetMiddleY(regionIndex));
         }
+
+        public static Vector2Int RegionToMapPos(this Region region, Vector2Int posInRegion)
+        {
+            int xDelta = Region.GetMiddleX(region.index);
+            int yDelta = Region.GetMiddleY(region.index);
+
+            return new Vector2Int(posInRegion.x + xDelta, posInRegion.y + yDelta);
+        }
+
+        public static Vector2Int RegionToMapPos(Vector2Int regionIndex, Vector2Int posInRegion)
+        {
+            int xDelta = Region.GetMiddleX(regionIndex);
+            int yDelta = Region.GetMiddleY(regionIndex);
+
+            return new Vector2Int(posInRegion.x + xDelta, posInRegion.y + yDelta);
+        }
+
+        public static int RegionToMapPosX(this Region region, int posX)
+        {
+            int xDelta = Region.GetMiddleX(region.index);
+
+            return posX + xDelta;
+        }
+
+        public static int RegionToMapPosX(Vector2Int regionIndex, int posX)
+        {
+            int xDelta = Region.GetMiddleX(regionIndex);
+
+            return posX + xDelta;
+        }
+
+        public static int RegionToMapPosY(this Region region, int posY)
+        {
+            int yDelta = Region.GetMiddleX(region.index);
+
+            return posY + yDelta;
+        }
+
+        public static int RegionToMapPosY(Vector2Int regionIndex, int posY)
+        {
+            int yDelta = Region.GetMiddleX(regionIndex);
+
+            return posY + yDelta;
+        }
     }
 }

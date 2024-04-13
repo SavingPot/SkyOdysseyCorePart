@@ -71,7 +71,7 @@ namespace GameCore
 
         public void LookAtDirection()
         {
-            float angle = Tools.IncludedAngleBetweenX(rb.velocity);
+            float angle = AngleTools.IncludedDegreeBetweenX(rb.velocity);
             transform.eulerAngles = new Vector3(0, 0, angle);
         }
 
