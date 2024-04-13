@@ -13,7 +13,7 @@ namespace GameCore
             if (GFiles.world == null)
                 Debug.Log($"尝试生成原有区域, index={region.index}");
             else
-                Debug.Log($"尝试在世界 {GFiles.world.basicData.worldName} 生成原有区域 {region.index}, 群系主题为 {region.regionTheme}, 尺寸 {region.size}");
+                Debug.Log($"尝试在世界 {GFiles.world.basicData.worldName} 生成原有区域 {region.index}, 群系为 {region.biomeId}, 尺寸 {region.size}");
         };
         public static event Action<Region> AfterGeneratingExistingRegion = _ => { };
 

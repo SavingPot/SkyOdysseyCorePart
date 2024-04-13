@@ -292,7 +292,7 @@ namespace GameCore
                 entity.normalAttackDamage = jo["ori:entity"]?["normal_attack_damage"]?.ToInt() ?? 15;
                 entity.normalAttackCD = jo["ori:entity"]?["normal_attack_cd"]?.ToFloat() ?? 2;
 
-                entity.summon.region = jo["ori:entity"]?["summon"]?["region"]?.ToString();
+                entity.summon.biome = jo["ori:entity"]?["summon"]?["biome"]?.ToString();
                 entity.summon.defaultProbability = jo["ori:entity"]?["summon"]?["default_probability"]?.ToString().ToFloat() ?? 100;
                 entity.summon.timeEarliest = jo["ori:entity"]?["summon"]?["time_earliest"]?.ToString().ToFloat() ?? 0;
                 entity.summon.timeLatest = jo["ori:entity"]?["summon"]?["time_latest"]?.ToString().ToFloat() ?? 0;
@@ -592,41 +592,6 @@ namespace GameCore
             return temp;
         }
 
-        public static RegionTheme LoadRegionTheme(JObject jo)
-        {
-            if (jo == null)
-            {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
-
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            RegionTheme temp = new()
-            {
-                jo = jo,
-                jsonFormat = format,
-            };
-
-            //0.4.5 -> 0.
-            string jfToLoad = string.Empty;
-            if (GameTools.CompareVersions(format, "0.7.8", Operators.thanOrEqual))
-            {
-                jfToLoad = "0.7.8";
-            }
-
-            temp.jsonFormatWhenLoad = jfToLoad;
-
-            if (jfToLoad == "0.7.8")
-            {
-                temp.id = jo["ori:region_theme"]?["id"]?.ToString();
-                temp.distribution = jo["ori:region_theme"]?["distribution"]?.ToString()?.ToInt() ?? 0;
-                temp.biomes = jo["ori:region_theme"]?["biomes"]?.ToObject<string[]>() ?? new string[] { BiomeID.Center };
-            }
-
-            return temp;
-        }
-
         public static BiomeBlockPrefab LoadBiomeBlockPrefab(JObject jo)
         {
             if (jo == null)
@@ -789,8 +754,18 @@ namespace GameCore
                 temp.jsonFormatWhenLoad = jfToLoad;
 
                 temp.id = ModCreate.GetStr(temp, "data.biome.id");
-                temp.minSize = ModCreate.Get(temp, "data.biome.size_scope.min")?.ToVector2Int() ?? Vector2Int.zero;
-                temp.maxSize = ModCreate.Get(temp, "data.biome.size_scope.max")?.ToVector2Int() ?? Vector2Int.zero;
+                temp.minScale = ModCreate.Get(temp, "data.biome.size_scope.min")?.ToVector2() ?? new Vector2(0.3f, 0.25f);
+                temp.maxScale = ModCreate.Get(temp, "data.biome.size_scope.max")?.ToVector2() ?? new Vector2(0.4f, 0.4f);
+
+                if (jo["ori:biome"]?["distribution"] != null)
+                {
+                    temp.distribution = jo["ori:biome"]["distribution"].ToString().ToInt();
+                }
+                else
+                {
+                    Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {temp.id} 没有 distribution 属性，群系必须指定分布");
+                    return null;
+                }
 
                 List<BiomeData_Block> blocksTemp = new();
                 ModCreate.GetFor(temp, "data.biome.blocks", l =>

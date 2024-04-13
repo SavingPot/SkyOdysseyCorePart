@@ -154,7 +154,7 @@ namespace GameCore
                 //抽取一个区块
                 Chunk chunk = Map.instance.chunks.Extract(EntitySummonPosRandom);
 
-                if (!string.IsNullOrEmpty(e.summon.region) && GFiles.world.TryGetRegion(chunk.regionIndex, out Region region) && e.summon.region != region.regionTheme)
+                if (!string.IsNullOrEmpty(e.summon.biome) && GFiles.world.TryGetRegion(chunk.regionIndex, out Region region) && e.summon.biome != region.biomeId)
                 {
                     continue;
                 }

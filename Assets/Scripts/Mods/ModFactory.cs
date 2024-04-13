@@ -351,12 +351,6 @@ namespace GameCore
         [ChineseName("在指定的模组中匹配结构")] public static StructureData CompareStructure(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.structures, new() { id = id });
 
 
-        [ChineseName("在已加载的全局模组中匹配区域主题")] public static RegionTheme CompareRegionTheme(string id) => CompareRegionTheme(id, mods);
-
-        [ChineseName("在指定的模组中匹配区域主题")] public static RegionTheme CompareRegionTheme(string id, Mod targetMod) => CompareRegionTheme(id, new[] { targetMod });
-
-        [ChineseName("在指定的模组中匹配区域主题")] public static RegionTheme CompareRegionTheme(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.regionThemes, null);
-
         [ChineseName("在已加载的全局模组中匹配群系方块预置")] public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id) => CompareBiomeBlockPrefab(id, mods);
 
         [ChineseName("在指定的模组中匹配群系方块预置")] public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id, Mod targetMod) => CompareBiomeBlockPrefab(id, new[] { targetMod });
@@ -783,21 +777,6 @@ namespace GameCore
                 }
                 #endregion
 
-                #region 加载区域主题
-                if (Directory.Exists(regionThemesPath))
-                {
-                    string[] regionThemesPaths = IOTools.GetFilesInFolder(regionThemesPath, true, "json");
-
-                    for (int b = 0; b < regionThemesPaths.Length; b++) MethodAgent.DebugRun(() =>
-                    {
-                        JObject jo = JsonTools.LoadJObjectByPath(regionThemesPaths[b]);
-                        var temp = ModLoading.LoadRegionTheme(jo);
-
-                        newMod.regionThemes.Add(temp);
-                    });
-                }
-                #endregion
-
                 #region 加载群系
                 if (Directory.Exists(biomePrefabPath))
                 {
@@ -824,7 +803,8 @@ namespace GameCore
                         JObject jo = JsonTools.LoadJObjectByPath(biomePaths[b]);
                         var temp = ModLoading.LoadBiome(jo);
 
-                        newMod.biomes.Add(temp);
+                        if (temp != null)
+                            newMod.biomes.Add(temp);
                     });
                 }
                 #endregion

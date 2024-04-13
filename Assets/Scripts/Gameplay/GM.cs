@@ -845,7 +845,7 @@ namespace GameCore
             GameCallbacks.CallAfterGeneratingExistingRegion(region);
         }
 
-        public Region GenerateNewRegion(Vector2Int index, string specificTheme = null)
+        public Region GenerateNewRegion(Vector2Int index, string specificBiome = null)
         {
             /* -------------------------------------------------------------------------- */
             /*                                    生成前检查                                   */
@@ -875,7 +875,7 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    初始化数据                                   */
             /* -------------------------------------------------------------------------- */
-            RegionGeneration generation = new(GFiles.world.basicData.seed, index, specificTheme);
+            RegionGeneration generation = new(GFiles.world.basicData.seed, index, specificBiome);
             GameCallbacks.CallBeforeGeneratingNewRegion(generation);
 
 
@@ -1319,7 +1319,6 @@ namespace GameCore
         public Vector2Int maxPoint;
         public Vector2Int minPoint;
         public Region region;
-        public BiomeData[] biomes;
 
 
 
@@ -1342,7 +1341,7 @@ namespace GameCore
 
 
 
-        public RegionGeneration(int seed, Vector2Int index, string specificTheme = null)
+        public RegionGeneration(int seed, Vector2Int index, string specificBiome = null)
         {
             this.index = index;
 
@@ -1352,17 +1351,17 @@ namespace GameCore
             //改变随机数种子, 以确保同一种子的地形一致, 不同区域地形不一致
             random = new(actualSeed);
 
-            /* --------------------------------- 获取区域主题 -------------------------------- */
-            RegionTheme theme = null;
-            if (specificTheme == null)
+            /* --------------------------------- 群系 -------------------------------- */
+            BiomeData biome = null;
+            if (specificBiome == null)
             {
                 foreach (var mod in ModFactory.mods)
                 {
-                    foreach (var regionTheme in mod.regionThemes)
+                    foreach (var currentBiome in mod.biomes)
                     {
-                        if (regionTheme.distribution == index.x)
+                        if (currentBiome.distribution == index.x)
                         {
-                            theme = regionTheme;
+                            biome = currentBiome;
                             break;
                         }
                     }
@@ -1370,33 +1369,13 @@ namespace GameCore
             }
             else
             {
-                theme = ModFactory.CompareRegionTheme(specificTheme);
+                biome = ModFactory.CompareBiome(specificBiome);
             }
-
-            if (theme == null)
+            if (biome == null)
             {
-                Debug.LogError($"群系为空, 将生成 {RegionThemeID.Plant}");
-                theme = ModFactory.CompareRegionTheme(RegionThemeID.Plant);
+                Debug.LogError($"群系为空, 将生成 {BiomeID.Desert}");
+                biome = ModFactory.CompareBiome(BiomeID.Desert);
             }
-
-            /* ----------------------------------- 获取区域主题对应的群系 ----------------------------------- */
-            List<BiomeData> biomeList = new();
-
-            foreach (var item in theme.biomes)
-            {
-                var biome = ModFactory.CompareBiome(item);
-
-                if (biome != null)
-                    biomeList.Add(biome);
-            }
-
-            //如果没有群系就随便添加
-            if (biomeList.Count == 0)
-                foreach (Mod mod in ModFactory.mods)
-                    foreach (BiomeData b in mod.biomes)
-                        biomeList.Add(b);
-
-            this.biomes = biomeList.ToArray();
 
             /* ------------------------------------------------------------------------ */
 
@@ -1413,7 +1392,7 @@ namespace GameCore
             {
                 size = size,
                 index = index,
-                regionTheme = theme.id,
+                biomeId = biome.id,
                 maxPoint = maxPoint,
                 minPoint = minPoint
             };
@@ -1671,14 +1650,11 @@ namespace GameCore
             this.blockAdded = new();
 
             //决定群系
-            if (isCenterIsland)
-                biome = ModFactory.CompareBiome(BiomeID.Center);
-            else
-                biome = regionGeneration.biomes.Extract(regionGeneration.random);
+            biome = ModFactory.CompareBiome(regionGeneration.region.biomeId);
 
             //决定岛的大小
-            size = new(regionGeneration.random.Next(biome.minSize.x, biome.maxSize.x).IRange(10, Region.place.x),
-                                regionGeneration.random.Next(biome.minSize.y, biome.maxSize.y).IRange(10, Region.place.y));
+            size = new(regionGeneration.random.Next((int)(Region.placeVec.x * biome.minScale.x), (int)(Region.placeVec.x * biome.maxScale.x)).IRange(10, Region.place.x),
+                                regionGeneration.random.Next((int)(Region.placeVec.y * biome.minScale.y), (int)(Region.placeVec.y * biome.maxScale.y)).IRange(10, Region.place.y));
             if (size.x % 2 != 0) size.x++;
             if (size.y % 2 != 0) size.y++;
 

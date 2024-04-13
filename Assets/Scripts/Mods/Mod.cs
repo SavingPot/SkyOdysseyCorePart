@@ -22,7 +22,6 @@ namespace GameCore
         [LabelText("菜谱")] public List<CookingRecipe> cookingRecipes = new();
         [LabelText("贴图")] public List<TextureData> textures = new();
         [LabelText("方块")] public List<BlockData> blocks = new();
-        [LabelText("区域主题")] public List<RegionTheme> regionThemes = new();
         [LabelText("群系方块预置")] public List<BiomeBlockPrefab> biomeBlockPrefabs = new();
         [LabelText("群系")] public List<BiomeData> biomes = new();
         [LabelText("结构")] public List<StructureData> structures = new();

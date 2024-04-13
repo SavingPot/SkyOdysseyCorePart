@@ -1207,7 +1207,7 @@ namespace GameCore
         /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         /// </summary>
         [Button]
-        public void GenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme = null)
+        public void GenerateRegion(Vector2Int index, bool isFirstGeneration, string specificBiome = null)
         {
             //检查是否正在生成
             if (regionGenerationSaves != null || regionGenerationRegion != null)
@@ -1221,7 +1221,7 @@ namespace GameCore
             regionGenerationSaves = new();
 
             //向服务器发送请求
-            ServerGenerateRegion(index, isFirstGeneration, specificTheme);
+            ServerGenerateRegion(index, isFirstGeneration, specificBiome);
 
             //等待服务器发回所有资源切片
             coroutineWaitingForRegionSegments = StartCoroutine(IEWaitForRegionSegments());
@@ -1311,7 +1311,7 @@ namespace GameCore
         }
 
         [ServerRpc]
-        private void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificTheme, NetworkConnection caller = null)
+        private void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificBiome, NetworkConnection caller = null)
         {
             Debug.Log($"Player={netId} 请求生成区域 {index}");
 
@@ -1324,7 +1324,7 @@ namespace GameCore
             MethodAgent.RunThread(() =>
             {
                 //如果没有则生成新的区域
-                GM.instance.GenerateNewRegion(index, specificTheme);
+                GM.instance.GenerateNewRegion(index, specificBiome);
 
                 //获取生成好的区域
                 var regionToGenerate = GetRegionToGenerate(index) ?? throw new();

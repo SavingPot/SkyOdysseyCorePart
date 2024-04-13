@@ -13,8 +13,9 @@ namespace GameCore
     [Serializable]
     public sealed class BiomeData : ModClass, ITags
     {
-        [LabelText("最小尺寸")] public Vector2Int minSize;
-        [LabelText("最大尺寸")] public Vector2Int maxSize;
+        [LabelText("最小尺寸")] public Vector2 minScale;
+        [LabelText("最大尺寸")] public Vector2 maxScale;
+        [LabelText("分布")] public int distribution;
         [LabelText("随机实体"), NonSerialized] public List<RandomEntityData> randomEntityData = new();
         [LabelText("结构"), NonSerialized] public BiomeData_Structure[] structures;
         [LabelText("方块")] public BiomeData_Block[] blocks;

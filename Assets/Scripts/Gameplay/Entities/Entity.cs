@@ -1124,7 +1124,7 @@ namespace GameCore
     [Serializable]
     public sealed class EntityData_Summon
     {
-        [LabelText("区域")] public string region;
+        [LabelText("区域")] public string biome;
         [LabelText("默认几率")] public float defaultProbability;
         [LabelText("最早时间")] public float timeEarliest;
         [LabelText("最晚时间")] public float timeLatest;

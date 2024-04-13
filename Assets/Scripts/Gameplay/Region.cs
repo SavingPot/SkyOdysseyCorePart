@@ -16,7 +16,7 @@ namespace GameCore
         public Vector2Int index;
         public List<BlockSave> blocks = new();
         public List<EntitySave> entities = new();
-        public string regionTheme;
+        public string biomeId;
         public Vector2Int size;
         public Vector2Int spawnPoint;
         public Vector2Int maxPoint;
@@ -29,7 +29,7 @@ namespace GameCore
         }
 
         //单数!
-        public const int chunkCount = 4 + 1;
+        public const int chunkCount = 6 + 1;
         public const float chunkCountReciprocal = 1f / chunkCount;
         public const float halfChunkCount = chunkCount / 2f;
         public const float negativeHalfChunkCount = -halfChunkCount;
