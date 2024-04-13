@@ -1510,8 +1510,8 @@ namespace GameCore
                                 item = ModFactory.CompareItem(BlockID.Dirt).DataToItem();
                                 item.count = 30;
                                 break;
-                            case 1:
 
+                            case 1:
                                 item = ModFactory.CompareItem(ItemID.SportsVest).DataToItem();
                                 break;
 
@@ -1521,6 +1521,11 @@ namespace GameCore
 
                             case 3:
                                 item = ModFactory.CompareItem(ItemID.Sneakers).DataToItem();
+                                break;
+
+                            case 4:
+                                item = ModFactory.CompareItem(BlockID.OnionCrop).DataToItem();
+                                item.count = 3;
                                 break;
                         }
 
@@ -1559,6 +1564,7 @@ namespace GameCore
                                 mod = null;
                         }
 
+                        //从模组中抽取一种魔咒
                         static string ExtractSpell(Random random)
                         {
                             Spell spell = null;
@@ -1572,7 +1578,7 @@ namespace GameCore
                                     mod = null;
                             }
 
-                            //获取魔咒
+                            //从获得到的模组中抽取一种魔咒
                             for (var inner = 0; inner < mod.spells.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的魔咒
                             {
                                 spell = mod.spells.Extract(random);
