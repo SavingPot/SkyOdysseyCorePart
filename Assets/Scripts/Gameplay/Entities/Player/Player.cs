@@ -607,7 +607,6 @@ namespace GameCore
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
 
                 GenerateRegion(regionIndex, true);
-                //GenerateNeighborRegions(); //TODO Fix
             }
 
 
@@ -893,6 +892,12 @@ namespace GameCore
 
             //刷新状态栏
             pui?.Update();
+
+            //如果当前区域不存在就生成
+            if (!GM.instance.generatedExistingRegions.Exists(p => p.index == regionIndex))
+            {
+                GenerateExistingRegion(regionIndex);
+            }
         }
 
         protected override void ServerUpdate()

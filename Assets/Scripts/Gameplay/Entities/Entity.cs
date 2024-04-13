@@ -297,18 +297,18 @@ namespace GameCore
 
         public static Action<Entity> OnRegionIndexChange = (entity) =>
         {
-            if (entity is Player player)
-            {
-                //TODO: 像以前一样自动生成周围的区块
-                if (player.generatedFirstRegion && !player.askingForGeneratingRegion && player.askingForGeneratingRegionTime + 5 <= Tools.time && !GM.instance.generatingExistingRegion && !GM.instance.generatingNewRegion)
-                {
-                    //生成周围的八个区域
-                    player.GenerateNeighborRegions();
+            // if (entity is Player player)
+            // {
+            //     //TODO: 像以前一样自动生成周围的区块
+            //     if (player.generatedFirstRegion && !player.askingForGeneratingRegion && player.askingForGeneratingRegionTime + 5 <= Tools.time && !GM.instance.generatingExistingRegion && !GM.instance.generatingNewRegion)
+            //     {
+            //         //生成周围的八个区域
+            //         player.GenerateNeighborRegions();
 
-                    //刷新时间
-                    player.askingForGeneratingRegionTime = Tools.time;
-                }
-            }
+            //         //刷新时间
+            //         player.askingForGeneratingRegionTime = Tools.time;
+            //     }
+            // }
         };
 
         #endregion
