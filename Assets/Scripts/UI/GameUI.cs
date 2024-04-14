@@ -738,6 +738,10 @@ namespace GameCore.UI
 
         #endregion
 
+
+
+
+
         public static void SetUILayer(UIIdentity ui, int layer)
         {
             int lowestIndex = ui.transform.parent.childCount - 1;
@@ -759,15 +763,23 @@ namespace GameCore.UI
             SetUILayer(ui, 2);
         }
 
+
+
+
+
         #region 视觉效果
         #region 淡出入
-        //TODO: delayTime to duration
         public static async void FadeOutGroup(UIIdentity target, bool setActiveToFalse = true, float duration = 1, UIAnimationAction? fadeAction = null)
         {
             BeforeFadeOutGroup(target);
             fadeAction?.beforeAnimation?.Invoke();
 
+
+
+            //播放动画
             await target.canvasGroup.DOFade(0, duration);
+
+
 
             if (target && setActiveToFalse)
                 target.gameObject.SetActive(false);
@@ -781,7 +793,12 @@ namespace GameCore.UI
             BeforeFadeOut(target);
             fadeAction?.beforeAnimation?.Invoke();
 
+
+
+            //播放动画
             await target.DOFade(0, duration);
+
+
 
             if (target && setActiveToFalse)
                 target.gameObject.SetActive(false);
@@ -798,7 +815,12 @@ namespace GameCore.UI
             if (setActiveToTrue)
                 target.gameObject.SetActive(true);
 
+
+
+            //播放动画
             await target.canvasGroup.DOFade(1, duration);
+
+
 
             AfterFadeOutGroup(target);
             fadeAction?.afterAnimation?.Invoke();
@@ -812,7 +834,12 @@ namespace GameCore.UI
             if (setActiveToTrue)
                 target.gameObject.SetActive(true);
 
+
+
+            //播放动画
             await target.DOFade(1, duration);
+
+
 
             AfterFadeOut(target);
             fadeAction?.afterAnimation?.Invoke();

@@ -85,72 +85,9 @@ namespace GameCore
         }
     }
 
-    public class BloodParticlePool
-    {
-        public Stack<ParticleSystem> stack = new();
 
-        public ParticleSystem Get(Entity entity)
-        {
-            var particle = stack.Count == 0 ? GameObject.Instantiate(GInit.instance.BloodParticleSystemPrefab) : stack.Pop();
 
-            particle.transform.position = entity.transform.position;
-            particle.gameObject.SetActive(true);
-            particle.Play();
-            Tools.InvokeAfter(particle.main.duration + particle.main.startLifetime.constant, () =>
-            {
-                stack.Push(particle);
-            });
 
-            //生成一个新的
-            return particle;
-        }
-
-        public void Recover(ParticleSystem particle)
-        {
-            stack.Push(particle);
-
-            particle.gameObject.SetActive(false);
-        }
-    }
-
-    public class DamageTextPool
-    {
-        public Stack<TMP_Text> stack = new();
-
-        public TMP_Text Get(Entity entity, float damage)
-        {
-            TMP_Text text = null;
-            if (stack.Count == 0)
-            {
-                text = GameObject.Instantiate(GInit.instance.DamageTextPrefab);
-                text.transform.SetParent(GameUI.worldSpaceCanvasRT);
-            }
-            else
-            {
-                text = stack.Pop();
-            }
-
-            text.transform.position = entity.transform.position;
-            text.text = damage.ToString();
-            text.gameObject.SetActive(true);
-            text.GetComponent<Rigidbody2D>().velocity = new(UnityEngine.Random.Range(-5, 5), 9);
-            Tools.InvokeAfter(0.5f, () => text.transform.DOScale(new Vector3(0, 0, 1), 0.3f).OnStepComplete(() =>
-            {
-                text.transform.localScale = Vector3.one;
-                Recover(text);
-            }));
-
-            //生成一个新的
-            return text;
-        }
-
-        public void Recover(TMP_Text text)
-        {
-            stack.Push(text);
-
-            text.gameObject.SetActive(false);
-        }
-    }
 
     //TODO: 告别冗长代码
     [DisallowMultipleComponent]
@@ -569,8 +506,10 @@ namespace GameCore
 
 
         #region Unity/Mirror/Entity 方法
+
         protected virtual void Awake()
         {
+            //初始化组件
             netIdentity = GetComponent<NetworkIdentity>();
             isPlayer = this is Player;
             isNotPlayer = !isPlayer;
@@ -580,6 +519,7 @@ namespace GameCore
             rb = GetComponent<Rigidbody2D>();
             mainCollider = GetComponent<BoxCollider2D>();
 
+            //初始化网络
             netId = netIdentity.netId;
             isServer = Server.isServer;
             isClient = Client.isClient;
@@ -867,14 +807,17 @@ namespace GameCore
         [ServerRpc]
         public void ServerReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
         {
+            //刷新属性
             health = newHealth;
             isDead = false;
 
             OnRebornServer(newHealth, newPos, caller);
 
-            if (newPos.x == float.PositiveInfinity && newPos.y == float.NegativeInfinity)
+            //如果数值无效, 则使用默认的重生点
+            if (float.IsInfinity(newPos.x) || float.IsInfinity(newPos.y))
                 newPos = GFiles.world.GetRegion(regionIndex)?.spawnPoint ?? Vector2Int.zero;
 
+            //非玩家实体重生时, 由服务器设置位置
             if (isNotPlayer)
                 transform.position = newPos;
 
@@ -886,6 +829,7 @@ namespace GameCore
         {
             OnRebornClient(newHealth, newPos, caller);
 
+            //玩家重生时, 由对应客户端设置位置
             if (isPlayer)
                 transform.position = newPos;
         }
@@ -919,6 +863,7 @@ namespace GameCore
                 Debug.LogError("世界为空, 无法写入保存数据");
                 return;
             }
+
 
             if (isPlayer)
             {
@@ -1090,50 +1035,5 @@ namespace GameCore
             };
             GM.OnUpdate += EntityCenter.Update;
         }
-    }
-
-
-
-
-
-    /* -------------------------------------------------------------------------- */
-    /*                                    公共类型                                    */
-    /* -------------------------------------------------------------------------- */
-    [Serializable]
-    public sealed class EntityData : ModClass
-    {
-        [LabelText("路径")] public string path;
-        [LabelText("生成")] public EntityData_Summon summon = new();
-        [LabelText("速度")] public float speed;
-        [LabelText("重力")] public float gravity;
-        [LabelText("碰撞箱大小")] public Vector2 colliderSize;
-        [LabelText("碰撞箱偏移")] public Vector2 colliderOffset;
-        [LabelText("最大血量")] public int maxHealth;
-        [LabelText("自动清除周期")] public float lifetime = defaultLifetime;
-        [LabelText("搜索半径")] public ushort searchRadius;
-        [LabelText("搜索半径平方")] public int searchRadiusSqr;
-        [LabelText("普通攻击半径")] public float normalAttackRadius;
-        [LabelText("普通攻击伤害")] public int normalAttackDamage;
-        [LabelText("普通攻击CD")] public float normalAttackCD;
-        public static float defaultLifetime = 60 * 3;
-        public Type behaviourType;
-        [LabelText("掉落的物品")] public List<DropData> drops;
-        [LabelText("掉落的金币数")] public int coinCount;
-    }
-
-    [Serializable]
-    public sealed class EntityData_Summon
-    {
-        [LabelText("区域")] public string biome;
-        [LabelText("默认几率")] public float defaultProbability;
-        [LabelText("最早时间")] public float timeEarliest;
-        [LabelText("最晚时间")] public float timeLatest;
-    }
-
-    public sealed class NotSummonableAttribute : Attribute { }
-
-    public interface IHasDestroyed
-    {
-        bool hasDestroyed { get; }
     }
 }

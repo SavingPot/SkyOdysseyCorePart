@@ -1622,23 +1622,28 @@ namespace GameCore
 
         private void RefreshChildrenTaskNodesDisplay(TaskNode current, TaskNode parentNode, List<TaskNode> siblingNodes, bool init)
         {
-            /* ----------------------------------- 初始化 ---------------------------------- */
+            //初始化按钮
             if (init)
                 TaskNodeDisplay_InitButton(current, parentNode, siblingNodes);
 
-            /* ---------------------------------- 设置图标 ---------------------------------- */
+
+            //设置图标
             current.icon.SetID($"ori:image.task_node.{current.data.id}");
             current.icon.image.sprite = ModFactory.CompareTexture(current.data.icon).sprite;
 
-            /* ---------------------------------- 设置颜色 ---------------------------------- */
-            current.icon.image.color = current.button.image.color =
-                        current.completed ?
-                            (current.hasGotRewards ?
-                                Color.white :  //完成了且领取了奖励
-                                Tools.HexToColor("#00FFD6")) :  //完成了且没领取奖励
-                            new(0.5f, 0.5f, 0.5f, 0.75f);  //没完成
 
+            //设置按钮和图标的颜色
+            current.icon.image.color = current.button.image.color = (current.completed, current.hasGotRewards) switch
+            {
+                (true, true) => Color.white,  //完成了且领取了奖励
+                (true, false) => Tools.HexToColor("#00FFD6"),  //完成了但没领取奖励
+                (false, _) => new(0.5f, 0.5f, 0.5f, 0.75f)  //没完成
+            };
+
+
+            //如果有连线还要设置线的颜色
             if (current.line) current.line.image.color = current.icon.image.color;
+
 
             /* ---------------------------------- 添加到节点组 & 初始化子节点 --------------------------------- */
             siblingNodes.Add(current);
@@ -1742,8 +1747,8 @@ namespace GameCore
                 //更改同级节点位置
                 siblingNode.button.ap = new(siblingNode.button.ap.x - deltaPos, siblingNode.button.ap.y);
 
-                //重新计算节点
-                TaskNodeDisplay_InitLine(siblingNode);
+                //重新计算节点连线
+                TaskNodeDisplay_ConnectTaskLine(siblingNode);
 
                 //更改本身
                 tempVec.x += deltaPos;
@@ -1758,14 +1763,14 @@ namespace GameCore
             node.icon.sd = node.button.sd;
 
             /* --------------------------------- 初始化连接线 --------------------------------- */
-            TaskNodeDisplay_InitLine(node);
+            TaskNodeDisplay_ConnectTaskLine(node);
         }
 
         /// <summary>
         /// 初始化任务节点之间的连接线
         /// </summary>
         /// <param name="node"></param>
-        private static void TaskNodeDisplay_InitLine(TaskNode node)
+        private static void TaskNodeDisplay_ConnectTaskLine(TaskNode node)
         {
             if (node.parent == null)
                 return;
