@@ -102,11 +102,11 @@ namespace GameCore
                 this.map = map;
             }
 
-            public void Recover(Block block)
+            public void Recycle(Block block)
             {
                 block.OnRecovered();
-                if (block.crackSr) map.blockCrackPool.Recover(block);
-                if (block.blockLight) map.blockLightPool.Recover(block.blockLight);
+                if (block.crackSr) map.blockCrackPool.Recycle(block);
+                if (block.blockLight) map.blockLightPool.Recycle(block.blockLight);
                 if (map.blocksToCheckHealths.Contains(block)) map.blocksToCheckHealths.Remove(block);
                 block.scaleAnimationTween?.Kill();
                 block.shakeRotationTween?.Kill();
@@ -147,7 +147,7 @@ namespace GameCore
 
                 return sr;
             }
-            public void Recover(Block block)
+            public void Recycle(Block block)
             {
                 block.crackSr.transform.SetParent(null);
                 block.crackSr.gameObject.SetActive(false);
@@ -176,7 +176,7 @@ namespace GameCore
                 return light;
             }
 
-            public void Recover(Light2D light)
+            public void Recycle(Light2D light)
             {
                 light.gameObject.SetActive(false);
                 stack.Push(light);
@@ -233,14 +233,14 @@ namespace GameCore
                 map.chunkTable.Add(chunkIndex, chunk);
             }
 
-            public void Recover(Chunk chunk)
+            public void Recycle(Chunk chunk)
             {
                 map.chunks.Remove(chunk);
                 map.chunkTable.Remove(chunk.chunkIndex);
                 chunk.gameObject.SetActive(false);
 
                 //回收区块里的方块
-                chunk.RecoverAllBlocks();
+                chunk.RecycleAllBlocks();
 
                 stack.Push(chunk);
             }
@@ -374,7 +374,7 @@ namespace GameCore
         {
             foreach (Chunk chunk in chunks)
             {
-                chunk.RecoverAllBlocks();
+                chunk.RecycleAllBlocks();
             }
         }
 
@@ -390,11 +390,11 @@ namespace GameCore
             return bs;
         }
 
-        public void RecoverChunks()
+        public void RecycleChunks()
         {
             for (int i = chunks.Count - 1; i >= 0; i--)
             {
-                chunkPool.Recover(chunks[i]);
+                chunkPool.Recycle(chunks[i]);
             }
         }
 

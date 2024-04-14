@@ -80,7 +80,7 @@ namespace GameCore
 
                 //回收裂痕
                 if (block.crackSr)
-                    block.chunk.map.blockCrackPool.Recover(block);
+                    block.chunk.map.blockCrackPool.Recycle(block);
             }
         };
 

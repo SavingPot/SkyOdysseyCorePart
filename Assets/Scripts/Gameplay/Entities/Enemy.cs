@@ -9,7 +9,7 @@ namespace GameCore
 {
     public abstract class Enemy : Creature, IHumanBodyParts<CreatureBodyPart>
     {
-        public Transform targetTransform;
+        public Entity targetEntity;
         public float searchTime = float.NegativeInfinity;
         public float attackTimer;
         public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: 包含 动画的layer 信息
@@ -20,26 +20,6 @@ namespace GameCore
 
 
 
-        public Func<Enemy, Transform> FindTarget = (enemy) =>
-        {
-            //搜索 CD 3s
-            if (Tools.time < enemy.searchTime + 3)
-                return null;
-
-            enemy.searchTime = Tools.time;
-
-            foreach (var player in PlayerCenter.all)
-            {
-                if ((player.transform.position - enemy.transform.position).sqrMagnitude <= enemy.data.searchRadiusSqr && !player.isDead)
-                {
-                    return player.transform;
-                }
-            }
-
-            return null;
-        };
-
-
 
 
         protected override void ServerUpdate()
@@ -47,15 +27,15 @@ namespace GameCore
             base.ServerUpdate();
 
             //检查目标
-            if (targetTransform)
+            if (targetEntity)
             {
                 #region 普通攻击
 
                 if (!isDead)
                 {
-                    //为了性能使用 x - x, y - y 而不是 Vector2.Distance()
-                    float disX = Mathf.Abs(transform.position.x - targetTransform.position.x);
-                    float disY = Mathf.Abs(transform.position.y - targetTransform.position.y);
+                    //为了性能使用 (x - x), (y - y) 而不是 Vector2.Distance()
+                    float disX = Mathf.Abs(transform.position.x - targetEntity.transform.position.x);
+                    float disY = Mathf.Abs(transform.position.y - targetEntity.transform.position.y);
 
                     //在攻击范围内, 并且 CD 已过
                     if (disX <= data.normalAttackRadius && disY <= data.normalAttackRadius && Tools.time >= attackTimer)
@@ -71,27 +51,29 @@ namespace GameCore
                             }
                         }
 
-                        if (UObjectTools.GetComponent(targetTransform, out Entity entity))
-                        {
-                            AttackEntity(entity);
-                        }
+                        AttackEntity(targetEntity);
                     }
                 }
 
                 #endregion
 
-                CheckEnemyTargetDistance();
+                CheckTargetStatus();
             }
             else
-                ReFindTarget();
+                FindTarget();
         }
 
         public void AttackEntity(Entity entity)
         {
-            entity.TakeDamage(data.normalAttackDamage, 0.3f, transform.position, transform.position.x < targetTransform.position.x ? Vector2.right * 12 : Vector2.left * 12);
+            entity.TakeDamage(
+                data.normalAttackDamage,
+                0.3f,
+                transform.position,
+                transform.position.x < targetEntity.transform.position.x ? Vector2.right * 12 : Vector2.left * 12
+            );
         }
 
-        public void ReFindTarget()
+        public void FindTarget()
         {
             if (!isServer)
             {
@@ -99,16 +81,27 @@ namespace GameCore
                 return;
             }
 
-            var tempTransform = FindTarget(this);
+            //搜索 CD 3s
+            if (Tools.time < searchTime + 3)
+                targetEntity = null;
 
-            if (tempTransform)
-                targetTransform = tempTransform;
+            searchTime = Tools.time;
+
+            foreach (var player in PlayerCenter.all)
+            {
+                if ((player.transform.position - transform.position).sqrMagnitude <= data.searchRadiusSqr && !player.isDead)
+                {
+                    targetEntity = player;
+                }
+            }
+
+            targetEntity = null;
         }
 
-        public void CheckEnemyTargetDistance()
+        public void CheckTargetStatus()
         {
-            if ((targetTransform.position - transform.position).sqrMagnitude > data.searchRadiusSqr)
-                targetTransform = null;
+            if (targetEntity.isDead || (targetEntity.transform.position - transform.position).sqrMagnitude > data.searchRadiusSqr)
+                targetEntity = null;
         }
     }
 }

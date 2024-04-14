@@ -48,6 +48,19 @@ namespace GameCore
 
         Item[] IItemContainer.items { get => inventory.slots; set => inventory.slots = value; }
 
+        public int TotalDefense
+        {
+            get
+            {
+                int totalDefense = 0;
+                totalDefense += inventory.helmet?.data?.Helmet.defense ?? 0;
+                totalDefense += inventory.breastplate?.data?.Breastplate.defense ?? 0;
+                totalDefense += inventory.legging?.data?.Legging.defense ?? 0;
+                totalDefense += inventory.boots?.data?.Boots.defense ?? 0;
+                return totalDefense;
+            }
+        }
+
 
 
 
@@ -72,109 +85,21 @@ namespace GameCore
                 //完成成就
                 if (!Item.Null(item))
                 {
-                    switch (item.data.id)
+                    //先通过 ID 查询任务
+                    if (TaskNameTable.ContainsKey(item.data.id))
                     {
-                        case BlockID.Dirt:
-                            pui.CompleteTask("ori:get_dirt");
-                            break;
-
-                        case ItemID.FeatherWing:
-                            pui.CompleteTask("ori:get_feather_wing");
-                            break;
-
-                        case BlockID.Grass:
-                            pui.CompleteTask("ori:get_grass");
-                            break;
-
-                        case ItemID.StrawRope:
-                            pui.CompleteTask("ori:get_straw_rope");
-                            break;
-
-                        case ItemID.PlantFiber:
-                            pui.CompleteTask("ori:get_plant_fiber");
-                            break;
-
-                        case BlockID.Gravel:
-                            pui.CompleteTask("ori:get_gravel");
-                            break;
-
-                        case ItemID.Flint:
-                            pui.CompleteTask("ori:get_flint");
-                            break;
-
-                        case BlockID.Stone:
-                            pui.CompleteTask("ori:get_stone");
-                            break;
-
-                        case BlockID.Campfire:
-                            pui.CompleteTask("ori:get_campfire");
-                            break;
-
-                        case ItemID.FlintKnife:
-                            pui.CompleteTask("ori:get_flint_knife");
-                            break;
-
-                        case ItemID.FlintHoe:
-                            pui.CompleteTask("ori:get_flint_hoe");
-                            break;
-
-                        case ItemID.FlintSword:
-                            pui.CompleteTask("ori:get_flint_sword");
-                            break;
-
-                        case ItemID.IronKnife:
-                            pui.CompleteTask("ori:get_iron_knife");
-                            break;
-
-                        case ItemID.IronHoe:
-                            pui.CompleteTask("ori:get_iron_hoe");
-                            break;
-
-                        case ItemID.IronSword:
-                            pui.CompleteTask("ori:get_iron_sword");
-                            break;
-
-                        case ItemID.Bark:
-                            pui.CompleteTask("ori:get_bark");
-                            break;
-
-                        case ItemID.BarkVest:
-                            pui.CompleteTask("ori:get_bark_vest");
-                            break;
-
-                        case ItemID.Stick:
-                            pui.CompleteTask("ori:get_stick");
-                            break;
-
-                        case ItemID.Potato:
-                            pui.CompleteTask("ori:get_potato");
-                            break;
-
-                        case ItemID.Onion:
-                            pui.CompleteTask("ori:get_onion");
-                            break;
-
-                        case ItemID.Watermelon:
-                            pui.CompleteTask("ori:get_watermelon");
-                            break;
-
-                        default:
-                            if (item.data.GetTag("ori:log").hasTag)
-                                pui.CompleteTask("ori:get_log");
-
-                            if (item.data.GetTag("ori:meat").hasTag)
-                                pui.CompleteTask("ori:get_meat");
-
-                            if (item.data.GetTag("ori:egg").hasTag)
-                                pui.CompleteTask("ori:get_egg");
-
-                            if (item.data.GetTag("ori:feather").hasTag)
-                                pui.CompleteTask("ori:get_feather");
-
-                            if (item.data.GetTag("ori:planks").hasTag)
-                                pui.CompleteTask("ori:get_planks");
-
-                            break;
+                        pui.CompleteTask(TaskNameTable[item.data.id]);
+                    }
+                    else
+                    {
+                        //如果没有符合的 ID，就通过标签查询任务
+                        item.data.tags.ForEach(tag =>
+                        {
+                            if (TaskTagTable.ContainsKey(tag))
+                            {
+                                pui.CompleteTask(TaskTagTable[tag]);
+                            }
+                        });
                     }
                 }
             }
@@ -460,6 +385,42 @@ namespace GameCore
         public static Color deathLowestColor = new(deathLowestColorFloat, deathLowestColorFloat, deathLowestColorFloat);
 
         public static float enoughSavingTime = 5.5f;
+
+
+
+        public static readonly Dictionary<string, string> TaskNameTable = new()
+        {
+            { BlockID.Dirt, "ori:get_dirt" },
+            { ItemID.FeatherWing, "ori:get_feather_wing" },
+            { BlockID.Grass, "ori:get_grass" },
+            { ItemID.StrawRope, "ori:get_straw_rope" },
+            { ItemID.PlantFiber, "ori:get_plant_fiber" },
+            { BlockID.Gravel, "ori:get_gravel" },
+            { ItemID.Flint, "ori:get_flint" },
+            { BlockID.Stone, "ori:get_stone" },
+            { BlockID.Campfire, "ori:get_campfire" },
+            { ItemID.FlintKnife, "ori:get_flint_knife" },
+            { ItemID.FlintHoe, "ori:get_flint_hoe" },
+            { ItemID.FlintSword, "ori:get_flint_sword" },
+            { ItemID.IronKnife, "ori:get_iron_knife" },
+            { ItemID.IronHoe, "ori:get_iron_hoe" },
+            { ItemID.IronSword, "ori:get_iron_sword" },
+            { ItemID.Bark, "ori:get_bark" },
+            { ItemID.BarkVest, "ori:get_bark_vest" },
+            { ItemID.Stick, "ori:get_stick" },
+            { ItemID.Potato, "ori:get_potato" },
+            { ItemID.Onion, "ori:get_onion" },
+            { ItemID.Watermelon, "ori:get_watermelon" },
+        };
+
+        public static readonly Dictionary<string, string> TaskTagTable = new()
+        {
+            { "ori:log", "ori:get_log" },
+            { "ori:meat", "ori:get_meat" },
+            { "ori:egg", "ori:get_egg" },
+            { "ori:feather", "ori:get_feather" },
+            { "ori:planks", "ori:get_planks" },
+        };
 
 
 
@@ -875,7 +836,7 @@ namespace GameCore
         private void LocalUpdate()
         {
             GravitySet(this);
-            AutoSetPlayerOrientation();
+            SetPlayerOrientation();
             rb.gravityScale = gravity;
             isAttacking = Tools.time <= previousAttackTime + attackAnimTime;
 
@@ -903,6 +864,13 @@ namespace GameCore
         protected override void ServerUpdate()
         {
             base.ServerUpdate();
+
+
+
+
+            /* -------------------------------------------------------------------------- */
+            /*                                    拾取物品                                    */
+            /* -------------------------------------------------------------------------- */
             Physics2D.OverlapCircleNonAlloc(transform.position, itemPickUpRadius, itemPickUpObjectsDetectedTemp);
 
             foreach (var other in itemPickUpObjectsDetectedTemp)
@@ -1318,7 +1286,7 @@ namespace GameCore
             //如果旧的区域没有玩家了，就回收区域
             if (!PlayerCenter.all.Any(currentPlayer => currentPlayer.regionIndex == currentPlayer.regionIndex))
             {
-                GM.instance.RecoverRegion(index);
+                GM.instance.RecycleRegion(index);
             }
 
             MethodAgent.RunThread(() =>
@@ -1383,6 +1351,10 @@ namespace GameCore
         {
             regionGenerationSaves.Add(block);
         }
+
+
+
+
 
         /// <summary>
         /// 删除区块的屏障方块，这个方法在服务器调用，作用是在存档中删除，而不是在地图中删除！
@@ -1504,10 +1476,14 @@ namespace GameCore
             }
         }
 
+
         #endregion
 
 
-        #region 玩家行为
+
+
+
+        #region 物品操作
 
 
 
@@ -1579,6 +1555,8 @@ namespace GameCore
 
 
 
+
+
         #region 移动和转向
         public override Vector2 GetMovementDirection()
         {
@@ -1608,7 +1586,7 @@ namespace GameCore
             return result;
         }
 
-        public void AutoSetPlayerOrientation()
+        public void SetPlayerOrientation()
         {
             ////诸如 && transform.localScale.x.Sign() == 1 之类的检测是为了减缓服务器压力
             if (isDead)
@@ -1654,6 +1632,10 @@ namespace GameCore
             }
         }
         #endregion
+
+
+
+
 
         #region 攻击
         public Vector2 cursorWorldPos
@@ -1738,6 +1720,8 @@ namespace GameCore
         }
 
         #endregion
+
+
 
 
 
@@ -1835,165 +1819,6 @@ namespace GameCore
         public Item GetItem(string index) => items[Convert.ToInt32(index)];
         public void SetItem(string index, Item value) => items[Convert.ToInt32(index)] = value;
     }
-
-    public static class ItemContainerExtensions
-    {
-        public static void LoadItemsFromCustomData(this IItemContainer container, JObject jo, int defaultItemCount)
-        {
-            /* -------------------------------------------------------------------------- */
-            /*                                //修正 JObject                                */
-            /* -------------------------------------------------------------------------- */
-            jo ??= new();
-
-            if (jo["ori:container"] == null)
-                jo.AddObject("ori:container");
-            if (jo["ori:container"]["items"] == null)
-                jo["ori:container"].AddObject("items");
-            if (jo["ori:container"]["items"]["array"] == null)
-            {
-                JToken[] tokens = new JToken[defaultItemCount];
-                jo["ori:container"]["items"].AddArray("array", tokens);
-            }
-
-            /* -------------------------------------------------------------------------- */
-            /*                                    缓存数据                                    */
-            /* -------------------------------------------------------------------------- */
-            var array = (JArray)jo["ori:container"]["items"]["array"];
-
-            /* -------------------------------------------------------------------------- */
-            /*                                    读取数据                                    */
-            /* -------------------------------------------------------------------------- */
-            if (array.Count != 0)
-            {
-                container.items = array.ToObject<Item[]>();
-
-                for (int i = 0; i < container.items.Length; i++)
-                {
-                    Item.ResumeFromStreamTransport(ref container.items[i]);
-                }
-            }
-            else
-            {
-                container.items = new Item[defaultItemCount];
-            }
-        }
-
-        public static void WriteItemsToCustomData(this IItemContainer container, JObject jo)
-        {
-            var array = (JArray)jo["ori:container"]["items"]["array"];
-
-            //清除数据
-            array.Clear();
-
-            //写入数据
-            foreach (var item in container.items)
-            {
-                if (Item.Null(item))
-                {
-                    array.Add(null);
-                    continue;
-                }
-
-                array.Add(JToken.FromObject(item));
-            }
-        }
-    }
-
-    public sealed class PlayerSkin
-    {
-        public string name { get; private set; }
-        public string path { get; private set; }
-        public string headPath { get; private set; }
-        public string bodyPath { get; private set; }
-        public string leftArmPath { get; private set; }
-        public string rightArmPath { get; private set; }
-        public string leftLegPath { get; private set; }
-        public string rightLegPath { get; private set; }
-        public string leftFootPath { get; private set; }
-        public string rightFootPath { get; private set; }
-
-        public Sprite head;
-        public Sprite body;
-        public Sprite leftArm;
-        public Sprite rightArm;
-        public Sprite leftLeg;
-        public Sprite rightLeg;
-        public Sprite leftFoot;
-        public Sprite rightFoot;
-
-        public static Sprite skinHead;
-        public static Sprite skinBody;
-        public static Sprite skinLeftArm;
-        public static Sprite skinRightArm;
-        public static Sprite skinLeftLeg;
-        public static Sprite skinRightLeg;
-        public static Sprite skinLeftFoot;
-        public static Sprite skinRightFoot;
-
-        public static void SetSkinByName(string skinName)
-        {
-            SetSkin(new PlayerSkin(Path.Combine(GInit.playerSkinPath, skinName ?? string.Empty)));
-        }
-
-        public static void SetSkin(PlayerSkin skin)
-        {
-            skinHead = skin.head ?? ModFactory.CompareTexture("ori:player_head").sprite;
-            skinBody = skin.body ?? ModFactory.CompareTexture("ori:player_body").sprite;
-            skinLeftArm = skin.leftArm ?? ModFactory.CompareTexture("ori:player_left_arm").sprite;
-            skinRightArm = skin.rightArm ?? ModFactory.CompareTexture("ori:player_right_arm").sprite;
-            skinLeftLeg = skin.leftLeg ?? ModFactory.CompareTexture("ori:player_left_leg").sprite;
-            skinRightLeg = skin.rightLeg ?? ModFactory.CompareTexture("ori:player_right_leg").sprite;
-            skinLeftFoot = skin.leftFoot ?? ModFactory.CompareTexture("ori:player_left_foot").sprite;
-            skinRightFoot = skin.rightFoot ?? ModFactory.CompareTexture("ori:player_right_foot").sprite;
-        }
-
-        public void Modify()
-        {
-            if (!head) head = ModFactory.CompareTexture("ori:player_head").sprite;
-            if (!body) body = ModFactory.CompareTexture("ori:player_body").sprite;
-            if (!leftArm) leftArm = ModFactory.CompareTexture("ori:player_left_arm").sprite;
-            if (!rightArm) rightArm = ModFactory.CompareTexture("ori:player_right_arm").sprite;
-            if (!leftLeg) leftLeg = ModFactory.CompareTexture("ori:player_left_leg").sprite;
-            if (!rightLeg) rightLeg = ModFactory.CompareTexture("ori:player_right_leg").sprite;
-            if (!leftFoot) leftFoot = ModFactory.CompareTexture("ori:player_left_foot").sprite;
-            if (!rightFoot) rightFoot = ModFactory.CompareTexture("ori:player_right_foot").sprite;
-        }
-
-        public PlayerSkin(string skinPath)
-        {
-            try
-            {
-                name = IOTools.GetDirectoryName(skinPath);
-            }
-            catch
-            {
-                name = string.Empty;
-            }
-
-            path = skinPath;
-
-            headPath = Path.Combine(skinPath, "head.png");
-            bodyPath = Path.Combine(skinPath, "body.png");
-            leftArmPath = Path.Combine(skinPath, "left_arm.png");
-            rightArmPath = Path.Combine(skinPath, "right_arm.png");
-            leftLegPath = Path.Combine(skinPath, "left_leg.png");
-            rightLegPath = Path.Combine(skinPath, "right_leg.png");
-            leftFootPath = Path.Combine(skinPath, "left_foot.png");
-            rightFootPath = Path.Combine(skinPath, "right_foot.png");
-
-            head = File.Exists(headPath) ? Tools.LoadSpriteByPath(headPath, FilterMode.Point, 16) : null;
-            body = File.Exists(bodyPath) ? Tools.LoadSpriteByPath(bodyPath, FilterMode.Point, 16) : null;
-            leftArm = File.Exists(leftArmPath) ? Tools.LoadSpriteByPath(leftArmPath, FilterMode.Point, 16) : null;
-            rightArm = File.Exists(rightArmPath) ? Tools.LoadSpriteByPath(rightArmPath, FilterMode.Point, 16) : null;
-            leftLeg = File.Exists(leftLegPath) ? Tools.LoadSpriteByPath(leftLegPath, FilterMode.Point, 16) : null;
-            rightLeg = File.Exists(rightLegPath) ? Tools.LoadSpriteByPath(rightLegPath, FilterMode.Point, 16) : null;
-            leftFoot = File.Exists(leftFootPath) ? Tools.LoadSpriteByPath(leftFootPath, FilterMode.Point, 16) : null;
-            rightFoot = File.Exists(rightFootPath) ? Tools.LoadSpriteByPath(rightFootPath, FilterMode.Point, 16) : null;
-        }
-    }
-
-
-
 
 
 

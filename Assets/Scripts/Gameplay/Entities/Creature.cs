@@ -20,10 +20,25 @@ namespace GameCore
     public abstract class Creature : Entity, IEntityIsOnGround
     {
         /* -------------------------------------------------------------------------- */
+        /*                                     组件                                     */
+        /* -------------------------------------------------------------------------- */
+        [HideInInspector] public GameObject model;
+        [HideInInspector] public CreatureBodyPart head { get; set; }
+        [HideInInspector] public CreatureBodyPart rightArm { get; set; }
+        [HideInInspector] public CreatureBodyPart body { get; set; }
+        [HideInInspector] public CreatureBodyPart leftArm { get; set; }
+        [HideInInspector] public CreatureBodyPart rightLeg { get; set; }
+        [HideInInspector] public CreatureBodyPart leftLeg { get; set; }
+        [HideInInspector] public CreatureBodyPart rightFoot { get; set; }
+        [HideInInspector] public CreatureBodyPart leftFoot { get; set; }
+
+
+
+
+        /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
         public Func<float> velocityFactor = null;
-        [HideInInspector] public GameObject model;
         [BoxGroup("属性"), LabelText("移速")] public float moveSpeed = 3;
         [BoxGroup("属性"), LabelText("加速度倍数")] public float accelerationMultiple = 0.18f;
         [BoxGroup("属性"), LabelText("空气摩擦力")] public float airFriction = 0.95f;
@@ -35,14 +50,6 @@ namespace GameCore
         bool isMoving_temp; void isMoving_set(bool value) { }
         [Sync, SyncDefaultValue(false)] public bool isMoving { get => isMoving_temp; set => isMoving_set(value); }
 
-        [HideInInspector] public CreatureBodyPart head { get; set; }
-        [HideInInspector] public CreatureBodyPart rightArm { get; set; }
-        [HideInInspector] public CreatureBodyPart body { get; set; }
-        [HideInInspector] public CreatureBodyPart leftArm { get; set; }
-        [HideInInspector] public CreatureBodyPart rightLeg { get; set; }
-        [HideInInspector] public CreatureBodyPart leftLeg { get; set; }
-        [HideInInspector] public CreatureBodyPart rightFoot { get; set; }
-        [HideInInspector] public CreatureBodyPart leftFoot { get; set; }
 
 
 
@@ -292,6 +299,7 @@ namespace GameCore
         {
             base.FixedUpdate();
 
+            //执行地面相关逻辑
             EntityIsOnGroundBehaviour.OnFixedUpdate(this);
 
             //移动 (只有本地玩家和服务器上的非玩家实体会执行)
@@ -301,7 +309,6 @@ namespace GameCore
                 rb.velocity = GetMovementVelocityByMovementDirection(movementDirection);
             }
 
-            //TODO
             if (isLocalPlayer)
             {
                 //摔落伤害
@@ -312,7 +319,6 @@ namespace GameCore
                     float delta = fallingStartPoint - fallenY;
                     float damageValue = (delta - fallenDamageHeight) * 1.2f;
 
-                    //generatedFirstRegion 是防止初始区域 y<0 导致直接摔死
                     if (damageValue >= 3)
                     {
                         TakeDamage((int)damageValue);

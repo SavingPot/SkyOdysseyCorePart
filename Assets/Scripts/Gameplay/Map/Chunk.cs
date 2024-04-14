@@ -64,10 +64,10 @@ namespace GameCore.High
             EnableRenderers();
         }
 
-        public void RecoverTotalRegion()
+        public void RecycleTotalRegion()
         {
             //删除区块所属的区域
-            GM.instance.RecoverRegion(regionIndex);
+            GM.instance.RecycleRegion(regionIndex);
         }
 
         [Button("关闭所有渲染器")] public void DisableRenderers() => SetRenderersEnabled(this, false);
@@ -107,13 +107,13 @@ namespace GameCore.High
             return block != null;
         }
 
-        public void RecoverAllBlocks()
+        public void RecycleAllBlocks()
         {
             foreach (Block block in blocks)
             {
                 if (block != null)
                 {
-                    Map.instance.blockPool.Recover(block);
+                    Map.instance.blockPool.Recycle(block);
                 }
             }
         }
@@ -137,7 +137,7 @@ namespace GameCore.High
                     }
 
                     //回收方块
-                    map.blockPool.Recover(block);
+                    map.blockPool.Recycle(block);
 
                     //调用删除方块成功的回调
                     GameCallbacks.OnRemoveBlock(pos, isBackground, editRegion, true);

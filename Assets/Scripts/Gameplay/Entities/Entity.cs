@@ -21,21 +21,6 @@ using ReadOnlyAttribute = Unity.Collections.ReadOnlyAttribute;
 
 namespace GameCore
 {
-    public static class JObjectReaderWriter
-    {
-        public static void WriteJObject(this NetworkWriter writer, JObject jo)
-        {
-            writer.WriteString(Compressor.CompressString(jo?.ToString(Formatting.None)));
-        }
-
-        public static JObject ReadJObject(this NetworkReader reader)
-        {
-            string str = Compressor.DecompressString(reader.ReadString());
-
-            return JsonTools.LoadJObjectByString(str);
-        }
-    }
-
     public static class EntityCenter
     {
         public static readonly List<Entity> all = new();
@@ -100,8 +85,6 @@ namespace GameCore
 
 
 
-
-
         /* -------------------------------------------------------------------------- */
         /*                                     引用                                     */
         /* -------------------------------------------------------------------------- */
@@ -110,20 +93,29 @@ namespace GameCore
 
 
 
-
-
         /* -------------------------------------------------------------------------- */
-        /*                                     生成属性                                     */
+        /*                                    生成属性                                    */
         /* -------------------------------------------------------------------------- */
         [BoxGroup("生成属性"), LabelText("初始化器")] public EntityInit Init { get; internal set; }
         [BoxGroup("变量ID"), LabelText("变量唯一ID")] public uint varInstanceId => Init.netId;
+        [BoxGroup("属性"), LabelText("数据"), HideInInspector] public EntityData data = null;
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     信息                                     */
+        /* -------------------------------------------------------------------------- */
         [HideInInspector] public bool isPlayer;
         [HideInInspector] public bool isNotPlayer;
         [HideInInspector] public bool isNPC;
         [HideInInspector] public bool isNotNPC;
-        [HideInInspector] public float timeToAutoDestroy;
-        Type classType;
-        public NetworkIdentity netIdentity;
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     网络                                     */
+        /* -------------------------------------------------------------------------- */
+        [HideInInspector] public NetworkIdentity netIdentity;
         [HideInInspector] public uint netId;
         [HideInInspector] public bool isServer;
         [HideInInspector] public bool isClient;
@@ -133,24 +125,26 @@ namespace GameCore
 
 
 
-
+        /* -------------------------------------------------------------------------- */
+        /*                                     组件                                     */
+        /* -------------------------------------------------------------------------- */
+        public Rigidbody2D rb { get; set; }
+        public BoxCollider2D mainCollider { get; set; }
+        [BoxGroup("组件"), LabelText(text: "渲染器")] public List<Renderer> renderers = new();
+        [BoxGroup("组件"), LabelText("精灵渲染器"), ReadOnly] public List<SpriteRenderer> spriteRenderers = new();
 
 
 
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
-        public Rigidbody2D rb { get; set; }
-        public BoxCollider2D mainCollider { get; set; }
+        [BoxGroup("属性"), LabelText("受伤音效")] public string takeDamageAudioId = AudioID.GetHurt;
+        [BoxGroup("属性"), LabelText("效果")] public Dictionary<string, float> effects = new();
+        [HideInInspector] public float timeToAutoDestroy;
         public bool isHurting => invincibleTime > 0;
         public int maxHealth => data.maxHealth;
         public bool hurtable = true;
         public float previousHurtTime;
-        [BoxGroup("属性"), LabelText("数据"), HideInInspector] public EntityData data = null;
-        [BoxGroup("属性"), LabelText("效果")] public Dictionary<string, float> effects = new();
-        [BoxGroup("组件"), LabelText(text: "渲染器")] public List<Renderer> renderers = new();
-        [BoxGroup("组件"), LabelText("精灵渲染器"), ReadOnly] public List<SpriteRenderer> spriteRenderers = new();
-        [BoxGroup("属性"), LabelText("受伤音效")] public string takeDamageAudioId = AudioID.GetHurt;
 
 
         public const int height = 2;
@@ -201,7 +195,7 @@ namespace GameCore
         [Sync, SyncDefaultValue(false)] public bool isDead { get => isDead_temp; set => isDead_set(value); }
         #endregion
 
-        #region 当前区域指针
+        #region 当前区域序列
         Vector2Int regionIndex_temp; void regionIndex_set(Vector2Int value) { }
         [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex { get => regionIndex_temp; set => regionIndex_set(value); }
         static Vector2Int regionIndex_default() => Vector2Int.zero;
@@ -265,38 +259,16 @@ namespace GameCore
 
 
 
-
-        /* -------------------------------------------------------------------------- */
-        /*                                生命周期                               */
-        /* -------------------------------------------------------------------------- */
-        public virtual async void OnDeathServer()
-        {
-            SummonCoins();
-            SummonDrops();
-
-            //? 等待一秒是为了防止客户端延迟过高导致报错
-            await 1;
-            DestroyEntityOnServer();
-        }
-        public virtual void OnDeathClient()
-        {
-            Hide();
-            ColliderOff();
-            this.enabled = false;
-        }
-        public virtual void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller) { }
-        public virtual void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller) { }
-        public virtual void OnGetHurtServer(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
-        public virtual void OnGetHurtClient(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
-
-
-
-
-
-
         /* -------------------------------------------------------------------------- */
         /*                                 Entity 远程指令                                */
+        /* 作用：让任意脚本都可以以实体为载体，远程调用任意命令，并允许传参。 */
+        /* 原理：在实体上注册命令，然后在客户端/服务器上注册远程调用的函数，并将命令ID和参数一起发送给服务器。 */
+        /*      服务器收到命令后，会根据命令ID找到对应的函数，并调用它，同时将返回值发送给客户端。 */
+        /*      客户端收到返回值后，会根据返回值进行相应的处理。 */
+        /* 优点：非常灵活，可以实现各种各样的远程调用，并且可以传参，可以实现服务器和客户端的同步。 */
+        /* 缺点：是实现起来比较复杂，需要编写大量的代码，并且需要在客户端和服务器上都注册命令。 */
         /* -------------------------------------------------------------------------- */
+        #region 无参远程指令
         readonly Dictionary<string, Action<Entity>> remoteCommands = new();
 
         public void RegisterRemoteCommand(string commandId, Action<Entity> action)
@@ -371,12 +343,15 @@ namespace GameCore
             //调用
             remoteCommands[commandId](this);
         }
+        #endregion
 
 
 
 
 
 
+
+        #region 有参远程指令
         readonly Dictionary<string, Action<Entity, JObject>> paramRemoteCommands = new();
 
         public void RegisterParamRemoteCommand(string commandId, Action<Entity, JObject> action)
@@ -451,6 +426,7 @@ namespace GameCore
             //调用
             paramRemoteCommands[commandId](this, param);
         }
+        #endregion
 
 
 
@@ -468,8 +444,7 @@ namespace GameCore
 
 
 
-
-        public void Recover()
+        public void Kill()
         {
             if (isPlayer)
                 return;
@@ -505,21 +480,22 @@ namespace GameCore
 
 
 
-        #region Unity/Mirror/Entity 方法
+        #region 生命周期
 
         protected virtual void Awake()
         {
-            //初始化组件
-            netIdentity = GetComponent<NetworkIdentity>();
+            //初始化信息
             isPlayer = this is Player;
             isNotPlayer = !isPlayer;
             isNPC = this is NPC;
             isNotNPC = !isNPC;
-            classType = GetType();
+
+            //初始化组件
             rb = GetComponent<Rigidbody2D>();
             mainCollider = GetComponent<BoxCollider2D>();
 
             //初始化网络
+            netIdentity = GetComponent<NetworkIdentity>();
             netId = netIdentity.netId;
             isServer = Server.isServer;
             isClient = Client.isClient;
@@ -595,12 +571,12 @@ namespace GameCore
 
         protected virtual void OnEnable()
         {
-            OnHealthChange += HealthCheck;
+            OnHealthChange += CheckHealthOnHealthChange;
         }
 
         protected virtual void OnDisable()
         {
-            OnHealthChange -= HealthCheck;
+            OnHealthChange -= CheckHealthOnHealthChange;
         }
 
 
@@ -671,7 +647,24 @@ namespace GameCore
 
 
 
-        public void HealthCheck()
+
+
+
+
+
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    受伤逻辑                                    */
+        /* -------------------------------------------------------------------------- */
+        public virtual void OnGetHurtServer(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
+        public virtual void OnGetHurtClient(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
+
+
+
+        public void CheckHealthOnHealthChange()
         {
             if (isServer)
             {
@@ -682,13 +675,19 @@ namespace GameCore
             }
         }
 
+
+
         public virtual void TakeDamage(int damage) => TakeDamage(damage, 0.1f, transform.position, Vector2.zero);
 
         public void TakeDamage(int damage, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
         {
-            if (hurtable)
-                ServerTakeDamage(damage, invincibleTime, hurtPos, impactForce, null);
+            if (!hurtable)
+                return;
+
+            ServerTakeDamage(damage, invincibleTime, hurtPos, impactForce, null);
         }
+
+
 
         [ServerRpc]
         void ServerTakeDamage(int damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
@@ -697,31 +696,16 @@ namespace GameCore
                 return;
 
 
-            //通过防御值计算实际伤害
-            if (this is IInventoryOwner owner)
-            {
-                var inventory = owner.GetInventory();
+            //根据防御值计算实际伤害
+            CalculateActualDamage(ref damage);
 
-                if (inventory != null)
-                {
-                    int defense =
-                        (inventory.helmet?.data?.Helmet?.defense ?? 0) + //头盔的防御
-                        (inventory.breastplate?.data?.Breastplate?.defense ?? 0) + //胸甲的防御
-                        (inventory.legging?.data?.Legging?.defense ?? 0) + //护腿的防御
-                        (inventory.boots?.data?.Boots?.defense ?? 0); //靴子的防御
-
-                    //防御值与伤害减免值的比值为 1:1
-                    damage = Mathf.Max(damage - defense, 1); //最小为 1
-                }
-            }
-
-
-
-            //扣血刷新无敌时间
+            //扣血并刷新无敌时间
             health -= damage;
             this.invincibleTime = invincibleTime;
 
             OnGetHurtServer(damage, invincibleTime, damageOriginPos, impactForce, caller);
+
+
 
             if (isNotPlayer)
             {
@@ -732,9 +716,23 @@ namespace GameCore
                 SetAutoDestroyTime();
             }
 
+
+
             Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}, 新血量为 {health}");
 
             ClientTakeDamage(damage, invincibleTime, damageOriginPos, impactForce, caller);
+        }
+
+        public void CalculateActualDamage(ref int damage)
+        {
+            if (this is IInventoryOwner owner)
+            {
+                var inventory = owner.GetInventory();
+                if (inventory != null)
+                {
+                    damage = Mathf.Max(damage - owner.TotalDefense, 1);
+                }
+            }
         }
 
         [ClientRpc]
@@ -756,12 +754,36 @@ namespace GameCore
             if (isPlayer && isOwned)
                 rb.velocity = impactForce;
 
+            //受伤特效
             GM.instance.bloodParticlePool.Get(this);
             GM.instance.damageTextPool.Get(this, damage);
         }
 
 
-        #region 死亡
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    死亡逻辑                                    */
+        /* -------------------------------------------------------------------------- */
+        public virtual async void OnDeathServer()
+        {
+            SummonCoins();
+            SummonDrops();
+
+            //? 等待一秒是为了防止客户端延迟过高导致报错
+            await 1;
+            DestroyEntityOnServer();
+        }
+        public virtual void OnDeathClient()
+        {
+            Hide();
+            ColliderOff();
+            this.enabled = false;
+        }
+
+
+
         public void Death()
         {
             //? 防止反复死亡
@@ -795,10 +817,19 @@ namespace GameCore
             //? 不要使用 RpcDeath 来回收资源等, 资源回收应该放在 OnDestroy 中, 因为服务器可能会在调用 RpcDeath 前删除物体, ClientDeath 是用来显示死亡动效的
             OnDeathClient();
         }
-        #endregion
 
 
-        #region 重生
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     重生逻辑                                     */
+        /* -------------------------------------------------------------------------- */
+        public virtual void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller) { }
+        public virtual void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller) { }
+
+
+
         public void Reborn(int newHealth, Vector2? newPos)
         {
             ServerReborn(newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
@@ -833,7 +864,16 @@ namespace GameCore
             if (isPlayer)
                 transform.position = newPos;
         }
-        #endregion
+
+
+
+
+
+
+
+
+
+
 
         private void SummonCoins()
         {

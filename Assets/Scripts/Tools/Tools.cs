@@ -792,7 +792,7 @@ namespace GameCore
             return sr;
         }
 
-        public static void Recover(SpriteRenderer sr)
+        public static void Recycle(SpriteRenderer sr)
         {
             sr.gameObject.SetActive(false);
             stack.Push(sr);

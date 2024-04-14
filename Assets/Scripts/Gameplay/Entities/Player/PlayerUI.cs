@@ -416,7 +416,7 @@ namespace GameCore
                         //清除方块防止警告
                         if (Map.HasInstance())
                         {
-                            Map.instance.RecoverChunks();
+                            Map.instance.RecycleChunks();
                         }
 
                         ManagerNetwork.instance.StopHost();

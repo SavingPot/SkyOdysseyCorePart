@@ -703,7 +703,7 @@ namespace GameCore
                 world.basicData.gameVersion = GInit.gameVersion;
         }
 
-        public void RecoverRegion(Vector2Int index)
+        public void RecycleRegion(Vector2Int index)
         {
             //如果已经在回收就取消
             foreach (var item in recoveringRegions)
@@ -721,7 +721,7 @@ namespace GameCore
                 Chunk chunk = map.chunks[i];
 
                 if (chunk.regionIndex == index)
-                    map.chunkPool.Recover(chunk);
+                    map.chunkPool.Recycle(chunk);
             }
 
             bool did = false;
@@ -741,7 +741,7 @@ namespace GameCore
 
                         if (entity.regionIndex == region.index)
                         {
-                            entity.Recover();
+                            entity.Kill();
                         }
                     }
 

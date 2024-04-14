@@ -135,15 +135,13 @@ namespace GameCore
         BoxCollider2D usingItemCollider { get; set; }
         InventoryItemRendererCollision usingItemCollisionComponent { get; set; }
         void ModifyUsingItemRendererTransform(Vector2 localPosition, Vector2 localScale, int localRotation);
+
+
+
+        int TotalDefense { get; }
     }
 
-    public interface IItemContainer
-    {
-        Item[] items { get; set; }
 
-        Item GetItem(string index);
-        void SetItem(string index, Item value);
-    }
 
     public class InventoryItemRendererCollision : MonoBehaviour
     {

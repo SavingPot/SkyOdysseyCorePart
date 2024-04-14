@@ -136,7 +136,7 @@ namespace SP.Tools.Unity
             return obj;
         }
 
-        public virtual void Recover(T obj)
+        public virtual void Recycle(T obj)
         {
             obj.gameObject.SetActive(false);
 
