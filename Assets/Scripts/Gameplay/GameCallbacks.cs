@@ -26,11 +26,11 @@ namespace GameCore
         public static Action<Vector2Int, bool, BlockData> OnBlockDestroyed = (_, _, _) => { };
         public static Action<Vector2Int, bool, bool, bool> OnRemoveBlock = (pos, layer, editRegion, successful) =>
         {
-            Map.instance.UpdateAt(pos, layer);
+            
         };
         public static Action<Vector2Int, bool, Block, Chunk> OnAddBlock = (pos, layer, block, chunk) =>
         {
-            Map.instance.UpdateAt(pos, layer);
+            
         };
 
 

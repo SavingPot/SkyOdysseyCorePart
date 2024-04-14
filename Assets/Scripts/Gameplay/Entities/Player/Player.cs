@@ -53,10 +53,10 @@ namespace GameCore
             get
             {
                 int totalDefense = 0;
-                totalDefense += inventory.helmet?.data?.Helmet.defense ?? 0;
-                totalDefense += inventory.breastplate?.data?.Breastplate.defense ?? 0;
-                totalDefense += inventory.legging?.data?.Legging.defense ?? 0;
-                totalDefense += inventory.boots?.data?.Boots.defense ?? 0;
+                totalDefense += inventory?.helmet?.data?.Helmet.defense ?? 0;
+                totalDefense += inventory?.breastplate?.data?.Breastplate.defense ?? 0;
+                totalDefense += inventory?.legging?.data?.Legging.defense ?? 0;
+                totalDefense += inventory?.boots?.data?.Boots.defense ?? 0;
                 return totalDefense;
             }
         }
@@ -166,6 +166,15 @@ namespace GameCore
                 }
             }
         }
+        internal void RefreshUnlockingRegion()
+        {
+            //渲染器
+            RefreshRegionUnlockingRenderers();
+
+            //相机跟随
+            unlockedRegionCameraFollowTarget.position = Region.GetMiddle(regionIndex);
+            Tools.instance.mainCameraController.lookAt = unlockedRegionCameraFollowTarget;
+        }
 
 
 
@@ -236,7 +245,7 @@ namespace GameCore
         #endregion
 
         #region 金币
-        int coin_temp; void coin_set(int value) { }
+        int coin_temp; [Button] void coin_set(int value) { }
         [Sync] public int coin { get => coin_temp; set => coin_set(value); }
         #endregion
 
@@ -467,6 +476,9 @@ namespace GameCore
 
         public override void Initialize()
         {
+            //防止玩家在生成区域前就掉落到很低的地方
+            GravitySet(this);
+
             base.Initialize();
 
             //加载服务器存档中的位置
@@ -644,9 +656,11 @@ namespace GameCore
             {
                 Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
 
+
                 /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
                 if (isOnGround && PlayerControls.Jump(this))
                     rb.SetVelocityY(GetJumpVelocity(30));
+
 
                 /* ----------------------------------- 挖掘与攻击 ----------------------------------- */
                 if (PlayerControls.HoldingAttack(this))  //检测物品的使用CD
@@ -654,11 +668,13 @@ namespace GameCore
                     OnHoldAttack();
                 }
 
+
                 /* ---------------------------------- 抛弃物品 ---------------------------------- */
                 if (PlayerControls.ThrowItem(this))
                     ServerThrowItem(usingItemIndex.ToString(), 1);
 
-                //
+#if DEBUG
+                /* --------------------------------- 摄像机调试器 --------------------------------- */
                 if (Keyboard.current.uKey.wasPressedThisFrame)
                 {
                     playerCameraScale = 1;
@@ -667,24 +683,21 @@ namespace GameCore
                 {
                     playerCameraScale *= 0.5f;
                 }
-                //
                 if (Keyboard.current.oKey.wasPressedThisFrame)
                 {
                     playerCameraScale *= 2;
                 }
-                //
+#endif
+
+                /* ---------------------------------- 解锁区域 ---------------------------------- */
                 if (Keyboard.current.pKey.wasPressedThisFrame)
                 {
                     if (!isUnlockingRegion)
                     {
                         isUnlockingRegion = true;
 
-                        //渲染器
-                        RefreshRegionUnlockingRenderers();
-
-                        //相机跟随
-                        unlockedRegionCameraFollowTarget.position = Region.GetMiddle(regionIndex);
-                        Tools.instance.mainCameraController.lookAt = unlockedRegionCameraFollowTarget;
+                        //刷新解锁区域的渲染器
+                        RefreshUnlockingRegion();
 
                         //相机缩放
                         DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 0.08f, 1).SetEase(Ease.InOutSine);
@@ -708,8 +721,16 @@ namespace GameCore
                 {
                     void UnlockRegion(Vector2Int targetIndex)
                     {
+                        var cost = GM.GetRegionUnlockingCost(targetIndex);
+
+                        if (coin < cost)
+                        {
+                            InternalUIAdder.instance.SetStatusText("金币不足!");
+                            return;
+                        }
+
+                        coin -= cost;
                         GenerateRegion(targetIndex, false);
-                        coin -= GM.GetRegionUnlockingCost(targetIndex);
                         RefreshRegionUnlockingRenderers();
                         ServerDestroyRegionBarriers(targetIndex);
                     }
@@ -814,7 +835,7 @@ namespace GameCore
                 isControllingBackground = PlayerControls.IsControllingBackground(this);
             }
 
-            //血量低于 10 就播放心跳声, 死了就不播放声音
+            //血量低于 10 就播放心跳声 (死了不播放声音)
             if (health <= 15)
             {
                 GAudio.Play(AudioID.Heartbeat, true);
@@ -836,8 +857,8 @@ namespace GameCore
         private void LocalUpdate()
         {
             GravitySet(this);
-            SetPlayerOrientation();
             rb.gravityScale = gravity;
+            SetPlayerOrientation();
             isAttacking = Tools.time <= previousAttackTime + attackAnimTime;
 
             if (!isDead)
