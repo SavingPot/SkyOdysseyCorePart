@@ -53,10 +53,10 @@ namespace GameCore
             get
             {
                 int totalDefense = 0;
-                totalDefense += inventory?.helmet?.data?.Helmet.defense ?? 0;
-                totalDefense += inventory?.breastplate?.data?.Breastplate.defense ?? 0;
-                totalDefense += inventory?.legging?.data?.Legging.defense ?? 0;
-                totalDefense += inventory?.boots?.data?.Boots.defense ?? 0;
+                totalDefense += inventory?.helmet?.data?.Helmet?.defense ?? 0;
+                totalDefense += inventory?.breastplate?.data?.Breastplate?.defense ?? 0;
+                totalDefense += inventory?.legging?.data?.Legging?.defense ?? 0;
+                totalDefense += inventory?.boots?.data?.Boots?.defense ?? 0;
                 return totalDefense;
             }
         }
@@ -370,8 +370,12 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    临时数据                                    */
         /* -------------------------------------------------------------------------- */
-        private float moveVecLastFrame;
         private readonly Collider2D[] itemPickUpObjectsDetectedTemp = new Collider2D[40];
+        private PlayerController playerController;
+        private void UpdateController(ControlMode newMode)
+        {
+            playerController = ControlModeToController(this, newMode);
+        }
 
 
 
@@ -461,7 +465,7 @@ namespace GameCore
 
 
 
-        #region Unity 回调
+        #region 生命周期
 
         protected override void Awake()
         {
@@ -472,6 +476,11 @@ namespace GameCore
             velocityFactor = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
 
             playerCanvas = transform.Find("Canvas");
+
+
+
+            //控制器
+            GControls.OnModeChanged += UpdateController;
         }
 
         public override void Initialize()
@@ -580,6 +589,12 @@ namespace GameCore
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
 
                 GenerateRegion(regionIndex, true);
+
+
+
+
+                //初始化控制
+                UpdateController(GControls.mode);
             }
 
 
@@ -606,19 +621,10 @@ namespace GameCore
             animWeb.Stop();
 
             PlayerCenter.RemovePlayer(this);
-        }
 
-        public override void SetOrientation(bool right)
-        {
-            base.SetOrientation(right);
 
-            if (nameText)
-            {
-                if (right)
-                    nameText.transform.SetScaleXAbs();
-                else
-                    nameText.transform.SetScaleXNegativeAbs();
-            }
+            //控制器
+            GControls.OnModeChanged -= UpdateController;
         }
 
 
@@ -639,8 +645,6 @@ namespace GameCore
 #endif
         }
 
-        public bool HasUseCDPast() => Tools.time >= itemUseTime + (GetUsingItemChecked()?.data?.useCD ?? ItemData.defaultUseCD);
-
         private void AliveLocalUpdate()
         {
             /* ----------------------------------- 背包 (不能放在 PlayerCanControl 里是因为打开背包后 PlayerCanControl 返回 false, 然后就关不掉背包了) ----------------------------------- */
@@ -658,12 +662,12 @@ namespace GameCore
 
 
                 /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
-                if (isOnGround && PlayerControls.Jump(this))
+                if (isOnGround && playerController.Jump())
                     rb.SetVelocityY(GetJumpVelocity(30));
 
 
                 /* ----------------------------------- 挖掘与攻击 ----------------------------------- */
-                if (PlayerControls.HoldingAttack(this))  //检测物品的使用CD
+                if (playerController.HoldingAttack())  //检测物品的使用CD
                 {
                     OnHoldAttack();
                 }
@@ -842,23 +846,11 @@ namespace GameCore
             }
         }
 
-        public static Action<Player> GravitySet = caller =>
-        {
-            if (!caller.generatedFirstRegion ||
-                !GM.instance.generatedExistingRegions.Any(p => p.index == PosConvert.WorldPosToRegionIndex(caller.transform.position)))  //获取区域序号不用 caller.regionIndex 是因为只有区域加载成功, caller.regionIndex才会正式改编
-            {
-                caller.gravity = 0;
-                return;
-            }
-
-            caller.gravity = playerDefaultGravity;
-        };
-
         private void LocalUpdate()
         {
             GravitySet(this);
             rb.gravityScale = gravity;
-            SetPlayerOrientation();
+            SetOrientationByControl();
             isAttacking = Tools.time <= previousAttackTime + attackAnimTime;
 
             if (!isDead)
@@ -921,103 +913,7 @@ namespace GameCore
             }
         }
 
-        public void AddCoin(int count)
-        {
-            coin += count;
 
-            Debug.Log("ADD COIN " + count);
-        }
-
-        [ServerRpc]
-        public void ServerThrowItem(string index, ushort count, NetworkConnection caller = null)
-        {
-            //获取位于 index 的物品
-            var item = inventory.GetItem(index);
-
-            //如果物品不为空
-            if (!Item.Null(item))
-            {
-                //减少物品的数量
-                ClientReduceItemCount(index, (ushort)Mathf.Min(item.count, count));
-
-                //从头上吐出物品
-                Vector2 pos = head ? head.transform.position : transform.localPosition;
-                GM.instance.SummonDrop(pos, item.data.id, count, item.customData?.ToString());
-            }
-        }
-
-        public void SwitchItem(int index)
-        {
-            usingItemIndex = index;
-
-            //刷新物品栏
-            EntityInventoryOwnerBehaviour.RefreshUsingItemRenderer(this);
-
-            //播放切换音效
-            GAudio.Play(AudioID.SwitchQuickInventorySlot);
-
-            //改变状态文本
-            string itemName = GameUI.CompareText(GetUsingItemChecked()?.data?.id).text;
-            if (itemName.IsNullOrWhiteSpace())
-                itemName = GameUI.CompareText("ori:empty_item").text;
-
-            InternalUIAdder.instance.SetStatusText(GameUI.CompareText("ori:switch_item").text.Replace("{item_id}", itemName));
-        }
-
-        public override void WriteDataToSaveObject(EntitySave save)
-        {
-            base.WriteDataToSaveObject(save);
-
-            if (save is PlayerSave trueSave)
-            {
-                trueSave.inventory = inventory;
-                trueSave.hungerValue = hungerValue;
-                trueSave.coin = coin;
-                trueSave.happinessValue = happinessValue;
-                trueSave.completedTasks = completedTasks;
-            }
-            else
-            {
-                throw new();
-            }
-        }
-
-
-        public void UseItem(Vector2 point)
-        {
-            foreach (var entity in EntityCenter.all)
-            {
-                /* --------------------------------- 筛选出 NPC -------------------------------- */
-                if (entity is not NPC)
-                    continue;
-
-                NPC npc = (NPC)entity;
-
-                /* ------------------------------- 如果在两倍的互动范围内  ------------------------------- */
-                if ((npc.transform.position.x - transform.position.x).Abs() < npc.interactionSize.x &&
-                    (npc.transform.position.y - transform.position.y).Abs() < npc.interactionSize.y &&
-                    npc.mainCollider.IsInCollider(point))
-                {
-                    npc.PlayerInteraction(this);
-                    return;
-                }
-            }
-
-            //与方块交互
-            if (InUseRadius(point) &&
-                map.TryGetBlock(PosConvert.WorldToMapPos(point), isControllingBackground, out Block block) &&
-                block.PlayerInteraction(this))
-            {
-
-            }
-            //使用物品
-            else
-            {
-                ItemBehaviour usingItemBehaviour = GetUsingItemBehaviourChecked();
-
-                if (usingItemBehaviour != null) usingItemBehaviour.Use(point);
-            }
-        }
 
 
         protected override void OnEnable()
@@ -1045,6 +941,11 @@ namespace GameCore
 #endif
         #endregion
 
+
+
+
+
+
         #region Base 覆写
 
 
@@ -1067,6 +968,10 @@ namespace GameCore
 
             animWeb.Stop();
         }
+
+
+
+
 
         public override void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
@@ -1091,6 +996,10 @@ namespace GameCore
             }
         }
 
+
+
+
+
         public override void OnGetHurtServer(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
 
         public override void OnGetHurtClient(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
@@ -1099,10 +1008,52 @@ namespace GameCore
                 GControls.GamepadVibrationMediumStrong();
         }
 
+
+
+
+
+        public override void WriteDataToSaveObject(EntitySave save)
+        {
+            base.WriteDataToSaveObject(save);
+
+            if (save is PlayerSave trueSave)
+            {
+                trueSave.inventory = inventory;
+                trueSave.hungerValue = hungerValue;
+                trueSave.coin = coin;
+                trueSave.happinessValue = happinessValue;
+                trueSave.completedTasks = completedTasks;
+            }
+            else
+            {
+                throw new();
+            }
+        }
+
         #endregion
 
 
 
+
+
+        public static Action<Player> GravitySet = caller =>
+        {
+            if (!caller.generatedFirstRegion ||
+                !GM.instance.generatedExistingRegions.Any(p => p.index == PosConvert.WorldPosToRegionIndex(caller.transform.position)))  //获取区域序号不用 caller.regionIndex 是因为只有区域加载成功, caller.regionIndex才会正式改编
+            {
+                caller.gravity = 0;
+                return;
+            }
+
+            caller.gravity = playerDefaultGravity;
+        };
+
+        public void AddCoin(int count)
+        {
+            coin += count;
+
+            Debug.Log("ADD COIN " + count);
+        }
 
         public void OnNameChange(string newValue)
         {
@@ -1123,7 +1074,12 @@ namespace GameCore
 
         public bool InUseRadius(Vector2 vec1, Vector2 vec2) => Vector2.Distance(vec1, vec2) <= useRadius;
 
+
+
+
+
         #region 挖掘方块
+
         private void ExcavateBlock(Block block)
         {
             if (!isLocalPlayer || block == null)
@@ -1149,7 +1105,11 @@ namespace GameCore
             //设置时间
             itemUseTime = Tools.time;
         }
+
         #endregion
+
+
+
 
 
         #region 生成区域
@@ -1506,8 +1466,6 @@ namespace GameCore
 
         #region 物品操作
 
-
-
         [ServerRpc]
         public void ServerAddItem(Item item, NetworkConnection caller = null)
         {
@@ -1521,6 +1479,8 @@ namespace GameCore
 
             inventory.AddItem(item);
         }
+
+
 
 
 
@@ -1547,6 +1507,8 @@ namespace GameCore
 
 
 
+
+
         [ServerRpc]
         public void ServerSwapItemOnHand(string index, NetworkConnection caller = null)
         {
@@ -1564,6 +1526,8 @@ namespace GameCore
 
 
 
+
+
         [ServerRpc]
         public void ServerReduceItemCount(string index, ushort count, NetworkConnection caller = null)
         {
@@ -1572,6 +1536,97 @@ namespace GameCore
 
         [ClientRpc]
         public void ClientReduceItemCount(string index, ushort count, NetworkConnection caller = null) => inventory.ReduceItemCount(index, count);
+
+
+
+
+
+        [ServerRpc]
+        public void ServerThrowItem(string index, ushort count, NetworkConnection caller = null)
+        {
+            //获取位于 index 的物品
+            var item = inventory.GetItem(index);
+
+            //如果物品不为空
+            if (!Item.Null(item))
+            {
+                //减少物品的数量
+                ClientReduceItemCount(index, (ushort)Mathf.Min(item.count, count));
+
+                //从头上吐出物品
+                Vector2 pos = head ? head.transform.position : transform.localPosition;
+                GM.instance.SummonDrop(pos, item.data.id, count, item.customData?.ToString());
+            }
+        }
+
+
+
+
+
+        public void SwitchItem(int index)
+        {
+            usingItemIndex = index;
+
+            //刷新物品栏
+            EntityInventoryOwnerBehaviour.RefreshUsingItemRenderer(this);
+
+            //播放切换音效
+            GAudio.Play(AudioID.SwitchQuickInventorySlot);
+
+            //改变状态文本
+            string itemName = GameUI.CompareText(GetUsingItemChecked()?.data?.id).text;
+            if (itemName.IsNullOrWhiteSpace())
+                itemName = GameUI.CompareText("ori:empty_item").text;
+
+            InternalUIAdder.instance.SetStatusText(GameUI.CompareText("ori:switch_item").text.Replace("{item_id}", itemName));
+        }
+
+
+
+
+
+        public void UseItem(Vector2 point)
+        {
+            foreach (var entity in EntityCenter.all)
+            {
+                /* --------------------------------- 筛选出 NPC -------------------------------- */
+                if (entity is not NPC)
+                    continue;
+
+                NPC npc = (NPC)entity;
+
+                /* ------------------------------- 如果在两倍的互动范围内  ------------------------------- */
+                if ((npc.transform.position.x - transform.position.x).Abs() < npc.interactionSize.x &&
+                    (npc.transform.position.y - transform.position.y).Abs() < npc.interactionSize.y &&
+                    npc.mainCollider.IsInCollider(point))
+                {
+                    npc.PlayerInteraction(this);
+                    return;
+                }
+            }
+
+            //与方块交互
+            if (InUseRadius(point) &&
+                map.TryGetBlock(PosConvert.WorldToMapPos(point), isControllingBackground, out Block block) &&
+                block.PlayerInteraction(this))
+            {
+
+            }
+            //使用物品
+            else
+            {
+                ItemBehaviour usingItemBehaviour = GetUsingItemBehaviourChecked();
+
+                if (usingItemBehaviour != null) usingItemBehaviour.Use(point);
+            }
+        }
+
+
+
+
+
+        public bool HasUseCDPast() => Tools.time >= itemUseTime + (GetUsingItemChecked()?.data?.useCD ?? ItemData.defaultUseCD);
+
         #endregion
 
 
@@ -1579,79 +1634,70 @@ namespace GameCore
 
 
         #region 移动和转向
+
         public override Vector2 GetMovementDirection()
         {
-            float move = (!PlayerCanControl(this) || isDead) ? 0 : PlayerControls.Move(this);
+            //获取移动方向
+            var playerCanMove = PlayerCanControl(this) && !isDead;
+            var move = playerCanMove ? playerController.Move() : 0;
 
-            //执行 移动的启停
-            if (move == 0 && moveVecLastFrame != 0)
+            //更新移动状态
+            bool isMovingThisFrame = (move != 0);
+            if (isMovingThisFrame != isMoving)
             {
-                isMoving = false;
-            }
-            else if (move != 0 && moveVecLastFrame == 0)
-            {
-                isMoving = true;
+                isMoving = isMovingThisFrame;
             }
 
-            //用于在下一帧检测是不是刚刚停止或开始移动
-            moveVecLastFrame = move;
 
-            Vector2 result = new(move, 0);
+            float resultX = move;
+            float resultY = 0;
 
             //地面摩擦
             if (isOnGround && move == 0 && rb.velocity.x != 0)
             {
-                result = new(result.x - rb.velocity.x * blockFriction, result.y);
+                resultX -= rb.velocity.x * blockFriction;
             }
 
-            return result;
+            return new(resultX, resultY);
         }
 
-        public void SetPlayerOrientation()
+        public override void SetOrientation(bool right)
         {
-            ////诸如 && transform.localScale.x.Sign() == 1 之类的检测是为了减缓服务器压力
+            base.SetOrientation(right);
+
+            //更改名字的朝向
+            if (nameText)
+            {
+                if (right)
+                    nameText.transform.SetScaleXAbs();
+                else
+                    nameText.transform.SetScaleXNegativeAbs();
+            }
+        }
+
+        public void SetOrientationByControl()
+        {
             if (isDead)
             {
                 SetOrientation(true);
                 return;
             }
 
-            switch (GControls.mode)
+            switch (playerController.SetPlayerOrientation())
             {
-                //* 如果是键鼠, 则检测鼠标和玩家的相对位置
-                case ControlMode.KeyboardAndMouse:
-                    float delta = GControls.mousePos.ToWorldPos().x - transform.position.x;
-
-                    if (delta < 0)
-                        SetOrientation(false);
-                    else if (delta > 0)
-                        SetOrientation(true);
-
+                case PlayerController.PlayerOrientation.Left:
+                    SetOrientation(false);
                     break;
 
-                //* 如果是触摸屏, 则检测光标和玩家的相对位置
-                case ControlMode.Touchscreen:
-                    if (pui.touchScreenMoveJoystick && pui.touchScreenCursorJoystick)
-                    {
-                        if (pui.touchScreenCursorImage.rt.localPosition.x < transform.position.x)
-                            SetOrientation(false);
-                        else if (pui.touchScreenCursorImage.rt.localPosition.x > transform.position.x)
-                            SetOrientation(true);
-                    }
+                case PlayerController.PlayerOrientation.Right:
+                    SetOrientation(true);
                     break;
 
-                //* 如果是手柄, 则检测左摇杆
-                case ControlMode.Gamepad:
-                    float x = PlayerControls.Move(this);
-
-                    if (x < 0)
-                        SetOrientation(false);
-                    else if (x > 0)
-                        SetOrientation(true);
-
+                case PlayerController.PlayerOrientation.Previous:
                     break;
             }
         }
+
         #endregion
 
 
@@ -1693,7 +1739,7 @@ namespace GameCore
                 ExcavateBlock(block);
             }
             //如果是刚刚点的攻击或者是触摸屏模式（触摸屏摇杆）
-            else if (PlayerControls.ClickingAttack(this) || GControls.mode == ControlMode.Touchscreen)
+            else if (playerController.ClickingAttack() || GControls.mode == ControlMode.Touchscreen)
             {
                 OnStartAttack();
 
@@ -1824,6 +1870,15 @@ namespace GameCore
 
             return p;
         }
+
+
+        public static PlayerController ControlModeToController(Player player, ControlMode mode) => mode switch
+        {
+            ControlMode.Touchscreen => new TouchscreenController(player),
+            ControlMode.KeyboardAndMouse => new KeyboardAndMouseController(player),
+            ControlMode.Gamepad => new GamepadController(player),
+            _ => throw new()
+        };
     }
 
 
