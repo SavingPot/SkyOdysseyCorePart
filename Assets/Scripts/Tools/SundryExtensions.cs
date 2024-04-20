@@ -69,56 +69,6 @@ namespace GameCore
             return func;
         }
 
-        [ChineseName("输出值")]
-        public static void LogValue(this object obj, string prefix = "")
-        {
-            StringBuilder msg = new();
-
-            if (!prefix.IsNullOrWhiteSpace())
-                msg.Append(prefix).Append(" : ");
-
-            msg.Append(obj);
-            Debug.Log(msg);
-        }
-
-        [ChineseName("详细输出值")]
-        public static void LogValueDetailedly(this object obj, string prefix = "")
-        {
-            StringBuilder msg = new(MethodGetter.GetLastAndCurrentMethodPath());
-            msg.Append(" / ");
-
-            if (!prefix.IsNullOrEmpty())
-                msg.Append(prefix).Append(" : ");
-
-            msg.Append(obj);
-            Debug.Log(msg);
-        }
-
-        [ChineseName("输出NULL值")]
-        public static void LogNull(this object obj, string prefix = "")
-        {
-            StringBuilder msg = new();
-
-            if (!prefix.IsNullOrEmpty())
-                msg.Append(prefix).Append(" : ");
-
-            msg.Append(obj == null);
-            Debug.Log(msg);
-        }
-
-        [ChineseName("详细输出NULL值")]
-        public static void LogNullDetailedly(this object obj, string prefix = "")
-        {
-            StringBuilder msg = new(MethodGetter.GetLastAndCurrentMethodPath());
-            msg.Append(" / ");
-
-            if (!prefix.IsNullOrEmpty())
-                msg.Append(prefix).Append(" : ");
-
-            msg.Append(obj == null);
-            Debug.Log(msg);
-        }
-
         [ChineseName("按着")] public static bool Holding(this KeyControl key) => key.isPressed;
 
         public static void SetColorBrightness(this SpriteRenderer r, float num) => r.color = new(num, num, num, r.color.a);

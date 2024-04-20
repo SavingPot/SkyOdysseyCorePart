@@ -1,22 +1,46 @@
+using System;
+using UnityEngine;
+
 namespace GameCore
 {
     public class TouchscreenController : PlayerController
     {
-        public override bool Jump() => player.pui != null && player.pui.touchScreenMoveJoystick.Vertical >= 0.65f;
-        public override bool HoldingJump() => player.pui != null && player.pui.touchScreenMoveJoystick.Vertical >= 0.65f;
-        public override float Move() => player.pui?.touchScreenMoveJoystick != null ? player.pui.touchScreenMoveJoystick.Horizontal : 0;
-        public override bool ClickingAttack() => player.pui?.touchScreenAttackButton != null && player.pui.touchScreenAttackButton.button.wasPressedThisFrame;
-        public override bool HoldingAttack() => player.pui?.touchScreenAttackButton != null && player.pui.touchScreenAttackButton.button.isPressed;
+        PlayerUI pui => player.pui;
+
+
+
+        public override bool Jump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.65f;
+        public override bool HoldingJump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.65f;
+        public override float Move() => pui?.touchScreenMoveJoystick != null ? pui.touchScreenMoveJoystick.Horizontal : 0;
+        public override bool ClickingAttack() => pui?.touchScreenAttackButton != null && pui.touchScreenAttackButton.button.wasPressedThisFrame;
+        public override bool HoldingAttack() => pui?.touchScreenAttackButton != null && pui.touchScreenAttackButton.button.isPressed;
+        public override bool IsControllingBackground() => false;
+        public override bool SkipDialog() => pui != null && pui.dialogPanel.button.isPressed;
+        public override Vector2Int DialogOptions() => throw new NotImplementedException();
+        public override bool Backpack() => false;
+        public override bool UseItem() => pui != null && pui.touchScreenUseItemButton.button.wasPressedThisFrame;
+        public override bool PlaceBlockUnderPlayer() => pui != null && pui.touchScreenPlaceBlockUnderPlayerButton.button.wasPressedThisFrame;
+        public override bool ThrowItem() => false;
+        public override bool SwitchToPreviousItem() => false;
+        public override bool SwitchToNextItem() => false;
+        public override bool SwitchToItem1() => false;
+        public override bool SwitchToItem2() => false;
+        public override bool SwitchToItem3() => false;
+        public override bool SwitchToItem4() => false;
+        public override bool SwitchToItem5() => false;
+        public override bool SwitchToItem6() => false;
+        public override bool SwitchToItem7() => false;
+        public override bool SwitchToItem8() => false;
 
         public override PlayerOrientation SetPlayerOrientation()
         {
-            if (player.pui.touchScreenCursorImage == null)
+            if (pui.touchScreenCursorImage == null)
                 return PlayerOrientation.Previous;
 
 
 
             //* 检测光标和玩家的相对位置
-            var joystickX = player.pui.touchScreenCursorImage.rt.localPosition.x;
+            var joystickX = pui.touchScreenCursorImage.rt.localPosition.x;
             var playerX = player.transform.position.x;
 
 

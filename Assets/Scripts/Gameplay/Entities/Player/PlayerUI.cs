@@ -348,7 +348,7 @@ namespace GameCore
                     while (Tools.time < timer)
                     {
                         //如果点击跳过对话，则直接输出所有对话文本
-                        if (PlayerControls.SkipDialog(player))
+                        if (player.playerController.SkipDialog())
                         {
                             dialogText.text.text = fullContent;
                             await UniTask.NextFrame();   //等一帧, 防止连续跳过 (我猜会有这个问题:D)
@@ -368,7 +368,7 @@ namespace GameCore
 
                 finishContent:
                 //等待玩家跳过对话
-                while (!PlayerControls.SkipDialog(player))
+                while (!player.playerController.SkipDialog())
                     await UniTask.NextFrame();
 
                 finishContentDirectly:
@@ -383,7 +383,7 @@ namespace GameCore
             }
 
             //等待玩家结束对话
-            while (!PlayerControls.SkipDialog(player))
+            while (!player.playerController.SkipDialog())
                 await UniTask.NextFrame();   //等一帧, 防止连续跳过 (我猜会有这个问题:D)
 
             //等一帧防止跳跃

@@ -371,7 +371,7 @@ namespace GameCore
         /*                                    临时数据                                    */
         /* -------------------------------------------------------------------------- */
         private readonly Collider2D[] itemPickUpObjectsDetectedTemp = new Collider2D[40];
-        private PlayerController playerController;
+        public PlayerController playerController;
         private void UpdateController(ControlMode newMode)
         {
             playerController = ControlModeToController(this, newMode);
@@ -648,7 +648,7 @@ namespace GameCore
         private void AliveLocalUpdate()
         {
             /* ----------------------------------- 背包 (不能放在 PlayerCanControl 里是因为打开背包后 PlayerCanControl 返回 false, 然后就关不掉背包了) ----------------------------------- */
-            if (PlayerControls.Backpack(this))
+            if (playerController.Backpack())
             {
                 if (pui != null && GameUI.page?.ui != pui.dialogPanel)
                 {
@@ -674,7 +674,7 @@ namespace GameCore
 
 
                 /* ---------------------------------- 抛弃物品 ---------------------------------- */
-                if (PlayerControls.ThrowItem(this))
+                if (playerController.ThrowItem())
                     ServerThrowItem(usingItemIndex.ToString(), 1);
 
 #if DEBUG
@@ -767,24 +767,24 @@ namespace GameCore
 
                 #region 切换物品
 
-                void FuncSwitchItem(Func<Player, bool> funcCall, int ii)
+                void FuncSwitchItem(Func<bool> funcCall, int ii)
                 {
-                    if (!funcCall(this))
+                    if (!funcCall())
                         return;
 
                     SwitchItem(ii - 1);
                 }
 
-                FuncSwitchItem(PlayerControls.SwitchToItem1, 1);
-                FuncSwitchItem(PlayerControls.SwitchToItem2, 2);
-                FuncSwitchItem(PlayerControls.SwitchToItem3, 3);
-                FuncSwitchItem(PlayerControls.SwitchToItem4, 4);
-                FuncSwitchItem(PlayerControls.SwitchToItem5, 5);
-                FuncSwitchItem(PlayerControls.SwitchToItem6, 6);
-                FuncSwitchItem(PlayerControls.SwitchToItem7, 7);
-                FuncSwitchItem(PlayerControls.SwitchToItem8, 8);
+                FuncSwitchItem(playerController.SwitchToItem1, 1);
+                FuncSwitchItem(playerController.SwitchToItem2, 2);
+                FuncSwitchItem(playerController.SwitchToItem3, 3);
+                FuncSwitchItem(playerController.SwitchToItem4, 4);
+                FuncSwitchItem(playerController.SwitchToItem5, 5);
+                FuncSwitchItem(playerController.SwitchToItem6, 6);
+                FuncSwitchItem(playerController.SwitchToItem7, 7);
+                FuncSwitchItem(playerController.SwitchToItem8, 8);
 
-                if (PlayerControls.SwitchToPreviousItem(this))
+                if (playerController.SwitchToPreviousItem())
                 {
                     int value = usingItemIndex - 1;
 
@@ -793,7 +793,7 @@ namespace GameCore
 
                     SwitchItem(value);
                 }
-                else if (PlayerControls.SwitchToNextItem(this))
+                else if (playerController.SwitchToNextItem())
                 {
                     int value = usingItemIndex + 1;
 
@@ -818,13 +818,13 @@ namespace GameCore
                 }
 
                 //如果按右键
-                if (PlayerControls.UseItem(this))
+                if (playerController.UseItem())
                 {
                     UseItem(cursorWorldPos);
                 }
 
                 //如果按S
-                if (PlayerControls.PlaceBlockUnderPlayer(this))
+                if (playerController.PlaceBlockUnderPlayer())
                 {
                     var usingItem = GetUsingItemChecked();
                     var behaviour = GetUsingItemBehaviourChecked();
@@ -836,7 +836,7 @@ namespace GameCore
                     }
                 }
 
-                isControllingBackground = PlayerControls.IsControllingBackground(this);
+                isControllingBackground = playerController.IsControllingBackground();
             }
 
             //血量低于 10 就播放心跳声 (死了不播放声音)
