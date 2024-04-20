@@ -81,9 +81,11 @@ namespace GameCore
                 return;
             }
 
+            targetEntity = null;
+
             //搜索 CD 3s
             if (Tools.time < searchTime + 3)
-                targetEntity = null;
+                return;
 
             searchTime = Tools.time;
 
@@ -94,8 +96,6 @@ namespace GameCore
                     targetEntity = player;
                 }
             }
-
-            targetEntity = null;
         }
 
         public void CheckTargetStatus()
