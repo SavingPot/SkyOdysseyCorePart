@@ -545,8 +545,12 @@ namespace GameCore
             if (regionIndex != newRegionIndex)
             {
                 //把实体数据写入新的区域
-                GFiles.world.GetOrAddRegion(regionIndex).entities.Remove(Init.save);
-                GFiles.world.GetOrAddRegion(newRegionIndex).entities.Add(Init.save);
+                //玩家的数据是自行管理的，这里要排除玩家
+                if (isNotPlayer)
+                {
+                    GFiles.world.GetOrAddRegion(regionIndex).entities.Remove(Init.save);
+                    GFiles.world.GetOrAddRegion(newRegionIndex).entities.Add(Init.save);
+                }
 
                 //更改值
                 regionIndex = newRegionIndex;
@@ -950,7 +954,6 @@ namespace GameCore
                 Debug.LogError("世界为空, 无法清除实体数据");
                 return;
             }
-
             foreach (Region region in GFiles.world.regionData)
             {
                 foreach (EntitySave save in region.entities)

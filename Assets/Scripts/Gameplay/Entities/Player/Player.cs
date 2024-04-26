@@ -1,5 +1,4 @@
 using Cysharp.Threading.Tasks;
-using Cysharp.Threading.Tasks.Triggers;
 using DG.Tweening;
 using GameCore.High;
 using GameCore.UI;
@@ -12,7 +11,6 @@ using SP.Tools.Unity;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -263,6 +261,20 @@ namespace GameCore
         void OnNameChangeMethod(byte[] _)
         {
             OnNameChange(playerName);
+        }
+
+        public void OnNameChange(string newValue)
+        {
+            //销毁原先的 nameText
+            if (nameText && nameText.gameObject)
+                Destroy(nameText.gameObject);
+
+            //初始化新的 nameText
+            nameText = GameUI.AddText(UPC.Middle, "ori:player_name_" + newValue, playerCanvas);
+            nameText.rectTransform.AddLocalPosY(30f);
+            nameText.text.SetFontSize(7);
+            nameText.text.text = newValue;
+            nameText.autoCompareText = false;
         }
         #endregion
 
@@ -704,7 +716,7 @@ namespace GameCore
                         RefreshUnlockingRegion();
 
                         //相机缩放
-                        DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 0.08f, 1).SetEase(Ease.InOutSine);
+                        DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 0.06f, 0.7f).SetEase(Ease.InOutSine);
                     }
                     else
                     {
@@ -717,7 +729,7 @@ namespace GameCore
                         Tools.instance.mainCameraController.lookAt = transform;
 
                         //相机缩放
-                        DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 1, 1).SetEase(Ease.InOutSine);
+                        DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 1, 0.7f).SetEase(Ease.InOutSine);
                     }
                 }
                 //TODO: 左下角显示技能点数
@@ -1053,20 +1065,6 @@ namespace GameCore
             coin += count;
 
             Debug.Log("ADD COIN " + count);
-        }
-
-        public void OnNameChange(string newValue)
-        {
-            //销毁原先的 nameText
-            if (nameText && nameText.gameObject)
-                Destroy(nameText.gameObject);
-
-            //初始化新的 nameText
-            nameText = GameUI.AddText(UPC.Middle, "ori:player_name_" + newValue, playerCanvas);
-            nameText.rectTransform.AddLocalPosY(30f);
-            nameText.text.SetFontSize(7);
-            nameText.text.text = newValue;
-            nameText.autoCompareText = false;
         }
 
         /// <returns>鼠标是否在使用范围内</returns>
@@ -1528,11 +1526,8 @@ namespace GameCore
 
 
 
-        [ServerRpc]
-        public void ServerReduceItemCount(string index, ushort count, NetworkConnection caller = null)
-        {
-            ClientReduceItemCount(index, count);
-        }
+        [ServerRpc] public void ServerReduceUsingItemCount(ushort count, NetworkConnection caller = null) => ServerReduceItemCount(usingItemIndex.ToString(), count);
+        [ServerRpc] public void ServerReduceItemCount(string index, ushort count, NetworkConnection caller = null) => ClientReduceItemCount(index, count);
 
         [ClientRpc]
         public void ClientReduceItemCount(string index, ushort count, NetworkConnection caller = null) => inventory.ReduceItemCount(index, count);
@@ -1894,84 +1889,5 @@ namespace GameCore
 
         public Item GetItem(string index) => items[Convert.ToInt32(index)];
         public void SetItem(string index, Item value) => items[Convert.ToInt32(index)] = value;
-    }
-
-
-
-
-
-
-
-
-
-
-
-    public static class PlayerCenter
-    {
-        public static List<Player> all = new();
-        public static Action<Player> OnAddPlayer = _ => { };
-        public static Action<Player> OnRemovePlayer = _ => { };
-        public static float playerHealthUpTimer;
-        public static float playerHungerHurtTimer;
-
-        public static void AddPlayer(Player player)
-        {
-            all.Add(player);
-            OnAddPlayer(player);
-        }
-
-        public static void RemovePlayer(Player player)
-        {
-            all.Remove(player);
-            OnRemovePlayer(player);
-        }
-
-        public static void Update()
-        {
-            if (Server.isServer)
-            {
-                var frameTime = Performance.frameTime;
-
-                foreach (var player in all)
-                {
-                    if (player.isDead)
-                        continue;
-
-                    bool isMoving = player.isMoving;
-                    float hungerValue = player.hungerValue;
-                    float happinessValue = player.happinessValue;
-                    int health = player.health;
-
-                    float hungerValueDelta = frameTime / 100;
-                    if (isMoving) hungerValueDelta += frameTime / 40;
-                    player.hungerValue = hungerValue - hungerValueDelta;
-
-                    float happinessValueDelta = frameTime / 25;
-                    if (isMoving) happinessValueDelta += frameTime / 10;
-                    if (hungerValue <= 30) happinessValueDelta += frameTime / 20;
-                    player.happinessValue = happinessValue - happinessValueDelta;
-
-                    //一秒回一次血
-                    if (Tools.time >= playerHealthUpTimer)
-                    {
-                        //受伤的八秒内不回血
-                        if (health < 100 && Tools.time > player.previousHurtTime + 8)
-                        {
-                            playerHealthUpTimer = Tools.time + 1f;
-                            player.health = health + 1;
-                        }
-                    }
-
-                    //每三秒扣一次血
-                    if (Tools.time >= playerHungerHurtTimer)
-                    {
-                        playerHungerHurtTimer = Tools.time + 5;
-
-                        if (hungerValue <= 0)
-                            player.TakeDamage(5);
-                    }
-                }
-            }
-        }
     }
 }

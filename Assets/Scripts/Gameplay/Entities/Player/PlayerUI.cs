@@ -511,9 +511,9 @@ namespace GameCore
 
 
 
-            #region 手机
+            #region 触摸屏
 
-            Vector2 phoneUniversalSize = new(100, 100);
+            Vector2 touchScreenUniversalSize = new(100, 100);
 
             /* -------------------------------------------------------------------------- */
             /*                                    虚拟指针                                    */
@@ -540,7 +540,7 @@ namespace GameCore
             {
                 touchScreenAttackButton = GameUI.AddButton(UPC.LowerRight, "ori:button.player_attack", GameUI.canvas.transform, "ori:player_attack_button");
                 Component.Destroy(touchScreenAttackButton.buttonText.gameObject);
-                touchScreenAttackButton.sd = phoneUniversalSize;
+                touchScreenAttackButton.sd = touchScreenUniversalSize;
                 touchScreenAttackButton.SetAPosOnBySizeLeft(touchScreenCursorJoystick, 150);
                 touchScreenAttackButton.AddAPosY(75);
                 touchScreenAttackButton.button.HideClickAction();
@@ -553,7 +553,7 @@ namespace GameCore
             {
                 touchScreenUseItemButton = GameUI.AddButton(UPC.LowerRight, "ori:button.player_use_item", GameUI.canvas.transform, "ori:player_use_item_button");
                 Component.Destroy(touchScreenUseItemButton.buttonText.gameObject);
-                touchScreenUseItemButton.sd = phoneUniversalSize;
+                touchScreenUseItemButton.sd = touchScreenUniversalSize;
                 touchScreenUseItemButton.SetAPosOnBySizeDown(touchScreenAttackButton, 50);
                 touchScreenUseItemButton.button.HideClickAction();
                 touchScreenUseItemButton.button.onClick.RemoveAllListeners();
@@ -568,7 +568,7 @@ namespace GameCore
             {
                 touchScreenPlaceBlockUnderPlayerButton = GameUI.AddButton(UPC.LowerRight, "ori:button.player_place_block_under_player", GameUI.canvas.transform, "ori:player_place_block_under_player_button");
                 Component.Destroy(touchScreenPlaceBlockUnderPlayerButton.buttonText.gameObject);
-                touchScreenPlaceBlockUnderPlayerButton.sd = phoneUniversalSize;
+                touchScreenPlaceBlockUnderPlayerButton.sd = touchScreenUniversalSize;
                 touchScreenPlaceBlockUnderPlayerButton.SetAPosOnBySizeLeft(touchScreenUseItemButton, 50);
                 touchScreenPlaceBlockUnderPlayerButton.button.HideClickAction();
                 touchScreenPlaceBlockUnderPlayerButton.button.onClick.RemoveAllListeners();

@@ -118,5 +118,16 @@ namespace GameCore
         {
             AddArray((JObject)jt, name, content);
         }
+
+
+
+
+
+        public static bool TryGetValue(this JToken jt, string name, out JToken value)
+        {
+            value = jt[name];
+
+            return value != null;
+        }
     }
 }

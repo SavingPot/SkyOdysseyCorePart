@@ -826,6 +826,10 @@ namespace GameCore
 
 
 
+                if (jt.TryGetValue("economy", out var economy))
+                {
+                    newItem.economy.worth = economy["worth"]?.ToInt() ?? 0;
+                }
 
                 if (GameTools.CompareVersions(newItem.jsonFormat, "0.7.8", Operators.thanOrEqual))
                 {

@@ -130,14 +130,10 @@ namespace GameCore
 
         public void SetSlotCount(int count)
         {
-            //执行行为包
+            //退出所有行为包
             if (slotsBehaviours != null)
-            {
-                for (int i = 0; i < slotsBehaviours.Length; i++)
-                {
-                    slotsBehaviours[i]?.OnExit();
-                }
-            }
+                foreach (var slotBehaviour in slotsBehaviours)
+                    slotBehaviour?.OnExit();
 
             //定义变量
             Item[] oldSlots = slots;
@@ -751,6 +747,12 @@ namespace GameCore
     }
 
     [Serializable]
+    public class ItemData_Economy
+    {
+        public int worth;
+    }
+
+    [Serializable]
     public class ItemData_Armor
     {
         public int defense;
@@ -803,6 +805,7 @@ namespace GameCore
         [NonSerialized, LabelText("大小")] public Vector2 size;
         [NonSerialized, LabelText("偏移")] public Vector2 offset;
         [NonSerialized, LabelText("偏移")] public int rotation;
+        [NonSerialized, LabelText("经济")] public ItemData_Economy economy = new();
 
 
 

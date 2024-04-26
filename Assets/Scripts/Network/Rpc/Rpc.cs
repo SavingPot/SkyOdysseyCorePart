@@ -63,6 +63,15 @@ namespace GameCore
                 Debug.LogError($"{mtdPath} 使用了 {nameof(RpcAttribute)} 特性, 最后一个参数必须为 NetworkConnection caller");
                 return false;
             }
+            for (int i = 0; i < parameters.Length - 1; i++)
+            {
+                var parameter = parameters[i];
+                if (parameter.HasDefaultValue)
+                {
+                    Debug.LogError($"{mtdPath} 使用了 {nameof(RpcAttribute)} 特性, 参数 {i} 不能有默认值");
+                    return false;
+                }
+            }
 
             return true;
         }

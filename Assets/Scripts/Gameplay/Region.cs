@@ -202,6 +202,7 @@ namespace GameCore
         public void RemovePos(string id, int x, int y, bool isBackground)
         {
             lock (blocks)
+            {
                 foreach (var save in blocks)
                 {
                     if (save.blockId != id || save.isBg != isBackground)
@@ -218,6 +219,9 @@ namespace GameCore
                         }
                     }
                 }
+            }
+
+            Debug.LogError($"移除方块 {id} (({x},{y}), {isBackground}) 失败：方块不存在");
         }
 
         public bool HasBlock(int x, int y, bool isBackground) => GetBlock(x, y, isBackground).location != null;
