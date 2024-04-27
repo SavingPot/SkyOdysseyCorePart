@@ -1582,6 +1582,9 @@ namespace GameCore
                 }
             }
 
+
+
+
             #region 手机操控
 
             if (GControls.mode == ControlMode.Touchscreen)
@@ -1870,6 +1873,10 @@ namespace GameCore
         }
 
         #endregion
+
+
+
+
 
         #region 技能系统
 
@@ -2259,7 +2266,8 @@ namespace GameCore
         }
     }
 
-    //TODO
+    //TODO: 把 InfoShower 打包为一个 abstract class，然后再派生出各种具体的实现类，这样可以更灵活快捷地使用
+    //TODO: 注意要划分为两种 InfoShower：一种是名字文本+信息文本，另一种是只有一个文本
     public static class ItemInfoShower
     {
         private static ItemInfoUI uiInstance;
