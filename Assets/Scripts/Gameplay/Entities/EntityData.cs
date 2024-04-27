@@ -21,6 +21,7 @@ namespace GameCore
         [LabelText("普通攻击半径")] public float normalAttackRadius;
         [LabelText("普通攻击伤害")] public int normalAttackDamage;
         [LabelText("普通攻击CD")] public float normalAttackCD;
+        [LabelText("受伤音效")] public string hurtAudioId = AudioID.GetHurt;
         public static float defaultLifetime = 60 * 3;
         public Type behaviourType;
         [LabelText("掉落的物品")] public List<DropData> drops;

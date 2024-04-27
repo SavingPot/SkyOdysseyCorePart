@@ -232,18 +232,62 @@ namespace GameCore
         /*                                    任务系统                                    */
         /* -------------------------------------------------------------------------- */
         public BackpackPanel taskPanel;
-        public ScrollViewIdentity taskView;
+        public NodeTree<TaskNode, TaskData> taskNodeTree;
         public ImageIdentity taskCompleteBackground;
         public ImageIdentity taskCompleteIcon;
         public TextIdentity taskCompleteText;
-
-        public List<TaskData> tasks = new();
-        public TaskNode rootTaskNode;
-
-        public void AddTask(string id, string icon, string parent, string[] rewards)
+        public static List<TaskData> tasks = new()
         {
-            tasks.Add(new(id, icon, parent, rewards));
-        }
+            new("ori:get_dirt", "ori:task.get_dirt", null, new[] { $"{BlockID.Dirt}/=/25/=/null" }),
+
+            new("ori:craft", "ori:task.craft", "ori:get_dirt", null),
+
+            new("ori:get_log", "ori:task.get_log", "ori:get_dirt", new[] { $"{BlockID.OakLog}/=/10/=/null" }),
+
+            new("ori:get_meat", "ori:task.get_meat", "ori:get_dirt", null),
+            new("ori:get_egg", "ori:task.get_egg", "ori:get_meat", null),
+            new("ori:get_potato", "ori:task.get_potato", "ori:get_meat", null),
+            new("ori:get_onion", "ori:task.get_onion", "ori:get_meat", null),
+            new("ori:get_watermelon", "ori:task.get_watermelon", "ori:get_meat", null),
+
+            new("ori:get_feather", "ori:task.get_feather", "ori:get_dirt", new[] { $"{ItemID.ChickenFeather}/=/5/=/null" }),
+            new("ori:get_feather_wing", "ori:task.get_feather_wing", "ori:get_feather", null),
+
+            new("ori:get_grass", "ori:task.get_grass", "ori:get_dirt", null),
+            new("ori:get_straw_rope", "ori:task.get_straw_rope", "ori:get_grass", new[] { $"{ItemID.StrawRope}/=/3/=/null" }),
+            new("ori:get_plant_fiber", "ori:task.get_plant_fiber", "ori:get_straw_rope", null),
+
+            new("ori:get_gravel", "ori:task.get_gravel", "ori:get_dirt", new[] { $"{BlockID.Gravel}/=/3/=/null" }),
+            new("ori:get_flint", "ori:task.get_flint", "ori:get_gravel", new[] { $"{ItemID.Flint}/=/2/=/null" }),
+            new("ori:get_stone", "ori:task.get_stone", "ori:get_flint", new[] { $"{BlockID.Stone}/=/10/=/null" }),
+
+            new("ori:get_planks", "ori:task.get_planks", "ori:get_log", new[] { $"{BlockID.OakPlanks}/=/10/=/null" }),
+            new("ori:get_stick", "ori:task.get_stick", "ori:get_planks", new[] { $"{ItemID.Stick}/=/10/=/null" }),
+            new("ori:get_campfire", "ori:task.get_campfire", "ori:get_stick", null),
+
+            new("ori:get_flint_knife", "ori:task.get_flint_knife", "ori:get_stick", null),
+            new("ori:get_flint_hoe", "ori:task.get_flint_hoe", "ori:get_stick", null),
+            new("ori:get_flint_sword", "ori:task.get_flint_sword", "ori:get_stick", null),
+            new("ori:get_iron_knife", "ori:task.get_iron_knife", "ori:get_flint_knife", null),
+            new("ori:get_iron_hoe", "ori:task.get_iron_hoe", "ori:get_flint_hoe", null),
+            new("ori:get_iron_sword", "ori:task.get_iron_sword", "ori:get_flint_sword", null),
+
+            new("ori:get_bark", "ori:task.get_bark", "ori:get_log", new[] { $"{ItemID.Bark}/=/1/=/null" }),
+            new("ori:get_bark_vest", "ori:task.get_bark_vest", "ori:get_bark", null),
+        };
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    技能系统                                    */
+        /* -------------------------------------------------------------------------- */
+        public List<SkillData> skills = new()
+        {
+            new("ori:run_faster", "ori:skill.run_faster", null,"ori:skill_description.run_faster",10)
+        };
+        public BackpackPanel skillPanel;
+        public NodeTree<SkillNode, SkillData> skillNodeTree;
 
 
 
@@ -975,22 +1019,6 @@ namespace GameCore
 
                 #region 任务系统
 
-                /* ----------------------------------- 生成任务视图 ----------------------------------- */
-                //生成面板, 设置颜色为深灰色半透明
-                taskPanel = GenerateBackpackPanel("ori:tasks", "ori:switch_button.tasks");
-                taskView = GameUI.AddScrollView(UPC.StretchDouble, "ori:view.task", taskPanel);
-                taskView.scrollViewImage.color = new(0.2f, 0.2f, 0.2f, 0.6f);
-                taskView.rt.sizeDelta = Vector2.zero;
-                taskView.content.anchoredPosition = new(GameUI.canvasScaler.referenceResolution.x / 2, GameUI.canvasScaler.referenceResolution.y / 2);  //将任务居中
-                taskView.scrollRect.horizontal = true;   //允许水平拖拽
-                taskView.scrollRect.movementType = ScrollRect.MovementType.Unrestricted;   //不限制拖拽
-                taskView.scrollRect.scrollSensitivity = 0;   //不允许滚轮控制
-                taskView.gameObject.AddComponent<RectMask2D>();   //添加新的遮罩
-                UnityEngine.Object.Destroy(taskView.viewportMask);   //删除自带的遮罩
-                UnityEngine.Object.Destroy(taskView.gridLayoutGroup);   //删除自动排序器
-                UnityEngine.Object.Destroy(taskView.scrollRect.horizontalScrollbar.gameObject);   //删除水平滚动条
-                UnityEngine.Object.Destroy(taskView.scrollRect.verticalScrollbar.gameObject);   //删除水平滚动条
-
                 /* -------------------------------- 生成任务完成图像 -------------------------------- */
                 taskCompleteBackground = GameUI.AddImage(UPC.UpperLeft, "ori:image.task_complete_background", "ori:task_complete");
                 taskCompleteBackground.SetSizeDelta(320, 100);
@@ -998,7 +1026,7 @@ namespace GameCore
                 taskCompleteBackground.gameObject.SetActive(false);
                 taskCompleteBackground.OnUpdate += _ =>
                 {
-                    GameUI.SetUILayerToTop(taskView);
+                    GameUI.SetUILayerToFirst(taskCompleteBackground);
                 };
 
                 taskCompleteIcon = GameUI.AddImage(UPC.Left, "ori:image.task_complete_icon", null, taskCompleteBackground);
@@ -1010,44 +1038,90 @@ namespace GameCore
                 taskCompleteText.text.margin = new(taskCompleteIcon.sd.x + 5, 5, 5, 5);
                 taskCompleteText.autoCompareText = false;
 
-                /* ---------------------------------- 绑定任务 ---------------------------------- */
-                BindTasks(this);
+                /* ----------------------------------- 生成任务视图 ----------------------------------- */
+                taskPanel = GenerateBackpackPanel("ori:tasks", "ori:switch_button.tasks");
 
-                /* --------------------------------- 生成任务节点 --------------------------------- */
-                foreach (var item in tasks)
-                {
-                    //是根任务
-                    if (string.IsNullOrWhiteSpace(item.parent))
+                taskNodeTree = new(
+                    "task_tree",
+                    tasks,
+                    taskPanel.rectTransform,
+                    node => (node.status.completed, node.status.hasGotRewards) switch
                     {
-                        rootTaskNode = AddChildrenNodesToNode(item);
-                        break;
-                    }
-                }
-
-                TaskNode AddChildrenNodesToNode(TaskData data)
-                {
-                    TaskNode temp = new(data);
-
-                    foreach (var task in tasks)
+                        (true, true) => Color.white,  //完成了且领取了奖励
+                        (true, false) => Tools.HexToColor("#00FFD6"),  //完成了但没领取奖励
+                        (false, _) => new(0.5f, 0.5f, 0.5f, 0.75f)  //没完成
+                    },
+                    node => TaskInfoShower.Show(node),
+                    _ => TaskInfoShower.Hide(),
+                    node =>
                     {
-                        //如果是 current 的子任务
-                        if (task.parent == data.id)
+                        if (!node.status.completed || node.status.hasGotRewards)
+                            return;
+
+                        foreach (var reward in node.data.rewards)
                         {
-                            temp.nodes.Add(AddChildrenNodesToNode(task));
+                            /* ---------------------------------- 切割字符串 --------------------------------- */
+                            if (Drop.ConvertStringItem(reward, out string id, out ushort count, out _, out string error))
+                            {
+                                /* ---------------------------------- 给予物品 ---------------------------------- */
+                                ItemData item = ModFactory.CompareItem(id);
+
+                                if (item == null)
+                                    continue;
+
+                                var extended = item.DataToItem();
+                                extended.count = count;
+                                player.ServerAddItem(extended);
+                            }
+                            else
+                            {
+                                Debug.LogError(error);
+                            }
                         }
+
+                        var completedTasksTemp = player.completedTasks;
+                        foreach (var completed in completedTasksTemp)
+                        {
+                            if (completed.id == node.data.id)
+                            {
+                                completed.hasGotRewards = true;
+                            }
+                        }
+                        player.completedTasks = completedTasksTemp;
+
+                        node.status.hasGotRewards = true;
+                        taskNodeTree.RefreshNodes(false);
                     }
-
-                    return temp;
-                }
-
-                /* --------------------------------- 显示任务节点 --------------------------------- */
-                RefreshTaskNodesDisplay(true);
+                );
 
                 /* --------------------------------- 加载已有任务 --------------------------------- */
                 foreach (var task in player.completedTasks)
                 {
                     CompleteTask(task.id, false, task.hasGotRewards);
                 }
+
+                #endregion
+
+                #region 技能树
+
+                skillPanel = GenerateBackpackPanel("ori:skills", "ori:switch_button.skills");
+                skillNodeTree = new(
+                    "skill_tree",
+                    skills,
+                    skillPanel.rectTransform,
+                    node => node.status.unlocked ? Color.white : new(0.5f, 0.5f, 0.5f, 0.75f),
+                    node => SkillInfoShower.Show(node),
+                    _ => SkillInfoShower.Hide(),
+                    node =>
+                    {
+                        if (!node.status.unlocked && player.coin > node.data.cost)
+                        {
+                            player.coin -= node.data.cost;
+                            node.status.unlocked = true;
+                            skillNodeTree.RefreshNodes(false);
+                        }
+                    }
+                );
 
                 #endregion
             }
@@ -1572,230 +1646,12 @@ namespace GameCore
             healthBarFull.image.fillAmount = (float)player.health / player.maxHealth;
         }
 
-        public static Action<PlayerUI> BindTasks = ui =>
-        {
-            ui.AddTask("ori:get_dirt", "ori:task.get_dirt", null, new[] { $"{BlockID.Dirt}/=/25/=/null" });
-
-            ui.AddTask("ori:craft", "ori:task.craft", "ori:get_dirt", null);
-
-            ui.AddTask("ori:get_log", "ori:task.get_log", "ori:get_dirt", new[] { $"{BlockID.OakLog}/=/10/=/null" });
-
-            ui.AddTask("ori:get_meat", "ori:task.get_meat", "ori:get_dirt", null);
-            ui.AddTask("ori:get_egg", "ori:task.get_egg", "ori:get_meat", null);
-            ui.AddTask("ori:get_potato", "ori:task.get_potato", "ori:get_meat", null);
-            ui.AddTask("ori:get_onion", "ori:task.get_onion", "ori:get_meat", null);
-            ui.AddTask("ori:get_watermelon", "ori:task.get_watermelon", "ori:get_meat", null);
-
-            ui.AddTask("ori:get_feather", "ori:task.get_feather", "ori:get_dirt", new[] { $"{ItemID.ChickenFeather}/=/5/=/null" });
-            ui.AddTask("ori:get_feather_wing", "ori:task.get_feather_wing", "ori:get_feather", null);
-
-            ui.AddTask("ori:get_grass", "ori:task.get_grass", "ori:get_dirt", null);
-            ui.AddTask("ori:get_straw_rope", "ori:task.get_straw_rope", "ori:get_grass", new[] { $"{ItemID.StrawRope}/=/3/=/null" });
-            ui.AddTask("ori:get_plant_fiber", "ori:task.get_plant_fiber", "ori:get_straw_rope", null);
-
-            ui.AddTask("ori:get_gravel", "ori:task.get_gravel", "ori:get_dirt", new[] { $"{BlockID.Gravel}/=/3/=/null" });
-            ui.AddTask("ori:get_flint", "ori:task.get_flint", "ori:get_gravel", new[] { $"{ItemID.Flint}/=/2/=/null" });
-            ui.AddTask("ori:get_stone", "ori:task.get_stone", "ori:get_flint", new[] { $"{BlockID.Stone}/=/10/=/null" });
-
-            ui.AddTask("ori:get_planks", "ori:task.get_planks", "ori:get_log", new[] { $"{BlockID.OakPlanks}/=/10/=/null" });
-            ui.AddTask("ori:get_stick", "ori:task.get_stick", "ori:get_planks", new[] { $"{ItemID.Stick}/=/10/=/null" });
-            ui.AddTask("ori:get_campfire", "ori:task.get_campfire", "ori:get_stick", null);
-
-            ui.AddTask("ori:get_flint_knife", "ori:task.get_flint_knife", "ori:get_stick", null);
-            ui.AddTask("ori:get_flint_hoe", "ori:task.get_flint_hoe", "ori:get_stick", null);
-            ui.AddTask("ori:get_flint_sword", "ori:task.get_flint_sword", "ori:get_stick", null);
-            ui.AddTask("ori:get_iron_knife", "ori:task.get_iron_knife", "ori:get_flint_knife", null);
-            ui.AddTask("ori:get_iron_hoe", "ori:task.get_iron_hoe", "ori:get_flint_hoe", null);
-            ui.AddTask("ori:get_iron_sword", "ori:task.get_iron_sword", "ori:get_flint_sword", null);
-
-            ui.AddTask("ori:get_bark", "ori:task.get_bark", "ori:get_log", new[] { $"{ItemID.Bark}/=/1/=/null" });
-            ui.AddTask("ori:get_bark_vest", "ori:task.get_bark_vest", "ori:get_bark", null);
-        };
-
-        public void RefreshTaskNodesDisplay(bool init)
-        {
-            if (init)
-                taskView.Clear();
-
-            RefreshChildrenTaskNodesDisplay(rootTaskNode, null, new(), init);
-        }
-
-        private void RefreshChildrenTaskNodesDisplay(TaskNode current, TaskNode parentNode, List<TaskNode> siblingNodes, bool init)
-        {
-            //初始化按钮
-            if (init)
-                TaskNodeDisplay_InitButton(current, parentNode, siblingNodes);
 
 
-            //设置图标
-            current.icon.SetID($"ori:image.task_node.{current.data.id}");
-            current.icon.image.sprite = ModFactory.CompareTexture(current.data.icon).sprite;
 
 
-            //设置按钮和图标的颜色
-            current.icon.image.color = current.button.image.color = (current.completed, current.hasGotRewards) switch
-            {
-                (true, true) => Color.white,  //完成了且领取了奖励
-                (true, false) => Tools.HexToColor("#00FFD6"),  //完成了但没领取奖励
-                (false, _) => new(0.5f, 0.5f, 0.5f, 0.75f)  //没完成
-            };
 
-
-            //如果有连线还要设置线的颜色
-            if (current.line) current.line.image.color = current.icon.image.color;
-
-
-            /* ---------------------------------- 添加到节点组 & 初始化子节点 --------------------------------- */
-            siblingNodes.Add(current);
-
-            List<TaskNode> childrenNodes = new();
-            foreach (var node in current.nodes)
-            {
-                RefreshChildrenTaskNodesDisplay(node, current, childrenNodes, init);
-            }
-        }
-
-        private void TaskNodeDisplay_InitButton(TaskNode node, TaskNode parentNode, List<TaskNode> siblingNodes)
-        {
-            /* ---------------------------------- 初始化按钮 --------------------------------- */
-            int space = 40;
-            node.button = GameUI.AddButton(UPC.Middle, $"ori:button.task_node.{node.data.id}", GameUI.canvas.transform, "ori:square_button");
-            node.parent = parentNode;
-            node.button.SetSizeDelta(space, space);   //设置按钮大小
-            node.button.buttonText.RefreshUI();
-
-            /* ---------------------------------- 绑定按钮 ---------------------------------- */
-            node.button.button.OnPointerStayAction = () => TaskInfoShower.Show(node);
-            node.button.button.OnPointerExitAction = _ => TaskInfoShower.Hide();
-            node.button.OnClickBind(() =>
-            {
-                if (!node.completed || node.hasGotRewards)
-                    return;
-
-                foreach (var reward in node.data.rewards)
-                {
-                    /* ---------------------------------- 切割字符串 --------------------------------- */
-                    if (Drop.ConvertStringItem(reward, out string id, out ushort count, out _, out string error))
-                    {
-                        /* ---------------------------------- 给予物品 ---------------------------------- */
-                        ItemData item = ModFactory.CompareItem(id);
-
-                        if (item == null)
-                            continue;
-
-                        var extended = item.DataToItem();
-                        extended.count = count;
-                        player.ServerAddItem(extended);
-                    }
-                    else
-                    {
-                        Debug.LogError(error);
-                    }
-                }
-
-                var completedTasksTemp = player.completedTasks;
-                foreach (var completed in completedTasksTemp)
-                {
-                    if (completed.id == node.data.id)
-                    {
-                        completed.hasGotRewards = true;
-                    }
-                }
-                player.completedTasks = completedTasksTemp;
-
-                node.hasGotRewards = true;
-                RefreshTaskNodesDisplay(false);
-            });
-
-            /* ---------------------------------- 设置父物体 --------------------------------- */
-            if (parentNode == null)
-                taskView.AddChild(node.button);
-            else
-                node.button.SetParentForUI(parentNode.button);
-
-            /* -------------------------------- 根据父节点更改位置 ------------------------------- */
-            Vector2 tempVec = Vector2.zero;
-            if (parentNode != null) { tempVec.y -= node.button.sd.y + space; }
-            int childrenCountOfCurrentNode = 0;
-
-            //统计自己的子任务数
-            foreach (var task in tasks)
-            {
-                if (task.parent == node.data.id)
-                {
-                    childrenCountOfCurrentNode++;
-                }
-            }
-
-            /* ------------------------------- 根据同级节点更改位置 ------------------------------- */
-            foreach (var siblingNode in siblingNodes)
-            {
-                int childrenCountOfSiblingNode = 0;
-
-                //统计自己和相邻节点的子任务数
-                foreach (var task in tasks)
-                {
-                    if (task.parent == siblingNode.data.id)
-                    {
-                        childrenCountOfSiblingNode++;
-                    }
-                }
-
-                float countOfChildrenNodesThatCauseCoincidence = childrenCountOfCurrentNode / 2f + childrenCountOfSiblingNode / 2f; // 要除以 2 是因为只有一半的子节点会影响到对方
-                float deltaPos = siblingNode.button.sd.x * 0.5f + node.button.sd.x * 0.5f + space * countOfChildrenNodesThatCauseCoincidence;
-
-                //更改同级节点位置
-                siblingNode.button.ap = new(siblingNode.button.ap.x - deltaPos, siblingNode.button.ap.y);
-
-                //重新计算节点连线
-                TaskNodeDisplay_ConnectTaskLine(siblingNode);
-
-                //更改本身
-                tempVec.x += deltaPos;
-            }
-
-            /* -------------------------------- 设置按钮和文本位置 ------------------------------- */
-            node.button.ap = tempVec;
-            node.button.buttonText.AddAPosY(-node.button.sd.y / 2 - node.button.buttonText.sd.y / 2 - 5);
-
-            /* ---------------------------------- 设置图标 ---------------------------------- */
-            node.icon = GameUI.AddImage(UPC.Middle, $"ori:image.task_node.{node.data.id}", null, node.button);
-            node.icon.sd = node.button.sd;
-
-            /* --------------------------------- 初始化连接线 --------------------------------- */
-            TaskNodeDisplay_ConnectTaskLine(node);
-        }
-
-        /// <summary>
-        /// 初始化任务节点之间的连接线
-        /// </summary>
-        /// <param name="node"></param>
-        private static void TaskNodeDisplay_ConnectTaskLine(TaskNode node)
-        {
-            if (node.parent == null)
-                return;
-
-            //如果没有线就创建
-            if (!node.line)
-                node.line = GameUI.AddImage(UPC.Middle, $"ori:button.task_node.{node.data.id}.line", null, node.button);
-
-            /* --------------------------------- 计算对应顶点 --------------------------------- */
-            Vector2 buttonPoint = new(node.button.ap.x, node.button.ap.y + node.button.sd.y / 2);   //本身按钮上方
-            Vector2 parentPoint = new(0, -node.button.sd.y / 2);   //父节点按钮下方
-
-            /* ---------------------------------- 设置大小 ---------------------------------- */
-            node.line.sd = new(Vector2.Distance(buttonPoint, parentPoint), 2);   //x轴为长度, y轴为宽度
-
-            /* ---------------------------------- 设置旋转角 --------------------------------- */
-            node.line.rt.localEulerAngles = new(0, 0, AngleTools.GetAngleFloat(buttonPoint, parentPoint) - 90);   //获取角度并旋转 -90 度 (我也不知道为啥)
-            if (node.button.ap.x < 0) node.line.rt.localEulerAngles = new(0, 180, node.line.rt.localEulerAngles.z);   //如果按钮在父节点左侧就水平翻转
-
-            /* ---------------------------------- 设置位置 ---------------------------------- */
-            Vector2 temp = Vector2.zero;
-            temp.x += 0.5f * (parentPoint.x - buttonPoint.x);   //使得线贴在按钮中间
-            temp.y += node.button.sd.y;   //使得线贴在按钮上方
-            node.line.ap = temp;
-        }
+        #region 任务系统
 
         public bool playingTaskCompletion { get; private set; }
 
@@ -1811,11 +1667,11 @@ namespace GameCore
 
         public void CompleteTask(string id, bool feedback = true, bool hasGotRewards = false)
         {
-            if (CompleteTask_Internal(rootTaskNode, id, out bool hasCompletedBefore, out TaskNode nodeCompleted) && !hasCompletedBefore && nodeCompleted != null)
+            if (CompleteTask_Internal(taskNodeTree.rootNode, id, out bool hasCompletedBefore, out TaskNode nodeCompleted) && !hasCompletedBefore && nodeCompleted != null)
             {
                 if (hasGotRewards)
                 {
-                    nodeCompleted.hasGotRewards = true;
+                    nodeCompleted.status.hasGotRewards = true;
                 }
 
                 if (feedback)
@@ -1834,7 +1690,7 @@ namespace GameCore
                 }
             }
 
-            RefreshTaskNodesDisplay(false);
+            taskNodeTree.RefreshNodes(false);
         }
 
         private bool CompleteTask_Internal(TaskNode current, string id, out bool hasCompletedBefore, out TaskNode nodeCompleted)
@@ -1848,7 +1704,7 @@ namespace GameCore
             //不是父节点开始尝试完成子节点
             foreach (var node in current.nodes)
             {
-                if (CompleteTask_Internal(node, id, out hasCompletedBefore, out nodeCompleted))
+                if (CompleteTask_Internal((TaskNode)node, id, out hasCompletedBefore, out nodeCompleted))
                 {
                     return true;
                 }
@@ -1863,14 +1719,14 @@ namespace GameCore
                 if (node.data.id == id)
                 {
                     nodeCompleted = node;
-                    hasCompletedBefore = node.completed;
+                    hasCompletedBefore = node.status.completed;
 
                     if (!player.completedTasks.Any(p => p.id == id))
                     {
-                        player.AddCompletedTasks(new() { id = id, completed = true, hasGotRewards = node.hasGotRewards });
+                        player.AddCompletedTasks(new() { id = id, completed = true, hasGotRewards = node.status.hasGotRewards });
                     };
 
-                    node.completed = true;
+                    node.status.completed = true;
                     return true;
                 }
 
@@ -1900,37 +1756,24 @@ namespace GameCore
             public string id;
         }
 
-        public class TaskData
+        public class TaskData : TreeNodeData
         {
-            public string id;
-            public string parent;
-            public string icon;
             public string[] rewards;
 
-            public TaskData(string id, string icon, string parent, string[] rewards)
+            public TaskData(string id, string icon, string parent, string[] rewards) : base(id, icon, parent)
             {
-                this.id = id;
-                this.icon = icon;
-                this.parent = parent;
                 this.rewards = rewards;
             }
         }
 
-        public class TaskNode : TaskStatus
+        public class TaskNode : TreeNode<TaskData>
         {
-            public ButtonIdentity button;
-            public ImageIdentity icon;
-            public TaskData data;
-            public TaskNode parent;
-            public ImageIdentity line;
-            public List<TaskNode> nodes = new();
+            public TaskStatus status = new();
 
-            public TaskNode(TaskData data)
+            public TaskNode(TaskData data) : base(data)
             {
-                this.data = data;
-
                 if (data.rewards == null || data.rewards.Length == 0)
-                    hasGotRewards = true;
+                    status.hasGotRewards = true;
             }
         }
 
@@ -2025,6 +1868,128 @@ namespace GameCore
                 ui.image.gameObject.SetActive(false);
             }
         }
+
+        #endregion
+
+        #region 技能系统
+
+
+        public class SkillInfoShower
+        {
+            public class SkillInfoUI
+            {
+                public ImageIdentity image;
+                public TextIdentity nameText;
+                public TextIdentity detailText;
+
+                public SkillInfoUI(ImageIdentity image, TextIdentity nameText, TextIdentity detailText)
+                {
+                    this.image = image;
+                    this.nameText = nameText;
+                    this.detailText = detailText;
+                }
+            }
+
+            private static SkillInfoUI uiInstance;
+
+            public static SkillInfoUI GetUI()
+            {
+                if (uiInstance == null || !uiInstance.image || !uiInstance.nameText || !uiInstance.detailText)
+                {
+                    ImageIdentity image = GameUI.AddImage(UPC.Middle, "ori:image.task_info_shower", "ori:item_info_shower");
+                    TextIdentity nameText = GameUI.AddText(UPC.UpperLeft, "ori:text.task_info_shower.name", image);
+                    TextIdentity detailText = GameUI.AddText(UPC.UpperLeft, "ori:text.task_info_shower.detail", image);
+
+                    nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
+                    detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
+
+                    image.SetSizeDelta(200, 200);
+                    nameText.SetSizeDelta(image.sd.x, 30);
+                    detailText.SetSizeDelta(nameText.sd.x, image.sd.y - nameText.sd.y);
+
+                    nameText.SetAPos(nameText.sd.x / 2, -nameText.sd.y / 2 - 5);
+                    detailText.SetAPos(nameText.ap.x, nameText.ap.y - nameText.sd.y / 2 - detailText.sd.y / 2 - 5);
+
+                    nameText.text.SetFontSize(18);
+                    detailText.text.SetFontSize(13);
+
+                    image.image.raycastTarget = false;
+                    nameText.text.raycastTarget = false;
+                    detailText.text.raycastTarget = false;
+
+                    uiInstance = new(image, nameText, detailText);
+                }
+
+                return uiInstance;
+            }
+
+            public static void Show(SkillNode skill)
+            {
+                SkillInfoUI ui = GetUI();
+                ui.image.transform.SetParent(skill.button.transform);
+                Vector2 pos = Vector2.zero;
+                pos.x += ui.image.sd.x;
+                pos.y -= ui.image.sd.y;
+
+                ui.image.ap = pos;
+                ui.nameText.text.text = skill.button.buttonText.text.text;
+                ui.detailText.text.text = GameUI.CompareText(skill.data.description).text;
+
+                ui.image.gameObject.SetActive(true);
+            }
+
+            public static void Hide()
+            {
+                SkillInfoUI ui = GetUI();
+                ui.image.gameObject.SetActive(false);
+            }
+        }
+
+
+        [Serializable]
+        public class SkillStatus
+        {
+            public bool unlocked;
+        }
+
+        [Serializable]
+        public class SkillStatusForSave : SkillStatus
+        {
+            public string id;
+        }
+
+        public class SkillData : TreeNodeData
+        {
+            public string description;
+            public int cost;
+
+            public SkillData(string id, string icon, string parent, string description, int cost) : base(id, icon, parent)
+            {
+                this.description = description;
+                this.cost = cost;
+            }
+        }
+
+        public class SkillNode : TreeNode<SkillData>
+        {
+            public SkillStatus status = new();
+
+            public SkillNode(SkillData data) : base(data)
+            {
+
+            }
+        }
+
+        #endregion
+
+
+
+
+
+
+
+
+
 
         [RuntimeInitializeOnLoadMethod]
         public static void BindMethods()

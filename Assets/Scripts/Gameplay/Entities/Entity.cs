@@ -138,8 +138,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
-        [BoxGroup("属性"), LabelText("受伤音效")] public string takeDamageAudioId = AudioID.GetHurt;
-        [BoxGroup("属性"), LabelText("效果")] public Dictionary<string, float> effects = new();
         [HideInInspector] public float timeToAutoDestroy;
         public bool isHurting => invincibleTime > 0;
         public int maxHealth => data.maxHealth;
@@ -746,8 +744,8 @@ namespace GameCore
                 Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}");
 
             //播放受伤音频
-            if (!takeDamageAudioId.IsNullOrWhiteSpace())
-                GAudio.Play(takeDamageAudioId);
+            if (!data.hurtAudioId.IsNullOrWhiteSpace())
+                GAudio.Play(data.hurtAudioId);
 
             //记录受伤时的时间
             previousHurtTime = Tools.time;
@@ -829,6 +827,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     重生逻辑                                     */
         /* -------------------------------------------------------------------------- */
+        //TODO：也许可以删除重生机制
         public virtual void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller) { }
         public virtual void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller) { }
 
