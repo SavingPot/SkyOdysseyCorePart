@@ -11,11 +11,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using DG.Tweening;
-using System.Security.Cryptography.X509Certificates;
 
 namespace GameCore
 {
@@ -1051,8 +1049,8 @@ namespace GameCore
                         (true, false) => Tools.HexToColor("#00FFD6"),  //完成了但没领取奖励
                         (false, _) => new(0.5f, 0.5f, 0.5f, 0.75f)  //没完成
                     },
-                    node => TaskInfoShower.Show(node),
-                    _ => TaskInfoShower.Hide(),
+                    node => TaskInfoShower.instance.Show(node),
+                    _ => TaskInfoShower.instance.Hide(),
                     node =>
                     {
                         if (!node.status.completed || node.status.hasGotRewards)
@@ -1422,9 +1420,9 @@ namespace GameCore
             if (backpackMask.gameObject.activeSelf)
             {
                 //TODO: Fix
-                ItemInfoShower.Hide();
+                ItemInfoShower.instance.Hide();
                 craftingInfoShower.Hide();
-                TaskInfoShower.Hide();
+                TaskInfoShower.instance.Hide();
                 ItemDragger.CancelDragging();
 
                 GameUI.SetPage(null);
@@ -1780,98 +1778,6 @@ namespace GameCore
             }
         }
 
-        public class TaskInfoShower
-        {
-            public class TaskInfoUI
-            {
-                public ImageIdentity image;
-                public TextIdentity nameText;
-                public TextIdentity detailText;
-
-                public TaskInfoUI(ImageIdentity image, TextIdentity nameText, TextIdentity detailText)
-                {
-                    this.image = image;
-                    this.nameText = nameText;
-                    this.detailText = detailText;
-                }
-            }
-
-            private static TaskInfoUI uiInstance;
-
-            public static TaskInfoUI GetUI()
-            {
-                if (uiInstance == null || !uiInstance.image || !uiInstance.nameText || !uiInstance.detailText)
-                {
-                    ImageIdentity image = GameUI.AddImage(UPC.Middle, "ori:image.task_info_shower", "ori:item_info_shower");
-                    TextIdentity nameText = GameUI.AddText(UPC.UpperLeft, "ori:text.task_info_shower.name", image);
-                    TextIdentity detailText = GameUI.AddText(UPC.UpperLeft, "ori:text.task_info_shower.detail", image);
-
-                    nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
-                    detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
-
-                    image.SetSizeDelta(200, 200);
-                    nameText.SetSizeDelta(image.sd.x, 30);
-                    detailText.SetSizeDelta(nameText.sd.x, image.sd.y - nameText.sd.y);
-
-                    nameText.SetAPos(nameText.sd.x / 2, -nameText.sd.y / 2 - 5);
-                    detailText.SetAPos(nameText.ap.x, nameText.ap.y - nameText.sd.y / 2 - detailText.sd.y / 2 - 5);
-
-                    nameText.text.SetFontSize(18);
-                    detailText.text.SetFontSize(13);
-
-                    image.image.raycastTarget = false;
-                    nameText.text.raycastTarget = false;
-                    detailText.text.raycastTarget = false;
-
-                    uiInstance = new(image, nameText, detailText);
-                }
-
-                return uiInstance;
-            }
-
-            public static void Show(TaskNode task)
-            {
-                TaskInfoUI ui = GetUI();
-                ui.image.transform.SetParent(task.button.transform);
-                Vector2 pos = Vector2.zero;
-                pos.x += ui.image.sd.x;
-                pos.y -= ui.image.sd.y;
-
-                ui.image.ap = pos;
-                ui.nameText.text.text = task.button.buttonText.text.text;
-                ui.detailText.text.text = GetText(task).ToString();
-
-                ui.image.gameObject.SetActive(true);
-            }
-
-            public static StringBuilder GetText(TaskNode task)
-            {
-                StringBuilder sb = new();
-
-                if (task.data.rewards != null)
-                {
-                    foreach (var reward in task.data.rewards)
-                    {
-                        if (string.IsNullOrWhiteSpace(reward))
-                            continue;
-
-                        if (Drop.ConvertStringItem(reward, out string id, out ushort count, out _, out _))
-                        {
-                            sb.AppendLine(GameUI.CompareText("ori:task.rewards").text.Replace("{id}", GameUI.CompareText(id).text).Replace("{count}", count.ToString()));
-                        }
-                    }
-                }
-
-                return sb;
-            }
-
-            public static void Hide()
-            {
-                TaskInfoUI ui = GetUI();
-                ui.image.gameObject.SetActive(false);
-            }
-        }
-
         #endregion
 
 
@@ -2098,7 +2004,7 @@ namespace GameCore
                 content.image.gameObject.SetActive(false);
 
                 //加这一行是因为物品不为空时会绑定显示，我们要在这里取消它
-                button.button.OnPointerStayAction = () => ItemInfoShower.Hide();
+                button.button.OnPointerStayAction = () => ItemInfoShower.instance.Hide();
 
                 //当栏位被点击时
                 button.OnClickBind(() =>
@@ -2129,14 +2035,14 @@ namespace GameCore
                 //当指针悬停时显示物品信息
                 button.button.OnPointerStayAction = () =>
                 {
-                    var ui = ItemInfoShower.Show(item);
+                    ItemInfoShower.instance.Show(item);
 
                     if (container is Player player)
                     {
-                        player.inventory.GetItemBehaviourChecked(itemIndex)?.ModifyInfo(ui);
+                        player.inventory.GetItemBehaviourChecked(itemIndex)?.ModifyInfo(ItemInfoShower.instance);
                     }
                 };
-                button.button.OnPointerExitAction = _ => ItemInfoShower.Hide();
+                button.button.OnPointerExitAction = _ => ItemInfoShower.instance.Hide();
 
                 //当栏位被点击时
                 button.OnClickBind(() =>
@@ -2167,205 +2073,6 @@ namespace GameCore
         }
     }
 
-
-    public class CraftingInfoShower
-    {
-        public Player player;
-        public ImageIdentity background;
-        public ScrollViewIdentity ingredientsView;
-        public ImageIdentity arrow;
-        public ScrollViewIdentity resultsView;
-        public TextIdentity maximumCraftingTimesText;
-        private readonly StringBuilder stringBuilder = new();
-
-        public void Show(CraftingRecipe recipe, List<Dictionary<int, ushort>> ingredients)
-        {
-            stringBuilder.Clear();
-            stringBuilder.AppendLine(GameUI.CompareText("可合成次数(TODO)").text.Replace("{value}", recipe.ingredients.Length.ToString()));
-
-
-            Vector2 pos = GControls.cursorPosInMainCanvas;
-            pos.x += background.sd.x * 0.75f;
-            pos.y -= background.sd.y * 0.75f;
-
-
-            background.ap = pos;
-            maximumCraftingTimesText.text.text = $"<color=#E0E0E0>{stringBuilder}</color>";
-
-            //显示原料
-            ingredientsView.Clear();
-            foreach (var ele in ingredients)
-            {
-                foreach (var ingredient in ele)
-                {
-                    Item itemGot = player.inventory.GetItem(ingredient.Key);
-
-                    //图标
-                    var ingredientsBackground = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.ingredients_background_{recipe.id}", "ori:item_tab");
-                    var ingredientsIcon = GameUI.AddImage(UPC.Middle, $"ori:button.crafting_info_shower.ingredients_{ingredient.Key}", null, ingredientsBackground);
-                    var ingredientsText = GameUI.AddText(UPC.Middle, $"ori:text.crafting_info_shower.ingredients_{recipe.id}", ingredientsBackground);
-
-                    ingredientsIcon.SetSizeDelta(ingredientsView.gridLayoutGroup.cellSize);
-                    ingredientsIcon.image.sprite = Item.Null(itemGot) ? null : itemGot.data.texture.sprite;
-
-                    ingredientsText.autoCompareText = false;
-                    ingredientsText.text.enableAutoSizing = true;
-                    ingredientsText.text.fontSizeMin = 0;
-                    ingredientsText.text.text = $"{GameUI.CompareText(itemGot.data.id)?.text}x{ingredient.Value}";
-                    ingredientsText.text.margin = Vector4.zero;
-                    ingredientsText.SetSizeDelta(ingredientsIcon.sd.x, 8);
-                    ingredientsText.SetAPosY(ingredientsIcon.ap.y / 2 - ingredientsIcon.sd.y / 2 - ingredientsText.sd.y / 2);
-
-                    ingredientsView.AddChild(ingredientsBackground);
-                }
-            }
-
-            //显示结果
-            resultsView.Clear();
-
-            var iconBackground = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.result_background_{recipe.id}", "ori:item_tab");
-            var icon = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.result_{recipe.id}", "ori:item_tab", iconBackground);
-            var iconText = GameUI.AddText(UPC.Middle, $"ori:text.crafting_info_shower.result_{recipe.id}", iconBackground);
-
-            icon.SetSizeDelta(resultsView.gridLayoutGroup.cellSize);
-            icon.image.sprite = ModFactory.CompareItem(recipe.result.id).texture.sprite;
-
-            iconText.autoCompareText = false;
-            iconText.text.enableAutoSizing = true;
-            iconText.text.fontSizeMin = 0;
-            iconText.text.text = $"{GameUI.CompareText(recipe.result.id)?.text}x{recipe.result.count}";
-            iconText.text.margin = Vector4.zero;
-            iconText.SetSizeDelta(icon.sd.x, 8);
-            iconText.SetAPosY(icon.ap.y / 2 - icon.sd.y / 2 - iconText.sd.y / 2);
-
-            resultsView.AddChild(iconBackground);
-
-
-            background.gameObject.SetActive(true);
-        }
-
-
-        public void Hide()
-        {
-            background.gameObject.SetActive(false);
-        }
-
-
-
-
-
-
-        public CraftingInfoShower(Player player, ImageIdentity background, ScrollViewIdentity ingredientsView, ImageIdentity arrow, ScrollViewIdentity resultsView, TextIdentity maximumCraftingTimesText)
-        {
-            this.player = player;
-            this.background = background;
-            this.ingredientsView = ingredientsView;
-            this.arrow = arrow;
-            this.resultsView = resultsView;
-            this.maximumCraftingTimesText = maximumCraftingTimesText;
-        }
-    }
-
-    //TODO: 把 InfoShower 打包为一个 abstract class，然后再派生出各种具体的实现类，这样可以更灵活快捷地使用
-    //TODO: 注意要划分为两种 InfoShower：一种是名字文本+信息文本，另一种是只有一个文本
-    public static class ItemInfoShower
-    {
-        private static ItemInfoUI uiInstance;
-        private static readonly StringBuilder stringBuilder = new();
-
-        public static ItemInfoUI GetUI()
-        {
-            if (uiInstance == null || !uiInstance.image || !uiInstance.nameText || !uiInstance.detailText)
-            {
-                int borderSize = 5;
-                int detailTextFontSize = 15;
-
-                ImageIdentity backgroundImage = GameUI.AddImage(UPC.Middle, "ori:image.item_info_shower", "ori:item_info_shower");
-                TextIdentity nameText = GameUI.AddText(UPC.UpperLeft, "ori:text.item_info_shower.name", backgroundImage);
-                //ImageIdentity damageIcon = GameUI.AddImage(UPC.UpperLeft, "ori:image.item_info_shower.damage_icon", "ori:item_info_shower_damage", backgroundImage);
-                TextIdentity detailText = GameUI.AddText(UPC.UpperLeft, "ori:text.item_info_shower.detail", backgroundImage);
-
-                backgroundImage.OnUpdate += x => GameUI.SetUILayerToTop(x);
-
-                nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
-                detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
-                detailText.text.paragraphSpacing = 15;
-
-                backgroundImage.SetSizeDelta(200, 200);
-                nameText.SetSizeDelta(backgroundImage.sd.x, 30);
-                //damageIcon.SetSizeDelta(detailTextFontSize, detailTextFontSize);
-                detailText.SetSizeDelta(nameText.sd.x, backgroundImage.sd.y - nameText.sd.y);
-
-                nameText.SetAPos(nameText.sd.x / 2, -nameText.sd.y / 2 - borderSize);
-                detailText.SetAPos(nameText.ap.x, nameText.ap.y - nameText.sd.y / 2 - detailText.sd.y / 2 - borderSize);
-                //damageIcon.SetAPos(borderSize + damageIcon.sd.x / 2, nameText.ap.y - nameText.sd.y / 2 - damageIcon.sd.y - borderSize);
-
-                nameText.text.SetFontSize(18);
-                detailText.text.SetFontSize(detailTextFontSize);
-
-                backgroundImage.image.raycastTarget = false;
-                nameText.text.raycastTarget = false;
-                detailText.text.raycastTarget = false;
-
-                uiInstance = new(backgroundImage, nameText, detailText);
-            }
-
-            return uiInstance;
-        }
-
-        public static ItemInfoUI Show(Item item) => Show(item.data);
-
-        public static ItemInfoUI Show(ItemData item)
-        {
-            ItemInfoUI ui = GetUI();
-            Vector2 pos = GControls.cursorPosInMainCanvas;
-            pos.x += ui.image.sd.x * 0.75f;
-            pos.y -= ui.image.sd.y * 0.75f;
-
-            ui.image.ap = pos;
-            ui.nameText.text.text = GameUI.CompareText(item.id).text;   //$"{GameUI.CompareText(item.basic.id).text} <size=60%>({item.basic.id})";
-            ui.detailText.text.text = $"<color=#E0E0E0>{GetDetailText(item, stringBuilder.Clear())}</color>";
-
-            ui.image.gameObject.SetActive(true);
-            return ui;
-        }
-
-        public static StringBuilder GetDetailText(Item item) => GetDetailText(item.data, stringBuilder);
-
-        public static StringBuilder GetDetailText(ItemData item, StringBuilder sb)
-        {
-            sb.AppendLine(GameUI.CompareText("ori:item.damage").text.Replace("{value}", item.damage.ToString()));
-            sb.AppendLine(GameUI.CompareText("ori:item.excavation_strength").text.Replace("{value}", item.excavationStrength.ToString()));
-            sb.AppendLine(GameUI.CompareText("ori:item.use_cd").text.Replace("{value}", item.useCD.ToString()));
-            sb.AppendLine(string.Empty);
-
-            //如果成功匹配到了描述文本
-            if (GameUI.TryCompareTextNullable(item.description, out var description))
-                sb.Append(description.text);
-
-            return sb;
-        }
-
-        public static void Hide()
-        {
-            ItemInfoUI ui = GetUI();
-            ui.image.gameObject.SetActive(false);
-        }
-    }
-
-    public class ItemInfoUI
-    {
-        public ImageIdentity image;
-        public TextIdentity nameText;
-        public TextIdentity detailText;
-
-        public ItemInfoUI(ImageIdentity image, TextIdentity nameText, TextIdentity detailText)
-        {
-            this.image = image;
-            this.nameText = nameText;
-            this.detailText = detailText;
-        }
-    }
 
     public static class ItemDragger
     {

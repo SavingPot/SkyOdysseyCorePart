@@ -125,7 +125,7 @@ namespace GameCore
 
         }
 
-        public virtual void ModifyInfo(ItemInfoUI ui)
+        public virtual void ModifyInfo(ItemInfoShower ui)
         {
 
         }
