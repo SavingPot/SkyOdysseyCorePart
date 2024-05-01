@@ -91,7 +91,8 @@ namespace GameCore
 
         #region 随机更新
 #if UNITY_EDITOR
-        [Button("设置随机更新几率")] private void EditorSetRandomUpdateProbability(byte u) => RandomUpdater.randomUpdateProbability = u;
+        [Button("设置随机更新几率")] private void EditorSetRandomUpdateProbability(byte u = byte.MaxValue) => RandomUpdater.randomUpdateProbability = u;
+        [Button("随机更新")] private void EditorRandomUpdate() => RandomUpdater.RandomUpdate();
 #endif
 
         //随机更新只在服务器进行, 无需同步至客户端

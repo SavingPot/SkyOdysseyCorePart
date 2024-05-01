@@ -60,7 +60,6 @@ namespace GameCore
             {
                 minTimeToPickUp = Tools.time + 1;
             }
-            Debug.Log($"Drop.SummonSetup: {dropData==null}");
 
             /* ---------------------------------- 切割字符串 --------------------------------- */
             if (ConvertStringItem(customData?["ori:item_data"].ToString(), out string id, out ushort count, out string itemCustomData, out string error))
