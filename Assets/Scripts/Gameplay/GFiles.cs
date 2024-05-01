@@ -279,7 +279,6 @@ namespace GameCore
         }
     }
 
-    //TODO: 继承自 EntityData?
     [Serializable]
     //该类只在 ManagerNetwork 的 AddPlayer 环节中创建
     public sealed class PlayerSave : EntitySave

@@ -411,7 +411,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public static int playerLayer { get; private set; }
         public static int playerLayerMask { get; private set; }
-        public static float itemPickUpRadius = 1.75f;
+        public static float itemPickUpRadius = 1.8f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion;
@@ -765,7 +765,6 @@ namespace GameCore
                         ServerDestroyRegionBarriers(targetIndex);
                     }
 
-                    //TODO: 解锁
                     if (Keyboard.current.upArrowKey.wasPressedThisFrame)
                     {
                         UnlockRegion(regionIndex + Vector2Int.up);
@@ -923,7 +922,6 @@ namespace GameCore
                     if (!Inventory.GetIndexesToPutItemIntoItems(inventory.slots, drop.item, out _))
                         return;
 
-                    //TODO: 改成吸引 Drop 到玩家身旁
                     ServerAddItem(drop.item);
                     GAudio.Play(AudioID.PickUpItem);
 

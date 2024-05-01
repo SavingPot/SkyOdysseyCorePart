@@ -8,7 +8,6 @@ namespace GameCore
         public ISpellContainer spellContainer;
         public Spell instance;
 
-        //TODO: NO THIS, ALSO IN ITEM-BEHAVIOUR
         public virtual void OnEnter()
         {
 
@@ -19,7 +18,7 @@ namespace GameCore
 
         }
 
-        //TODO: NO PLAYER VAR
+        //TODO: VAR PLAYER  > IInventoryOwner
         public virtual void Release(Vector2 releaseDirection, Vector2 releasePosition, Player player)
         {
 

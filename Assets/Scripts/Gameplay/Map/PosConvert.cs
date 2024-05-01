@@ -46,9 +46,29 @@ namespace GameCore
             return new(mapPos.x - chunk.regionMiddleX, mapPos.y - chunk.regionMiddleY);
         }
 
+        public static int MapToRegionPosX(this Chunk chunk, int mapPosX)
+        {
+            return mapPosX - chunk.regionMiddleX;
+        }
+
+        public static int MapToRegionPosY(this Chunk chunk, int mapPosY)
+        {
+            return mapPosY - chunk.regionMiddleY;
+        }
+
         public static Vector2Int MapToRegionPos(Vector2Int mapPos, Vector2Int regionIndex)
         {
             return new(mapPos.x - Region.GetMiddleX(regionIndex), mapPos.y - Region.GetMiddleY(regionIndex));
+        }
+
+        public static int MapToRegionPosX(int mapPosX, Vector2Int regionIndex)
+        {
+            return mapPosX - Region.GetMiddleX(regionIndex);
+        }
+
+        public static int MapToRegionPosY(int mapPosY, Vector2Int regionIndex)
+        {
+            return mapPosY - Region.GetMiddleY(regionIndex);
         }
 
         public static Vector2Int RegionToMapPos(this Region region, Vector2Int posInRegion)
