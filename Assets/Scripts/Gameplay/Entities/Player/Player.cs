@@ -6,6 +6,7 @@ using Mirror;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Sirenix.OdinInspector;
+using Sirenix.Utilities;
 using SP.Tools;
 using SP.Tools.Unity;
 using System;
@@ -209,6 +210,18 @@ namespace GameCore
             var tasksTemp = completedTasks;
             tasksTemp.Add(task);
             completedTasks = tasksTemp;
+        }
+        #endregion
+
+        #region 技能树
+        List<SkillStatusForSave> unlockedSkills_temp; void unlockedSkills_set(List<SkillStatusForSave> value) { }
+        [Sync] public List<SkillStatusForSave> unlockedSkills { get => unlockedSkills_temp; set => unlockedSkills_set(value); }
+
+        public void AddUnlockedSkills(SkillStatusForSave task)
+        {
+            var skillsTemp = unlockedSkills;
+            skillsTemp.Add(task);
+            unlockedSkills = skillsTemp;
         }
         #endregion
 
@@ -600,8 +613,6 @@ namespace GameCore
                 managerGame.weatherParticle.transform.SetParent(transform);
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
 
-                GenerateRegion(regionIndex, true);
-
 
 
 
@@ -623,6 +634,9 @@ namespace GameCore
             base.AfterInitialization();
 
             PlayerCenter.AddPlayer(this);
+
+            //生成地图
+            GenerateRegion(regionIndex, true);
         }
 
         protected override void OnDestroy()
@@ -903,7 +917,7 @@ namespace GameCore
                 if (other == null)
                     break;
 
-                if (other.TryGetComponent<Drop>(out var drop) && !drop.isDead)
+                if (other.TryGetComponent<Drop>(out var drop) && drop.CanBePickedUp())
                 {
                     //检测有没有栏位存放物品
                     if (!Inventory.GetIndexesToPutItemIntoItems(inventory.slots, drop.item, out _))
@@ -915,7 +929,7 @@ namespace GameCore
 
                     drop.Death();
                 }
-                else if (other.TryGetComponent<CoinEntity>(out var coinEntity) && !coinEntity.isDead)
+                else if (other.TryGetComponent<CoinEntity>(out var coinEntity) && coinEntity.CanBePickedUp())
                 {
                     AddCoin(coinEntity.coinCount);
                     GAudio.Play(AudioID.PickUpItem);
@@ -1030,11 +1044,7 @@ namespace GameCore
 
             if (save is PlayerSave trueSave)
             {
-                trueSave.inventory = inventory;
-                trueSave.hungerValue = hungerValue;
-                trueSave.coin = coin;
-                trueSave.happinessValue = happinessValue;
-                trueSave.completedTasks = completedTasks;
+                trueSave.WriteFromPlayer(this);
             }
             else
             {
@@ -1548,9 +1558,13 @@ namespace GameCore
                 //减少物品的数量
                 ClientReduceItemCount(index, (ushort)Mathf.Min(item.count, count));
 
-                //从头上吐出物品
+                //处理数据
                 Vector2 pos = head ? head.transform.position : transform.localPosition;
-                GM.instance.SummonDrop(pos, item.data.id, count, item.customData?.ToString());
+                JObject customData = item.customData != null ? new(item.customData) : new();
+                customData.AddObjectIfNone("ori:drop", new JProperty("is_thrown_by_player", true));
+
+                //生成掉落物
+                GM.instance.SummonDrop(pos, item.data.id, count, customData.ToString());
             }
         }
 
@@ -1774,7 +1788,7 @@ namespace GameCore
         public void AttackEntity(Entity entity)
         {
             int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
-            entity.TakeDamage(damage, 0.3f, transform.position, transform.position.x < entity.transform.position.x ? Vector2.right * 12 : Vector2.left * 12);
+            entity.TakeDamage(damage, 0.3f, transform.position, transform.localScale.x.Sign() * Vector2.right * 12);
 
             //如果使用手柄就震动一下
             if (GControls.mode == ControlMode.Gamepad)

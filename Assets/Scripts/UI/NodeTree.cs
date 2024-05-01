@@ -21,6 +21,32 @@ namespace GameCore.UI
         public Action<PointerEventData> OnPointerExitAction;
         public Action<TTreeNode> OnClick;
 
+        public TTreeNode FindTreeNode(string id)
+        {
+            //从根节点开始迭代
+            Queue<TTreeNode> queue = new();
+            queue.Enqueue(rootNode);
+
+            while (queue.Count > 0)
+            {
+                TTreeNode currentNode = queue.Dequeue();
+
+                //如果本身就是目标节点，则返回
+                if (currentNode.data.id == id)
+                {
+                    return currentNode;
+                }
+
+                //把子节点加入迭代队列
+                foreach (var childNode in currentNode.nodes)
+                {
+                    queue.Enqueue((TTreeNode)childNode);
+                }
+            }
+
+            return null;
+        }
+
         public NodeTree(
             string nodeTreeViewName,
             List<TTreeNodeData> nodeDataList,
@@ -106,7 +132,7 @@ namespace GameCore.UI
             if (completelyInit)
                 nodeTreeView.Clear();
 
-            RefreshChildrenNodes(rootNode, null, completelyInit);
+            RefreshChildrenNodesOf(rootNode, null, completelyInit);
         }
 
         /// <summary>
@@ -115,7 +141,7 @@ namespace GameCore.UI
         /// <param name="current"></param>
         /// <param name="parentNode"></param>
         /// <param name="completelyInit"></param>
-        private void RefreshChildrenNodes(TTreeNode current, TTreeNode parentNode, bool completelyInit)
+        private void RefreshChildrenNodesOf(TTreeNode current, TTreeNode parentNode, bool completelyInit)
         {
             //初始化按钮
             if (completelyInit)
@@ -138,7 +164,7 @@ namespace GameCore.UI
             /* ---------------------------------- 初始化子节点 --------------------------------- */
             foreach (var node in current.nodes)
             {
-                RefreshChildrenNodes((TTreeNode)node, current, completelyInit);
+                RefreshChildrenNodesOf((TTreeNode)node, current, completelyInit);
             }
         }
 

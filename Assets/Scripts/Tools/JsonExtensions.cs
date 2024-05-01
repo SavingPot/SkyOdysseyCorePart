@@ -39,6 +39,30 @@ namespace GameCore
             jo.Add(new JProperty(name, new JObject(content)));
         }
 
+        public static void AddObjectIfNone(this JObject jo, string name)
+        {
+            if (jo[name] != null)
+                return;
+
+            jo.AddObject(name);
+        }
+        public static void AddObjectIfNone(this JObject jo, string name, params object[] content)
+        {
+            if (jo[name] != null)
+                return;
+
+            jo.AddObject(name, content);
+        }
+        public static void AddObjectIfNone(this JObject jo, string name, object content)
+        {
+            if (jo[name] != null)
+                return;
+
+            jo.AddObject(name, content);
+        }
+
+        
+
         public static void AddProperty(this JObject jo, string name)
         {
             jo.Add(new JProperty(name));
@@ -123,7 +147,7 @@ namespace GameCore
 
 
 
-        public static bool TryGetValue(this JToken jt, string name, out JToken value)
+        public static bool TryGetJToken(this JToken jt, string name, out JToken value)
         {
             value = jt[name];
 

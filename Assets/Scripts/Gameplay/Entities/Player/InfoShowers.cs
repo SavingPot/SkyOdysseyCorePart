@@ -3,6 +3,7 @@ using UnityEngine;
 using SP.Tools.Unity;
 using System.Text;
 using System.Collections.Generic;
+using static GameCore.PlayerUI;
 
 namespace GameCore
 {
@@ -39,7 +40,6 @@ namespace GameCore
 
 
 
-
     //TODO: 把 InfoShower 打包为一个 abstract class，然后再派生出各种具体的实现类，这样可以更灵活快捷地使用
     //TODO: 注意要划分为两种 InfoShower：一种是名字文本+信息文本，另一种是只有一个文本
 
@@ -51,7 +51,7 @@ namespace GameCore
 
 
 
-        public void Show(string nameTextContent, string detailTextContent)
+        public virtual void Show(string nameTextContent, string detailTextContent)
         {
             Vector2 pos = GControls.cursorPosInMainCanvas;
             pos.x += backgroundImage.sd.x * 0.75f;
@@ -275,31 +275,13 @@ namespace GameCore
 
     public class TaskInfoShower : NameAndDetailInfoShower<TaskInfoShower>
     {
-        public TaskInfoShower()
+        public void Show(TaskNode node)
         {
-            backgroundImage = GameUI.AddImage(UPC.Middle, "ori:image.task_info_shower", "ori:item_info_shower");
-            nameText = GameUI.AddText(UPC.UpperLeft, "ori:text.task_info_shower.name", backgroundImage);
-            detailText = GameUI.AddText(UPC.UpperLeft, "ori:text.task_info_shower.detail", backgroundImage);
+            Show(node.button.buttonText.text.text, GetText(node).ToString());
 
-            nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
-            detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
-
-            backgroundImage.SetSizeDelta(200, 200);
-            nameText.SetSizeDelta(backgroundImage.sd.x, 30);
-            detailText.SetSizeDelta(nameText.sd.x, backgroundImage.sd.y - nameText.sd.y);
-
-            nameText.SetAPos(nameText.sd.x / 2, -nameText.sd.y / 2 - 5);
-            detailText.SetAPos(nameText.ap.x, nameText.ap.y - nameText.sd.y / 2 - detailText.sd.y / 2 - 5);
-
-            nameText.text.SetFontSize(18);
-            detailText.text.SetFontSize(13);
-
-            backgroundImage.image.raycastTarget = false;
-            nameText.text.raycastTarget = false;
-            detailText.text.raycastTarget = false;
+            backgroundImage.transform.SetParent(node.button.transform);
+            backgroundImage.transform.localPosition = new(backgroundImage.sd.x, -backgroundImage.sd.y);
         }
-
-        public void Show(TaskNode task) => Show(task.button.buttonText.text.text, GetText(task).ToString());
 
         public static StringBuilder GetText(TaskNode task)
         {
@@ -320,6 +302,31 @@ namespace GameCore
             }
 
             return sb;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public class SkillInfoShower : NameAndDetailInfoShower<SkillInfoShower>
+    {
+        public void Show(SkillNode node)
+        {
+            Show(node.button.buttonText.text.text, GameUI.CompareText(node.data.description).text);
+
+            backgroundImage.transform.SetParent(node.button.transform);
+            backgroundImage.transform.localPosition = new(backgroundImage.sd.x, -backgroundImage.sd.y);
         }
     }
 }

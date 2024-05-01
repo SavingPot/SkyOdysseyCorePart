@@ -282,10 +282,14 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public List<SkillData> skills = new()
         {
-            new("ori:run_faster", "ori:skill.run_faster", null,"ori:skill_description.run_faster",10)
+            new("ori:agriculture", "ori:skill.agriculture", null, "ori:skill_description.agriculture", 5),
+            new("ori:agriculture.quick", "ori:skill.agriculture.quick", "ori:agriculture", "ori:skill_description.agriculture.quick", 10),
+            new("ori:agriculture.coin", "ori:skill.agriculture.coin", "ori:agriculture", "ori:skill_description.agriculture.coin", 10),
+            new("ori:agriculture.harvest", "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 10)
         };
         public BackpackPanel skillPanel;
         public NodeTree<SkillNode, SkillData> skillNodeTree;
+        public Action<SkillData> OnUnlockSkill = _ => { };
 
 
 
@@ -801,16 +805,16 @@ namespace GameCore
                 for (int i = 0; i < inventorySlotsUIs.Length; i++)
                 {
                     int index = i;
-                    var ui = InventorySlotUI.Generate($"ori:button.backpack_inventory_item_{index}", $"ori:image.backpack_inventory_item_{index}", inventoryItemView.gridLayoutGroup.cellSize);
+                    var ui = new InventorySlotUI($"ori:button.backpack_inventory_item_{index}", $"ori:image.backpack_inventory_item_{index}", inventoryItemView.gridLayoutGroup.cellSize);
 
                     inventorySlotsUIs[i] = ui;
                     inventoryItemView.AddChild(ui.button);
                 }
 
-                inventoryHelmetUI = InventorySlotUI.Generate($"ori:button.backpack_inventory_item_{Inventory.helmetVar}", $"ori:image.backpack_inventory_item_{Inventory.helmetVar}", inventoryItemView.gridLayoutGroup.cellSize);
-                inventoryBreastplateUI = InventorySlotUI.Generate($"ori:button.backpack_inventory_item_{Inventory.breastplateVar}", $"ori:image.backpack_inventory_item_{Inventory.breastplateVar}", inventoryItemView.gridLayoutGroup.cellSize);
-                inventoryLeggingUI = InventorySlotUI.Generate($"ori:button.backpack_inventory_item_{Inventory.leggingVar}", $"ori:image.backpack_inventory_item_{Inventory.leggingVar}", inventoryItemView.gridLayoutGroup.cellSize);
-                inventoryBootsUI = InventorySlotUI.Generate($"ori:button.backpack_inventory_item_{Inventory.bootsVar}", $"ori:image.backpack_inventory_item_{Inventory.bootsVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryHelmetUI = new($"ori:button.backpack_inventory_item_{Inventory.helmetVar}", $"ori:image.backpack_inventory_item_{Inventory.helmetVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryBreastplateUI = new($"ori:button.backpack_inventory_item_{Inventory.breastplateVar}", $"ori:image.backpack_inventory_item_{Inventory.breastplateVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryLeggingUI = new($"ori:button.backpack_inventory_item_{Inventory.leggingVar}", $"ori:image.backpack_inventory_item_{Inventory.leggingVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryBootsUI = new($"ori:button.backpack_inventory_item_{Inventory.bootsVar}", $"ori:image.backpack_inventory_item_{Inventory.bootsVar}", inventoryItemView.gridLayoutGroup.cellSize);
 
                 inventoryHelmetUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
                 inventoryBreastplateUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
@@ -1077,6 +1081,7 @@ namespace GameCore
                             }
                         }
 
+                        //刷新玩家属性
                         var completedTasksTemp = player.completedTasks;
                         foreach (var completed in completedTasksTemp)
                         {
@@ -1087,6 +1092,7 @@ namespace GameCore
                         }
                         player.completedTasks = completedTasksTemp;
 
+                        //刷新节点显示
                         node.status.hasGotRewards = true;
                         taskNodeTree.RefreshNodes(false);
                     }
@@ -1095,12 +1101,26 @@ namespace GameCore
                 /* --------------------------------- 加载已有任务 --------------------------------- */
                 foreach (var task in player.completedTasks)
                 {
-                    CompleteTask(task.id, false, task.hasGotRewards);
+                    var node = taskNodeTree.FindTreeNode(task.id);
+
+                    if (node == null)
+                    {
+                        Debug.LogError($"任务 {task.id} 未找到对应的节点");
+                        continue;
+                    }
+
+                    node.status.completed = task.completed;
+                    node.status.hasGotRewards = task.hasGotRewards;
                 }
+
+                //刷新节点显示
+                taskNodeTree.RefreshNodes(false);
 
                 #endregion
 
                 #region 技能树
+
+                /* --------------------------------- 加载已有任务 --------------------------------- */
 
                 skillPanel = GenerateBackpackPanel("ori:skills", "ori:switch_button.skills");
                 skillNodeTree = new(
@@ -1108,18 +1128,45 @@ namespace GameCore
                     skills,
                     skillPanel.rectTransform,
                     node => node.status.unlocked ? Color.white : new(0.5f, 0.5f, 0.5f, 0.75f),
-                    node => SkillInfoShower.Show(node),
-                    _ => SkillInfoShower.Hide(),
+                    node => SkillInfoShower.instance.Show(node),
+                    _ => SkillInfoShower.instance.Hide(),
                     node =>
                     {
-                        if (!node.status.unlocked && player.coin > node.data.cost)
+                        if (node.status.unlocked || !node.IsParentLineUnlocked() || player.coin < node.data.cost)
+                            return;
+
+                        //刷新玩家属性
+                        player.coin -= node.data.cost;
+                        if (!player.unlockedSkills.Any(p => p.id == node.data.id))
                         {
-                            player.coin -= node.data.cost;
-                            node.status.unlocked = true;
-                            skillNodeTree.RefreshNodes(false);
-                        }
+                            player.AddUnlockedSkills(new() { id = node.data.id, unlocked = true });
+                        };
+
+                        //刷新节点显示
+                        node.status.unlocked = true;
+                        skillNodeTree.RefreshNodes(false);
+
+                        //调用委托
+                        OnUnlockSkill(node.data);
                     }
                 );
+
+                //加载已解锁的技能
+                foreach (var skill in player.unlockedSkills)
+                {
+                    var node = skillNodeTree.FindTreeNode(skill.id);
+
+                    if (node == null)
+                    {
+                        Debug.LogError($"技能 {skill.id} 未找到对应的节点");
+                        continue;
+                    }
+
+                    node.status.unlocked = true;
+                }
+
+                //刷新节点显示
+                skillNodeTree.RefreshNodes(false);
 
                 #endregion
             }
@@ -1666,15 +1713,22 @@ namespace GameCore
             playingTaskCompletion = false;
         }
 
-        public void CompleteTask(string id, bool feedback = true, bool hasGotRewards = false)
+        public void CompleteTask(string id, bool feedback = true)
         {
-            if (CompleteTask_Internal(taskNodeTree.rootNode, id, out bool hasCompletedBefore, out TaskNode nodeCompleted) && !hasCompletedBefore && nodeCompleted != null)
-            {
-                if (hasGotRewards)
-                {
-                    nodeCompleted.status.hasGotRewards = true;
-                }
+            var node = taskNodeTree.FindTreeNode(id);
 
+            if (!node.status.completed)
+            {
+                //更改玩家数据
+                if (!player.completedTasks.Any(p => p.id == id))
+                {
+                    player.AddCompletedTasks(new() { id = id, completed = true, hasGotRewards = node.status.hasGotRewards });
+                };
+
+                //更改节点显示数据
+                node.status.completed = true;
+
+                //如果要求反馈，就播放完成动画
                 if (feedback)
                 {
                     MethodAgent.CallUntil(() => !playingTaskCompletion, () =>
@@ -1682,8 +1736,8 @@ namespace GameCore
                         playingTaskCompletion = true;
                         GameUI.Appear(taskCompleteBackground);
 
-                        taskCompleteIcon.image.sprite = nodeCompleted.icon.image.sprite;
-                        taskCompleteText.text.text = nodeCompleted.button.buttonText.text.text;
+                        taskCompleteIcon.image.sprite = node.icon.image.sprite;
+                        taskCompleteText.text.text = node.button.buttonText.text.text;
 
                         GAudio.Play(AudioID.Complete);
                         CoroutineStarter.Do(TaskCompleteTimer());
@@ -1691,53 +1745,8 @@ namespace GameCore
                 }
             }
 
+
             taskNodeTree.RefreshNodes(false);
-        }
-
-        private bool CompleteTask_Internal(TaskNode current, string id, out bool hasCompletedBefore, out TaskNode nodeCompleted)
-        {
-            //从父节点开始尝试完成
-            if (MakeTheSpecificNodeCompleted(current, out hasCompletedBefore, out nodeCompleted))
-            {
-                return true;
-            }
-
-            //不是父节点开始尝试完成子节点
-            foreach (var node in current.nodes)
-            {
-                if (CompleteTask_Internal((TaskNode)node, id, out hasCompletedBefore, out nodeCompleted))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-
-
-
-            bool MakeTheSpecificNodeCompleted(TaskNode node, out bool hasCompletedBefore, out TaskNode nodeCompleted)
-            {
-                if (node.data.id == id)
-                {
-                    nodeCompleted = node;
-                    hasCompletedBefore = node.status.completed;
-
-                    if (!player.completedTasks.Any(p => p.id == id))
-                    {
-                        player.AddCompletedTasks(new() { id = id, completed = true, hasGotRewards = node.status.hasGotRewards });
-                    };
-
-                    node.status.completed = true;
-                    return true;
-                }
-
-
-
-                nodeCompleted = null;
-                hasCompletedBefore = false;
-
-                return false;
-            }
         }
 
 
@@ -1787,78 +1796,6 @@ namespace GameCore
         #region 技能系统
 
 
-        public class SkillInfoShower
-        {
-            public class SkillInfoUI
-            {
-                public ImageIdentity image;
-                public TextIdentity nameText;
-                public TextIdentity detailText;
-
-                public SkillInfoUI(ImageIdentity image, TextIdentity nameText, TextIdentity detailText)
-                {
-                    this.image = image;
-                    this.nameText = nameText;
-                    this.detailText = detailText;
-                }
-            }
-
-            private static SkillInfoUI uiInstance;
-
-            public static SkillInfoUI GetUI()
-            {
-                if (uiInstance == null || !uiInstance.image || !uiInstance.nameText || !uiInstance.detailText)
-                {
-                    ImageIdentity image = GameUI.AddImage(UPC.Middle, "ori:image.task_info_shower", "ori:item_info_shower");
-                    TextIdentity nameText = GameUI.AddText(UPC.UpperLeft, "ori:text.task_info_shower.name", image);
-                    TextIdentity detailText = GameUI.AddText(UPC.UpperLeft, "ori:text.task_info_shower.detail", image);
-
-                    nameText.text.alignment = TMPro.TextAlignmentOptions.Left;
-                    detailText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
-
-                    image.SetSizeDelta(200, 200);
-                    nameText.SetSizeDelta(image.sd.x, 30);
-                    detailText.SetSizeDelta(nameText.sd.x, image.sd.y - nameText.sd.y);
-
-                    nameText.SetAPos(nameText.sd.x / 2, -nameText.sd.y / 2 - 5);
-                    detailText.SetAPos(nameText.ap.x, nameText.ap.y - nameText.sd.y / 2 - detailText.sd.y / 2 - 5);
-
-                    nameText.text.SetFontSize(18);
-                    detailText.text.SetFontSize(13);
-
-                    image.image.raycastTarget = false;
-                    nameText.text.raycastTarget = false;
-                    detailText.text.raycastTarget = false;
-
-                    uiInstance = new(image, nameText, detailText);
-                }
-
-                return uiInstance;
-            }
-
-            public static void Show(SkillNode skill)
-            {
-                SkillInfoUI ui = GetUI();
-                ui.image.transform.SetParent(skill.button.transform);
-                Vector2 pos = Vector2.zero;
-                pos.x += ui.image.sd.x;
-                pos.y -= ui.image.sd.y;
-
-                ui.image.ap = pos;
-                ui.nameText.text.text = skill.button.buttonText.text.text;
-                ui.detailText.text.text = GameUI.CompareText(skill.data.description).text;
-
-                ui.image.gameObject.SetActive(true);
-            }
-
-            public static void Hide()
-            {
-                SkillInfoUI ui = GetUI();
-                ui.image.gameObject.SetActive(false);
-            }
-        }
-
-
         [Serializable]
         public class SkillStatus
         {
@@ -1886,6 +1823,21 @@ namespace GameCore
         public class SkillNode : TreeNode<SkillData>
         {
             public SkillStatus status = new();
+
+            public bool IsParentLineUnlocked()
+            {
+                var currentParent = parent;
+
+                while (currentParent != null)
+                {
+                    if (!((SkillNode)currentParent).status.unlocked)
+                        return false;
+
+                    currentParent = currentParent.parent;
+                }
+
+                return true;
+            }
 
             public SkillNode(SkillData data) : base(data)
             {
@@ -1957,37 +1909,48 @@ namespace GameCore
         public RectTransform rectTransform => panel.rectTransform;
     }
 
-    public class InventorySlotUI
+    public class ItemSlotUI
     {
         public ButtonIdentity button;
         public ImageIdentity content;
 
-        public static InventorySlotUI Generate(string buttonId, string imageId, Vector2 sizeDelta)
+
+
+
+
+        public ItemSlotUI(ButtonIdentity button, ImageIdentity content)
         {
-            ButtonIdentity button = GameUI.AddButton(UPC.Middle, buttonId);
-            ImageIdentity image = GameUI.AddImage(UPC.Middle, imageId, null, button);
+            this.button = button;
+            this.content = content;
+        }
+
+        public ItemSlotUI(string buttonId, string imageId, Vector2 sizeDelta)
+        {
+            button = GameUI.AddButton(UPC.Middle, buttonId);
+            content = GameUI.AddImage(UPC.Middle, imageId, null, button);
 
             button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
-            image.image.sprite = null;
-            image.image.gameObject.SetActive(false);
+            content.image.sprite = null;
+            content.image.gameObject.SetActive(false);
 
             button.sd = sizeDelta;
-            image.sd = sizeDelta * 0.6f;
+            content.sd = sizeDelta * 0.6f;
 
-            image.ap = new(0, 3);
+            content.ap = new(0, 3);
 
             button.buttonText.text.raycastTarget = false;
-            image.image.raycastTarget = false;
+            content.image.raycastTarget = false;
 
             button.buttonText.SetSizeDeltaX(100);
             button.buttonText.text.SetFontSize(13);
             button.buttonText.SetAPosOnBySizeDown(button, -27.5f);
             button.buttonText.doRefresh = false;
             button.buttonText.text.text = string.Empty;
-
-            return new(button, image);
         }
+    }
 
+    public class InventorySlotUI : ItemSlotUI
+    {
         public void Refresh(IItemContainer container, string itemIndex, Func<Item, bool> replacementCondition = null)
         {
             Item item = container.GetItem(itemIndex);
@@ -2066,11 +2029,13 @@ namespace GameCore
             }
         }
 
-        public InventorySlotUI(ButtonIdentity button, ImageIdentity content)
-        {
-            this.button = button;
-            this.content = content;
-        }
+
+
+
+
+        public InventorySlotUI(ButtonIdentity button, ImageIdentity content) : base(button, content) { }
+
+        public InventorySlotUI(string buttonId, string imageId, Vector2 sizeDelta) : base(buttonId, imageId, sizeDelta) { }
     }
 
 

@@ -494,6 +494,7 @@ namespace GameCore
             //TODO: 优化寻址逻辑
             Debug.Log("开始重加载所有模组");
 
+            //初始化资源
             List<Mod> modsTemp = new();
             assemblies.Clear();
 
@@ -505,10 +506,31 @@ namespace GameCore
 
             Debug.Log($"模组路径:\n{GInit.modsPath}\n{Path.Combine(GInit.soleAssetsPath, "mods")}");
 
-            //获取模组文件夹并分出有 info 与无 info 的文件夹
+
+
+
+            //先在独占资源中寻找模组
             List<string> folders = IOTools.GetFoldersInFolder(Path.Combine(GInit.soleAssetsPath, "mods"), true).ToList();
+
+            //把 ori 排在第一个
+            for (int i = 0; i < folders.Count; i++)
+            {
+                var folder = folders[i];
+
+                if (IOTools.GetDirectoryName(folder) == "ori")
+                {
+                    folders.Remove(folder);
+                    folders.Insert(0, folder);
+                }
+            }
+
+            //然后在共享资源中寻找模组
             folders.AddRange(IOTools.GetFoldersInFolder(GInit.modsPath, true));
 
+
+
+
+            //处理日志信息
             StringBuilder foldersFound = Tools.stringBuilderPool.Get();
 
             foldersFound.Append("寻找模组文件夹完成, 找到以下文件夹\n");
@@ -518,11 +540,17 @@ namespace GameCore
             Debug.Log(foldersFound);
             Tools.stringBuilderPool.Recover(foldersFound);
 
+
+
+            //获取模组文件夹并分出有 info 与无 info 的文件夹
             string[] modPathsWithInfo = folders.Where(p => File.Exists(GetInfoPath(p))).ToArray();
             string[] modPathsWithoutInfo = folders.Where(p => !File.Exists(GetInfoPath(p))).ToArray();
 
             modCountFound = modPathsWithInfo.Length;
 
+
+
+            //加载模组
             foreach (var path in modPathsWithInfo)
             {
                 LoadMod(path, modsTemp);
@@ -534,6 +562,11 @@ namespace GameCore
 
             mods = modsTemp.ToArray();
 
+
+
+
+
+            //处理日志信息
             StringBuilder sb = Tools.stringBuilderPool.Get();
             sb.Append("模组加载完毕, 列表如下:\n");
             //TODO: 显示加载失败的模组
@@ -568,11 +601,17 @@ namespace GameCore
             Debug.Log(sb);
             Tools.stringBuilderPool.Recover(sb);
 
-            Thread.Sleep(20);
+
+
+
 
             //重新配置所有模组
             ReconfigureAllMods();
 
+
+
+
+            //完成
             MethodAgent.RunOnMainThread(_ =>
             {
                 afterReload?.Invoke();

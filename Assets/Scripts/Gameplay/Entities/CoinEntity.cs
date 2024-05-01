@@ -39,6 +39,13 @@ namespace GameCore
             SummonSetup();
         }
 
+
+        public bool CanBePickedUp() => !isDead;
+
+
+
+
+
         [Button("初始化")]
         public void SummonSetup()
         {

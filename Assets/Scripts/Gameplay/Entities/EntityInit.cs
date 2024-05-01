@@ -48,6 +48,7 @@ namespace GameCore
         public static readonly string coinVarId = $"{typeof(Player).FullName}.{nameof(Player.coin)}";
         public static readonly string inventoryVarId = $"{typeof(Player).FullName}.{nameof(Player.inventory)}";
         public static readonly string completedTasksVarId = $"{typeof(Player).FullName}.{nameof(Player.completedTasks)}";
+        public static readonly string unlockedSkillsVarId = $"{typeof(Player).FullName}.{nameof(Player.unlockedSkills)}";
         public static readonly string playerNameVarId = $"{typeof(Player).FullName}.{nameof(Player.playerName)}";
         public static readonly string skinHeadVarId = $"{typeof(Player).FullName}.{nameof(Player.skinHead)}";
         public static readonly string skinBodyVarId = $"{typeof(Player).FullName}.{nameof(Player.skinBody)}";
@@ -255,6 +256,12 @@ namespace GameCore
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.completedTasks ?? new()));
+                    }
+                    else if (pair.propertyPath == unlockedSkillsVarId)
+                    {
+                        PlayerSave saveAsPlayer = (PlayerSave)save;
+
+                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.unlockedSkills ?? new()));
                     }
                     else if (pair.propertyPath == playerNameVarId)
                     {

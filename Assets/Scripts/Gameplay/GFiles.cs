@@ -270,6 +270,13 @@ namespace GameCore
         public Vector2 pos;
         public int? health;
         public string saveId;
+
+        public void WriteFromEntity(Entity entity)
+        {
+            pos = entity.transform.position;
+            health = entity.health;
+            customData = entity.customData?.ToString(Formatting.None);
+        }
     }
 
     //TODO: 继承自 EntityData?
@@ -282,6 +289,7 @@ namespace GameCore
         public int coin;
         public Inventory inventory;// = new();
         public List<TaskStatusForSave> completedTasks = new();
+        public List<SkillStatusForSave> unlockedSkills = new();
 
         [NonSerialized] public byte[] skinHead;
         [NonSerialized] public byte[] skinBody;
@@ -292,6 +300,16 @@ namespace GameCore
         [NonSerialized] public byte[] skinLeftFoot;
         [NonSerialized] public byte[] skinRightFoot;
 
+        public void WriteFromPlayer(Player player)
+        {
+            inventory = player.inventory;
+            hungerValue = player.hungerValue;
+            coin = player.coin;
+            happinessValue = player.happinessValue;
+            completedTasks = player.completedTasks;
+            unlockedSkills = player.unlockedSkills;
+        }
+
         public static PlayerSave NewPlayer(string playerName)
         {
             return new PlayerSave()
@@ -300,7 +318,8 @@ namespace GameCore
                 inventory = new(Player.inventorySlotCountConst, null),
                 hungerValue = Player.defaultHungerValue,
                 happinessValue = Player.defaultHappinessValue,
-                completedTasks = new()
+                completedTasks = new(),
+                unlockedSkills = new()
             }; ;
         }
     }

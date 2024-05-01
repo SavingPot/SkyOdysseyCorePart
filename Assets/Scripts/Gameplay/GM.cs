@@ -655,11 +655,21 @@ namespace GameCore
         public void SummonDrop(Vector3 pos, string itemId, ushort count = 1, string customData = null)
         {
             StringBuilder sb = Tools.stringBuilderPool.Get();
-            var param = new JObject();
-            param.AddProperty("ori:item_data", sb.Append(itemId).Append("/=/").Append(count).Append("/=/").Append(customData).ToString());
+            JObject jo = customData == null ? new() : JsonTools.LoadJObjectByString(customData);
+
+            jo.AddProperty(
+                "ori:item_data",
+                sb.Append(itemId)
+                        .Append("/=/")
+                        .Append(count)
+                        .Append("/=/")
+                        .Append(customData)
+                        .ToString()
+            );
+
             Tools.stringBuilderPool.Recover(sb);
 
-            SummonEntity(pos, EntityID.Drop, null, true, null, param.ToString());
+            SummonEntity(pos, EntityID.Drop, null, true, null, jo.ToString());
         }
 
         [Button]

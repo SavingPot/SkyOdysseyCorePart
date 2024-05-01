@@ -826,7 +826,7 @@ namespace GameCore
 
 
 
-                if (jt.TryGetValue("economy", out var economy))
+                if (jt.TryGetJToken("economy", out var economy))
                 {
                     newItem.economy.worth = economy["worth"]?.ToInt() ?? 0;
                 }

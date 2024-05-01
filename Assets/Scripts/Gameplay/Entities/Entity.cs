@@ -894,9 +894,7 @@ namespace GameCore
 
         public virtual void WriteDataToSaveObject(EntitySave save)
         {
-            save.pos = transform.position;
-            save.health = health;
-            save.customData = customData?.ToString(Formatting.None);
+            save.WriteFromEntity(this);
         }
 
         public void WriteDataToWorldSave()

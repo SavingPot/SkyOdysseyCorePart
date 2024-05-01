@@ -18,6 +18,8 @@ namespace GameCore
         [LabelText("物品")]
         public Item item;
 
+        public float minTimeToPickUp { get; private set; }
+
 
         protected override void Awake()
         {
@@ -39,9 +41,27 @@ namespace GameCore
             SummonSetup();
         }
 
+
+
+        public bool CanBePickedUp()
+        {
+            // 1秒后可拾取
+            return Tools.time >= minTimeToPickUp && !isDead;
+        }
+
+
+
         [Button("初始化")]
         public void SummonSetup()
         {
+            //如果是被玩家抛出的物品，则设置最早的可拾起时间为 1s 后
+            if (customData.TryGetJToken("ori:drop", out var dropData) &&
+                dropData.TryGetJToken("is_thrown_by_player", out var isThrownByPlayer) && isThrownByPlayer.ToBool())
+            {
+                minTimeToPickUp = Tools.time + 1;
+            }
+            Debug.Log($"Drop.SummonSetup: {dropData==null}");
+
             /* ---------------------------------- 切割字符串 --------------------------------- */
             if (ConvertStringItem(customData?["ori:item_data"].ToString(), out string id, out ushort count, out string itemCustomData, out string error))
             {
@@ -68,6 +88,8 @@ namespace GameCore
                 Debug.LogError(error);
             }
         }
+
+
 
         public static bool ConvertStringItem(string str, out string id, out ushort count, out string customData, out string error)
         {
