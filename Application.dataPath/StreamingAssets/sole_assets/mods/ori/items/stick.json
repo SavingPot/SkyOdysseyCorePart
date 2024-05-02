@@ -1,9 +1,0 @@
-{
-    "json_format": "0.5.1",
-    "ori:item": {
-        "id": "ori:stick",
-        "texture": "ori:stick",
-        "damage": 12,
-        "description": "ori:description.stick"
-    }
-}

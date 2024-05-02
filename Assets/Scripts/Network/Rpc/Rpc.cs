@@ -12,6 +12,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System;
 using UnityEngine;
+using System.Threading.Tasks;
 
 namespace GameCore
 {
@@ -369,7 +370,7 @@ namespace GameCore
             //? 例如: 我有一个 Player, 需要传输 int value 这个值, 就需要把设定通用代理放在后面, 并写一个 PlayerSurrogate
             ModFactory.assemblies.Foreach(ass =>
             {
-                ass.GetTypes().Foreach(type =>
+                Parallel.ForEach(ass.GetTypes(), type =>
                 {
                     if (type.IsSubclassOf(typeof(Entity)))
                     {
@@ -384,7 +385,7 @@ namespace GameCore
 
             ModFactory.assemblies.Foreach(ass =>
             {
-                ass.GetTypes().Foreach(type =>
+                Parallel.ForEach(ass.GetTypes(), type =>
                 {
                     if (AttributeGetter.TryGetAttribute<SerializationSurrogatesClassAttribute>(type, out _))
                     {
@@ -433,12 +434,11 @@ namespace GameCore
                     var NMRpcTemp = Expression.Constant(new NMRpc(mtdPath, callType));
 
                     /* ---------------------------------- 获取参数 ---------------------------------- */
-                    var totalParameters = mtd.GetParameters();   //分为真正的参数和 NetworkConnection
+                    var totalParameters = mtd.GetParameters();   //参数分为真参数和 NetworkConnection
                     List<Type> trueParameters = new();
                     for (int i = 0; i < totalParameters.Length - 1; i++)
                     {
-                        var pa = totalParameters[i];
-                        trueParameters.Add(pa.ParameterType);
+                        trueParameters.Add(totalParameters[i].ParameterType);
                     }
                     var parameterListConst = Expression.Constant(trueParameters.ToArray());
 

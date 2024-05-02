@@ -678,8 +678,7 @@ namespace GameCore
 
                 #region 初始化
                 //加载Json文件并赋值
-                JObject infoJo = JsonTools.LoadJObjectByPath(infoPath);
-                newMod.info = ModLoading.LoadInfo(infoJo, iconPath);
+                newMod.info = ModLoading.LoadInfo(infoPath, iconPath);
 
                 if (!newMod.info.enabled)
                 {
@@ -800,53 +799,14 @@ namespace GameCore
                 }
                 #endregion
 
-                #region 加载结构
-                if (Directory.Exists(structurePath))
-                {
-                    List<string> structurePaths = IOTools.GetFilesInFolderIncludingChildren(structurePath, true, "json");
+                //加载结构
+                LoadModSubitem(structurePath, newMod.structures, path => ModLoading.LoadStructure(path));
 
-                    for (int b = 0; b < structurePaths.Count; b++) MethodAgent.DebugRun(() =>
-                    {
-                        JObject jo = JsonTools.LoadJObjectByPath(structurePaths[b]);
+                //加载群系方块预制体
+                LoadModSubitem(biomeBlockPrefabPath, newMod.biomeBlockPrefabs, path => ModLoading.LoadBiomeBlockPrefab(path));
 
-                        var temp = ModLoading.LoadStructure(jo);
-
-                        newMod.structures.Add(temp);
-                    });
-                }
-                #endregion
-
-                #region 加载群系
-                if (Directory.Exists(biomePrefabPath))
-                {
-                    if (Directory.Exists(biomeBlockPrefabPath))
-                    {
-                        string[] blockPrefabPaths = IOTools.GetFilesInFolder(biomeBlockPrefabPath, true, "json");
-
-                        for (int b = 0; b < blockPrefabPaths.Length; b++) MethodAgent.DebugRun(() =>
-                        {
-                            JObject jo = JsonTools.LoadJObjectByPath(blockPrefabPaths[b]);
-                            var temp = ModLoading.LoadBiomeBlockPrefab(jo);
-
-                            newMod.biomeBlockPrefabs.Add(temp);
-                        });
-                    }
-                }
-
-                if (Directory.Exists(biomesPath))
-                {
-                    string[] biomePaths = IOTools.GetFilesInFolder(biomesPath, true, "json");
-
-                    for (int b = 0; b < biomePaths.Length; b++) MethodAgent.DebugRun(() =>
-                    {
-                        JObject jo = JsonTools.LoadJObjectByPath(biomePaths[b]);
-                        var temp = ModLoading.LoadBiome(jo);
-
-                        if (temp != null)
-                            newMod.biomes.Add(temp);
-                    });
-                }
-                #endregion
+                //加载群系
+                LoadModSubitem(biomesPath, newMod.biomes, path => ModLoading.LoadBiome(path), false);
 
                 #region 加载文本
                 if (Directory.Exists(langsPath))
@@ -875,64 +835,17 @@ namespace GameCore
                 }
                 #endregion
 
-                #region 加载物品
-                if (Directory.Exists(itemsPath))
-                {
-                    List<string> paths = IOTools.GetFilesInFolderIncludingChildren(itemsPath, true, "json");
+                //加载物品
+                LoadModSubitem(itemsPath, newMod.items, path => ModLoading.LoadItem(path));
 
-                    paths.For(p => MethodAgent.DebugRun(() =>
-                    {
-                        ItemData newItem = ModLoading.LoadItem(p);
+                //加载魔咒
+                LoadModSubitem(spellsPath, newMod.spells, path => ModLoading.LoadSpell(path));
 
-                        newMod.items.Add(newItem);
-                    }));
-                }
-                #endregion
+                //加载合成表
+                LoadModSubitem(craftingRecipesPath, newMod.craftingRecipes, path => ModLoading.LoadCraftingRecipe(path));
 
-                #region 加载魔咒
-                if (Directory.Exists(spellsPath))
-                {
-                    List<string> paths = IOTools.GetFilesInFolderIncludingChildren(spellsPath, true, "json");
-
-                    paths.For(p => MethodAgent.DebugRun(() =>
-                    {
-                        JObject jo = JsonTools.LoadJObjectByPath(p);
-                        Spell spell = ModLoading.LoadSpell(jo);
-
-                        newMod.spells.Add(spell);
-                    }));
-                }
-                #endregion
-
-                #region 加载合成表
-                if (Directory.Exists(craftingRecipesPath))
-                {
-                    List<string> craftingRecipesPaths = IOTools.GetFilesInFolderIncludingChildren(craftingRecipesPath, true, "json");
-
-                    craftingRecipesPaths.For(p => MethodAgent.DebugRun(() =>
-                    {
-                        CraftingRecipe newCR = ModLoading.LoadCraftingRecipe(p);
-
-                        if (newCR != null)
-                            newMod.craftingRecipes.Add(newCR);
-                    }));
-                }
-                #endregion
-
-                #region 加载菜谱
-                if (Directory.Exists(cookingRecipesPath))
-                {
-                    List<string> cookingRecipesPaths = IOTools.GetFilesInFolderIncludingChildren(cookingRecipesPath, true, "json");
-
-                    cookingRecipesPaths.For(p => MethodAgent.DebugRun(() =>
-                    {
-                        CookingRecipe newCR = ModLoading.LoadCookingRecipe(p);
-
-                        if (newCR != null)
-                            newMod.cookingRecipes.Add(newCR);
-                    }));
-                }
-                #endregion
+                //加载菜谱
+                LoadModSubitem(cookingRecipesPath, newMod.cookingRecipes, path => ModLoading.LoadCookingRecipe(path));
 
                 #region 加载脚本 (Dll)
                 List<ImportType> importTypesTemp = new();
@@ -1015,6 +928,23 @@ namespace GameCore
                 //调用 ModEntry 的 OnModLoaded
                 MethodAgent.DebugRun(() => CallOnModLoaded(mods[^1]));
             });
+        }
+
+        private static void LoadModSubitem<T>(string directoryPath, List<T> subitemList, Func<string, T> LoadSubitem, bool includingChildren = true)
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                string[] subitemPaths = includingChildren ? IOTools.GetFilesInFolderIncludingChildren(directoryPath, true, "json").ToArray() :
+                                                            IOTools.GetFilesInFolder(directoryPath, true, "json");
+
+                for (int i = 0; i < subitemPaths.Length; i++) MethodAgent.DebugRun(() =>
+                {
+                    var temp = LoadSubitem(subitemPaths[i]);
+
+                    if (temp != null)
+                        subitemList.Add(temp);
+                });
+            }
         }
 
         public static Mod GetMod(string id)
@@ -1316,7 +1246,6 @@ namespace GameCore
     }
 
 
-    //TODO: 解决 ModClass 与 ModClassChild
     [Serializable]
     public class ModClass : IdClassBase, IJOFormatCore
     {
@@ -1404,24 +1333,14 @@ namespace GameCore
     }
 
     [Serializable]
-    public sealed class Mod_Info : IdClassBase, IJOFormatCore
+    public sealed class Mod_Info : ModClass, IJOFormatCore
     {
-        [JsonProperty(propertyName: "version"), LabelText("版本")] public string version;
+        public string version;
         public string description;
         public string name;
         public bool enabled;
         public Sprite icon;
         public bool isOri => id == "ori";
-
-
-
-
-        [LabelText("JF")] public string jsonFormat;
-        [LabelText("加载时的 JF")] public string jsonFormatWhenLoad;
-
-        string IJsonFormat.jsonFormat { get => jsonFormat; set => jsonFormat = value; }
-        string IJsonFormatWhenLoad.jsonFormatWhenLoad { get => jsonFormatWhenLoad; set => jsonFormatWhenLoad = value; }
-        public JObject jo { get; set; }
     }
 
     [Serializable]

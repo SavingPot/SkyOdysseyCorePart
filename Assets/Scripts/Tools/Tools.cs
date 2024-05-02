@@ -91,6 +91,18 @@ namespace GameCore
 
 
 
+        public static long GetTimeCost(Action action)
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            action();
+
+            watch.Stop();
+            long usedTime = watch.ElapsedMilliseconds;
+
+            return usedTime;
+        }
+
         public static void TimeTest(Action action)
         {
             Stopwatch watch = Stopwatch.StartNew();

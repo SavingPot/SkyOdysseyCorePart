@@ -1,8 +1,0 @@
-{
-    "json_format": "0.5.1",
-    "ori:item": {
-        "id": "ori:cactus_flower",
-        "texture": "ori:cactus_flower",
-        "description": "ori:description.cactus_flower"
-    }
-}

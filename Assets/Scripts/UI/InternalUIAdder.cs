@@ -138,7 +138,7 @@ namespace GameCore.UI
 
             foreach (var path in info)
             {
-                modDirs.Add(new(path, ModLoading.LoadInfo(JsonTools.LoadJObjectByPath(path), ModFactory.GetIconPath(IOTools.GetParentPath(path)))));
+                modDirs.Add(new(path, ModLoading.LoadInfo(path, ModFactory.GetIconPath(IOTools.GetParentPath(path)))));
             }
         }
 
@@ -166,7 +166,7 @@ namespace GameCore.UI
                     {
                         if (!hasShowedModLoadingInterface)
                         {
-                            float earliestExitTime = Tools.time + 5;
+                            float earliestExitTime = Tools.time + 4;
 
                             var panel = GameUI.AddPanel("ori:panel.first_scene_panel");
                             panel.panelImage.color = Tools.HexToColor("#070714");
@@ -206,7 +206,7 @@ namespace GameCore.UI
                                 ModFactory.CompareTexture("ori:loading_house_0").sprite,
                                 ModFactory.CompareTexture("ori:loading_house_1").sprite,
                             };
-                            
+
                             var _ = EasyAnim.PlaySprites(1.5f, sprites, sprite =>
                             {
                                 if (houseImage)

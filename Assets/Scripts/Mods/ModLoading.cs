@@ -87,16 +87,17 @@ namespace GameCore
             JObject jo = JsonTools.LoadJObjectByPath(path);
             var format = GetCorrectJsonFormatByJObject(jo);
             entrance = jo[entranceId];
-            var entranceIdToken = entrance["id"];
-            string entranceIdTokenAsString = null;
 
             //如果入口为空或者不是对象类型
-            if (entrance == null && entrance.Type != JTokenType.Object)
+            if (entrance == null || entrance.Type != JTokenType.Object)
             {
                 obj = null;
                 Debug.LogError($"{MethodGetter.GetLastMethodName()}: {path} 的 json 文件中不包含 {entranceId} 或者 {entranceId} 不是对象");
                 return false;
             }
+
+            var entranceIdToken = entrance["id"];
+            string entranceIdTokenAsString = null;
 
             //检查 Id
             if (!ignoreIdCheck)
@@ -133,7 +134,7 @@ namespace GameCore
             {
                 jsonFormat = format,
                 jo = jo,
-                id = entranceIdTokenAsString
+                id = entranceIdTokenAsString,
             };
 
             return true;
@@ -141,41 +142,30 @@ namespace GameCore
 
 
 
-        public static Mod_Info LoadInfo(JObject jo, string iconPath)
+        public static Mod_Info LoadInfo(string path, string iconPath)
         {
-            if (jo == null)
+            if (LoadModClass(path, "ori:mod_info", out Mod_Info info, out JToken entrance, true))
             {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
+                if (true)// (GameTools.CompareVersions(format, "0.6.4", Operators.less))
+                {
+                    info.jsonFormatWhenLoad = "0.6.4";
 
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            Mod_Info info = new()
-            {
-                jo = jo,
-                jsonFormat = format
-            };
-
-            if (true)// (GameTools.CompareVersions(format, "0.6.4", Operators.less))
-            {
-                info.jsonFormatWhenLoad = "0.6.4";
-
-                info.id = jo["ori:mod_info"]["id"].ToString();
-                info.enabled = jo["ori:mod_info"]["enabled"].ToBool();
-                info.version = jo["ori:mod_info"]["version"]?.ToString();
-                info.description = jo["ori:mod_info"]["display"]["description"].ToString();
-                info.name = jo["ori:mod_info"]["display"]["name"].ToString();
-            }
+                    info.id = entrance["id"].ToString();
+                    info.enabled = entrance["enabled"].ToBool();
+                    info.version = entrance["version"]?.ToString();
+                    info.description = entrance["display"]["description"].ToString();
+                    info.name = entrance["display"]["name"].ToString();
+                }
 
 
-            if (!iconPath.IsNullOrWhiteSpace() && File.Exists(iconPath))
-            {
-                MethodAgent.RunOnMainThread(_ => info.icon = Tools.LoadSpriteByPath(iconPath));
-            }
-            else
-            {
-                info.icon = GInit.instance.textureUnknown.sprite;
+                if (!iconPath.IsNullOrWhiteSpace() && File.Exists(iconPath))
+                {
+                    MethodAgent.RunOnMainThread(_ => info.icon = Tools.LoadSpriteByPath(iconPath));
+                }
+                else
+                {
+                    info.icon = GInit.instance.textureUnknown.sprite;
+                }
             }
 
             return info;
@@ -533,97 +523,71 @@ namespace GameCore
             return new(newBlock, newItem);
         }
 
-        public static StructureData LoadStructure(JObject jo)
+        public static StructureData LoadStructure(string path)
         {
-            if (jo == null)
+            if (LoadModClass(path, "ori:structure", out StructureData temp, out var entrance))
             {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
-
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            StructureData temp = new()
-            {
-                jsonFormat = format,
-                jo = jo
-            };
-
-            // 0.4.5 -> 0.4.8
-            if (GameTools.CompareVersions(format, "0.6.4", Operators.lessOrEqual))
-            {
-                temp.jsonFormatWhenLoad = "0.6.4";
-
-                temp.id = jo["ori:structure"]?["id"]?.ToString();
-                temp.probability = jo["ori:structure"]?["generation"]?["probability"]?.ToFloat() ?? 1;
-                temp.mustEnough = jo["ori:structure"]?["generation"]?["must_enough"]?.ToBool() ?? true;
-
-                List<AttachedBlockDatum> requireBlockTemp = new();
-                jo["ori:structure"]?["generation"]?["require"]?.For(i =>
+                // 0.4.5 -> 0.4.8
+                if (GameTools.CompareVersions(temp.jsonFormat, "0.6.4", Operators.lessOrEqual))
                 {
-                    if (i["id"] != null)
-                    {
-                        if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
-                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
-                        else if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
-                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
-                        else
-                            requireBlockTemp.Add(new(i["id"]?.ToString(), Vector2Int.zero, false));
-                    }
-                });
-                temp.require = requireBlockTemp.ToArray();
+                    temp.jsonFormatWhenLoad = "0.6.4";
 
-                List<AttachedBlockDatum> fixedBlockTemp = new();
-                jo["ori:structure"]?["blocks"]?["fixed"]?.For(i =>
-                {
-                    if (i["id"] != null)
+                    temp.probability = entrance["generation"]?["probability"]?.ToFloat() ?? 1;
+                    temp.mustEnough = entrance["generation"]?["must_enough"]?.ToBool() ?? true;
+
+                    List<AttachedBlockDatum> requireBlockTemp = new();
+                    entrance["generation"]?["require"]?.For(i =>
                     {
-                        if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
-                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
-                        if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
-                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
-                        else
-                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(), false));
-                    }
-                });
-                temp.fixedBlocks = fixedBlockTemp.ToArray();
+                        if (i["id"] != null)
+                        {
+                            if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
+                                requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
+                            else if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
+                                requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
+                            else
+                                requireBlockTemp.Add(new(i["id"]?.ToString(), Vector2Int.zero, false));
+                        }
+                    });
+                    temp.require = requireBlockTemp.ToArray();
+
+                    List<AttachedBlockDatum> fixedBlockTemp = new();
+                    entrance["blocks"]?["fixed"]?.For(i =>
+                    {
+                        if (i["id"] != null)
+                        {
+                            if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
+                                fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
+                            if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
+                                fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
+                            else
+                                fixedBlockTemp.Add(new(i["id"]?.ToString(), new(), false));
+                        }
+                    });
+                    temp.fixedBlocks = fixedBlockTemp.ToArray();
+                }
             }
 
             return temp;
         }
 
-        public static BiomeBlockPrefab LoadBiomeBlockPrefab(JObject jo)
+        public static BiomeBlockPrefab LoadBiomeBlockPrefab(string path)
         {
-            if (jo == null)
+            if (LoadModClass(path, "prefab", out BiomeBlockPrefab temp, out var entrance))
             {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
+                //0.7.0 -> 0.~~
+                if (GameTools.CompareVersions(temp.jsonFormat, "0.7.0", Operators.thanOrEqual))
+                {
+                    temp.jsonFormatWhenLoad = "0.7.0";
+                    entrance["content"]?.For(prefab => MethodAgent.DebugRun(() =>
+                    {
+                        var block = LoadBiomeBlock(prefab, temp.jsonFormatWhenLoad);
+                        block.isPrefab = true;
+
+                        temp.content.Add(block);
+                    }));
+                }
             }
 
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            BiomeBlockPrefab temp = new()
-            {
-                jo = jo,
-                jsonFormat = format,
-            };
-
-            //0.4.5 -> 0.
-            string jfToLoad = string.Empty;
-            if (GameTools.CompareVersions(format, "0.7.0", Operators.thanOrEqual))
-            {
-                jfToLoad = "0.7.0";
-            }
-
-            temp.jsonFormatWhenLoad = jfToLoad;
-            temp.id = jo["prefab"]?["id"]?.ToString();
-            jo["prefab"]?["content"]?.For(prefab => MethodAgent.DebugRun(() =>
-            {
-                var block = LoadBiomeBlock(prefab, jfToLoad);
-                block.isPrefab = true;
-
-                temp.content.Add(block);
-            }));
 
             return temp;
         }
@@ -655,7 +619,7 @@ namespace GameCore
 
                     jt["blocks"]?.Foreach(blockToken =>
                     {
-                        IntervalFormulaToMinMaxFormula(blockToken["range"]?.ToString(), out var minFormula, out var maxFormula);
+                        StringExtensions.SplitIntervalFormulaIntoMinMaxFormula(blockToken["range"]?.ToString(), out var minFormula, out var maxFormula);
 
                         perlinBlocks.Add(new()
                         {
@@ -690,7 +654,7 @@ namespace GameCore
                 ModCreate.GetFor(jt, "data.biome.blocks.ranges", jfToLoad, token =>
                 {
                     var tokenStr = token.ToString();
-                    IntervalFormulaToMinMaxFormula(tokenStr, out var minFormula, out var maxFormula);
+                    StringExtensions.SplitIntervalFormulaIntoMinMaxFormula(tokenStr, out var minFormula, out var maxFormula);
 
                     rangesTemp.Add(new()
                     {
@@ -709,98 +673,64 @@ namespace GameCore
             return temp;
         }
 
-        //TODO: Move it to SP.Tools
-        public static void IntervalFormulaToMinMaxFormula(string intervalFormula, out string minFormula, out string maxFormula)
+
+        public static BiomeData LoadBiome(string path)
         {
-            var splitted = intervalFormula.Split("=>");
-
-            if (splitted.Length == 1)
+            if (LoadModClass(path, "ori:biome", out BiomeData temp, out var entrance))
             {
-                minFormula = splitted[0];
-                maxFormula = minFormula;
-            }
-            else if (splitted.Length == 2)
-            {
-                minFormula = splitted[0];
-                maxFormula = splitted[1];
-            }
-            else
-            {
-                throw new();
-            }
-        }
-
-        public static BiomeData LoadBiome(JObject jo)
-        {
-            if (jo == null)
-            {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
-
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            BiomeData temp = new()
-            {
-                jsonFormat = format,
-                jo = jo
-            };
-
-            //0.4.5 -> 0.
-            string jfToLoad = string.Empty;
-            if (GameTools.CompareVersions(format, "0.6.2", Operators.thanOrEqual))
-            {
-                jfToLoad = "0.6.2";
-                temp.jsonFormatWhenLoad = jfToLoad;
-
-                temp.id = ModCreate.GetStr(temp, "data.biome.id");
-                temp.minScale = ModCreate.Get(temp, "data.biome.size_scope.min")?.ToVector2() ?? new Vector2(0.3f, 0.25f);
-                temp.maxScale = ModCreate.Get(temp, "data.biome.size_scope.max")?.ToVector2() ?? new Vector2(0.4f, 0.4f);
-
-                if (jo["ori:biome"]?["distribution"] != null)
+                //* 0.6.2 -> ~
+                if (GameTools.CompareVersions(temp.jsonFormat, "0.6.2", Operators.thanOrEqual))
                 {
-                    temp.distribution = jo["ori:biome"]["distribution"].ToString().ToInt();
-                }
-                else
-                {
-                    Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {temp.id} 没有 distribution 属性，群系必须指定分布");
-                    return null;
-                }
+                    temp.jsonFormatWhenLoad = "0.6.2";
+                    temp.minScale = entrance["size_scope"]?["min"]?.ToVector2() ?? new Vector2(0.3f, 0.25f);
+                    temp.maxScale = entrance["size_scope"]?["max"]?.ToVector2() ?? new Vector2(0.4f, 0.4f);
 
-                List<BiomeData_Block> blocksTemp = new();
-                ModCreate.GetFor(temp, "data.biome.blocks", l =>
-                {
-                    BiomeData_Block block;
-
-                    if (l["prefab"] == null)
+                    if (entrance.TryGetJToken("distribution", out var distribution))
                     {
-                        block = LoadBiomeBlock(l, jfToLoad);
+                        temp.distribution = distribution.ToString().ToInt();
                     }
                     else
                     {
-                        block = new() { id = l["prefab"].ToString(), isPrefab = true, initialized = false };
+                        Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {temp.id} 没有 distribution 属性，群系必须指定分布");
+                        return null;
                     }
 
-                    blocksTemp.Add(block);
-                });
-                temp.blocks = blocksTemp.ToArray();
-                List<BiomeData_Structure> structuresTempList = new();
-                ModCreate.GetFor(temp, "data.biome.structures", l =>
-                {
-                    structuresTempList.Add(new()
+                    List<BiomeData_Block> blocksTemp = new();
+                    entrance["blocks"]?.For(blockJT =>
                     {
-                        structure = new()
-                        {
-                            id = ModCreate.GetStr(temp, "data.biome.structures.id", l)
-                        }
-                    });
-                });
-                temp.structures = structuresTempList.ToArray();
+                        BiomeData_Block block;
 
-                ModCreate.GetFor(temp, "data.biome.tags", i =>
-                {
-                    temp.tags.Add(i.ToString());
-                });
+                        if (blockJT["prefab"] == null)
+                        {
+                            block = LoadBiomeBlock(blockJT, temp.jsonFormatWhenLoad);
+                        }
+                        else
+                        {
+                            block = new() { id = blockJT["prefab"].ToString(), isPrefab = true, initialized = false };
+                        }
+
+                        blocksTemp.Add(block);
+                    });
+                    temp.blocks = blocksTemp.ToArray();
+
+                    List<BiomeData_Structure> structuresTempList = new();
+                    entrance["structures"]?.For(structJT =>
+                    {
+                        structuresTempList.Add(new()
+                        {
+                            structure = new()
+                            {
+                                id = structJT["id"].ToString()
+                            }
+                        });
+                    });
+                    temp.structures = structuresTempList.ToArray();
+
+                    entrance["tags"]?.For(tagJT =>
+                    {
+                        temp.tags.Add(tagJT.ToString());
+                    });
+                }
             }
 
             return temp;
@@ -924,31 +854,24 @@ namespace GameCore
             return newItem;
         }
 
-        public static Spell LoadSpell(JObject jo)
+        public static Spell LoadSpell(string path)
         {
-            if (jo == null)
+            if (LoadModClass(path, "ori:spell", out Spell temp, out var entrance))
             {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
-
-            var format = GetCorrectJsonFormatByJObject(jo);
-
-            Spell spell = new();
-
-            if (true)//(GameTools.CompareVersions(format, "0.7.8", Operators.lessOrEqual))
-            {
-                spell.id = jo["ori:spell"]?["id"]?.ToString();
-                spell.cost = jo["ori:spell"]?["cost"]?.ToInt() ?? 1;
-                spell.description = jo["ori:spell"]?["description"]?.ToString();
-
-                jo["ori:spell"]?["tags"]?.For(i =>
+                if (true)//(GameTools.CompareVersions(format, "0.7.8", Operators.lessOrEqual))
                 {
-                    spell.tags.Add(i.ToString());
-                });
+                    temp.id = entrance?["id"]?.ToString();
+                    temp.cost = entrance?["cost"]?.ToInt() ?? 1;
+                    temp.description = entrance?["description"]?.ToString();
+
+                    entrance?["tags"]?.For(i =>
+                    {
+                        temp.tags.Add(i.ToString());
+                    });
+                }
             }
 
-            return spell;
+            return temp;
         }
     }
 }

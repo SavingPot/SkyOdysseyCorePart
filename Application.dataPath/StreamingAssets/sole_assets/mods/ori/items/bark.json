@@ -1,9 +1,0 @@
-{
-    "json_format": "0.5.1",
-    "ori:item": {
-        "id": "ori:bark",
-        "texture": "ori:bark",
-        "damage": 10,
-        "description": "ori:description.bark"
-    }
-}

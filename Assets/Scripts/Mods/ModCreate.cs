@@ -232,10 +232,6 @@ namespace GameCore
             pairs = new()
             {
                 {
-                    new("data.biome.blocks.type", "0.6.2"),
-                    new[] { "type" }
-                },
-                {
                     new("data.biome.blocks.block", "0.6.2"),
                     new[] { "block" }
                 },
@@ -248,14 +244,6 @@ namespace GameCore
                     new[] { "ranges" }
                 },
                 {
-                    new("data.biome.blocks.ranges.min", "0.6.2"),
-                    new[] { "min" }
-                },
-                {
-                    new("data.biome.blocks.ranges.max", "0.6.2"),
-                    new[] { "max" }
-                },
-                {
                     new("data.biome.blocks.attached.id", "0.6.2"),
                     new[] { "attached", "id" }
                 },
@@ -264,48 +252,8 @@ namespace GameCore
                     new[] { "attached", "offset" }
                 },
                 {
-                    new("data.biome.blocks.attached.loc", "0.6.2"),
-                    new[] { "attached", "loc" }
-                },
-                {
                     new("data.biome.blocks.rules.probability", "0.6.2"),
                     new[] { "rules", "probability" }
-                },
-                {
-                    new("data.biome.blocks", "0.6.2"),
-                    new[] { "ori:biome", "blocks" }
-                },
-                {
-                    new("data.biome.structures.id", "0.6.2"),
-                    new[] { "id" }
-                },
-                {
-                    new("data.biome.id", "0.6.2"),
-                    new[] { "ori:biome", "id" }
-                },
-                {
-                    new("data.biome.tags", "0.6.2"),
-                    new[] { "ori:biome", "tags" }
-                },
-                {
-                    new("data.biome.structures", "0.6.2"),
-                    new[] { "ori:biome", "structures" }
-                },
-                {
-                    new("data.biome.blocks.fixed_layers", "0.6.2"),
-                    new[] { "ori:biome", "blocks", "fixed_layers" }
-                },
-                {
-                    new("data.biome.blocks.inserted_blocks", "0.6.2"),
-                    new[] { "ori:biome", "blocks", "inserted_blocks" }
-                },
-                {
-                    new("data.biome.size_scope.min", "0.6.2"),
-                    new[] { "ori:biome", "size_scope", "min" }
-                },
-                {
-                    new("data.biome.size_scope.max", "0.6.2"),
-                    new[] { "ori:biome", "size_scope", "max" }
                 },
 
 

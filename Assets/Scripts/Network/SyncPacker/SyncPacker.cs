@@ -10,6 +10,8 @@ using System.Text;
 using System;
 using UnityEngine;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace GameCore
 {
@@ -314,7 +316,7 @@ namespace GameCore
         public static Func<string, string> StaticSetterId;
 
         public static Action StaticVarsRegister;
-        public static Action<Entity> InstanceVarsRegister;//TODO
+        //public static Action<Entity> InstanceVarsRegister;//TODO
 
         private static readonly StringBuilder stringBuilder = new();
 
@@ -372,7 +374,7 @@ namespace GameCore
         }
 
 
-        public static void Init()
+        public static async void Init()
         {
             sendInterval = defaultSendInterval;
 
@@ -384,6 +386,10 @@ namespace GameCore
             var _StaticSet = typeof(SyncPacker).GetMethod($"{nameof(SyncPacker._StaticSet)}");
             var RegisterVar = typeof(SyncPacker).GetMethod(nameof(SyncPacker.RegisterVar), new Type[] { typeof(string), typeof(bool), typeof(byte[]) });
             var RpcBytesToObject = typeof(Rpc).GetMethod(nameof(Rpc.BytesToObject), 0, new Type[] { typeof(byte[]) });
+            var _StaticOnValueChangeBind = typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBind));
+            var _StaticOnValueChangeBindWithHook = typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBindWithHook));
+            var _InstanceOnValueChangeBind = typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBind));
+            var _InstanceOnValueChangeBindWithHook = typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBindWithHook));
 
             ParameterExpression firstTempValue_id = Expression.Parameter(typeof(string), "id");
             ParameterExpression firstTempValue_instance = Expression.Parameter(typeof(Entity), "instance");
@@ -404,6 +410,8 @@ namespace GameCore
 
             Action staticVarsRegisterMethods = () => { };
 
+            List<Thread> waitingThread = new();
+
             /* -------------------------------------------------------------------------- */
             //?                               更改方法内容                                 */
             /* -------------------------------------------------------------------------- */
@@ -416,7 +424,6 @@ namespace GameCore
                     if (!ModFactory.IsUserType(type) || type.IsGenericType)
                         continue;
 
-                    //TODO: 现在检测的耗时很高
                     //获取所有可用方法
                     foreach (var property in type.GetAllProperties())
                     {
@@ -427,6 +434,7 @@ namespace GameCore
                             var valueType = property.PropertyType;
                             var valueTypeName = valueType.FullName;
                             var tempFieldPath = $"{propertyPath}_temp";
+                            var valueTypeArray = new Type[] { valueType };
                             var tempField = type.GetFieldFromAllIncludingBases($"{property.Name}_temp");
                             var tempFieldConst = Expression.Constant(tempField, typeof(FieldInfo));
                             var setterMethodPath = $"{propertyPath}_set";
@@ -437,6 +445,8 @@ namespace GameCore
 
 
 
+                            #region 检查
+#if DEBUG
 
                             if (propertyPath.Contains("_set"))
                             {
@@ -484,13 +494,16 @@ namespace GameCore
                                 continue;
                             }
 
+#endif
+                            #endregion
 
 
 
 
 
 
-                            #region 修改 _set 方法
+
+                            #region 修改 _set 方法（这个地方 Harmony 的耗时很高，所以我们用了多线程）
 
 
                             /* ---------------------------------- 编辑方法 ---------------------------------- */
@@ -498,24 +511,26 @@ namespace GameCore
                             if (!setterMethod.IsStatic)
                             {
                                 //* 通过 setterMethod 的名字获取变量名
-                                instanceSetterIdCases.Add(Expression.SwitchCase(
-                                    propertyPathConst,
-                                    Expression.Constant(setterMethodPath)
-                                ));
+                                lock (instanceSetterIdCases)
+                                    instanceSetterIdCases.Add(Expression.SwitchCase(
+                                        propertyPathConst,
+                                        Expression.Constant(setterMethodPath)
+                                    ));
 
                                 //修改方法
-                                harmony.Patch(setterMethod, new HarmonyMethod(_InstanceSet));
+                                waitingThread.Add(MethodAgent.RunThread(() => harmony.Patch(setterMethod, new HarmonyMethod(_InstanceSet))));
                             }
                             else
                             {
-                                //* 通过 setterMethod 的名字获取变量名
-                                staticSetterIdCases.Add(Expression.SwitchCase(
-                                    propertyPathConst,
-                                    Expression.Constant(setterMethodPath)
-                                ));
+                                lock (staticSetterIdCases)
+                                    //* 通过 setterMethod 的名字获取变量名
+                                    staticSetterIdCases.Add(Expression.SwitchCase(
+                                        propertyPathConst,
+                                        Expression.Constant(setterMethodPath)
+                                    ));
 
                                 //修改方法
-                                harmony.Patch(setterMethod, new HarmonyMethod(_StaticSet));
+                                waitingThread.Add(MethodAgent.RunThread(() => harmony.Patch(setterMethod, new HarmonyMethod(_StaticSet))));
                             }
 
                             #endregion
@@ -528,8 +543,8 @@ namespace GameCore
 
                             #region 绑定 值改变事件
 
+                            //处理钩子方法（线程安全）
                             MethodInfo hookMethod = null;
-
                             if (!att.hook.IsNullOrWhiteSpace())
                             {
                                 //获取钩子方法
@@ -556,65 +571,67 @@ namespace GameCore
 
 
                             //绑定初始值设置
-                            firstTempValueCases.Add(
-                                Expression.SwitchCase(
-                                        isStaticVar ?
-                                            Expression.Call(
-                                                    null,
-                                                    typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBind)).MakeGenericMethod(new Type[] { valueType }),
-                                                    firstTempValue_newValueBytes,
-                                                    tempFieldConst
-                                                ) :
-                                            Expression.Call(
-                                                    null,
-                                                    typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBind)).MakeGenericMethod(new Type[] { valueType }),
-                                                    firstTempValue_newValueBytes,
-                                                    tempFieldConst,
-                                                    firstTempValue_instance
-                                                ),
-                                        propertyPathConst
-                                    )
-                            );
+                            lock (firstTempValueCases)
+                                firstTempValueCases.Add(
+                                    Expression.SwitchCase(
+                                            isStaticVar ?
+                                                Expression.Call(
+                                                        null,
+                                                        _StaticOnValueChangeBind.MakeGenericMethod(valueTypeArray),
+                                                        firstTempValue_newValueBytes,
+                                                        tempFieldConst
+                                                    ) :
+                                                Expression.Call(
+                                                        null,
+                                                        _InstanceOnValueChangeBind.MakeGenericMethod(valueTypeArray),
+                                                        firstTempValue_newValueBytes,
+                                                        tempFieldConst,
+                                                        firstTempValue_instance
+                                                    ),
+                                            propertyPathConst
+                                        )
+                                );
 
 
                             //绑定值改变事件
-                            onValueChangeCases.Add((isStaticVar, hookMethod == null) switch
-                            {
-                                (true, true) => Expression.SwitchCase(
-                                                Expression.Call(
-                                                        null,
-                                                        typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBind)).MakeGenericMethod(new Type[] { valueType }),
-                                                        onValueChangeParam_newValueBytes,
-                                                        tempFieldConst),
-                                                propertyPathConst),
-                                (true, false) => Expression.SwitchCase(
-                                                Expression.Call(
-                                                        null,
-                                                        typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBindWithHook)).MakeGenericMethod(new Type[] { valueType }),
-                                                        onValueChangeParam_oldValueBytes,
-                                                        onValueChangeParam_newValueBytes,
-                                                        tempFieldConst,
-                                                        Expression.Constant(hookMethod)),
-                                                propertyPathConst),
-                                (false, true) => Expression.SwitchCase(
-                                                Expression.Call(
-                                                        null,
-                                                        typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBind)).MakeGenericMethod(new Type[] { valueType }),
-                                                        onValueChangeParam_newValueBytes,
-                                                        tempFieldConst,
-                                                        onValueChangeParam_instance),
-                                                propertyPathConst),
-                                (false, false) => Expression.SwitchCase(
-                                                Expression.Call(
-                                                        null,
-                                                        typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBindWithHook)).MakeGenericMethod(new Type[] { valueType }),
-                                                        onValueChangeParam_oldValueBytes,
-                                                        onValueChangeParam_newValueBytes,
-                                                        tempFieldConst,
-                                                        Expression.Constant(hookMethod),
-                                                        onValueChangeParam_instance),
-                                                propertyPathConst)
-                            });
+                            lock (onValueChangeCases)
+                                onValueChangeCases.Add((isStaticVar, hookMethod == null) switch
+                                {
+                                    (true, true) => Expression.SwitchCase(
+                                                    Expression.Call(
+                                                            null,
+                                                            _StaticOnValueChangeBind.MakeGenericMethod(valueTypeArray),
+                                                            onValueChangeParam_newValueBytes,
+                                                            tempFieldConst),
+                                                    propertyPathConst),
+                                    (true, false) => Expression.SwitchCase(
+                                                    Expression.Call(
+                                                            null,
+                                                            _StaticOnValueChangeBindWithHook.MakeGenericMethod(valueTypeArray),
+                                                            onValueChangeParam_oldValueBytes,
+                                                            onValueChangeParam_newValueBytes,
+                                                            tempFieldConst,
+                                                            Expression.Constant(hookMethod)),
+                                                    propertyPathConst),
+                                    (false, true) => Expression.SwitchCase(
+                                                    Expression.Call(
+                                                            null,
+                                                            _InstanceOnValueChangeBind.MakeGenericMethod(valueTypeArray),
+                                                            onValueChangeParam_newValueBytes,
+                                                            tempFieldConst,
+                                                            onValueChangeParam_instance),
+                                                    propertyPathConst),
+                                    (false, false) => Expression.SwitchCase(
+                                                    Expression.Call(
+                                                            null,
+                                                            _InstanceOnValueChangeBindWithHook.MakeGenericMethod(valueTypeArray),
+                                                            onValueChangeParam_oldValueBytes,
+                                                            onValueChangeParam_newValueBytes,
+                                                            tempFieldConst,
+                                                            Expression.Constant(hookMethod),
+                                                            onValueChangeParam_instance),
+                                                    propertyPathConst)
+                                });
 
                             #endregion
 
@@ -694,6 +711,15 @@ namespace GameCore
                             #endregion
                         }
                     }
+                }
+            }
+
+            //等待所有线程完成（通常等待的耗时很短）
+            foreach (var thread in waitingThread)
+            {
+                if (thread.ThreadState == ThreadState.Running)
+                {
+                    await UniTask.NextFrame();
                 }
             }
 
