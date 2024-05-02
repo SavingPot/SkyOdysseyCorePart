@@ -9,7 +9,8 @@ namespace GameCore
 {
     public abstract class Enemy : Creature, IHumanBodyParts<CreatureBodyPart>
     {
-        public Entity targetEntity;
+        Entity targetEntity_temp; void targetEntity_set(Entity value) { }
+        [Sync] public Entity targetEntity { get => targetEntity_temp; set => targetEntity_set(value); }
         public float searchTime = float.NegativeInfinity;
         public float attackTimer;
         public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: 包含 动画的layer 信息
@@ -20,6 +21,19 @@ namespace GameCore
 
 
 
+        public override void AfterInitialization()
+        {
+            base.AfterInitialization();
+
+            EnemyCenter.AddEnemy(this);
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            EnemyCenter.RemoveEnemy(this);
+        }
 
 
         protected override void ServerUpdate()
@@ -102,6 +116,25 @@ namespace GameCore
         {
             if (targetEntity.isDead || (targetEntity.transform.position - transform.position).sqrMagnitude > data.searchRadiusSqr)
                 targetEntity = null;
+        }
+    }
+
+    public static class EnemyCenter
+    {
+        public static List<Enemy> all = new();
+        public static Action<Enemy> OnAddEnemy = _ => { };
+        public static Action<Enemy> OnRemoveEnemy = _ => { };
+
+        public static void AddEnemy(Enemy enemy)
+        {
+            all.Add(enemy);
+            OnAddEnemy(enemy);
+        }
+
+        public static void RemoveEnemy(Enemy enemy)
+        {
+            all.Remove(enemy);
+            OnRemoveEnemy(enemy);
         }
     }
 }

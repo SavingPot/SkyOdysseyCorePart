@@ -39,12 +39,14 @@ namespace GameCore
         public const string Rain = "ori:rain";
         public const string Reward = "ori:reward";
         public const string Rooster = "ori:rooster";
+        public const string Skirmish0 = "ori:skirmish_0";
         public const string Smother = "ori:smother";
         public const string Swim0 = "ori:swim_0";
         public const string Swim1 = "ori:swim_1";
         public const string Swim2 = "ori:swim_2";
         public const string Swim3 = "ori:swim_3";
         public const string SwitchQuickInventorySlot = "ori:switch_quick_inventory_slot";
+        public const string TheNewRegion = "ori:the_new_region";
         public const string Town = "ori:town";
         public const string WearArmor = "ori:wear_armor";
         public const string WhyNotComeToTheParty = "ori:why_not_come_to_the_party";

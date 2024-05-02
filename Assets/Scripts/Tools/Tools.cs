@@ -490,6 +490,11 @@ namespace GameCore
             return viewPos.x >= 0 && viewPos.x <= 1 && viewPos.y >= 0 && viewPos.y <= 1;
         }
 
+        public bool IsInView2DFaster(Vector2 worldPos)
+        {
+            return worldPos.x <= viewRightSideWorldPos && worldPos.x >= viewLeftSideWorldPos && worldPos.y <= viewUpSideWorldPos && worldPos.y >= viewDownSideWorldPos;
+        }
+
         /// <summary>
         /// 检测物体是否在屏幕内.
         /// Check if is the point object in the screen.
