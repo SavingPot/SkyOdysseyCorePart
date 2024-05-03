@@ -424,6 +424,10 @@ namespace GameCore
                     if (!ModFactory.IsUserType(type) || type.IsGenericType)
                         continue;
 
+                    //TODO: 加油，没那么难
+                    //TODO: 要做的是加载完后保存好所有同步变量的类型，
+                    //TODO: 现在oldValue改为object,而非byte[], SetValue(以后接受参数object而非byte[])
+                    //TODO: 在注册同步变量后就开始在AutoRegister中记录同步变量的值（检测object而非byte[]），然后检测有无变化
                     //获取所有可用方法
                     foreach (var property in type.GetAllProperties())
                     {
