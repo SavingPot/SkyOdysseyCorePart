@@ -46,7 +46,7 @@ namespace GameCore
                     Debug.LogError($"{nameof(sendInterval)} 值不应小于或等于 0, 否则程序将停止响应, 已按照 {nameof(defaultSendInterval)}:{defaultSendInterval} 处理");
                     value = defaultSendInterval;
                 }
-
+                
                 _sendInterval = value;
             }
         }

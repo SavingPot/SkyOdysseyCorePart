@@ -779,6 +779,7 @@ namespace GameCore
         }
         public virtual void OnDeathClient()
         {
+            //让玩家看不见实体
             Hide();
             ColliderOff();
             this.enabled = false;
@@ -823,50 +824,6 @@ namespace GameCore
 
 
 
-
-        /* -------------------------------------------------------------------------- */
-        /*                                     重生逻辑                                     */
-        /* -------------------------------------------------------------------------- */
-        //TODO：也许可以删除重生机制
-        public virtual void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller) { }
-        public virtual void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller) { }
-
-
-
-        public void Reborn(int newHealth, Vector2? newPos)
-        {
-            ServerReborn(newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
-        }
-
-        [ServerRpc]
-        public void ServerReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
-        {
-            //刷新属性
-            health = newHealth;
-            isDead = false;
-
-            OnRebornServer(newHealth, newPos, caller);
-
-            //如果数值无效, 则使用默认的重生点
-            if (float.IsInfinity(newPos.x) || float.IsInfinity(newPos.y))
-                newPos = GFiles.world.GetRegion(regionIndex)?.spawnPoint ?? Vector2Int.zero;
-
-            //非玩家实体重生时, 由服务器设置位置
-            if (isNotPlayer)
-                transform.position = newPos;
-
-            ClientReborn(newHealth, newPos, caller);
-        }
-
-        [ClientRpc]
-        public void ClientReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
-        {
-            OnRebornClient(newHealth, newPos, caller);
-
-            //玩家重生时, 由对应客户端设置位置
-            if (isPlayer)
-                transform.position = newPos;
-        }
 
 
 

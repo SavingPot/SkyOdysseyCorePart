@@ -474,12 +474,12 @@ namespace GameCore
 
                     if (entrance.TryGetJToken("display", out var display))
                     {
-                        //如果指定 texture 就是 texture, 不指定 texture 就是 id
-                        newBlock.defaultTexture = new(display["texture_id"]?.ToString() ?? newBlock.id);
-
                         newBlock.lightLevel = display["light_level"]?.ToFloat() ?? 0;
                         newBlock.description = display["description"]?.ToString();
                     }
+
+                    //如果指定 texture 就是 texture, 不指定 texture 就是 id
+                    newBlock.defaultTexture = new(display?["texture_id"]?.ToString() ?? newBlock.id);
 
                     //如果不指定介绍就按照 id 自动生成
                     if (newBlock.description == null)

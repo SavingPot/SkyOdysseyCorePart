@@ -28,7 +28,7 @@ namespace MainGame.Tiles
             }
         }
 
-        // ¸ù¾İÏàÁÚµÄ Tile È·¶¨Ê¹ÓÃÄÄ¸öÌùÍ¼
+        // æ ¹æ®ç›¸é‚»çš„ Tile ç¡®å®šä½¿ç”¨å“ªä¸ªè´´å›¾
         public override void GetTileData(Vector3Int location, ITilemap tilemap, ref TileData tileData)
         {
             base.GetTileData(location, tilemap, ref tileData);
@@ -39,7 +39,7 @@ namespace MainGame.Tiles
             {
                 if (transitionTileData[i].active)
                 {
-                    //ÒÔÏÂÓÃÓÚ¼ò»¯Ãû³Æ
+                    //ä»¥ä¸‹ç”¨äºç®€åŒ–åç§°
                     string id = transitionTileData[i].intersectingTileId;
                     Sprite angularSprite = transitionTileData[i].angularSprite;
                     Sprite edgeSprite = transitionTileData[i].edgeSprite;
@@ -55,7 +55,7 @@ namespace MainGame.Tiles
                     bool upSelf = HasSuchTile(location + new Vector3Int(0, 1, 0), this.id, tilemap);
                     bool downSelf = HasSuchTile(location + new Vector3Int(0, -1, 0), this.id, tilemap);
 
-                    //ÉÏ ÏÂ ×ó ÓÒ
+                    //ä¸Š ä¸‹ å·¦ å³
                     if (leftTarget && rightTarget && upTarget && downTarget)
                     {
                         tileData.sprite = tiledSprite;
@@ -63,14 +63,14 @@ namespace MainGame.Tiles
                         SetMatrix4x4Rot(ref m, 0);
                         continue;
                     }
-                    //½öÉÏ·½
+                    //ä»…ä¸Šæ–¹
                     if (upTarget)
                     {
                         tileData.sprite = edgeSprite;
 
                         SetMatrix4x4Rot(ref m, 0);
                     }
-                    //½öÏÂ·½
+                    //ä»…ä¸‹æ–¹
                     if (downTarget)
                     {
                         tileData.sprite = edgeSprite;
@@ -183,7 +183,7 @@ namespace MainGame.Tiles
                             SetMatrix4x4Rot(ref m, 270);
                         }
                     }
-                    //ÉÏÏÂÒ»¶¨ÓĞ (Ä¿±êÍßÆ¬), ¿ÉÑ¡µÄÊÇ ×óÓÒ¶¼ÓĞ (×Ô¼º) / ×óÓĞ×Ô¼ºÓÒ±ßÎŞÄ¿±ê
+                    //ä¸Šä¸‹ä¸€å®šæœ‰ (ç›®æ ‡ç“¦ç‰‡), å¯é€‰çš„æ˜¯ å·¦å³éƒ½æœ‰ (è‡ªå·±) / å·¦æœ‰è‡ªå·±å³è¾¹æ— ç›®æ ‡
                     if (upTarget && downTarget && !leftTarget && !rightTarget)
                     {
                         tileData.sprite = missingTwoFaceSprite;
@@ -191,7 +191,7 @@ namespace MainGame.Tiles
                         SetMatrix4x4Rot(ref m, 0);
                         continue;
                     }
-                    //×óÓÒÒ»¶¨ÓĞ (Ä¿±êÍßÆ¬), ¿ÉÑ¡µÄÊÇ ÉÏÏÂ¶¼ÓĞ (×Ô¼º) / ÉÏÓĞ×Ô¼ºÓÒ±ßÎŞÄ¿±ê
+                    //å·¦å³ä¸€å®šæœ‰ (ç›®æ ‡ç“¦ç‰‡), å¯é€‰çš„æ˜¯ ä¸Šä¸‹éƒ½æœ‰ (è‡ªå·±) / ä¸Šæœ‰è‡ªå·±å³è¾¹æ— ç›®æ ‡
                     if (leftTarget && rightTarget && !upTarget && !downTarget)
                     {
                         tileData.sprite = missingTwoFaceSprite;
@@ -217,13 +217,13 @@ namespace MainGame.Tiles
         [JsonIgnore, HideInInspector] public Sprite missingOneFaceSprite;
         [JsonIgnore, HideInInspector] public Sprite missingTwoFaceSprite;
 
-        [JsonProperty(propertyName: "tiled_sprite_id"), LabelText("Æ½ÆÌÌùÍ¼Id")] public string tiledSpriteId;
-        [JsonProperty(propertyName: "angular_sprite_id"), LabelText("±ß½ÇÌùÍ¼Id")] public string angularSpriteId;
-        [JsonProperty(propertyName: "edge_sprite_id"), LabelText("±ßÔµÌùÍ¼Id")] public string edgeSpriteId;
-        [JsonProperty(propertyName: "missing_one_face_sprite_id"), LabelText("Ê§È¥Ò»ÃæÌùÍ¼Id")] public string missingOneFaceSpriteId;
-        [JsonProperty(propertyName: "missing_two_face_sprite_id"), LabelText("Ê§È¥Á½ÃæÌùÍ¼Id")] public string missingTwoFaceSpriteId;
+        [JsonProperty(propertyName: "tiled_sprite_id"), LabelText("å¹³é“ºè´´å›¾Id")] public string tiledSpriteId;
+        [JsonProperty(propertyName: "angular_sprite_id"), LabelText("è¾¹è§’è´´å›¾Id")] public string angularSpriteId;
+        [JsonProperty(propertyName: "edge_sprite_id"), LabelText("è¾¹ç¼˜è´´å›¾Id")] public string edgeSpriteId;
+        [JsonProperty(propertyName: "missing_one_face_sprite_id"), LabelText("å¤±å»ä¸€é¢è´´å›¾Id")] public string missingOneFaceSpriteId;
+        [JsonProperty(propertyName: "missing_two_face_sprite_id"), LabelText("å¤±å»ä¸¤é¢è´´å›¾Id")] public string missingTwoFaceSpriteId;
 
-        [JsonProperty(propertyName: "intersecting_tile_id"), LabelText("Á¬½ÓÍßÆ¬µÄID")] public string intersectingTileId;
-        [LabelText("Ö÷¶¯")] public bool active;
+        [JsonProperty(propertyName: "intersecting_tile_id"), LabelText("è¿æ¥ç“¦ç‰‡çš„ID")] public string intersectingTileId;
+        [LabelText("ä¸»åŠ¨")] public bool active;
     }
 }

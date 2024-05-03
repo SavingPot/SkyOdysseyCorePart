@@ -117,7 +117,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
-        [BoxGroup("属性"), LabelText("经验")] public int experience;
         [LabelText("是否控制背景"), BoxGroup("状态")] public bool isControllingBackground;
         [BoxGroup("属性"), LabelText("挖掘范围")] public float excavationRadius = 2.8f;
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
@@ -997,12 +996,46 @@ namespace GameCore
 
 
 
-        public override void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller)
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     重生逻辑                                     */
+        /* -------------------------------------------------------------------------- */
+        public void Reborn(int newHealth, Vector2? newPos)
+        {
+            ServerReborn(newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
+        }
+
+        [ServerRpc]
+        void ServerReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
+        {
+            //刷新属性
+            health = newHealth;
+            isDead = false;
+
+            OnRebornServer(newHealth, newPos, caller);
+
+            //如果数值无效, 则使用默认的重生点
+            if (float.IsInfinity(newPos.x) || float.IsInfinity(newPos.y))
+                newPos = GFiles.world.GetRegion(regionIndex)?.spawnPoint ?? Vector2Int.zero;
+
+            ClientReborn(newHealth, newPos, caller);
+        }
+
+        [ClientRpc]
+        void ClientReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
+        {
+            OnRebornClient(newHealth, newPos, caller);
+
+            //玩家重生时, 由对应客户端设置位置
+            transform.position = newPos;
+        }
+
+        void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
             hungerValue = 20;
         }
 
-        public override void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller)
+        void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
             //设置颜色
             foreach (var sr in spriteRenderers)
@@ -1024,6 +1057,7 @@ namespace GameCore
 
 
 
+
         public override void OnGetHurtServer(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
 
         public override void OnGetHurtClient(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
@@ -1031,6 +1065,7 @@ namespace GameCore
             if (GControls.mode == ControlMode.Gamepad)
                 GControls.GamepadVibrationMediumStrong();
         }
+
 
 
 
