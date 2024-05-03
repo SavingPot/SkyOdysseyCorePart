@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -746,15 +747,6 @@ namespace GameCore
         {
             if (LoadModClass(path, "ori:item", out ItemData newItem, out var jt, ignoreIdCheck))
             {
-                var helmet = jt["helmet"];
-                var breastplate = jt["breastplate"];
-                var legging = jt["legging"];
-                var boots = jt["boots"];
-
-
-
-
-
                 newItem.damage = jt["damage"]?.ToInt() ?? ItemData.defaultDamage;
                 newItem.excavationStrength = jt["excavation_strength"]?.ToInt() ?? ItemData.defaultExcavationStrength;
                 newItem.useCD = jt["use_cd"]?.ToFloat() ?? ItemData.defaultUseCD;
@@ -794,11 +786,18 @@ namespace GameCore
                 }
 
 
+                jt["tags"]?.For(i =>
+                {
+                    newItem.tags.Add(i.ToString());
+                });
 
 
 
 
-                if (helmet != null)
+
+
+
+                if (jt.TryGetJToken("helmet", out var helmet))
                 {
                     newItem.Helmet = new()
                     {
@@ -809,7 +808,7 @@ namespace GameCore
                     if (!string.IsNullOrWhiteSpace(headId)) newItem.Helmet.head = new(headId);
                 }
 
-                if (breastplate != null)
+                if (jt.TryGetJToken("breastplate", out var breastplate))
                 {
                     newItem.Breastplate = new()
                     {
@@ -824,7 +823,7 @@ namespace GameCore
                     if (!string.IsNullOrWhiteSpace(rightArmId)) newItem.Breastplate.rightArm = new(rightArmId);
                 }
 
-                if (legging != null)
+                if (jt.TryGetJToken("legging", out var legging))
                 {
                     newItem.Legging = new()
                     {
@@ -837,7 +836,7 @@ namespace GameCore
                     if (!string.IsNullOrWhiteSpace(rightLegId)) newItem.Legging.rightLeg = new(rightLegId);
                 }
 
-                if (boots != null)
+                if (jt.TryGetJToken("boots", out var boots))
                 {
                     newItem.Boots = new()
                     {
@@ -849,11 +848,6 @@ namespace GameCore
                     if (!string.IsNullOrWhiteSpace(leftFootId)) newItem.Boots.leftFoot = new(leftFootId);
                     if (!string.IsNullOrWhiteSpace(rightFootId)) newItem.Boots.rightFoot = new(rightFootId);
                 }
-
-                jt["tags"]?.For(i =>
-                {
-                    newItem.tags.Add(i.ToString());
-                });
             }
 
             return newItem;
