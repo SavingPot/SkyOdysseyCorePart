@@ -52,6 +52,7 @@ namespace GameCore
         }
 
         public const float defaultSendInterval = 0.1f;
+        public static bool initialized { get; private set; }
 
 
 
@@ -374,8 +375,9 @@ namespace GameCore
         }
 
 
-        public static void Init()
+        public static async void Init()
         {
+            initialized = false;
             sendInterval = defaultSendInterval;
 
             /* --------------------------------- 生成反射参数 --------------------------------- */
@@ -439,6 +441,7 @@ namespace GameCore
                             var setterMethod = type.GetMethodFromAllIncludingBases($"{property.Name}_set");
                             var isStaticVar = property.GetSetMethod().IsStatic;
                             Harmony harmony = new($"SyncPacker.harmony.{propertyPath}");
+
 
 
 
@@ -709,6 +712,10 @@ namespace GameCore
                             #endregion
                         }
                     }
+
+
+                    //要等一帧以防止游戏卡死
+                    await UniTask.NextFrame();
                 }
             }
 
@@ -737,6 +744,8 @@ namespace GameCore
 
                 StaticVarsRegister();
             };
+
+            initialized = true;
         }
 
 

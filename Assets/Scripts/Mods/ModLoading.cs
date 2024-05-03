@@ -470,32 +470,38 @@ namespace GameCore
                 else
                 {
                     newBlock.jsonFormatWhenLoad = "0.6.0";
-                    newBlock.description = entrance["display"]?["description"]?.ToString();
-                    newBlock.lightLevel = entrance["display"]?["light_level"]?.ToFloat() ?? 0;
-                    newBlock.hardness = entrance["property"]?["hardness"]?.ToFloat() ?? BlockData.defaultHardness;
-                    newBlock.collidible = entrance["property"]?["collidible"]?.ToBool() ?? true;
 
-                    //如果不指定介绍
-                    (var jtModId, var jtProjectName) = Tools.SplitModIdAndName(newBlock.id);
-                    newBlock.description ??= $"{jtModId}:description.{jtProjectName}";
-
-                    //如果指定 texture 就是 texture, 不指定 texture 就是 id
-                    newBlock.defaultTexture = new(entrance["display"]?["texture_id"]?.ToString() ?? newBlock.id);
-
-
-                    entrance["property"]?["tags"]?.For(i =>
+                    if (entrance.TryGetJToken("display", out var display))
                     {
-                        newBlock.tags.Add(i.ToString());
-                    });
+                        //如果指定 texture 就是 texture, 不指定 texture 就是 id
+                        newBlock.defaultTexture = new(display["texture_id"]?.ToString() ?? newBlock.id);
 
-                    newBlock.behaviourName = entrance["property"]?["behaviour"]?.ToString();
-
-                    if (entrance["property"]?["drops"] == null)
-                        newBlock.drops.Add(new(newBlock.id, 1));
-                    else
-                    {
-                        newBlock.drops = LoadDrops(entrance["property"]["drops"], "0.7.1");
+                        newBlock.lightLevel = display["light_level"]?.ToFloat() ?? 0;
+                        newBlock.description = display["description"]?.ToString();
                     }
+
+                    //如果不指定介绍就按照 id 自动生成
+                    if (newBlock.description == null)
+                    {
+                        (var jtModId, var jtProjectName) = Tools.SplitModIdAndName(newBlock.id);
+                        newBlock.description ??= $"{jtModId}:description.{jtProjectName}";
+                    }
+
+                    if (entrance.TryGetJToken("property", out var property))
+                    {
+                        newBlock.hardness = property["hardness"]?.ToFloat() ?? BlockData.defaultHardness;
+                        newBlock.collidible = property["collidible"]?.ToBool() ?? true;
+                        newBlock.behaviourName = property["behaviour"]?.ToString();
+                        property["tags"]?.For(i =>
+                        {
+                            newBlock.tags.Add(i.ToString());
+                        });
+                        if (property?["drops"] == null)
+                            newBlock.drops.Add(new(newBlock.id, 1));
+                        else
+                            newBlock.drops = LoadDrops(property["drops"], "0.7.1");
+                    }
+
 
 
                     if (newBlock.jo["ori:item"] == null)
@@ -763,10 +769,9 @@ namespace GameCore
 
                 if (GameTools.CompareVersions(newItem.jsonFormat, "0.7.8", Operators.thanOrEqual))
                 {
-                    var display = jt["display"];
                     newItem.jsonFormatWhenLoad = "0.7.8";
 
-                    if (display != null)
+                    if (jt.TryGetJToken("display", out var display))
                     {
                         //如果不指定 texture 就是 id
                         var textureJT = display["texture"];

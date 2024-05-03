@@ -164,6 +164,7 @@ namespace GameCore.UI
             {
                 case SceneNames.MainMenu:
                     {
+                        #region 游戏初始化界面
                         if (!hasShowedModLoadingInterface)
                         {
                             float earliestExitTime = Tools.time + 3;
@@ -183,7 +184,15 @@ namespace GameCore.UI
                                             15, 0,
                                             new(0, 24), new(50, 50),
                                             () => (float)ModFactory.mods.Length / (float)ModFactory.modCountFound,
-                                            () => $"Loading... {ModFactory.mods.Length}/{ModFactory.modCountFound}", //TODO; Make Loading into text comparation
+                                            () =>
+                                            {
+                                                if (ModFactory.mods.Length != ModFactory.modCountFound)
+                                                    return $"Loading... {ModFactory.mods.Length}/{ModFactory.modCountFound}";
+                                                else if (!SyncPacker.initialized)
+                                                    return "正在等待网络系统初始化";
+                                                else
+                                                    return "Loading... 100%";
+                                            }, //TODO; Make Loading into text comparison
                                             panel.transform);
 
                             //刷新吉祥物位置
@@ -222,6 +231,10 @@ namespace GameCore.UI
                             while (ModFactory.mods.Length < ModFactory.modCountFound)
                                 await UniTask.NextFrame();
 
+                            //等待网络系统
+                            while (!SyncPacker.initialized)
+                                await UniTask.NextFrame();
+
 #if !DEBUG
                             //等待动画播放完成
                             while (Tools.time < earliestExitTime)
@@ -241,6 +254,7 @@ namespace GameCore.UI
                             await fadeOutDuration;
 #endif
                         }
+                        #endregion
 
                         #region 滚动背景
                         var c = UObjectTools.CreateComponent<ScrollingBackground>("ScrollingBackground");

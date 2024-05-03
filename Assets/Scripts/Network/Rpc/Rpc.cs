@@ -13,12 +13,14 @@ using System.Runtime.Serialization;
 using System;
 using UnityEngine;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace GameCore
 {
     //TODO: 性能优化
     public static class Rpc
     {
+        public static bool initialized { get; private set; }
         public static BinaryFormatter binaryFormatter;
         public static Func<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], Entity, bool> Remote;
         public static Action<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], uint> LocalCall;
@@ -302,6 +304,9 @@ namespace GameCore
 
         public static void Init()
         {
+            initialized = false;
+            int delayDuration = 0;
+
             //TODO: 有一个重要的问题: 若是一个方法有多个重载, 会不会出现问题？ 还是说不同的重载名字不一样？
             /* -------------------------------------------------------------------------- */
             /*                              //Step 1: 定义反射参数
@@ -331,6 +336,9 @@ namespace GameCore
             var _InstanceRemote5 = typeof(Rpc).GetMethod($"{nameof(Rpc._InstanceRemote5)}", flags);
 
 
+
+
+
             /* -------------------------------------------------------------------------- */
             /*                         //Step 2: 定义 Expression 参数
             /* -------------------------------------------------------------------------- */
@@ -358,6 +366,10 @@ namespace GameCore
             //Substep 2: 定义 Switch Cases
             List<SwitchCase> remoteCases = new();
             List<SwitchCase> localCases = new();
+
+
+
+
 
             /* -------------------------------------------------------------------------- */
             /*                              //Step 3: 为 BinaryFormatter 匹配正确的转化器
@@ -417,12 +429,16 @@ namespace GameCore
                 SurrogateSelector = surrogateSelector
             };
 
+
+
+
+
             /* -------------------------------------------------------------------------- */
             /*                              //Step 6: 更改带有 RpcBinder 的方法的内容
             /* -------------------------------------------------------------------------- */
 
             //获取所有可用方法
-            ModFactory.EachUserMethod((ass, type, mtd) =>
+            ModFactory.EachUserMethod(async (ass, type, mtd) =>
             {
                 string mtdPath = $"{type.FullName}.{mtd.Name}";
 
@@ -741,8 +757,19 @@ namespace GameCore
                                 break;
                         }
                     }
+
+
+
+                    //每修改 10 个方法就等一帧以防止游戏卡死
+                    delayDuration++;
+                    if (delayDuration == 10)
+                        await UniTask.NextFrame();
                 }
             }, ReflectionTools.BindingFlags_All | BindingFlags.DeclaredOnly);
+
+
+
+
 
 
 
@@ -785,6 +812,7 @@ namespace GameCore
 
 
 
+            initialized = true;
             SyncPacker.Init();
         }
     }
