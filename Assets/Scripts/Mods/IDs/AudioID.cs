@@ -48,6 +48,7 @@ namespace GameCore
         public const string SwitchQuickInventorySlot = "ori:switch_quick_inventory_slot";
         public const string TheNewRegion = "ori:the_new_region";
         public const string Town = "ori:town";
+        public const string Trade = "ori:trade";
         public const string WearArmor = "ori:wear_armor";
         public const string WhyNotComeToTheParty = "ori:why_not_come_to_the_party";
         public const string Wolf1 = "ori:wolf_1";

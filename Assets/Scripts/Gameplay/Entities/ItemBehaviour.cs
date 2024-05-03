@@ -60,7 +60,7 @@ namespace GameCore
                 //进食
                 else if (instance.data.Edible().hasTag)
                 {
-                    player.hungerValue += instance.data.Edible().tagValue;
+                    player.hungerValue = Mathf.Min(player.hungerValue + instance.data.Edible().tagValue, Player.maxHungerValue);
 
                     player.ServerReduceItemCount(inventoryIndex, 1);
 

@@ -7,6 +7,7 @@ namespace GameCore
         public const string Berry = "ori:berry";
         public const string Bottle = "ori:bottle";
         public const string CactusFlower = "ori:cactus_flower";
+        public const string Carrot = "ori:carrot";
         public const string ChickenDrumstick = "ori:chicken_drumstick";
         public const string ChickenFeather = "ori:chicken_feather";
         public const string ChickenSoup = "ori:chicken_soup";
@@ -42,6 +43,7 @@ namespace GameCore
         public const string StrawRope = "ori:straw_rope";
         public const string Sugar = "ori:sugar";
         public const string Sword = "ori:sword";
+        public const string Tomato = "ori:tomato";
         public const string WashedShelledDogTailGrass = "ori:washed_shelled_dog_tail_grass";
         public const string WaterBottle = "ori:water_bottle";
         public const string Watermelon = "ori:watermelon";

@@ -166,7 +166,7 @@ namespace GameCore.UI
                     {
                         if (!hasShowedModLoadingInterface)
                         {
-                            float earliestExitTime = Tools.time + 4;
+                            float earliestExitTime = Tools.time + 3;
 
                             var panel = GameUI.AddPanel("ori:panel.first_scene_panel");
                             panel.panelImage.color = Tools.HexToColor("#070714");
@@ -218,14 +218,28 @@ namespace GameCore.UI
                                 return false;
                             });
 
-                            while (ModFactory.mods.Length < ModFactory.modCountFound || Tools.time < earliestExitTime)
-                            {
+                            //等待模组加载
+                            while (ModFactory.mods.Length < ModFactory.modCountFound)
                                 await UniTask.NextFrame();
-                            }
+
+#if !DEBUG
+                            //等待动画播放完成
+                            while (Tools.time < earliestExitTime)
+                                await UniTask.NextFrame();
+#endif
 
                             hasShowedModLoadingInterface = true;
-                            GameUI.FadeOutGroup(panel, true, 2, new(() => Destroy(panel.gameObject)));
-                            await 2;
+
+
+
+                            //播放淡出动画
+                            float fadeOutDuration = 2;
+                            GameUI.FadeOutGroup(panel, true, fadeOutDuration, new(() => Destroy(panel.gameObject)));
+
+#if !DEBUG
+                            //等待动画结束后继续执行
+                            await fadeOutDuration;
+#endif
                         }
 
                         #region 滚动背景
@@ -241,7 +255,10 @@ namespace GameCore.UI
                             item.color = new(0, 0, 0, 0);
                             var _ = item.DOColor(Color.white, appearDuration);
                         }
-                        await appearDuration; //等到动画播放完成
+#if !DEBUG
+                        //等待动画播放完成
+                        await appearDuration;
+#endif
                         #endregion
 
                         #region 游戏信息

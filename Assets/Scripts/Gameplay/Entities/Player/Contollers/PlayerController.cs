@@ -8,6 +8,7 @@ namespace GameCore
 
 
 
+        public abstract bool Apply();
         public abstract bool Jump();
         public abstract bool HoldingJump();
         public abstract float Move();

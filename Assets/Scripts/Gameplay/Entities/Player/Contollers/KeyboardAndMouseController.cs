@@ -5,13 +5,14 @@ namespace GameCore
 {
     public class KeyboardAndMouseController : PlayerController
     {
+        public override bool Apply() => (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
         public override bool Jump() => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
         public override bool HoldingJump() => Keyboard.current != null && Keyboard.current.spaceKey.isPressed;
         public override float Move() => GControls.GetAD();
         public override bool ClickingAttack() => Mouse.current?.leftButton?.wasPressedThisFrame ?? false;
         public override bool HoldingAttack() => Mouse.current?.leftButton?.isPressed ?? false;
         public override bool IsControllingBackground() => Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
-        public override bool SkipDialog() => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
+        public override bool SkipDialog() => Apply();
         public override Vector2Int DialogOptions() => GControls.GetWASDVec();
         public override bool Backpack() => Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame;
         public override bool UseItem() => Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame;

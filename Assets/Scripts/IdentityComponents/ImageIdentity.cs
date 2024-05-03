@@ -13,6 +13,17 @@ namespace GameCore
         public Image image { get { if (!_image) _image = GetComponent<Image>(); return _image; } }
 
 
+
+        public void SetSprite(Sprite sprite)
+        {
+            image.sprite = sprite;
+        }
+
+        public void SetColor(Color color)
+        {
+            image.color = color;
+        }
+
         protected override void Awake()
         {
             base.Awake();

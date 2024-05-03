@@ -3,9 +3,9 @@ using UnityEngine;
 using SP.Tools.Unity;
 using System.Text;
 using System.Collections.Generic;
-using static GameCore.PlayerUI;
+using static GameCore.UI.PlayerUI;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public abstract class InfoShower<T> where T : InfoShower<T>, new()
     {

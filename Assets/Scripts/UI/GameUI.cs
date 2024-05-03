@@ -41,6 +41,7 @@ namespace GameCore.UI
             PositionLeftToRight,
             PositionRightToLeft,
             Alpha,
+            Scale,
             ScaleX,
             ScaleY,
         }
@@ -52,6 +53,7 @@ namespace GameCore.UI
             PositionLeftToRight,
             PositionRightToLeft,
             Alpha,
+            Scale,
             ScaleX,
             ScaleY,
         }
@@ -72,7 +74,7 @@ namespace GameCore.UI
 
             //播放出现
             if (page.ui)
-                Appear(page.ui, page.appearType);//, page.appearType);
+                Appear(page.ui, page.appearType);
         }
 
         public static void SetPageBack()
@@ -920,8 +922,12 @@ namespace GameCore.UI
                     {
                         Debug.LogError("目标不包含 Graphic 组件");
                     }
-
                     break;
+
+                case DisappearType.Scale:
+                case DisappearType.ScaleX:
+                case DisappearType.ScaleY:
+                    throw new NotImplementedException();
             }
 
 
@@ -987,8 +993,12 @@ namespace GameCore.UI
                     {
                         Debug.LogError("目标不包含 Graphic 组件");
                     }
-
                     break;
+
+                case AppearType.Scale:
+                case AppearType.ScaleX:
+                case AppearType.ScaleY:
+                    throw new NotImplementedException();
             }
 
 

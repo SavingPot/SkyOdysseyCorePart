@@ -326,7 +326,6 @@ namespace GameCore
                     newRecipe.jsonFormatWhenLoad = "0.6.0";
 
                     newRecipe.type = cr["type"]?.ToString() ?? "ori:poach";
-                    newRecipe.needBowl = cr["need_bowl"]?.ToBool() ?? false;
                     newRecipe.result = new(cr["result"]["id"].ToString(), (cr["result"]["count"]?.ToInt() ?? 1).ToUShort(), new());
 
                     List<CookingRecipe_Item> ingredients = new();
@@ -465,6 +464,7 @@ namespace GameCore
                 if (GameTools.CompareVersions(newBlock.jsonFormat, "0.6.0", Operators.less))
                 {
                     newItem = null;
+                    Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {path} 的 json 文件格式不正确, 请更新到 0.6.0 或以上版本");
                 }
                 // 0.6.0 -> 0.?.?
                 else

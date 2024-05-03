@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
+using GameCore;
 using GameCore.Converters;
 using GameCore.High;
-using GameCore.UI;
 using SP.Tools;
 using SP.Tools.Unity;
 using System;
@@ -15,7 +15,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using DG.Tweening;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class DialogData
     {
@@ -444,6 +444,22 @@ namespace GameCore
 
 
 
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    获取物品                                    */
+        /* -------------------------------------------------------------------------- */
+        public ButtonIdentity getPreciousItemButtonPanel;
+        public ImageIdentity getPreciousItemIcon;
+        public TextIdentity getPreciousItemNameText;
+        public TextIdentity getPreciousItemDescriptionText;
+
+
+
+
+
+
         public void LeftGame()
         {
             //保存数据
@@ -508,6 +524,47 @@ namespace GameCore
                 GameUI.SetPage(chatView);
             }
         }
+
+
+
+
+
+
+
+
+
+
+
+
+        public void ShowGetItemUI(string itemId)
+        {
+            var item = ModFactory.CompareItem(itemId);
+
+            if (item == null)
+            {
+                Debug.LogWarning($"找不到物品 {itemId}");
+                return;
+            }
+
+            ShowGetPreciousItemUI(item);
+        }
+
+        public void ShowGetPreciousItemUI(ItemData item)
+        {
+            getPreciousItemIcon.SetSprite(item.texture.sprite);
+            getPreciousItemNameText.SetText(GameUI.CompareText(item.id).text);
+            getPreciousItemDescriptionText.SetText(GameUI.CompareTextNullable(item.description)?.text);
+
+            getPreciousItemButtonPanel.ap = Vector2.zero;
+            GameUI.SetPage(getPreciousItemButtonPanel, GameUI.DisappearType.PositionDownToUp, GameUI.AppearType.PositionDownToUp);
+        }
+
+
+
+
+
+
+
 
 
 
@@ -1284,6 +1341,45 @@ namespace GameCore
                 };
             }
             #endregion
+
+            #region 获得物品界面
+
+            getPreciousItemButtonPanel = GameUI.AddButton(UPC.Middle, "ori:button.get_item", GameUI.canvas.transform, null);
+            getPreciousItemButtonPanel.SetSizeDelta(500, 200);
+            getPreciousItemButtonPanel.SetSprite(null);
+            getPreciousItemButtonPanel.SetColor(new(0.15f, 0.15f, 0.15f, 0.75f));
+            getPreciousItemButtonPanel.button.ClearColorEffects();
+            getPreciousItemButtonPanel.OnUpdate += _ =>
+            {
+                if (Application.isFocused && player.playerController.Apply())
+                {
+                    GameUI.SetPage(null, GameUI.DisappearType.PositionDownToUp, GameUI.AppearType.PositionDownToUp);
+                }
+            };
+            getPreciousItemButtonPanel.gameObject.SetActive(false);
+            GameObject.Destroy(getPreciousItemButtonPanel.buttonText.gameObject);
+
+
+            getPreciousItemIcon = GameUI.AddImage(UPC.Left, "ori:image.get_item_icon", null, getPreciousItemButtonPanel);
+            getPreciousItemIcon.SetAPosX(getPreciousItemIcon.sd.x / 2 + 30);
+
+
+            getPreciousItemNameText = GameUI.AddText(UPC.Up, "ori:text.get_item_name", getPreciousItemButtonPanel);
+            getPreciousItemNameText.autoCompareText = false;
+            getPreciousItemNameText.SetAPos(50, -getPreciousItemNameText.sd.y / 2 - 20);
+            getPreciousItemNameText.SetSizeDeltaY(40);
+            getPreciousItemNameText.text.SetFontSize(24);
+            getPreciousItemNameText.text.alignment = TMPro.TextAlignmentOptions.Left;
+
+
+            getPreciousItemDescriptionText = GameUI.AddText(UPC.Up, "ori:text.get_item_description", getPreciousItemButtonPanel);
+            getPreciousItemDescriptionText.autoCompareText = false;
+            getPreciousItemDescriptionText.SetAPosOnBySizeDown(getPreciousItemNameText, 3);
+            getPreciousItemDescriptionText.text.SetFontSize(14);
+            getPreciousItemDescriptionText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
+
+
+            #endregion
         }
 
 
@@ -1909,134 +2005,6 @@ namespace GameCore
         public RectTransform rectTransform => panel.rectTransform;
     }
 
-    public class ItemSlotUI
-    {
-        public ButtonIdentity button;
-        public ImageIdentity content;
-
-
-
-
-
-        public ItemSlotUI(ButtonIdentity button, ImageIdentity content)
-        {
-            this.button = button;
-            this.content = content;
-        }
-
-        public ItemSlotUI(string buttonId, string imageId, Vector2 sizeDelta)
-        {
-            button = GameUI.AddButton(UPC.Middle, buttonId);
-            content = GameUI.AddImage(UPC.Middle, imageId, null, button);
-
-            button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
-            content.image.sprite = null;
-            content.image.gameObject.SetActive(false);
-
-            button.sd = sizeDelta;
-            content.sd = sizeDelta * 0.6f;
-
-            content.ap = new(0, 3);
-
-            button.buttonText.text.raycastTarget = false;
-            content.image.raycastTarget = false;
-
-            button.buttonText.SetSizeDeltaX(100);
-            button.buttonText.text.SetFontSize(13);
-            button.buttonText.SetAPosOnBySizeDown(button, -27.5f);
-            button.buttonText.doRefresh = false;
-            button.buttonText.text.text = string.Empty;
-        }
-    }
-
-    public class InventorySlotUI : ItemSlotUI
-    {
-        public void Refresh(IItemContainer container, string itemIndex, Func<Item, bool> replacementCondition = null)
-        {
-            Item item = container.GetItem(itemIndex);
-            replacementCondition ??= (_) => true;
-
-            button.button.onClick.RemoveAllListeners();
-
-            /* --------------------------------- 如果物品为空 --------------------------------- */
-            if (Item.Null(item))
-            {
-                //设置 UI
-                button.buttonText.text.text = string.Empty;
-                content.image.sprite = null;
-                content.image.gameObject.SetActive(false);
-
-                //加这一行是因为物品不为空时会绑定显示，我们要在这里取消它
-                button.button.OnPointerStayAction = () => ItemInfoShower.instance.Hide();
-
-                //当栏位被点击时
-                button.OnClickBind(() =>
-                {
-                    ItemDragger.DragItem(
-                        item,
-                        Vector2.zero,
-                        value =>
-                        {
-                            container.SetItem(itemIndex, value);
-                        },
-                        () =>
-                        {
-                            content.image.color = Color.white;
-                        },
-                        replacementCondition
-                    );
-                });
-            }
-            /* --------------------------------- 如果物品不为空 -------------------------------- */
-            else
-            {
-                //设置 UI
-                button.buttonText.text.text = item.count.ToString();
-                content.image.sprite = item.data.texture.sprite; ////->?? GInit.instance.spriteUnknown;
-                content.image.gameObject.SetActive(true);
-
-                //当指针悬停时显示物品信息
-                button.button.OnPointerStayAction = () =>
-                {
-                    ItemInfoShower.instance.Show(item);
-
-                    if (container is Player player)
-                    {
-                        player.inventory.GetItemBehaviourChecked(itemIndex)?.ModifyInfo(ItemInfoShower.instance);
-                    }
-                };
-                button.button.OnPointerExitAction = _ => ItemInfoShower.instance.Hide();
-
-                //当栏位被点击时
-                button.OnClickBind(() =>
-                {
-                    content.image.color = new(1, 1, 1, 0.5f);
-
-                    ItemDragger.DragItem(
-                        item,
-                        content.sd,
-                        value =>
-                        {
-                            container.SetItem(itemIndex, value);
-                        },
-                        () =>
-                        {
-                            content.image.color = Color.white;
-                        },
-                        replacementCondition
-                    );
-                });
-            }
-        }
-
-
-
-
-
-        public InventorySlotUI(ButtonIdentity button, ImageIdentity content) : base(button, content) { }
-
-        public InventorySlotUI(string buttonId, string imageId, Vector2 sizeDelta) : base(buttonId, imageId, sizeDelta) { }
-    }
 
 
     public static class ItemDragger

@@ -10,6 +10,7 @@ namespace GameCore
         public const string Bush = "ori:bush";
         public const string Cactus = "ori:cactus";
         public const string Campfire = "ori:campfire";
+        public const string CarrotCrop = "ori:carrot_crop";
         public const string ClayFurnace = "ori:clay_furnace";
         public const string DeadTree = "ori:dead_tree";
         public const string Dirt = "ori:dirt";
@@ -36,6 +37,7 @@ namespace GameCore
         public const string SoupPot = "ori:soup_pot";
         public const string Stone = "ori:stone";
         public const string SugarCane = "ori:sugar_cane";
+        public const string TomatoCrop = "ori:tomato_crop";
         public const string Water = "ori:water";
         public const string WatermelonCrop = "ori:watermelon_crop";
         public const string WoodenChest = "ori:wooden_chest";

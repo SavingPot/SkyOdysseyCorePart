@@ -374,7 +374,7 @@ namespace GameCore
         }
 
 
-        public static async void Init()
+        public static void Init()
         {
             sendInterval = defaultSendInterval;
 
@@ -409,8 +409,6 @@ namespace GameCore
             List<SwitchCase> staticSetterIdCases = new();
 
             Action staticVarsRegisterMethods = () => { };
-
-            List<Thread> waitingThread = new();
 
             /* -------------------------------------------------------------------------- */
             //?                               更改方法内容                                 */
@@ -518,7 +516,7 @@ namespace GameCore
                                     ));
 
                                 //修改方法
-                                waitingThread.Add(MethodAgent.RunThread(() => harmony.Patch(setterMethod, new HarmonyMethod(_InstanceSet))));
+                                harmony.Patch(setterMethod, new HarmonyMethod(_InstanceSet));
                             }
                             else
                             {
@@ -530,7 +528,7 @@ namespace GameCore
                                     ));
 
                                 //修改方法
-                                waitingThread.Add(MethodAgent.RunThread(() => harmony.Patch(setterMethod, new HarmonyMethod(_StaticSet))));
+                                harmony.Patch(setterMethod, new HarmonyMethod(_StaticSet));
                             }
 
                             #endregion
@@ -711,15 +709,6 @@ namespace GameCore
                             #endregion
                         }
                     }
-                }
-            }
-
-            //等待所有线程完成（通常等待的耗时很短）
-            foreach (var thread in waitingThread)
-            {
-                if (thread.ThreadState == ThreadState.Running)
-                {
-                    await UniTask.NextFrame();
                 }
             }
 

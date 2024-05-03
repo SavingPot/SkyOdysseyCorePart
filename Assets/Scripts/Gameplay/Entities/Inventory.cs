@@ -983,7 +983,6 @@ namespace GameCore
     public class CookingRecipe : Recipe<CookingRecipe_Item>
     {
         [LabelText("类型")] public string type;
-        [LabelText("需要碗")] public bool needBowl;
     }
 
     [Serializable]

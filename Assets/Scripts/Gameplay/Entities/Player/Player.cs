@@ -18,8 +18,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.UI;
-using static GameCore.PlayerUI;
 using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
+using static GameCore.UI.PlayerUI;
 
 namespace GameCore
 {
@@ -414,7 +414,7 @@ namespace GameCore
         public static float itemPickUpRadius = 1.8f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
-        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion;
+        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion && Application.isFocused;
         public const float playerDefaultGravity = 6f;
 
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);

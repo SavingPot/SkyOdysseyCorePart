@@ -393,6 +393,20 @@ namespace GameCore
         [ChineseName("在指定的模组中匹配实体")] public static EntityData CompareEntity(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.entities);
 
 
+        [ChineseName("在已加载的全局模组中匹配合成配方")] public static CraftingRecipe CompareCraftingRecipe(string id) => CompareCraftingRecipe(id, mods);
+
+        [ChineseName("在指定的模组中匹配合成配方")] public static CraftingRecipe CompareCraftingRecipe(string id, Mod targetMod) => CompareCraftingRecipe(id, new[] { targetMod });
+
+        [ChineseName("在指定的模组中匹配合成配方")] public static CraftingRecipe CompareCraftingRecipe(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.craftingRecipes);
+
+
+        [ChineseName("在已加载的全局模组中匹配烹饪配方")] public static CookingRecipe CompareCookingRecipe(string id) => CompareCookingRecipe(id, mods);
+
+        [ChineseName("在指定的模组中匹配烹饪配方")] public static CookingRecipe CompareCookingRecipe(string id, Mod targetMod) => CompareCookingRecipe(id, new[] { targetMod });
+
+        [ChineseName("在指定的模组中匹配烹饪配方")] public static CookingRecipe CompareCookingRecipe(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.cookingRecipes);
+
+
 
         [ChineseName("在模组中匹配项目")]
         public static T CompareModElement<T>(string id, IList<Mod> mods, Func<Mod, IList<T>> elementsInMod, T defaultValue = null) where T : class, IStringId
