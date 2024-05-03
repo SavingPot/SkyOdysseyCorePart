@@ -9,8 +9,8 @@ namespace GameCore
 {
     public abstract class Enemy : Creature, IHumanBodyParts<CreatureBodyPart>
     {
-        Entity targetEntity_temp; void targetEntity_set(Entity value) { }
-        [Sync] public Entity targetEntity { get => targetEntity_temp; set => targetEntity_set(value); }
+        Entity _targetEntity; void _targetEntity_set(Entity value) { }
+        [Sync] public Entity targetEntity { get => _targetEntity; set => _targetEntity_set(value); }
         public float searchTime = float.NegativeInfinity;
         public float attackTimer;
         public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: 包含 动画的layer 信息

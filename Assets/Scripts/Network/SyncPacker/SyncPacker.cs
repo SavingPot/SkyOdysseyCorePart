@@ -46,7 +46,7 @@ namespace GameCore
                     Debug.LogError($"{nameof(sendInterval)} 值不应小于或等于 0, 否则程序将停止响应, 已按照 {nameof(defaultSendInterval)}:{defaultSendInterval} 处理");
                     value = defaultSendInterval;
                 }
-                
+
                 _sendInterval = value;
             }
         }
@@ -433,12 +433,12 @@ namespace GameCore
                             var propertyPathConst = Expression.Constant(propertyPath);
                             var valueType = property.PropertyType;
                             var valueTypeName = valueType.FullName;
-                            var tempFieldPath = $"{propertyPath}_temp";
                             var valueTypeArray = new Type[] { valueType };
-                            var tempField = type.GetFieldFromAllIncludingBases($"{property.Name}_temp");
+                            var tempFieldName = $"_{property.Name}";
+                            var tempField = type.GetFieldFromAllIncludingBases(tempFieldName);
                             var tempFieldConst = Expression.Constant(tempField, typeof(FieldInfo));
-                            var setterMethodPath = $"{propertyPath}_set";
-                            var setterMethod = type.GetMethodFromAllIncludingBases($"{property.Name}_set");
+                            var setterMethodPath = $"_{propertyPath}_set";
+                            var setterMethod = type.GetMethodFromAllIncludingBases($"_{property.Name}_set");
                             var isStaticVar = property.GetSetMethod().IsStatic;
                             Harmony harmony = new($"SyncPacker.harmony.{propertyPath}");
 
@@ -458,17 +458,17 @@ namespace GameCore
 
                             if (tempField == null)
                             {
-                                Debug.LogError($"同步变量 {propertyPath} 不包含字段 {tempFieldPath}, 请重新创建");
+                                Debug.LogError($"同步变量 {propertyPath} 不包含字段 {tempFieldName}, 请重新创建");
                                 continue;
                             }
                             if (tempField.IsStatic != isStaticVar)
                             {
-                                Debug.LogError($"同步变量的缓存字段 {tempFieldPath} 与其对应属性的静态/实例不符, 请重新创建");
+                                Debug.LogError($"同步变量的缓存字段 {tempFieldName} 与其对应属性的静态/实例不符, 请重新创建");
                                 continue;
                             }
                             if (tempField.FieldType != valueType)
                             {
-                                Debug.LogError($"同步变量的缓存字段 {tempFieldPath} 的类型与其对应属性不符合, 请重新创建, 如 float health 的缓存字段应为 float health_temp;");
+                                Debug.LogError($"同步变量的缓存字段 {tempFieldName} 的类型与其对应属性不符合, 请重新创建, 如 float health 的缓存字段应为 float health_temp;");
                                 continue;
                             }
 
@@ -481,7 +481,7 @@ namespace GameCore
                             }
                             if (setterMethod.IsStatic != isStaticVar)
                             {
-                                Debug.LogError($"同步变量设置器 {tempFieldPath} 与其对应属性的静态/实例不符, 请重新创建");
+                                Debug.LogError($"同步变量设置器 {tempFieldName} 与其对应属性的静态/实例不符, 请重新创建");
                                 continue;
                             }
                             if (setterMethod.GetParameters().Length != 1)

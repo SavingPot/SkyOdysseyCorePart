@@ -201,8 +201,8 @@ namespace GameCore
         #region 同步变量
 
         #region 任务
-        List<TaskStatusForSave> completedTasks_temp; void completedTasks_set(List<TaskStatusForSave> value) { }
-        [Sync] public List<TaskStatusForSave> completedTasks { get => completedTasks_temp; set => completedTasks_set(value); }
+        List<TaskStatusForSave> _completedTasks; void _completedTasks_set(List<TaskStatusForSave> value) { }
+        [Sync] public List<TaskStatusForSave> completedTasks { get => _completedTasks; set => _completedTasks_set(value); }
 
         public void AddCompletedTasks(TaskStatusForSave task)
         {
@@ -213,8 +213,8 @@ namespace GameCore
         #endregion
 
         #region 技能树
-        List<SkillStatusForSave> unlockedSkills_temp; void unlockedSkills_set(List<SkillStatusForSave> value) { }
-        [Sync] public List<SkillStatusForSave> unlockedSkills { get => unlockedSkills_temp; set => unlockedSkills_set(value); }
+        List<SkillStatusForSave> _unlockedSkills; void _unlockedSkills_set(List<SkillStatusForSave> value) { }
+        [Sync] public List<SkillStatusForSave> unlockedSkills { get => _unlockedSkills; set => _unlockedSkills_set(value); }
 
         public void AddUnlockedSkills(SkillStatusForSave task)
         {
@@ -226,49 +226,49 @@ namespace GameCore
 
         #region 皮肤
 
-        Sprite skinHead_temp; void skinHead_set(Sprite value) { }
-        [Sync] public Sprite skinHead { get => skinHead_temp; set => skinHead_set(value); }
-        Sprite skinBody_temp; void skinBody_set(Sprite value) { }
-        [Sync] public Sprite skinBody { get => skinBody_temp; set => skinBody_set(value); }
-        Sprite skinLeftArm_temp; void skinLeftArm_set(Sprite value) { }
-        [Sync] public Sprite skinLeftArm { get => skinLeftArm_temp; set => skinLeftArm_set(value); }
-        Sprite skinRightArm_temp; void skinRightArm_set(Sprite value) { }
-        [Sync] public Sprite skinRightArm { get => skinRightArm_temp; set => skinRightArm_set(value); }
-        Sprite skinLeftLeg_temp; void skinLeftLeg_set(Sprite value) { }
-        [Sync] public Sprite skinLeftLeg { get => skinLeftLeg_temp; set => skinLeftLeg_set(value); }
-        Sprite skinRightLeg_temp; void skinRightLeg_set(Sprite value) { }
-        [Sync] public Sprite skinRightLeg { get => skinRightLeg_temp; set => skinRightLeg_set(value); }
-        Sprite skinLeftFoot_temp; void skinLeftFoot_set(Sprite value) { }
-        [Sync] public Sprite skinLeftFoot { get => skinLeftFoot_temp; set => skinLeftFoot_set(value); }
-        Sprite skinRightFoot_temp; void skinRightFoot_set(Sprite value) { }
-        [Sync] public Sprite skinRightFoot { get => skinRightFoot_temp; set => skinRightFoot_set(value); }
+        Sprite _skinHead; void _skinHead_set(Sprite value) { }
+        Sprite _skinBody; void _skinBody_set(Sprite value) { }
+        Sprite _skinLeftArm; void _skinLeftArm_set(Sprite value) { }
+        Sprite _skinRightArm; void _skinRightArm_set(Sprite value) { }
+        Sprite _skinLeftLeg; void _skinLeftLeg_set(Sprite value) { }
+        Sprite _skinRightLeg; void _skinRightLeg_set(Sprite value) { }
+        Sprite _skinLeftFoot; void _skinLeftFoot_set(Sprite value) { }
+        Sprite _skinRightFoot; void _skinRightFoot_set(Sprite value) { }
+        [Sync] public Sprite skinHead { get => _skinHead; set => _skinHead_set(value); }
+        [Sync] public Sprite skinBody { get => _skinBody; set => _skinBody_set(value); }
+        [Sync] public Sprite skinLeftArm { get => _skinLeftArm; set => _skinLeftArm_set(value); }
+        [Sync] public Sprite skinRightArm { get => _skinRightArm; set => _skinRightArm_set(value); }
+        [Sync] public Sprite skinLeftLeg { get => _skinLeftLeg; set => _skinLeftLeg_set(value); }
+        [Sync] public Sprite skinRightLeg { get => _skinRightLeg; set => _skinRightLeg_set(value); }
+        [Sync] public Sprite skinLeftFoot { get => _skinLeftFoot; set => _skinLeftFoot_set(value); }
+        [Sync] public Sprite skinRightFoot { get => _skinRightFoot; set => _skinRightFoot_set(value); }
 
         #endregion
 
         #region 属性
 
         #region 饥饿值
-        float hungerValue_temp; void hungerValue_set(float value) { }
-        [Sync] public float hungerValue { get => hungerValue_temp; set => hungerValue_set(value); }
+        float _hungerValue; void _hungerValue_set(float value) { }
+        [Sync] public float hungerValue { get => _hungerValue; set => _hungerValue_set(value); }
         public static float defaultHungerValue = 100;
         public static float maxHungerValue = 100;
         #endregion
 
         #region 金币
-        int coin_temp; [Button] void coin_set(int value) { }
-        [Sync] public int coin { get => coin_temp; set => coin_set(value); }
+        int _coin; [Button] void _coin_set(int value) { }
+        [Sync] public int coin { get => _coin; set => _coin_set(value); }
         #endregion
 
         #region 幸福值
-        float happinessValue_temp; void happinessValue_set(float value) { }
-        [Sync] public float happinessValue { get => happinessValue_temp; set => happinessValue_set(value); }
+        float _happinessValue; void _happinessValue_set(float value) { }
+        [Sync] public float happinessValue { get => _happinessValue; set => _happinessValue_set(value); }
         public static float defaultHappinessValue = 50;
         public static float maxHappinessValue = 100;
         #endregion
 
         #region 玩家名
-        string playerName_temp; void playerName_set(string value) { }
-        [Sync(nameof(OnNameChangeMethod)), SyncDefaultValue("")] public string playerName { get => playerName_temp; set => playerName_set(value); }
+        string _playerName; void _playerName_set(string value) { }
+        [Sync(nameof(OnNameChangeMethod)), SyncDefaultValue("")] public string playerName { get => _playerName; set => _playerName_set(value); }
 
         void OnNameChangeMethod(byte[] _)
         {
@@ -291,12 +291,12 @@ namespace GameCore
         #endregion
 
         #region 物品栏
-        Inventory inventory_temp; void inventory_set(Inventory value) { }
-        [Sync(nameof(TempInventory))] public Inventory inventory { get => inventory_temp; set => inventory_set(value); }
+        Inventory _inventory; void _inventory_set(Inventory value) { }
+        [Sync(nameof(TempInventory))] public Inventory inventory { get => _inventory; set => _inventory_set(value); }
 
         void TempInventory(byte[] _)
         {
-            inventory_temp = Inventory.ResumeFromStreamTransport(inventory_temp, this);
+            _inventory = Inventory.ResumeFromStreamTransport(_inventory, this);
 
             //刷新物品栏
             if (Init.isServerCompletelyReady)

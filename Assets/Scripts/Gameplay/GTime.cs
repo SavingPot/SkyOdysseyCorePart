@@ -26,14 +26,14 @@ namespace GameCore
 
         #region 变量
 
-        static bool isMorning_temp; static void isMorning_set(bool value) { }
-        [Sync, SyncDefaultValue(true)] public static bool isMorning { get => isMorning_temp; set => isMorning_set(value); }
+        static bool _isMorning; static void _isMorning_set(bool value) { }
+        [Sync, SyncDefaultValue(true)] public static bool isMorning { get => _isMorning; set => _isMorning_set(value); }
 
-        static float timeOneDay_temp; static void timeOneDay_set(float value) { }
-        [Sync, SyncDefaultValue(1440f)] public static float timeOneDay { get => timeOneDay_temp; set => timeOneDay_set(value); }
+        static float _timeOneDay; static void _timeOneDay_set(float value) { }
+        [Sync, SyncDefaultValue(1440f)] public static float timeOneDay { get => _timeOneDay; set => _timeOneDay_set(value); }
 
-        static float time_temp; static void time_set(float value) { }
-        [Sync(nameof(TimeModify)), SyncDefaultValue(420f)] public static float time { get => time_temp; set => time_set(value); }
+        static float _time; static void _time_set(float value) { }
+        [Sync(nameof(TimeModify)), SyncDefaultValue(420f)] public static float time { get => _time; set => _time_set(value); }
 
         public static void TimeModify(byte[] _)
         {

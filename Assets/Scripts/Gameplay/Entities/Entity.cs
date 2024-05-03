@@ -156,8 +156,8 @@ namespace GameCore
         #region 同步变量
 
         #region 无敌时间
-        float invincibleTime_temp; void invincibleTime_set(float value) { }
-        [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime { get => invincibleTime_temp; set => invincibleTime_set(value); }
+        float _invincibleTime; void _invincibleTime_set(float value) { }
+        [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime { get => _invincibleTime; set => _invincibleTime_set(value); }
         void OnInvincibleTimeChange(byte[] _)
         {
             if (isHurting)
@@ -178,8 +178,8 @@ namespace GameCore
         #endregion
 
         #region 血量
-        int health_temp; void health_set(int value) { }
-        [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health { get => health_temp; set => health_set(value); }
+        int _health; [Button] void _health_set(int value) { }
+        [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health { get => _health; set => _health_set(value); }
         public const int DEFAULT_HEALTH = 100;
         public Action OnHealthChange = () => { };
         private void OnHealthChangeMethod(byte[] _)
@@ -189,13 +189,13 @@ namespace GameCore
         #endregion
 
         #region 已死亡
-        bool isDead_temp; void isDead_set(bool value) { }
-        [Sync, SyncDefaultValue(false)] public bool isDead { get => isDead_temp; set => isDead_set(value); }
+        bool _isDead; void _isDead_set(bool value) { }
+        [Sync, SyncDefaultValue(false)] public bool isDead { get => _isDead; set => _isDead_set(value); }
         #endregion
 
         #region 当前区域序列
-        Vector2Int regionIndex_temp; void regionIndex_set(Vector2Int value) { }
-        [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex { get => regionIndex_temp; set => regionIndex_set(value); }
+        Vector2Int _regionIndex; void _regionIndex_set(Vector2Int value) { }
+        [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex { get => _regionIndex; set => _regionIndex_set(value); }
         static Vector2Int regionIndex_default() => Vector2Int.zero;
         public Vector2Int chunkIndex;
 
@@ -243,8 +243,8 @@ namespace GameCore
         #endregion
 
         #region 自定义数据
-        JObject customData_temp; void customData_set(JObject value) { }
-        [Sync] public JObject customData { get => customData_temp; set => customData_set(value); }
+        JObject _customData; void _customData_set(JObject value) { }
+        [Sync] public JObject customData { get => _customData; set => _customData_set(value); }
         #endregion
 
         #endregion
