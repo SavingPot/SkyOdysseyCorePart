@@ -612,7 +612,7 @@ namespace Mirror
         // querying this at runtime won't work for threaded transports.
         public override string ServerGetClientAddress(int connectionId)
         {
-            return "cannot.get.this.version";
+            throw new NotImplementedException();
         }
 
         public override void ServerStop()

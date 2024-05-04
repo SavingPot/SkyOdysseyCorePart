@@ -68,8 +68,11 @@ namespace GameCore
         private void OnDestroy()
         {
             hasDestroyed = true;
+        }
 
-
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
 
 
 
@@ -77,18 +80,16 @@ namespace GameCore
             /*                                  注销所有同步变量                                  */
             /* -------------------------------------------------------------------------- */
             if (!hasRegisteredSyncVars)
-                return;
-
-
-            if (Server.isServer)
             {
-                /* ---------------------------------- 注销变量 ---------------------------------- */
-                var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
+                Debug.LogError("严重错误!! 该实体在服务器未注册好同步变量，就被销毁了!!!!!!!", this);
+                return;
+            }
 
-                foreach (SyncAttributeData pair in syncVarTemps)
-                {
-                    SyncPacker.UnregisterVar(pair.fieldPath, netId);
-                }
+            var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
+
+            foreach (SyncAttributeData pair in syncVarTemps)
+            {
+                SyncPacker.UnregisterVar(pair.fieldPath, netId);
             }
         }
 
@@ -178,7 +179,7 @@ namespace GameCore
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId,  Rpc.ObjectToBytes(saveAsPlayer.coin));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.coin));
                     }
                     else if (pair.fieldPath == skinHeadVarId)
                     {
