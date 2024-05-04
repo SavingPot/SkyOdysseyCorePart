@@ -22,6 +22,7 @@ namespace GameCore
     {
         public static bool initialized { get; private set; }
         public static BinaryFormatter binaryFormatter;
+        public static SurrogateSelector surrogateSelector;
         public static Func<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], Entity, bool> Remote;
         public static Action<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], uint> LocalCall;
 
@@ -374,7 +375,7 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                              //Step 3: 为 BinaryFormatter 匹配正确的转化器
             /* -------------------------------------------------------------------------- */
-            var surrogateSelector = new SurrogateSelector();
+            surrogateSelector = new();
 
 
             //? 为所有 Entity 指定代理, 避免反复编写代理
