@@ -42,7 +42,7 @@ namespace GameCore
 
         public static void SaveFileJson(string savePath, object obj, bool compress = false, bool prettyJson = false)
         {
-            SaveFileContext(savePath, JsonTools.ToJson(obj, compress, prettyJson));
+            SaveFileContext(savePath, JsonUtils.ToJson(obj, compress, prettyJson));
         }
 
         static void SaveFileContext(string savePath, string context)
@@ -62,7 +62,7 @@ namespace GameCore
         {
             if (File.Exists(GInit.settingsPath))
             {
-                var datum = JsonTools.LoadJson<GameSettings>(GInit.settingsPath);
+                var datum = JsonUtils.LoadTypeFromJsonPath<GameSettings>(GInit.settingsPath);
 
                 return datum ?? new(true);
             }
@@ -159,9 +159,9 @@ namespace GameCore
 
         public static World Load(string dirPath)
         {
-            WorldBasicData basicData = JsonTools.LoadJson<WorldBasicData>(GetBasicDataPath(dirPath));
-            List<Region> regionData = JsonTools.LoadJson<List<Region>>(GetRegionDataPath(dirPath));
-            List<PlayerSave> playerData = JsonTools.LoadJson<List<PlayerSave>>(GetPlayerDataPath(dirPath));
+            WorldBasicData basicData = JsonUtils.LoadTypeFromJsonPath<WorldBasicData>(GetBasicDataPath(dirPath));
+            List<Region> regionData = JsonUtils.LoadTypeFromJsonPath<List<Region>>(GetRegionDataPath(dirPath));
+            List<PlayerSave> playerData = JsonUtils.LoadTypeFromJsonPath<List<PlayerSave>>(GetPlayerDataPath(dirPath));
 
             return new(basicData, regionData, playerData);
         }

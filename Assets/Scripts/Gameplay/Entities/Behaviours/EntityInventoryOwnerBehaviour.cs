@@ -89,7 +89,7 @@ namespace GameCore
                 customData.AddObject("ori:inventory");
             if (customData["ori:inventory"]["data"] == null)
             {
-                customData["ori:inventory"].AddProperty("data", JsonTools.ToJToken(entity.DefaultInventory()));
+                customData["ori:inventory"].AddProperty("data", JsonUtils.ToJToken(entity.DefaultInventory()));
             }
 
             entity.customData = customData;
@@ -110,7 +110,7 @@ namespace GameCore
 
         public static void WriteInventoryToCustomData<T>(this T entity) where T : Entity, IInventoryOwner
         {
-            entity.customData["ori:inventory"]["data"] = JsonTools.ToJson(entity.GetInventory());
+            entity.customData["ori:inventory"]["data"] = JsonUtils.ToJson(entity.GetInventory());
         }
     }
 

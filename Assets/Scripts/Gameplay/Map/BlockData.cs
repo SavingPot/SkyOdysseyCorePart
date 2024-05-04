@@ -19,7 +19,7 @@ namespace GameCore
         [JsonIgnore, LabelText("默认贴图")] public TextureData defaultTexture;
         [LabelText("介绍")] public string description;
         [LabelText("可碰撞")] public bool collidible = true;
-        [LabelText("掉落物")] public List<DropData> drops = new();
+        [LabelText("掉落物")] public DropData[] drops;
         [LabelText("光亮等级")] public float lightLevel;
 
         #region 方块行为

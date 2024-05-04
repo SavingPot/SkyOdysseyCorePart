@@ -85,7 +85,7 @@ namespace GameCore
         /// <returns>加载是否成功</returns>
         public static bool LoadModClass<T>(string path, string entranceId, out T obj, out JToken entrance, bool ignoreIdCheck = false) where T : ModClass, new()
         {
-            JObject jo = JsonTools.LoadJObjectByPath(path);
+            JObject jo = JsonUtils.LoadJObjectByPath(path);
             var format = GetCorrectJsonFormatByJObject(jo);
             entrance = jo[entranceId];
 
@@ -215,14 +215,14 @@ namespace GameCore
             return lang;
         }
 
-        public static List<DropData> LoadDrops(JToken jt, string jsonFormat)
+        public static DropData[] LoadDrops(JToken jt, string jsonFormat)
         {
             List<DropData> ts = new();
 
             if (jt == null)
             {
                 //Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jt)} 不能为空");
-                return ts;
+                return ts.ToArray();
             }
 
             jt.For(t =>
@@ -244,7 +244,7 @@ namespace GameCore
                 ts.Add(temp);
             });
 
-            return ts;
+            return ts.ToArray();
         }
 
         public static EntityData LoadEntity(JObject jo, string entityPath)
@@ -470,6 +470,8 @@ namespace GameCore
                 // 0.6.0 -> 0.?.?
                 else
                 {
+                    var property = entrance["property"];
+
                     newBlock.jsonFormatWhenLoad = "0.6.0";
 
                     if (entrance.TryGetJToken("display", out var display))
@@ -488,20 +490,17 @@ namespace GameCore
                         newBlock.description ??= $"{jtModId}:description.{jtProjectName}";
                     }
 
-                    if (entrance.TryGetJToken("property", out var property))
+                    newBlock.hardness = property?["hardness"]?.ToFloat() ?? BlockData.defaultHardness;
+                    newBlock.collidible = property?["collidible"]?.ToBool() ?? true;
+                    newBlock.behaviourName = property?["behaviour"]?.ToString();
+                    property?["tags"]?.For(i =>
                     {
-                        newBlock.hardness = property["hardness"]?.ToFloat() ?? BlockData.defaultHardness;
-                        newBlock.collidible = property["collidible"]?.ToBool() ?? true;
-                        newBlock.behaviourName = property["behaviour"]?.ToString();
-                        property["tags"]?.For(i =>
-                        {
-                            newBlock.tags.Add(i.ToString());
-                        });
-                        if (property?["drops"] == null)
-                            newBlock.drops.Add(new(newBlock.id, 1));
-                        else
-                            newBlock.drops = LoadDrops(property["drops"], "0.7.1");
-                    }
+                        newBlock.tags.Add(i.ToString());
+                    });
+                    if (property?["drops"] == null)
+                        newBlock.drops = new DropData[] { new(newBlock.id, 1) };
+                    else
+                        newBlock.drops = LoadDrops(property?["drops"], "0.7.1");
 
 
 
@@ -765,15 +764,15 @@ namespace GameCore
 
                     if (jt.TryGetJToken("display", out var display))
                     {
-                        //如果不指定 texture 就是 id
-                        var textureJT = display["texture"];
-                        newItem.texture = new(textureJT != null ? display["texture"]?.ToString() : newItem.id);
-
                         newItem.description = display["description"]?.ToString();
                         newItem.size = display["size"]?.ToVector2() ?? Vector2.one;
                         newItem.offset = display["offset"]?.ToVector2() ?? Vector2.zero;
                         newItem.rotation = display["rotation"]?.ToInt() ?? 0;
                     }
+
+                    //如果不指定 texture 就是 id
+                    var textureJT = display?["texture"];
+                    newItem.texture = new(textureJT != null ? textureJT.ToString() : newItem.id);
                 }
                 else
                 {

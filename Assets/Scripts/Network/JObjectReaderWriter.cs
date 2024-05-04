@@ -20,7 +20,7 @@ namespace GameCore
         {
             string str = Compressor.DecompressString(reader.ReadString());
 
-            return JsonTools.LoadJObjectByString(str);
+            return JsonUtils.LoadJObjectByString(str);
         }
     }
 }

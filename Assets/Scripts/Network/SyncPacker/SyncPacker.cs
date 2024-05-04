@@ -51,7 +51,7 @@ namespace GameCore
             }
         }
 
-        public const float defaultSendInterval = 0.1f;
+        public const float defaultSendInterval = 0.05f;
         public static bool initialized { get; private set; }
         public static readonly Dictionary<uint, Entity> EntitiesIDTable = new();
 
@@ -147,7 +147,6 @@ namespace GameCore
 
 
 
-            //TODO: 单开线程处理
             //遍历静态变量
             for (int a = 0; a < staticVars.Count; a++)
             {
@@ -171,7 +170,6 @@ namespace GameCore
                 Server.Send(temp);
             }
 
-            //TODO: 单开线程处理
             //遍历实例变量
             for (int a = 0; a < instanceVars.Count; a++)
             {
@@ -182,22 +180,21 @@ namespace GameCore
                 for (int b = 0; b < entityVarTable.Count; b++)
                 {
                     var entityNetIdAndVar = entityVarTable.ElementAt(b);
+                    var variant = entityNetIdAndVar.Value;
                     var entityNetId = entityNetIdAndVar.Key;
-                    var var = entityNetIdAndVar.Value;
                     var entity = EntitiesIDTable[entityNetId];
 
                     var currentValue = GetInstanceFieldValue(varId, entity);
 
-                    if (Equals(var.valueLastSync, currentValue))
+                    if (Equals(variant.valueLastSync, currentValue))
                         continue;
 
-                    var temp = var;
+                    var temp = variant;
                     temp.valueLastSync = currentValue;
                     temp.value = Rpc.ObjectToBytes(currentValue);
                     instanceVars[varId][entityNetId] = temp;
 
-                    //TODO: oldValue 改为 object
-                    OnValueChange(varId, entity, Rpc.ObjectToBytes(var.valueLastSync), temp.value);
+                    OnValueChange(varId, entity, Rpc.ObjectToBytes(variant.valueLastSync), temp.value);
 
                     //将新值发送给所有客户端
                     Server.Send(temp);
@@ -338,9 +335,6 @@ namespace GameCore
                     if (!ModFactory.IsUserType(type) || type.IsGenericType)
                         continue;
 
-                    //TODO: 加油，没那么难
-                    //TODO: 现在oldValue改为object,而非byte[], SetValue(以后接受参数object而非byte[])
-                    //TODO: 在注册同步变量后就开始在AutoRegister中记录同步变量的值（检测object而非byte[]），然后检测有无变化
                     //获取所有可用方法
                     foreach (var field in type.GetFields())
                     {
@@ -391,7 +385,6 @@ namespace GameCore
                                 }
                                 if (hookMethod.GetParameters().Length != 1)
                                 {
-                                    //TODO: 参数列表改为字段的类型
                                     Debug.LogError($"同步变量 {fieldPath} 的钩子 {att.hook} 的参数列表必须为: byte[]");
                                     continue;
                                 }

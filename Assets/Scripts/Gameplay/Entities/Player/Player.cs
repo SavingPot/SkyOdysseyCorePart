@@ -118,7 +118,6 @@ namespace GameCore
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
         [LabelText("是否控制背景"), BoxGroup("状态")] public bool isControllingBackground;
-        [BoxGroup("属性"), LabelText("挖掘范围")] public float excavationRadius = 2.8f;
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
         [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
@@ -200,6 +199,8 @@ namespace GameCore
 
         #region 同步变量
 
+        [Sync] public int coin;
+
         #region 任务
         [Sync] public List<TaskStatusForSave> completedTasks;
 
@@ -240,13 +241,6 @@ namespace GameCore
         [Sync] public float hungerValue;
         public static float defaultHungerValue = 100;
         public static float maxHungerValue = 100;
-        #endregion
-
-        #region 金币
-#if UNITY_EDITOR
-        [Button] void editor_coin_set(int value) => coin = value;
-#endif
-        [Sync] public int coin;
         #endregion
 
         #region 幸福值
@@ -351,7 +345,7 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("使用时间")]
         public float itemUseTime;
         public float previousAttackTime;
-        public float useRadius => excavationRadius + (GetUsingItemChecked()?.data?.extraDistance ?? 0);
+        public float interactiveRadius => defaultInteractiveRadius + (GetUsingItemChecked()?.data?.extraDistance ?? 0);
 
 
 
@@ -402,6 +396,7 @@ namespace GameCore
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion && Application.isFocused;
         public const float playerDefaultGravity = 6f;
+        public const float defaultInteractiveRadius = 2.8f;
 
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);
         public static float deathLowestColorFloat = 0.45f;
@@ -915,7 +910,7 @@ namespace GameCore
                 }
                 else if (other.TryGetComponent<CoinEntity>(out var coinEntity) && coinEntity.CanBePickedUp())
                 {
-                    AddCoin(coinEntity.coinCount);
+                    ServerAddCoin(coinEntity.coinCount);
                     GAudio.Play(AudioID.PickUpItem);
 
                     coinEntity.Death();
@@ -945,7 +940,7 @@ namespace GameCore
             base.OnDrawGizmos();
 
             Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(transform.position, excavationRadius);
+            Gizmos.DrawWireSphere(transform.position, interactiveRadius);
         }
 
 #endif
@@ -1090,17 +1085,18 @@ namespace GameCore
             caller.gravity = playerDefaultGravity;
         };
 
-        public void AddCoin(int count)
+        [ServerRpc, Button]
+        public void ServerAddCoin(int count, NetworkConnection caller = null)
         {
             coin += count;
 
             Debug.Log("ADD COIN " + count);
         }
 
-        /// <returns>鼠标是否在使用范围内</returns>
-        public bool InUseRadius(Vector2 vec) => InUseRadius(transform.position, vec);
+        /// <returns>一个点是否在交互范围内</returns>
+        public bool IsPointInteractable(Vector2 vec) => IsPointInteractable(transform.position, vec);
 
-        public bool InUseRadius(Vector2 vec1, Vector2 vec2) => Vector2.Distance(vec1, vec2) <= useRadius;
+        public bool IsPointInteractable(Vector2 vec1, Vector2 vec2) => Vector2.Distance(vec1, vec2) <= interactiveRadius;
 
 
 
@@ -1635,7 +1631,7 @@ namespace GameCore
             }
 
             //与方块交互
-            if (InUseRadius(point) &&
+            if (IsPointInteractable(point) &&
                 map.TryGetBlock(PosConvert.WorldToMapPos(point), isControllingBackground, out Block block) &&
                 block.PlayerInteraction(this))
             {
@@ -1764,7 +1760,7 @@ namespace GameCore
                 return;
 
             //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的 && 方块不是液体
-            if (InUseRadius(cursorWorldPos) &&
+            if (IsPointInteractable(cursorWorldPos) &&
                 map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
                 block.gameObject.activeInHierarchy &&
                 !block.data.GetTag("ori:liquid").hasTag)

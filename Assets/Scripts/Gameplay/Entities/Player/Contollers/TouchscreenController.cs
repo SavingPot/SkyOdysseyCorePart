@@ -10,7 +10,7 @@ namespace GameCore
 
 
 
-        public override bool Apply() => pui != null && pui.getPreciousItemButtonPanel.button.wasPressedThisFrame;
+        public override bool Apply() => pui != null && pui.gainRareItemButtonPanel.button.wasPressedThisFrame;
         public override bool Jump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.65f;
         public override bool HoldingJump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.65f;
         public override float Move() => pui?.touchScreenMoveJoystick != null ? pui.touchScreenMoveJoystick.Horizontal : 0;

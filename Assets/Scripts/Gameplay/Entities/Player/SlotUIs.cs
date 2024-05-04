@@ -204,7 +204,7 @@ namespace GameCore.UI
                     }
 
                     //减少金币
-                    player.coin -= item.cost;
+                    player.ServerAddCoin(-item.cost);
                     GAudio.Play(AudioID.Trade);
 
                     //给予物品

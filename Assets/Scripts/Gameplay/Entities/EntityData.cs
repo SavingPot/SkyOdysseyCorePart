@@ -24,7 +24,7 @@ namespace GameCore
         [LabelText("受伤音效")] public string hurtAudioId = AudioID.GetHurt;
         public static float defaultLifetime = 60 * 3;
         public Type behaviourType;
-        [LabelText("掉落的物品")] public List<DropData> drops;
+        [LabelText("掉落的物品")] public DropData[] drops;
         [LabelText("掉落的金币数")] public int coinCount;
     }
 

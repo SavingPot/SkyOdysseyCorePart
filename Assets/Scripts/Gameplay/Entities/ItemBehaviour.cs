@@ -51,7 +51,7 @@ namespace GameCore
             if (owner is Player player)
             {
                 //放置方块
-                if (instance.data.isBlock && player.InUseRadius(point) && !player.map.HasBlock(PosConvert.WorldToMapPos(point), player.isControllingBackground))
+                if (instance.data.isBlock && player.IsPointInteractable(point) && !player.map.HasBlock(PosConvert.WorldToMapPos(point), player.isControllingBackground))
                 {
                     UseAsBlock(PosConvert.WorldToMapPos(point), player.isControllingBackground);
 

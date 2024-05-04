@@ -85,8 +85,6 @@ namespace GameCore
                 /* ---------------------------------- 注销变量 ---------------------------------- */
                 var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
 
-                StringBuilder sb = new();
-
                 foreach (SyncAttributeData pair in syncVarTemps)
                 {
                     SyncPacker.UnregisterVar(pair.fieldPath, netId);
@@ -107,9 +105,6 @@ namespace GameCore
         {
             StartCoroutine(IECallWhenGetGeneratingId(() =>
             {
-                //TODO: 修改代码, 使其同时适配 Player 和 普通实体
-                //TODO: Also change the Drop? Have a look. so that we can combine the logics all into EntityInit
-                //TODO: 使用 EntityInit 而非 Entity 来注册和销毁同步变量
                 if (!isServer)
                     data = ModFactory.CompareEntity(generationId);
                 if (generationId == EntityID.Player)
@@ -149,7 +144,6 @@ namespace GameCore
             var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
 
             //遍历每个属性
-            //TODO: Improve readability and performance step and step
             if (isServer)
             {
                 foreach (SyncAttributeData pair in syncVarTemps)
@@ -166,7 +160,7 @@ namespace GameCore
                     }
                     else if (pair.fieldPath == customDataVarId)
                     {
-                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(JsonTools.LoadJObjectByString(save.customData)));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(JsonUtils.LoadJObjectByString(save.customData)));
                     }
                     else if (pair.fieldPath == hungerValueVarId)
                     {

@@ -113,7 +113,7 @@ namespace GameCore.UI
 
             foreach (string folder in vs)
             {
-                var basicData = JsonTools.LoadJson<WorldBasicData>(World.GetBasicDataPath(folder));
+                var basicData = JsonUtils.LoadTypeFromJsonPath<WorldBasicData>(World.GetBasicDataPath(folder));
 
                 worldFiles.Add(basicData);
             }

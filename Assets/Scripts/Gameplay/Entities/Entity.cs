@@ -141,7 +141,7 @@ namespace GameCore
         [HideInInspector] public float timeToAutoDestroy;
         public bool isHurting => invincibleTime > 0;
         public int maxHealth => data.maxHealth;
-        public bool hurtable = true;
+        public bool isHurtable = true;
         public float previousHurtTime;
 
 
@@ -154,6 +154,8 @@ namespace GameCore
 
 
         #region 同步变量
+        [Sync, SyncDefaultValue(false)] public bool isDead;
+        [Sync] public JObject customData;
 
         #region 无敌时间
         [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime;
@@ -178,7 +180,7 @@ namespace GameCore
 
         #region 血量
 #if UNITY_EDITOR
-        [Button] void editor_health_set(int value) => health = value;
+        [Button, ServerRpc] void editor_health_set(int value, NetworkConnection caller) => health = value;
 #endif
         [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health;
         public const int DEFAULT_HEALTH = 100;
@@ -187,10 +189,6 @@ namespace GameCore
         {
             OnHealthChange();
         }
-        #endregion
-
-        #region 已死亡
-        [Sync, SyncDefaultValue(false)] public bool isDead;
         #endregion
 
         #region 当前区域序列
@@ -239,10 +237,6 @@ namespace GameCore
             // }
         };
 
-        #endregion
-
-        #region 自定义数据
-        [Sync] public JObject customData;
         #endregion
 
         #endregion
@@ -682,7 +676,7 @@ namespace GameCore
 
         public void TakeDamage(int damage, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
         {
-            if (!hurtable)
+            if (!isHurtable)
                 return;
 
             ServerTakeDamage(damage, invincibleTime, hurtPos, impactForce, null);

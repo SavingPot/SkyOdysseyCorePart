@@ -17,7 +17,7 @@ namespace GameCore
         {
             base.Awake();
 
-            hurtable = false;
+            isHurtable = false;
         }
 
 

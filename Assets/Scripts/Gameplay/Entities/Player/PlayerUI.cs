@@ -448,12 +448,37 @@ namespace GameCore.UI
 
 
         /* -------------------------------------------------------------------------- */
-        /*                                    获取物品                                    */
+        /*                                    获取珍惜物品                                    */
         /* -------------------------------------------------------------------------- */
-        public ButtonIdentity getPreciousItemButtonPanel;
-        public ImageIdentity getPreciousItemIcon;
-        public TextIdentity getPreciousItemNameText;
-        public TextIdentity getPreciousItemDescriptionText;
+        public ButtonIdentity gainRareItemButtonPanel;
+        public ImageIdentity gainRareItemIcon;
+        public TextIdentity gainRareItemNameText;
+        public TextIdentity gainRareItemDescriptionText;
+
+        public void ShowGainRareItemUI(string itemId)
+        {
+            var item = ModFactory.CompareItem(itemId);
+
+            if (item == null)
+            {
+                Debug.LogWarning($"找不到物品 {itemId}");
+                return;
+            }
+
+            ShowGainRareItemUI(item);
+        }
+
+        public void ShowGainRareItemUI(ItemData item)
+        {
+            gainRareItemIcon.SetSprite(item.texture.sprite);
+            gainRareItemNameText.SetText(GameUI.CompareText(item.id).text);
+            gainRareItemDescriptionText.SetText(GameUI.CompareTextNullable(item.description)?.text);
+
+            gainRareItemButtonPanel.ap = Vector2.zero;
+            GameUI.SetPage(gainRareItemButtonPanel, GameUI.DisappearType.PositionDownToUp, GameUI.AppearType.PositionDownToUp);
+        }
+
+
 
 
 
@@ -524,41 +549,6 @@ namespace GameCore.UI
                 GameUI.SetPage(chatView);
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-        public void ShowGetItemUI(string itemId)
-        {
-            var item = ModFactory.CompareItem(itemId);
-
-            if (item == null)
-            {
-                Debug.LogWarning($"找不到物品 {itemId}");
-                return;
-            }
-
-            ShowGetPreciousItemUI(item);
-        }
-
-        public void ShowGetPreciousItemUI(ItemData item)
-        {
-            getPreciousItemIcon.SetSprite(item.texture.sprite);
-            getPreciousItemNameText.SetText(GameUI.CompareText(item.id).text);
-            getPreciousItemDescriptionText.SetText(GameUI.CompareTextNullable(item.description)?.text);
-
-            getPreciousItemButtonPanel.ap = Vector2.zero;
-            GameUI.SetPage(getPreciousItemButtonPanel, GameUI.DisappearType.PositionDownToUp, GameUI.AppearType.PositionDownToUp);
-        }
-
 
 
 
@@ -1193,7 +1183,7 @@ namespace GameCore.UI
                             return;
 
                         //刷新玩家属性
-                        player.coin -= node.data.cost;
+                        player.ServerAddCoin(-node.data.cost);
                         if (!player.unlockedSkills.Any(p => p.id == node.data.id))
                         {
                             player.AddUnlockedSkills(new() { id = node.data.id, unlocked = true });
@@ -1342,41 +1332,41 @@ namespace GameCore.UI
             }
             #endregion
 
-            #region 获得物品界面
+            #region 获得珍贵物品界面
 
-            getPreciousItemButtonPanel = GameUI.AddButton(UPC.Middle, "ori:button.get_item", GameUI.canvas.transform, null);
-            getPreciousItemButtonPanel.SetSizeDelta(500, 200);
-            getPreciousItemButtonPanel.SetSprite(null);
-            getPreciousItemButtonPanel.SetColor(new(0.15f, 0.15f, 0.15f, 0.75f));
-            getPreciousItemButtonPanel.button.ClearColorEffects();
-            getPreciousItemButtonPanel.OnUpdate += _ =>
+            gainRareItemButtonPanel = GameUI.AddButton(UPC.Middle, "ori:button.get_item", GameUI.canvas.transform, null);
+            gainRareItemButtonPanel.SetSizeDelta(500, 200);
+            gainRareItemButtonPanel.SetSprite(null);
+            gainRareItemButtonPanel.SetColor(new(0.15f, 0.15f, 0.15f, 0.75f));
+            gainRareItemButtonPanel.button.ClearColorEffects();
+            gainRareItemButtonPanel.OnUpdate += _ =>
             {
                 if (Application.isFocused && player.playerController.Apply())
                 {
                     GameUI.SetPage(null, GameUI.DisappearType.PositionDownToUp, GameUI.AppearType.PositionDownToUp);
                 }
             };
-            getPreciousItemButtonPanel.gameObject.SetActive(false);
-            GameObject.Destroy(getPreciousItemButtonPanel.buttonText.gameObject);
+            gainRareItemButtonPanel.gameObject.SetActive(false);
+            GameObject.Destroy(gainRareItemButtonPanel.buttonText.gameObject);
 
 
-            getPreciousItemIcon = GameUI.AddImage(UPC.Left, "ori:image.get_item_icon", null, getPreciousItemButtonPanel);
-            getPreciousItemIcon.SetAPosX(getPreciousItemIcon.sd.x / 2 + 30);
+            gainRareItemIcon = GameUI.AddImage(UPC.Left, "ori:image.get_item_icon", null, gainRareItemButtonPanel);
+            gainRareItemIcon.SetAPosX(gainRareItemIcon.sd.x / 2 + 30);
 
 
-            getPreciousItemNameText = GameUI.AddText(UPC.Up, "ori:text.get_item_name", getPreciousItemButtonPanel);
-            getPreciousItemNameText.autoCompareText = false;
-            getPreciousItemNameText.SetAPos(50, -getPreciousItemNameText.sd.y / 2 - 20);
-            getPreciousItemNameText.SetSizeDeltaY(40);
-            getPreciousItemNameText.text.SetFontSize(24);
-            getPreciousItemNameText.text.alignment = TMPro.TextAlignmentOptions.Left;
+            gainRareItemNameText = GameUI.AddText(UPC.Up, "ori:text.get_item_name", gainRareItemButtonPanel);
+            gainRareItemNameText.autoCompareText = false;
+            gainRareItemNameText.SetAPos(50, -gainRareItemNameText.sd.y / 2 - 20);
+            gainRareItemNameText.SetSizeDeltaY(40);
+            gainRareItemNameText.text.SetFontSize(24);
+            gainRareItemNameText.text.alignment = TMPro.TextAlignmentOptions.Left;
 
 
-            getPreciousItemDescriptionText = GameUI.AddText(UPC.Up, "ori:text.get_item_description", getPreciousItemButtonPanel);
-            getPreciousItemDescriptionText.autoCompareText = false;
-            getPreciousItemDescriptionText.SetAPosOnBySizeDown(getPreciousItemNameText, 3);
-            getPreciousItemDescriptionText.text.SetFontSize(14);
-            getPreciousItemDescriptionText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
+            gainRareItemDescriptionText = GameUI.AddText(UPC.Up, "ori:text.get_item_description", gainRareItemButtonPanel);
+            gainRareItemDescriptionText.autoCompareText = false;
+            gainRareItemDescriptionText.SetAPosOnBySizeDown(gainRareItemNameText, 3);
+            gainRareItemDescriptionText.text.SetFontSize(14);
+            gainRareItemDescriptionText.text.alignment = TMPro.TextAlignmentOptions.TopLeft;
 
 
             #endregion
@@ -1489,30 +1479,6 @@ namespace GameCore.UI
             Debug.LogError($"未找到背包界面 {id}, 销毁失败");
         }
 
-        public (BackpackPanel panel, ScrollViewIdentity itemView) GenerateItemViewBackpackPanel(
-            string id,
-            string switchButtonTexture,
-            float cellSize,
-            Vector2 viewSize,
-            Vector2 cellSpacing,
-            Action Refresh = null,
-            Action OnActivate = null,
-            Action OnDeactivate = null,
-            string texture = "ori:backpack_inventory_background")
-        {
-            (var modId, var panelName) = Tools.SplitModIdAndName(id);
-
-            var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, texture);
-            var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
-            view.transform.SetParent(panel.panel.rt, false);
-            view.SetAnchorMinMax(UPC.StretchDouble);
-            view.content.anchoredPosition = Vector2.zero;
-            view.content.sizeDelta = Vector2.zero;
-            Component.Destroy(view.viewportImage);
-
-            return (panel, view);
-        }
-
         public void SetBackpackPanel(string id)
         {
             foreach (var item in backpackPanels)
@@ -1614,6 +1580,30 @@ namespace GameCore.UI
 
 
 
+
+        public (BackpackPanel panel, ScrollViewIdentity itemView) GenerateItemViewBackpackPanel(
+            string id,
+            string switchButtonTexture,
+            float cellSize,
+            Vector2 viewSize,
+            Vector2 cellSpacing,
+            Action Refresh = null,
+            Action OnActivate = null,
+            Action OnDeactivate = null,
+            string texture = "ori:backpack_inventory_background")
+        {
+            (var modId, var panelName) = Tools.SplitModIdAndName(id);
+
+            var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, texture);
+            var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
+            view.transform.SetParent(panel.panel.rt, false);
+            view.SetAnchorMinMax(UPC.StretchDouble);
+            view.content.anchoredPosition = Vector2.zero;
+            view.content.sizeDelta = Vector2.zero;
+            Component.Destroy(view.viewportImage);
+
+            return (panel, view);
+        }
 
         public ScrollViewIdentity GenerateItemScrollView(string id, float cellSize, Vector2 viewSize, Vector2 cellSpacing, string backgroundTexture)
         {
@@ -1745,7 +1735,7 @@ namespace GameCore.UI
 
                 if (touchScreenCursorJoystick.Horizontal != 0 || touchScreenCursorJoystick.Vertical != 0)
                 {
-                    float radius = player.useRadius;
+                    float radius = player.interactiveRadius;
 
                     touchScreenCursorImage.image.enabled = true;
                     touchScreenCursorImage.rt.localPosition = new(

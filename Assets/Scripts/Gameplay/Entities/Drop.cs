@@ -25,7 +25,7 @@ namespace GameCore
         {
             base.Awake();
 
-            hurtable = false;
+            isHurtable = false;
 
             renderers.Add(spriteRenderer);
             spriteRenderers.Add(spriteRenderer);
@@ -75,7 +75,7 @@ namespace GameCore
 
                 /* ---------------------------------- 改变属性 ---------------------------------- */
                 item.count = count;
-                item.customData = JsonTools.LoadJObjectByString(itemCustomData);
+                item.customData = JsonUtils.LoadJObjectByString(itemCustomData);
 
                 if (item?.data?.texture != null)
                 {

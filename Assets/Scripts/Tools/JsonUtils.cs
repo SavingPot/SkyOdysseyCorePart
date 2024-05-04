@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace GameCore
 {
-    public static class JsonTools
+    public static class JsonUtils
     {
         private static readonly JsonSerializerSettings defaultJsonSerializerSettings = new()
         {
@@ -442,7 +442,7 @@ namespace GameCore
             return JToken.Parse(str);
         }
 
-        public static T LoadJson<T>(string jsonFilePath, bool decompress = false)
+        public static T LoadTypeFromJsonPath<T>(string jsonFilePath, bool decompress = false)
         {
             if (!File.Exists(jsonFilePath))
             {
@@ -465,7 +465,7 @@ namespace GameCore
                 return default;
             }
 
-            return LoadJsonByString<T>(textsInFile);
+            return LoadTypeFromJsonString<T>(textsInFile);
         }
 
         /// <summary>
@@ -529,8 +529,8 @@ namespace GameCore
             }
         }
 
-        public static T LoadJsonByString<T>(string str) => (T)LoadJsonByString(str, typeof(T));
-        public static object LoadJsonByString(string str, Type type)
+        public static T LoadTypeFromJsonString<T>(string str) => (T)LoadTypeFromJsonString(str, typeof(T));
+        public static object LoadTypeFromJsonString(string str, Type type)
         {
             try
             {

@@ -83,7 +83,7 @@ namespace GameCore
 
                 /* ---------------------------------- 设置数据 ---------------------------------- */
                 block.health = Block.totalMaxHealth;
-                block.customData = JsonTools.LoadJObjectByString(customData);
+                block.customData = JsonUtils.LoadJObjectByString(customData);
                 block.data = data;
                 block.gameObject.name = data.id;
 

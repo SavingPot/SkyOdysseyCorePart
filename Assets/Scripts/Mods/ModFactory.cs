@@ -708,10 +708,10 @@ namespace GameCore
                 #endregion
 
                 #region 加载纹理
-                if (File.Exists(textureSettingsPath) && JsonTools.IsJsonByPath(textureSettingsPath))
+                if (File.Exists(textureSettingsPath) && JsonUtils.IsJsonByPath(textureSettingsPath))
                 {
                     //加载贴图设置
-                    JObject jo = JsonTools.LoadJObjectByPath(textureSettingsPath);
+                    JObject jo = JsonUtils.LoadJObjectByPath(textureSettingsPath);
 
                     newMod.textures = ModLoading.LoadFromTextureSettings(jo, modPath);
 
@@ -830,7 +830,7 @@ namespace GameCore
                     for (int b = 0; b < textPaths.Length; b++) MethodAgent.DebugRun(() =>
                     {
                         //加载文本数据
-                        JObject jo = JsonTools.LoadJObjectByPath(textPaths[b]);
+                        JObject jo = JsonUtils.LoadJObjectByPath(textPaths[b]);
 
                         GameLang newText = ModLoading.LoadText(jo);
                         AddToFinalText(newText);
@@ -840,10 +840,10 @@ namespace GameCore
                 #endregion
 
                 #region 加载音频
-                if (File.Exists(audioSettingsPath) && JsonTools.IsJsonByPath(audioSettingsPath))
+                if (File.Exists(audioSettingsPath) && JsonUtils.IsJsonByPath(audioSettingsPath))
                 {
                     //加载音频设置
-                    JObject jo = JsonTools.LoadJObjectByPath(audioSettingsPath);
+                    JObject jo = JsonUtils.LoadJObjectByPath(audioSettingsPath);
 
                     newMod.audios = ModLoading.LoadFromAudioSettings(jo, modPath);
                 }
@@ -914,7 +914,7 @@ namespace GameCore
                     Array.ForEach(entityPaths, p => MethodAgent.DebugRun(() =>
                     {
                         //加载文本数据
-                        JObject jo = JsonTools.LoadJObjectByPath(p);
+                        JObject jo = JsonUtils.LoadJObjectByPath(p);
                         EntityData newEntity = ModLoading.LoadEntity(jo, p);
 
                         newMod.entities.Add(newEntity);
@@ -1227,7 +1227,7 @@ namespace GameCore
 
         public static string GetJsonFormatByPath(string path) => GetJsonFormat(File.ReadAllText(path));
 
-        public static string GetCorrectJsonFormatByPath(string path) => GetCorrectJsonFormatByJObject(JsonTools.LoadJObjectByPath(path));
+        public static string GetCorrectJsonFormatByPath(string path) => GetCorrectJsonFormatByJObject(JsonUtils.LoadJObjectByPath(path));
 
         public static string GetCorrectJsonFormatByJObject(JObject jo) => ModLoading.GetCorrectJsonFormatByJObject(jo);
 

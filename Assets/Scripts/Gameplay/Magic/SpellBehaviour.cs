@@ -18,7 +18,7 @@ namespace GameCore
 
         }
 
-        //TODO: VAR PLAYER  > IInventoryOwner
+        //TODO: VAR PLAYER -> IInventoryOwner
         public virtual void Release(Vector2 releaseDirection, Vector2 releasePosition, Player player)
         {
 

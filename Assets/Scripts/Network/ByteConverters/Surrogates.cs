@@ -384,7 +384,7 @@ namespace GameCore
                 }
                 else
                 {
-                    return JsonTools.LoadJObjectByString(Compressor.DecompressString(str));
+                    return JsonUtils.LoadJObjectByString(Compressor.DecompressString(str));
                 }
             }
         }
@@ -410,7 +410,7 @@ namespace GameCore
                 }
                 else
                 {
-                    return JsonTools.LoadJTokenByString(Compressor.DecompressString(str));
+                    return JsonUtils.LoadJTokenByString(Compressor.DecompressString(str));
                 }
             }
         }

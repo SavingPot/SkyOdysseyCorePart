@@ -21,7 +21,7 @@ namespace GameCore
         {
             base.Awake();
 
-            hurtable = false;
+            isHurtable = false;
 
             spriteRenderer.sprite = ModFactory.CompareTexture("ori:coin").sprite;
 

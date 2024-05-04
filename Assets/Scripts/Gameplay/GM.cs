@@ -622,7 +622,7 @@ namespace GameCore
             {
                 Debug.Log($"n: {n.pos}, {n.isBackground}");
                 Debug.Log($"b: {block.pos}, {block.isBackground}");
-                block.customData = JsonTools.LoadJObjectByString(n.customData);
+                block.customData = JsonUtils.LoadJObjectByString(n.customData);
                 block.OnServerSetCustomData();
             }
             else
@@ -656,7 +656,7 @@ namespace GameCore
         public void SummonDrop(Vector3 pos, string itemId, ushort count = 1, string customData = null)
         {
             StringBuilder sb = Tools.stringBuilderPool.Get();
-            JObject jo = customData == null ? new() : JsonTools.LoadJObjectByString(customData);
+            JObject jo = customData == null ? new() : JsonUtils.LoadJObjectByString(customData);
 
             jo.AddProperty(
                 "ori:item_data",
