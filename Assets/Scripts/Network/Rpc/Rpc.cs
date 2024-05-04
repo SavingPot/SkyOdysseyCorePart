@@ -487,7 +487,6 @@ namespace GameCore
                             _ => throw new()
                         };
 
-                        //* return ByteReader.TypeRead(parameterTypes[index].FullName, parameters.chunks[index]);
                         return Expression.Block(
                                     trueParameters[index],
                                     new ParameterExpression[] { localParam_bytesToObjectTemp },
@@ -505,7 +504,9 @@ namespace GameCore
                                                 localParam_bytesToObjectTemp,
                                                 Expression.Constant(null)
                                             ),
+                                            //* if (objectTemp == null) return default(T);
                                             Expression.Default(trueParameters[index]),//TODO: Maybe can't be Default
+                                            //* else return (T)objectTemp;
                                             Expression.Convert(
                                                 localParam_bytesToObjectTemp,
                                                 trueParameters[index]

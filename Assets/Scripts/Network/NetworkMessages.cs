@@ -163,12 +163,20 @@ namespace GameCore.High
         public byte[] value;
         [NonSerialized] public object valueLastSync;
 
-        public NMSyncVar(string varId, uint instanceId, byte[] value)
+        public NMSyncVar(string varId, uint instance, byte[] value)
         {
             this.varId = varId;
-            this.instance = instanceId;
+            this.instance = instance;
             this.value = value;
             this.valueLastSync = null;
+        }
+
+        public NMSyncVar(string varId, uint instance, byte[] value, object valueLastSync)
+        {
+            this.varId = varId;
+            this.instance = instance;
+            this.value = value;
+            this.valueLastSync = valueLastSync;
         }
     }
 

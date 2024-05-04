@@ -51,7 +51,7 @@ namespace GameCore
             }
         }
 
-        public const int defaultSendInterval = 60;
+        public const int defaultSendInterval = 80;
         public static bool initialized { get; private set; }
         public static readonly Dictionary<uint, Entity> EntitiesIDTable = new();
 
@@ -115,24 +115,23 @@ namespace GameCore
 
         public static async void StartAutoSync()
         {
-            while (true)
+            //按 sendInterval 毫秒的间隔来同步
+            await Task.Delay(sendInterval);
+
+            //如果服务器关闭了就停止
+            if (!Server.isServer)
+                return;
+
+            try
             {
-                //按 sendInterval 毫秒的间隔来同步
-                await Task.Delay(sendInterval);
-
-                //如果服务器关闭了就停止
-                if (!Server.isServer)
-                    return;
-
-                try
-                {
-                    Sync();
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"自动同步变量失败: {ex}");
-                }
+                Sync();
             }
+            catch (Exception ex)
+            {
+                Debug.LogError($"自动同步变量失败: {ex}");
+            }
+
+            StartAutoSync();
         }
 
         /// <summary>
@@ -149,30 +148,33 @@ namespace GameCore
 
 
 
-            //遍历静态变量
-            for (int a = 0; a < staticVars.Count; a++)
+            //遍历静态变量（时间复杂度为 O(n)）
+            for (int i = 0; i < staticVars.Count; i++)
             {
-                var entry = staticVars.ElementAt(a);
+                var entry = staticVars.ElementAt(i);
+                var variant = entry.Value;
                 var varId = entry.Key;
-                var var = entry.Value;
-
                 var currentValue = GetStaticFieldValue(varId);
 
-                if (Equals(var.valueLastSync, currentValue))
+                //如果值没有变化就跳过
+                if (Equals(variant.valueLastSync, currentValue))
                     continue;
 
-                var temp = var;
-                temp.valueLastSync = currentValue;
-                temp.value = Rpc.ObjectToBytes(currentValue);
-                staticVars[varId] = temp;
+                //调用值改变方法
+                var newValueBytes = Rpc.ObjectToBytes(currentValue);
+                OnValueChange(varId, null, Rpc.ObjectToBytes(variant.valueLastSync), newValueBytes);
 
-                OnValueChange(varId, null, Rpc.ObjectToBytes(var.valueLastSync), temp.value);
+                //更改字典中的值
+                var temp = variant;
+                temp.valueLastSync = currentValue;
+                temp.value = newValueBytes;
+                staticVars[varId] = temp;
 
                 //将新值发送给所有客户端
                 Server.Send(temp);
             }
 
-            //遍历实例变量
+            //遍历实例变量（时间复杂度为 O(m * n)，m=instanceVars.Count, n=entityVarTable.Count）
             for (int a = 0; a < instanceVars.Count; a++)
             {
                 var entry = instanceVars.ElementAt(a);
@@ -185,21 +187,22 @@ namespace GameCore
                     var variant = entityNetIdAndVar.Value;
                     var entityNetId = entityNetIdAndVar.Key;
                     var entity = EntitiesIDTable[entityNetId];
-
                     var currentValue = GetInstanceFieldValue(varId, entity);
 
+                    //如果值没有变化就跳过
                     if (Equals(variant.valueLastSync, currentValue))
                         continue;
 
-                    var temp = variant;
-                    temp.valueLastSync = currentValue;
-                    temp.value = Rpc.ObjectToBytes(currentValue);
-                    instanceVars[varId][entityNetId] = temp;
+                    //调用值改变方法
+                    var newValueBytes = Rpc.ObjectToBytes(currentValue);
+                    OnValueChange(varId, entity, Rpc.ObjectToBytes(variant.valueLastSync), newValueBytes);
 
-                    OnValueChange(varId, entity, Rpc.ObjectToBytes(variant.valueLastSync), temp.value);
+                    //更改字典中的值
+                    var newVar = new NMSyncVar(varId, entityNetId, newValueBytes, currentValue);
+                    instanceVars[varId][entityNetId] = newVar;
 
                     //将新值发送给所有客户端
-                    Server.Send(temp);
+                    Server.Send(newVar);
                 }
             }
         }
@@ -697,38 +700,38 @@ namespace GameCore
 
             static void OnServerGetNMSyncVar(NetworkConnectionToClient conn, NMSyncVar nm)
             {
-                //TODO: 安全检查: if (!conn.owned)
-                //排除服务器自己
-                if (conn == Server.localConnection)
-                    return;
-
-                //实例变量
-                if (nm.instance != uint.MaxValue)
-                {
-                    if (instanceVars.TryGetValue(nm.varId, out var inner) && inner.TryGetValue(nm.instance, out var var))
-                    {
-                        var oldValue = var.value;
-                        var.value = nm.value;
-                        inner[nm.instance] = var;
-                        OnValueChange(var.varId, Entity.GetEntityByNetIdWithCheckInvalid(var.instance), oldValue, var.value);
-                        return;
-                    }
-                }
-                //静态变量
-                else
-                {
-                    if (staticVars.TryGetValue(nm.varId, out var var))
-                    {
-                        var oldValue = var.value;
-                        var.value = nm.value;
-                        staticVars[nm.varId] = var;
-                        OnValueChange(var.varId, Entity.GetEntityByNetIdWithCheckInvalid(var.instance), oldValue, var.value);
-                        return;
-                    }
-                }
-
-                //广播给其他客户端
-                Server.Send(nm);
+                //// to-dO: 安全检查: if (!conn.owned)
+                //// //排除服务器自己
+                //// if (conn == Server.localConnection)
+                ////     return;
+                //
+                //// //实例变量
+                //// if (nm.instance != uint.MaxValue)
+                //// {
+                ////     if (instanceVars.TryGetValue(nm.varId, out var inner) && inner.TryGetValue(nm.instance, out var var))
+                ////     {
+                ////         var oldValue = var.value;
+                ////         var.value = nm.value;
+                ////         inner[nm.instance] = var;
+                ////         OnValueChange(var.varId, Entity.GetEntityByNetIdWithCheckInvalid(var.instance), oldValue, var.value);
+                ////         return;
+                ////     }
+                //// }
+                //// //静态变量
+                //// else
+                //// {
+                ////     if (staticVars.TryGetValue(nm.varId, out var var))
+                ////     {
+                ////         var oldValue = var.value;
+                ////         var.value = nm.value;
+                ////         staticVars[nm.varId] = var;
+                ////         OnValueChange(var.varId, Entity.GetEntityByNetIdWithCheckInvalid(var.instance), oldValue, var.value);
+                ////         return;
+                ////     }
+                //// }
+                //
+                //// //广播给其他客户端
+                //// Server.Send(nm);
             }
 
             static void OnClientGetNMRegisterSyncVar(NMRegisterSyncVar nm)
