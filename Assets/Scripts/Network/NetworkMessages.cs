@@ -134,14 +134,12 @@ namespace GameCore.High
     {
         public string varId;
         public uint instance;
-        public bool clientCanSet;
         public byte[] defaultValue;
 
-        public NMRegisterSyncVar(string varId, uint instance, bool clientCanSet, byte[] defaultValue)
+        public NMRegisterSyncVar(string varId, uint instance, byte[] defaultValue)
         {
             this.varId = varId;
             this.instance = instance;
-            this.clientCanSet = clientCanSet;
             this.defaultValue = defaultValue;
         }
     }
@@ -164,15 +162,13 @@ namespace GameCore.High
         public uint instance;
         public byte[] value;
         [NonSerialized] public object valueLastSync;
-        [NonSerialized] public readonly bool clientCanSet;
 
-        public NMSyncVar(string varId, uint instanceId, byte[] value, bool clientCanSet)
+        public NMSyncVar(string varId, uint instanceId, byte[] value)
         {
             this.varId = varId;
             this.instance = instanceId;
             this.value = value;
             this.valueLastSync = null;
-            this.clientCanSet = clientCanSet;
         }
     }
 

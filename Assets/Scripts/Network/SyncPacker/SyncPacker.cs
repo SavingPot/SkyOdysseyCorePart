@@ -63,7 +63,7 @@ namespace GameCore
         /// 注册同步变量, 只能在服务端调用
         /// </summary>
         /// <param name="varId"></param>
-        public static void RegisterVar(string varId, uint instance, bool clientCanSet, byte[] defaultValue)
+        public static void RegisterVar(string varId, uint instance, byte[] defaultValue)
         {
             if (varId.IsNullOrWhiteSpace())
             {
@@ -77,7 +77,7 @@ namespace GameCore
                 return;
             }
 
-            NMRegisterSyncVar var = new(varId, instance, clientCanSet, defaultValue);
+            NMRegisterSyncVar var = new(varId, instance, defaultValue);
 
             //保证服务器立马注册
 #if DEBUG
@@ -121,7 +121,14 @@ namespace GameCore
             if (!Server.isServer)
                 return;
 
-            Sync();
+            try
+            {
+                Sync();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"自动同步变量失败: {ex}");
+            }
 
             StartAutoSync();
         }
@@ -139,14 +146,8 @@ namespace GameCore
 
 
 
-            List<string> staticSets = new();
-            List<(string id, uint instance)> instanceSets = new();
 
-
-
-
-
-
+            //TODO: 单开线程处理
             //遍历静态变量
             for (int a = 0; a < staticVars.Count; a++)
             {
@@ -158,7 +159,7 @@ namespace GameCore
 
                 if (Equals(var.valueLastSync, currentValue))
                     continue;
-                    
+
                 var temp = var;
                 temp.valueLastSync = currentValue;
                 temp.value = Rpc.ObjectToBytes(currentValue);
@@ -495,7 +496,7 @@ namespace GameCore
                                     var value = Rpc.ObjectToBytes(defaultValueAttribute.defaultValue);
 
                                     //绑定注册
-                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(fieldPath, uint.MaxValue, true, value);
+                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(fieldPath, uint.MaxValue, value);
                                 }
                                 //* 如果是 方法形式 的默认值
                                 else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(field, out var defaultValueFromMethodAttribute))
@@ -522,7 +523,7 @@ namespace GameCore
                                         //在注册时获取默认值并转为 byte[]
                                         staticVarsRegisterMethods += () =>
                                         {
-                                            SyncPacker.RegisterVar(fieldPath, uint.MaxValue, true, Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null)));
+                                            SyncPacker.RegisterVar(fieldPath, uint.MaxValue, Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null)));
                                         };
                                     }
                                     else
@@ -531,13 +532,13 @@ namespace GameCore
                                         var value = Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null));
 
                                         //绑定注册
-                                        staticVarsRegisterMethods += () => SyncPacker.RegisterVar(fieldPath, uint.MaxValue, true, value);
+                                        staticVarsRegisterMethods += () => SyncPacker.RegisterVar(fieldPath, uint.MaxValue, value);
                                     }
                                 }
                                 //* 如果是无默认值
                                 else
                                 {
-                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(fieldPath, uint.MaxValue, true, null);
+                                    staticVarsRegisterMethods += () => SyncPacker.RegisterVar(fieldPath, uint.MaxValue, null);
                                 }
                             }
 
@@ -607,7 +608,7 @@ namespace GameCore
                     var var = entry.Value;
 
                     //让指定客户端重新注册同步变量
-                    conn.Send<NMRegisterSyncVar>(new(var.varId, var.instance, var.clientCanSet, var.value));
+                    conn.Send<NMRegisterSyncVar>(new(var.varId, var.instance, var.value));
                 }
             };
 
@@ -694,14 +695,14 @@ namespace GameCore
                         var var = instanceEntry.Value;
 
                         //让指定客户端重新注册同步变量
-                        conn.Send<NMRegisterSyncVar>(new(var.varId, var.instance, var.clientCanSet, var.value));
+                        conn.Send<NMRegisterSyncVar>(new(var.varId, var.instance, var.value));
                     }
                 }
             }
 
             static void OnServerGetNMSyncVar(NetworkConnectionToClient conn, NMSyncVar nm)
             {
-                //TODO: 安全检查: if (!nm.clientCanSet&&conn.owned)
+                //TODO: 安全检查: if (!conn.owned)
                 //排除服务器自己
                 if (conn == Server.localConnection)
                     return;
@@ -796,9 +797,8 @@ namespace GameCore
                     table = instanceVars[var.varId];
                 }
 
-                if (table.TryAdd(var.instance, new NMSyncVar(var.varId, var.instance, var.defaultValue, var.clientCanSet)))
+                if (table.TryAdd(var.instance, new NMSyncVar(var.varId, var.instance, var.defaultValue)))
                 {
-                    ////FirstTempValue(var.varId, Entity.GetEntityByNetIdWithCheck(var.instance), var.defaultValue);
                     //? 实例变量的缓存由 EntityInit 执行
                 }
                 else
@@ -809,7 +809,7 @@ namespace GameCore
             //静态变量
             else
             {
-                if (staticVars.TryAdd(var.varId, new(var.varId, var.instance, var.defaultValue, var.clientCanSet)))
+                if (staticVars.TryAdd(var.varId, new(var.varId, var.instance, var.defaultValue)))
                 {
                     FirstTempValue(var.varId, null, var.defaultValue);
                 }

@@ -158,81 +158,81 @@ namespace GameCore
 
                     if (pair.fieldPath == maxHealthVarId)
                     {
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(data.maxHealth));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(data.maxHealth));
                     }
                     else if (pair.fieldPath == healthVarId)
                     {
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : save.health.Value));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : save.health.Value));
                     }
                     else if (pair.fieldPath == customDataVarId)
                     {
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(JsonTools.LoadJObjectByString(save.customData)));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(JsonTools.LoadJObjectByString(save.customData)));
                     }
                     else if (pair.fieldPath == hungerValueVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.hungerValue));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.hungerValue));
                     }
                     else if (pair.fieldPath == happinessValueVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.happinessValue));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.happinessValue));
                     }
                     else if (pair.fieldPath == coinVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.coin));
+                        SyncPacker.RegisterVar(id, netId,  Rpc.ObjectToBytes(saveAsPlayer.coin));
                     }
                     else if (pair.fieldPath == skinHeadVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinHead);
+                        SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinHead);
                     }
                     else if (pair.fieldPath == skinBodyVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinBody);
+                        SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinBody);
                     }
                     else if (pair.fieldPath == skinLeftArmVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftArm);
+                        SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinLeftArm);
                     }
                     else if (pair.fieldPath == skinRightArmVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightArm);
+                        SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinRightArm);
                     }
                     else if (pair.fieldPath == skinLeftLegVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftLeg);
+                        SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinLeftLeg);
                     }
                     else if (pair.fieldPath == skinRightLegVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightLeg);
+                        SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinRightLeg);
                     }
                     else if (pair.fieldPath == skinLeftFootVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftFoot);
+                        SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinLeftFoot);
                     }
                     else if (pair.fieldPath == skinRightFootVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightFoot);
+                        SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinRightFoot);
                     }
                     else if (pair.fieldPath == inventoryVarId)
                     {
@@ -240,7 +240,7 @@ namespace GameCore
 
                         if (saveAsPlayer.inventory == null)
                         {
-                            SyncPacker.RegisterVar(id, netId, true, null);
+                            SyncPacker.RegisterVar(id, netId, null);
                         }
                         else
                         {
@@ -248,33 +248,33 @@ namespace GameCore
                             //这一行代码的意义是如果物品栏栏位数更改了, 可以保证栏位数和预想的一致
                             saveAsPlayer.inventory.SetSlotCount(Player.inventorySlotCountConst);
 
-                            SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.inventory));
+                            SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.inventory));
                         }
                     }
                     else if (pair.fieldPath == completedTasksVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.completedTasks ?? new()));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.completedTasks ?? new()));
                     }
                     else if (pair.fieldPath == unlockedSkillsVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.unlockedSkills ?? new()));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.unlockedSkills ?? new()));
                     }
                     else if (pair.fieldPath == playerNameVarId)
                     {
-                        SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(save.id));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(save.id));
                     }
                     else
                     {
                         if (!pair.includeDefaultValue)
-                            SyncPacker.RegisterVar(id, netId, true, null);
+                            SyncPacker.RegisterVar(id, netId, null);
                         else if (pair.defaultValueMethod == null)
-                            SyncPacker.RegisterVar(id, netId, true, pair.defaultValue);
+                            SyncPacker.RegisterVar(id, netId, pair.defaultValue);
                         else
-                            SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(pair.defaultValueMethod.Invoke(null, null)));
+                            SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(pair.defaultValueMethod.Invoke(null, null)));
                     }
                 }
             }
