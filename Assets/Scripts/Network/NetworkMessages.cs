@@ -164,6 +164,7 @@ namespace GameCore.High
         public uint instance;
         public byte[] value;
         [NonSerialized] public object valueLastSync;
+        [NonSerialized] public readonly bool clientCanSet;
 
         public NMSyncVar(string varId, uint instanceId, byte[] value, bool clientCanSet)
         {
