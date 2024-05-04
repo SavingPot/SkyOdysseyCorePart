@@ -34,15 +34,15 @@ namespace GameCore
         /// <summary>
         /// 发送同步变量的间隔
         /// </summary>
-        private static float _sendInterval;
-        public static float sendInterval
+        private static int _sendInterval;
+        public static int sendInterval
         {
             get => _sendInterval;
             set
             {
                 if (value <= 0)
                 {
-                    //按 defaultSendInterval 秒来同步
+                    //按 defaultSendInterval 毫秒来同步
                     Debug.LogError($"{nameof(sendInterval)} 值不应小于或等于 0, 否则程序将停止响应, 已按照 {nameof(defaultSendInterval)}:{defaultSendInterval} 处理");
                     value = defaultSendInterval;
                 }
@@ -51,7 +51,7 @@ namespace GameCore
             }
         }
 
-        public const float defaultSendInterval = 0.05f;
+        public const int defaultSendInterval = 60;
         public static bool initialized { get; private set; }
         public static readonly Dictionary<uint, Entity> EntitiesIDTable = new();
 
@@ -115,22 +115,24 @@ namespace GameCore
 
         public static async void StartAutoSync()
         {
-            //按 sendInterval 秒的间隔来同步
-            await sendInterval;
-
-            if (!Server.isServer)
-                return;
-
-            try
+            while (true)
             {
-                Sync();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"自动同步变量失败: {ex}");
-            }
+                //按 sendInterval 毫秒的间隔来同步
+                await Task.Delay(sendInterval);
 
-            StartAutoSync();
+                //如果服务器关闭了就停止
+                if (!Server.isServer)
+                    return;
+
+                try
+                {
+                    Sync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"自动同步变量失败: {ex}");
+                }
+            }
         }
 
         /// <summary>

@@ -92,7 +92,12 @@ namespace GameCore
         #region 随机更新
 #if UNITY_EDITOR
         [Button("设置随机更新几率")] private void EditorSetRandomUpdateProbability(byte u = byte.MaxValue) => RandomUpdater.randomUpdateProbability = u;
-        [Button("随机更新")] private void EditorRandomUpdate() => RandomUpdater.RandomUpdate();
+        [Button("随机更新")]
+        private void EditorRandomUpdate()
+        {
+            Debug.Log(RandomUpdater.updates.Count);
+            RandomUpdater.RandomUpdate();
+        }
 #endif
 
         //随机更新只在服务器进行, 无需同步至客户端
@@ -1252,17 +1257,8 @@ namespace GameCore
                         generation.region.RemovePos(x, y, false);
                         generation.region.RemovePos(x, y, true);
 
-                        //TODO: 门
-                        if (x == 0 || y == 0)
-                        {
-                            //添加边界方块
-                            generation.region.AddPos(BlockID.BoundaryGate, x, y, false, true);
-                        }
-                        else
-                        {
-                            //添加边界方块
-                            generation.region.AddPos(BlockID.Boundary, x, y, false, true);
-                        }
+                        //添加边界方块
+                        generation.region.AddPos(BlockID.Boundary, x, y, false, true);
                     }
                 }
             }
