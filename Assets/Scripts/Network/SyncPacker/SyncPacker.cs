@@ -165,13 +165,11 @@ namespace GameCore
                 OnValueChange(varId, null, Rpc.ObjectToBytes(variant.valueLastSync), newValueBytes);
 
                 //更改字典中的值
-                var temp = variant;
-                temp.valueLastSync = currentValue;
-                temp.value = newValueBytes;
-                staticVars[varId] = temp;
+                var newVar = new NMSyncVar(varId, uint.MaxValue, newValueBytes, currentValue);
+                staticVars[varId] = newVar;
 
                 //将新值发送给所有客户端
-                Server.Send(temp);
+                Server.Send(newVar);
             }
 
             //遍历实例变量（时间复杂度为 O(m * n)，m=instanceVars.Count, n=entityVarTable.Count）
