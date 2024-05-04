@@ -2,7 +2,7 @@ using System;
 
 namespace GameCore
 {
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Field)]
     public class SyncAttribute : Attribute
     {
         public readonly string hook;
@@ -18,7 +18,7 @@ namespace GameCore
         }
     }
 
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Field)]
     public class SyncDefaultValueAttribute : Attribute
     {
         public readonly object defaultValue;
@@ -29,7 +29,7 @@ namespace GameCore
         }
     }
 
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Field)]
     public class SyncDefaultValueFromMethodAttribute : Attribute
     {
         public readonly string methodName;

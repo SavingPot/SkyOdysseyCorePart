@@ -39,7 +39,6 @@ namespace GameCore
         public static Vector2Int place => placeVec;
         public static Vector2 halfPlace => halfPlaceVec;
 
-        [BurstCompile]
         public static Vector2 GetMiddle(int indexX, int indexY)
         {
             int x = GetMiddleX(indexX);
@@ -48,7 +47,6 @@ namespace GameCore
             return new(x, y);
         }
 
-        [BurstCompile]
         public static int GetMiddleX(int indexX)
         {
             int x = Region.place.x * indexX;
@@ -56,7 +54,6 @@ namespace GameCore
             return x;
         }
 
-        [BurstCompile]
         public static int GetMiddleY(int indexY)
         {
             int y = Region.place.y * indexY;
@@ -64,7 +61,6 @@ namespace GameCore
             return y;
         }
 
-        [BurstCompile]
         public static Vector2 GetMiddle(Vector2Int index)
         {
             int x = GetMiddleX(index);
@@ -73,7 +69,6 @@ namespace GameCore
             return new(x, y);
         }
 
-        [BurstCompile]
         public static int GetMiddleX(Vector2Int index)
         {
             int x = Region.place.x * index.x;
@@ -81,7 +76,6 @@ namespace GameCore
             return x;
         }
 
-        [BurstCompile]
         public static int GetMiddleY(Vector2Int index)
         {
             int y = Region.place.y * index.y;
@@ -89,7 +83,6 @@ namespace GameCore
             return y;
         }
 
-        [BurstCompile]
         public static float GetRightX(Vector2Int index)
         {
             float x = GetMiddleX(index) + Region.halfPlace.x;
@@ -97,7 +90,6 @@ namespace GameCore
             return x;
         }
 
-        [BurstCompile]
         public static float GetLeftX(Vector2Int index)
         {
             float x = GetMiddleX(index) - Region.halfPlace.x;
@@ -105,7 +97,6 @@ namespace GameCore
             return x;
         }
 
-        [BurstCompile]
         public static float GetUpY(Vector2Int index)
         {
             float y = GetMiddleY(index) + Region.halfPlace.y;
@@ -113,7 +104,6 @@ namespace GameCore
             return y;
         }
 
-        [BurstCompile]
         public static float GetDownY(Vector2Int index)
         {
             float y = GetMiddleY(index) - Region.halfPlace.y;

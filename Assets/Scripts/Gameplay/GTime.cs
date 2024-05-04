@@ -1,7 +1,6 @@
 using GameCore.High;
 using System;
 using System.Collections.Generic;
-using Unity.Burst;
 using UnityEngine;
 
 namespace GameCore
@@ -26,14 +25,9 @@ namespace GameCore
 
         #region 变量
 
-        static bool _isMorning; static void _isMorning_set(bool value) { }
-        [Sync, SyncDefaultValue(true)] public static bool isMorning { get => _isMorning; set => _isMorning_set(value); }
-
-        static float _timeOneDay; static void _timeOneDay_set(float value) { }
-        [Sync, SyncDefaultValue(1440f)] public static float timeOneDay { get => _timeOneDay; set => _timeOneDay_set(value); }
-
-        static float _time; static void _time_set(float value) { }
-        [Sync(nameof(TimeModify)), SyncDefaultValue(420f)] public static float time { get => _time; set => _time_set(value); }
+        [Sync, SyncDefaultValue(true)] public static bool isMorning;
+        [Sync, SyncDefaultValue(1440f)] public static float timeOneDay;
+        [Sync(nameof(TimeModify)), SyncDefaultValue(420f)] public static float time;
 
         public static void TimeModify(byte[] _)
         {
@@ -84,7 +78,6 @@ namespace GameCore
             Debug.Log($"设置了时间为 {time24Format}");
         }
 
-        [BurstCompile]
         public static float GetTime12ByStandard(float standardTime)
         {
             float value = standardTime / (timeOneDay / 2) * 12f;
@@ -100,7 +93,6 @@ namespace GameCore
             return value;
         }
 
-        [BurstCompile]
         public static float GetTimeStandardBy12(float time12)
         {
             float value;
@@ -114,9 +106,8 @@ namespace GameCore
             return value;
         }
 
-        [BurstCompile] public static void SetTimeStandardBy12(float time12) => time = GetTimeStandardBy12(time12);
+        public static void SetTimeStandardBy12(float time12) => time = GetTimeStandardBy12(time12);
 
-        [BurstCompile]
         public static float GetTime24By12(float time12)
         {
             if (isMorning)
@@ -126,7 +117,6 @@ namespace GameCore
             return (((int)time12 == 12) ? 0 : 12) + time12;
         }
 
-        [BurstCompile]
         public static void SetTime12By24(float time24)
         {
             //小于 12 为上午, 大于或等于则为 下午 

@@ -201,8 +201,7 @@ namespace GameCore
         #region 同步变量
 
         #region 任务
-        List<TaskStatusForSave> _completedTasks; void _completedTasks_set(List<TaskStatusForSave> value) { }
-        [Sync] public List<TaskStatusForSave> completedTasks { get => _completedTasks; set => _completedTasks_set(value); }
+        [Sync] public List<TaskStatusForSave> completedTasks;
 
         public void AddCompletedTasks(TaskStatusForSave task)
         {
@@ -213,8 +212,7 @@ namespace GameCore
         #endregion
 
         #region 技能树
-        List<SkillStatusForSave> _unlockedSkills; void _unlockedSkills_set(List<SkillStatusForSave> value) { }
-        [Sync] public List<SkillStatusForSave> unlockedSkills { get => _unlockedSkills; set => _unlockedSkills_set(value); }
+        [Sync] public List<SkillStatusForSave> unlockedSkills;
 
         public void AddUnlockedSkills(SkillStatusForSave task)
         {
@@ -225,50 +223,40 @@ namespace GameCore
         #endregion
 
         #region 皮肤
-
-        Sprite _skinHead; void _skinHead_set(Sprite value) { }
-        Sprite _skinBody; void _skinBody_set(Sprite value) { }
-        Sprite _skinLeftArm; void _skinLeftArm_set(Sprite value) { }
-        Sprite _skinRightArm; void _skinRightArm_set(Sprite value) { }
-        Sprite _skinLeftLeg; void _skinLeftLeg_set(Sprite value) { }
-        Sprite _skinRightLeg; void _skinRightLeg_set(Sprite value) { }
-        Sprite _skinLeftFoot; void _skinLeftFoot_set(Sprite value) { }
-        Sprite _skinRightFoot; void _skinRightFoot_set(Sprite value) { }
-        [Sync] public Sprite skinHead { get => _skinHead; set => _skinHead_set(value); }
-        [Sync] public Sprite skinBody { get => _skinBody; set => _skinBody_set(value); }
-        [Sync] public Sprite skinLeftArm { get => _skinLeftArm; set => _skinLeftArm_set(value); }
-        [Sync] public Sprite skinRightArm { get => _skinRightArm; set => _skinRightArm_set(value); }
-        [Sync] public Sprite skinLeftLeg { get => _skinLeftLeg; set => _skinLeftLeg_set(value); }
-        [Sync] public Sprite skinRightLeg { get => _skinRightLeg; set => _skinRightLeg_set(value); }
-        [Sync] public Sprite skinLeftFoot { get => _skinLeftFoot; set => _skinLeftFoot_set(value); }
-        [Sync] public Sprite skinRightFoot { get => _skinRightFoot; set => _skinRightFoot_set(value); }
+        [Sync] public Sprite skinHead;
+        [Sync] public Sprite skinBody;
+        [Sync] public Sprite skinLeftArm;
+        [Sync] public Sprite skinRightArm;
+        [Sync] public Sprite skinLeftLeg;
+        [Sync] public Sprite skinRightLeg;
+        [Sync] public Sprite skinLeftFoot;
+        [Sync] public Sprite skinRightFoot;
 
         #endregion
 
         #region 属性
 
         #region 饥饿值
-        float _hungerValue; void _hungerValue_set(float value) { }
-        [Sync] public float hungerValue { get => _hungerValue; set => _hungerValue_set(value); }
+        [Sync] public float hungerValue;
         public static float defaultHungerValue = 100;
         public static float maxHungerValue = 100;
         #endregion
 
         #region 金币
-        int _coin; [Button] void _coin_set(int value) { }
-        [Sync] public int coin { get => _coin; set => _coin_set(value); }
+#if UNITY_EDITOR
+        [Button] void editor_coin_set(int value) => coin = value;
+#endif
+        [Sync] public int coin;
         #endregion
 
         #region 幸福值
-        float _happinessValue; void _happinessValue_set(float value) { }
-        [Sync] public float happinessValue { get => _happinessValue; set => _happinessValue_set(value); }
+        [Sync] public float happinessValue;
         public static float defaultHappinessValue = 50;
         public static float maxHappinessValue = 100;
         #endregion
 
         #region 玩家名
-        string _playerName; void _playerName_set(string value) { }
-        [Sync(nameof(OnNameChangeMethod)), SyncDefaultValue("")] public string playerName { get => _playerName; set => _playerName_set(value); }
+        [Sync(nameof(OnNameChangeMethod)), SyncDefaultValue("")] public string playerName;
 
         void OnNameChangeMethod(byte[] _)
         {
@@ -291,12 +279,11 @@ namespace GameCore
         #endregion
 
         #region 物品栏
-        Inventory _inventory; void _inventory_set(Inventory value) { }
-        [Sync(nameof(TempInventory))] public Inventory inventory { get => _inventory; set => _inventory_set(value); }
+        [Sync(nameof(TempInventory))] public Inventory inventory;
 
         void TempInventory(byte[] _)
         {
-            _inventory = Inventory.ResumeFromStreamTransport(_inventory, this);
+            inventory = Inventory.ResumeFromStreamTransport(inventory, this);
 
             //刷新物品栏
             if (Init.isServerCompletelyReady)
@@ -509,9 +496,6 @@ namespace GameCore
 
         public override void Initialize()
         {
-            //防止玩家在生成区域前就掉落到很低的地方
-            GravitySet(this);
-
             base.Initialize();
 
             //加载服务器存档中的位置
@@ -626,6 +610,9 @@ namespace GameCore
 
             //显示名称
             OnNameChange(playerName);
+
+            //防止玩家在生成区域前就掉落到很低的地方
+            GravitySet(this);
         }
 
         public override void AfterInitialization()
@@ -1305,11 +1292,11 @@ namespace GameCore
         {
             Debug.Log($"Player={netId} 请求生成区域 {index}");
 
-            //如果旧的区域没有玩家了，就回收区域
-            if (!PlayerCenter.all.Any(currentPlayer => currentPlayer.regionIndex == currentPlayer.regionIndex))
-            {
-                GM.instance.RecycleRegion(index);
-            }
+            //TODO: 如果旧的区域没有玩家了，就回收区域
+            // if (!PlayerCenter.all.Any(currentPlayer => currentPlayer.regionIndex == currentPlayer.regionIndex))
+            // {
+            //     GM.instance.RecycleRegion(index);
+            // }
 
             MethodAgent.RunThread(() =>
             {
@@ -1724,6 +1711,10 @@ namespace GameCore
                 SetOrientation(true);
                 return;
             }
+
+            //如果玩家没在玩就返回
+            if (!Application.isFocused)
+                return;
 
             switch (playerController.SetPlayerOrientation())
             {

@@ -89,7 +89,7 @@ namespace GameCore
 
                 foreach (SyncAttributeData pair in syncVarTemps)
                 {
-                    SyncPacker.UnregisterVar(pair.propertyPath, netId);
+                    SyncPacker.UnregisterVar(pair.fieldPath, netId);
                 }
             }
         }
@@ -154,87 +154,87 @@ namespace GameCore
             {
                 foreach (SyncAttributeData pair in syncVarTemps)
                 {
-                    var id = pair.propertyPath;
+                    var id = pair.fieldPath;
 
-                    if (pair.propertyPath == maxHealthVarId)
+                    if (pair.fieldPath == maxHealthVarId)
                     {
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(data.maxHealth));
                     }
-                    else if (pair.propertyPath == healthVarId)
+                    else if (pair.fieldPath == healthVarId)
                     {
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : save.health.Value));
                     }
-                    else if (pair.propertyPath == customDataVarId)
+                    else if (pair.fieldPath == customDataVarId)
                     {
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(JsonTools.LoadJObjectByString(save.customData)));
                     }
-                    else if (pair.propertyPath == hungerValueVarId)
+                    else if (pair.fieldPath == hungerValueVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.hungerValue));
                     }
-                    else if (pair.propertyPath == happinessValueVarId)
+                    else if (pair.fieldPath == happinessValueVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.happinessValue));
                     }
-                    else if (pair.propertyPath == coinVarId)
+                    else if (pair.fieldPath == coinVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.coin));
                     }
-                    else if (pair.propertyPath == skinHeadVarId)
+                    else if (pair.fieldPath == skinHeadVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinHead);
                     }
-                    else if (pair.propertyPath == skinBodyVarId)
+                    else if (pair.fieldPath == skinBodyVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinBody);
                     }
-                    else if (pair.propertyPath == skinLeftArmVarId)
+                    else if (pair.fieldPath == skinLeftArmVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftArm);
                     }
-                    else if (pair.propertyPath == skinRightArmVarId)
+                    else if (pair.fieldPath == skinRightArmVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightArm);
                     }
-                    else if (pair.propertyPath == skinLeftLegVarId)
+                    else if (pair.fieldPath == skinLeftLegVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftLeg);
                     }
-                    else if (pair.propertyPath == skinRightLegVarId)
+                    else if (pair.fieldPath == skinRightLegVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightLeg);
                     }
-                    else if (pair.propertyPath == skinLeftFootVarId)
+                    else if (pair.fieldPath == skinLeftFootVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinLeftFoot);
                     }
-                    else if (pair.propertyPath == skinRightFootVarId)
+                    else if (pair.fieldPath == skinRightFootVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, saveAsPlayer.skinRightFoot);
                     }
-                    else if (pair.propertyPath == inventoryVarId)
+                    else if (pair.fieldPath == inventoryVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
@@ -251,19 +251,19 @@ namespace GameCore
                             SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.inventory));
                         }
                     }
-                    else if (pair.propertyPath == completedTasksVarId)
+                    else if (pair.fieldPath == completedTasksVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.completedTasks ?? new()));
                     }
-                    else if (pair.propertyPath == unlockedSkillsVarId)
+                    else if (pair.fieldPath == unlockedSkillsVarId)
                     {
                         PlayerSave saveAsPlayer = (PlayerSave)save;
 
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(saveAsPlayer.unlockedSkills ?? new()));
                     }
-                    else if (pair.propertyPath == playerNameVarId)
+                    else if (pair.fieldPath == playerNameVarId)
                     {
                         SyncPacker.RegisterVar(id, netId, true, Rpc.ObjectToBytes(save.id));
                     }
@@ -310,7 +310,7 @@ namespace GameCore
 
                 foreach (var pair in syncVarTemps)
                 {
-                    string id = pair.propertyPath;
+                    string id = pair.fieldPath;
                     waitingRegisteringVar = id;
 
                     //等待变量被注册并将其缓存
@@ -347,7 +347,7 @@ namespace GameCore
 
             foreach (var pair in syncVarTemps)
             {
-                string id = pair.propertyPath;
+                string id = pair.fieldPath;
                 waitingRegisteringVar = id;
 
                 foreach (var var in SyncPacker.instanceVars)
@@ -370,8 +370,7 @@ namespace GameCore
                 Debug.LogError($"实例同步变量 {id} 未被成功缓存");
 
             //继续缓存下一个变量
-            nextPair:
-                continue;
+            nextPair: { }
             }
 
             /* --------------------------------- 注册完成 --------------------------------- */
@@ -383,6 +382,8 @@ namespace GameCore
             entity = generationId == EntityID.Player ? gameObject.AddComponent<Player>() : (Entity)gameObject.AddComponent(data.behaviourType);
             entity.Init = this;
             entity.data = data;
+
+            SyncPacker.EntitiesIDTable.Add(netId, entity);
         }
 
         void CompleteEntityComponentCreation()
@@ -431,7 +432,7 @@ namespace GameCore
 
         internal class SyncAttributeData
         {
-            public string propertyPath;
+            public string fieldPath;
             public bool includeDefaultValue;
             public byte[] defaultValue;
             public MethodInfo defaultValueMethod;
@@ -448,21 +449,21 @@ namespace GameCore
             //如果没有就添加
             List<SyncAttributeData> ts = new();
 
-            foreach (var property in type.GetAllProperties())
+            foreach (var field in type.GetFields())
             {
                 //如果存在 SyncAttribute 就添加到列表
-                if (AttributeGetter.TryGetAttribute<SyncAttribute>(property, out var att))
+                if (AttributeGetter.TryGetAttribute<SyncAttribute>(field, out var att))
                 {
-                    string propertyPath = $"{property.DeclaringType.FullName}.{property.Name}";
+                    string fieldPath = $"{field.DeclaringType.FullName}.{field.Name}";
                     bool includeDefaultValue = false;
                     byte[] defaultValue = null;
                     MethodInfo defaultValueMethod = null;
 
-                    if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(property, out var defaultValueAtt))
+                    if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(field, out var defaultValueAtt))
                     {
-                        if (defaultValueAtt.defaultValue != null && property.PropertyType.FullName != defaultValueAtt.defaultValue.GetType().FullName)
+                        if (defaultValueAtt.defaultValue != null && field.FieldType.FullName != defaultValueAtt.defaultValue.GetType().FullName)
                         {
-                            Debug.LogError($"同步变量 {propertyPath} 错误: 返回值的类型为 {property.PropertyType.FullName} , 但默认值的类型为 {defaultValueAtt.defaultValue.GetType().FullName}");
+                            Debug.LogError($"同步变量 {fieldPath} 错误: 返回值的类型为 {field.FieldType.FullName} , 但默认值的类型为 {defaultValueAtt.defaultValue.GetType().FullName}");
                             continue;
                         }
                         else
@@ -473,19 +474,19 @@ namespace GameCore
                             includeDefaultValue = true;
                         }
                     }
-                    else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(property, out var defaultValueFromMethodAtt))
+                    else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(field, out var defaultValueFromMethodAtt))
                     {
                         defaultValueMethod = !defaultValueFromMethodAtt.methodName.Contains(".") ? type.GetMethodFromAllIncludingBases(defaultValueFromMethodAtt.methodName) : ModFactory.SearchUserMethod(defaultValueFromMethodAtt.methodName);
 
                         if (defaultValueMethod == null)
                         {
-                            Debug.LogError($"无法找到同步变量 {propertyPath} 的默认值获取方法 {defaultValueFromMethodAtt.methodName}");
+                            Debug.LogError($"无法找到同步变量 {fieldPath} 的默认值获取方法 {defaultValueFromMethodAtt.methodName}");
                             continue;
                         }
 
-                        if (property.PropertyType.FullName != defaultValueMethod.ReturnType.FullName)
+                        if (field.FieldType.FullName != defaultValueMethod.ReturnType.FullName)
                         {
-                            Debug.LogError($"同步变量 {propertyPath} 错误: 返回值的类型为 {property.PropertyType.FullName} , 但默认值的类型为 {defaultValueMethod.ReturnType.FullName}");
+                            Debug.LogError($"同步变量 {fieldPath} 错误: 返回值的类型为 {field.FieldType.FullName} , 但默认值的类型为 {defaultValueMethod.ReturnType.FullName}");
                             continue;
                         }
 
@@ -507,11 +508,11 @@ namespace GameCore
 
                     ts.Add(new()
                     {
-                        propertyPath = propertyPath,
+                        fieldPath = fieldPath,
                         includeDefaultValue = includeDefaultValue,
                         defaultValue = defaultValue,
                         defaultValueMethod = defaultValueMethod,
-                        valueType = property.PropertyType.FullName,
+                        valueType = field.FieldType.FullName,
                     });
                 }
             }

@@ -47,8 +47,7 @@ namespace GameCore
 
 
 
-        bool _isMoving; void _isMoving_set(bool value) { }
-        [Sync, SyncDefaultValue(false)] public bool isMoving { get => _isMoving; set => _isMoving_set(value); }
+        [Sync, SyncDefaultValue(false)] public bool isMoving;
 
 
 

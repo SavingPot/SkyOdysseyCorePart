@@ -76,7 +76,7 @@ namespace GameCore
 
     //TODO: 告别冗长代码
     [DisallowMultipleComponent]
-    public class Entity : MonoBehaviour, IRigidbody2D, IVarInstanceID, IDeath, IHealth
+    public class Entity : MonoBehaviour, IRigidbody2D, IVarInstanceID, IDeath
     {
         /* -------------------------------------------------------------------------- */
         /*                               Static & Const                               */
@@ -130,7 +130,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public Rigidbody2D rb { get; set; }
         public BoxCollider2D mainCollider { get; set; }
-        [BoxGroup("组件"), LabelText(text: "渲染器")] public List<Renderer> renderers = new();
+        [BoxGroup("组件"), LabelText(text: "渲染器")] public readonly List<Renderer> renderers = new();
         [BoxGroup("组件"), LabelText("精灵渲染器"), ReadOnly] public List<SpriteRenderer> spriteRenderers = new();
 
 
@@ -156,8 +156,7 @@ namespace GameCore
         #region 同步变量
 
         #region 无敌时间
-        float _invincibleTime; void _invincibleTime_set(float value) { }
-        [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime { get => _invincibleTime; set => _invincibleTime_set(value); }
+        [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime;
         void OnInvincibleTimeChange(byte[] _)
         {
             if (isHurting)
@@ -178,8 +177,10 @@ namespace GameCore
         #endregion
 
         #region 血量
-        int _health; [Button] void _health_set(int value) { }
-        [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health { get => _health; set => _health_set(value); }
+#if UNITY_EDITOR
+        [Button] void editor_health_set(int value) => health = value;
+#endif
+        [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health;
         public const int DEFAULT_HEALTH = 100;
         public Action OnHealthChange = () => { };
         private void OnHealthChangeMethod(byte[] _)
@@ -189,13 +190,11 @@ namespace GameCore
         #endregion
 
         #region 已死亡
-        bool _isDead; void _isDead_set(bool value) { }
-        [Sync, SyncDefaultValue(false)] public bool isDead { get => _isDead; set => _isDead_set(value); }
+        [Sync, SyncDefaultValue(false)] public bool isDead;
         #endregion
 
         #region 当前区域序列
-        Vector2Int _regionIndex; void _regionIndex_set(Vector2Int value) { }
-        [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex { get => _regionIndex; set => _regionIndex_set(value); }
+        [Sync(nameof(OnRegionIndexChangeMethod)), SyncDefaultValueFromMethod(nameof(regionIndex_default), false)] public Vector2Int regionIndex;
         static Vector2Int regionIndex_default() => Vector2Int.zero;
         public Vector2Int chunkIndex;
 
@@ -243,8 +242,7 @@ namespace GameCore
         #endregion
 
         #region 自定义数据
-        JObject _customData; void _customData_set(JObject value) { }
-        [Sync] public JObject customData { get => _customData; set => _customData_set(value); }
+        [Sync] public JObject customData;
         #endregion
 
         #endregion
@@ -519,6 +517,7 @@ namespace GameCore
         protected virtual void OnDestroy()
         {
             EntityCenter.RemoveEntity(this);
+            SyncPacker.EntitiesIDTable.Remove(netId);
         }
 
         protected virtual void Update()
@@ -813,13 +812,13 @@ namespace GameCore
         }
 
         [ClientRpc]
-        protected void ClientDeath(NetworkConnection caller)
+        protected void ClientDeath(NetworkConnection caller) => MethodAgent.DebugRun(() =>
         {
             //Debug.Log($"客户端: 实体 {name} 已死亡");
 
             //? 不要使用 RpcDeath 来回收资源等, 资源回收应该放在 OnDestroy 中, 因为服务器可能会在调用 RpcDeath 前删除物体, ClientDeath 是用来显示死亡动效的
             OnDeathClient();
-        }
+        });
 
 
 
