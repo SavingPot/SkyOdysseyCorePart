@@ -478,8 +478,8 @@ namespace GameCore
             base.Awake();
 
             //计算移动速度因数
-            Func<float> oldValue = velocityFactor;
-            velocityFactor = () => oldValue() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
+            Func<float> oldFactor = velocityFactor;
+            velocityFactor = () => oldFactor() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
 
             playerCanvas = transform.Find("Canvas");
 
