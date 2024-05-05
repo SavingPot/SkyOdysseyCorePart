@@ -313,15 +313,9 @@ namespace GameCore
                     {
                         foreach (var var in SyncPacker.instanceVars)
                         {
-                            if (var.Key != id)
-                                continue;
-
-                            foreach (var item in var.Value)
+                            if (var.varId == id && var.instance == netId)
                             {
-                                if (item.Key == netId)
-                                {
-                                    goto nextPair;
-                                }
+                                goto nextPair;
                             }
                         }
 
@@ -345,21 +339,13 @@ namespace GameCore
                 string id = pair.fieldPath;
                 waitingRegisteringVar = id;
 
-                foreach (var var in SyncPacker.instanceVars)
+                foreach (var variant in SyncPacker.instanceVars)
                 {
-                    if (var.Key != id)
+                    if (variant.varId != id || variant.instance != netId)
                         continue;
 
-                    foreach (var item in var.Value)
-                    {
-                        if (item.Key == netId)
-                        {
-                            SyncPacker.FirstTempValue(id, entity, item.Value.value);
-                            goto nextPair;
-                        }
-                    }
-
-                    Debug.LogError($"实例同步变量 {id} 未被成功缓存");
+                    SyncPacker.FirstTempValue(id, entity, variant.value);
+                    goto nextPair;
                 }
 
                 Debug.LogError($"实例同步变量 {id} 未被成功缓存");

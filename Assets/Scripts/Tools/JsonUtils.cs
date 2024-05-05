@@ -428,8 +428,8 @@ namespace GameCore
 
         public static JObject LoadJObjectByString(string str)
         {
-            if (string.IsNullOrEmpty(str))
-                return new();
+            if (str.IsNullOrWhiteSpace())
+                return null;
 
             return JObject.Parse(str);
         }

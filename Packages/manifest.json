@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.unity.entities": "1.2.1",
     "com.unity.ide.vscode": "1.2.5",
     "com.unity.inputsystem": "1.7.0",
     "com.unity.nuget.newtonsoft-json": "3.2.1",

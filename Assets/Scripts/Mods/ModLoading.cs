@@ -85,7 +85,7 @@ namespace GameCore
         /// <returns>加载是否成功</returns>
         public static bool LoadModClass<T>(string path, string entranceId, out T obj, out JToken entrance, bool ignoreIdCheck = false) where T : ModClass, new()
         {
-            JObject jo = JsonUtils.LoadJObjectByPath(path);
+            JObject jo = JsonUtils.LoadJObjectByPath(path) ?? new();
             var format = GetCorrectJsonFormatByJObject(jo);
             entrance = jo[entranceId];
 

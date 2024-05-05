@@ -139,7 +139,7 @@ namespace GameCore
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
         [HideInInspector] public float timeToAutoDestroy;
-        public bool isHurting => invincibleTime > 0;
+        public bool isHurting => invincibleTime > 0.05f;
         public int maxHealth => data.maxHealth;
         public bool isHurtable = true;
         public float previousHurtTime;
@@ -156,6 +156,7 @@ namespace GameCore
         #region 同步变量
         [Sync, SyncDefaultValue(false)] public bool isDead;
         [Sync] public JObject customData;
+        static JObject NewJObject() => new();
 
         #region 无敌时间
         [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime;

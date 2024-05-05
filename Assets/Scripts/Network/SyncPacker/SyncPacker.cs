@@ -11,7 +11,6 @@ using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
-using Unity.Entities.UniversalDelegates;
 
 namespace GameCore
 {
@@ -28,8 +27,8 @@ namespace GameCore
         public static FirstTempValueDelegate FirstTempValue;
         public static OnValueChangeCallback OnValueChange;
 
-        public static readonly Dictionary<string, NMSyncVar> staticVars = new();
-        public static readonly Dictionary<string, Dictionary<uint, NMSyncVar>> instanceVars = new();
+        public static readonly List<NMSyncVar> staticVars = new();
+        public static readonly List<NMSyncVar> instanceVars = new();
 
         /// <summary>
         /// 发送同步变量的间隔
@@ -51,7 +50,7 @@ namespace GameCore
             }
         }
 
-        public const int defaultSendInterval = 80;
+        public const int defaultSendInterval = 100;
         public static bool initialized { get; private set; }
         public static readonly Dictionary<uint, Entity> EntitiesIDTable = new();
 
@@ -134,6 +133,9 @@ namespace GameCore
             StartAutoSync();
         }
 
+        static Dictionary<string, object> staticVarLastSyncValues = new();
+        static Dictionary<string, Dictionary<uint, object>> instanceVarLastSyncValues = new();
+
         /// <summary>
         /// 立即同步所有变量
         /// </summary>
@@ -146,102 +148,85 @@ namespace GameCore
             }
 
 
+            Dictionary<string, object> newStaticVarLastSyncValues = new();
+            Dictionary<string, Dictionary<uint, object>> newInstanceVarLastSyncValues = new();
 
 
             //遍历静态变量（时间复杂度为 O(n)）
             for (int i = 0; i < staticVars.Count; i++)
             {
-                var entry = staticVars.ElementAt(i);
-                var variant = entry.Value;
-                var varId = entry.Key;
-                var currentValue = GetStaticFieldValue(varId);
+                var variant = staticVars[i];
+                var currentValue = GetStaticFieldValue(variant.varId);
 
-                //如果值没有变化就跳过
-                if (Equals(variant.valueLastSync, currentValue))
+                //记录下最新值供下次比较
+                newStaticVarLastSyncValues.Add(variant.varId, currentValue);
+
+
+
+                //* 如果值没有变化就跳过
+                if (!staticVarLastSyncValues.TryGetValue(variant.varId, out var lastSyncValue) || Equals(currentValue, lastSyncValue))
                     continue;
 
-                //调用值改变方法
-                var newValueBytes = Rpc.ObjectToBytes(currentValue);
-                OnValueChange(varId, null, Rpc.ObjectToBytes(variant.valueLastSync), newValueBytes);
 
-                //更改字典中的值
-                var newVar = new NMSyncVar(varId, uint.MaxValue, newValueBytes, currentValue);
-                staticVars[varId] = newVar;
+
+                //调用值改变方法
+                var currentValueBytes = Rpc.ObjectToBytes(currentValue);
+                OnValueChange(variant.varId, null, Rpc.ObjectToBytes(variant.valueLastSync), currentValueBytes);
+
+                //更改列表中的值
+                var newVar = new NMSyncVar(variant.varId, uint.MaxValue, currentValueBytes, currentValueBytes);
+                staticVars[i] = newVar;
 
                 //将新值发送给所有客户端
                 Server.Send(newVar);
             }
 
-            //遍历实例变量（时间复杂度为 O(m * n)，m=instanceVars.Count, n=entityVarTable.Count）
-            for (int a = 0; a < instanceVars.Count; a++)
+
+
+
+
+            //遍历实例变量（时间复杂度为 O(n)）
+            for (int i = 0; i < instanceVars.Count; i++)
             {
-                var entry = instanceVars.ElementAt(a);
-                var varId = entry.Key;
-                var entityVarTable = entry.Value;
+                var variant = instanceVars[i];
+                var entity = EntitiesIDTable[variant.instance];
+                var currentValue = GetInstanceFieldValue(variant.varId, entity);
 
-                for (int b = 0; b < entityVarTable.Count; b++)
-                {
-                    var entityNetIdAndVar = entityVarTable.ElementAt(b);
-                    var variant = entityNetIdAndVar.Value;
-                    var entityNetId = entityNetIdAndVar.Key;
-                    var entity = EntitiesIDTable[entityNetId];
-                    var currentValue = GetInstanceFieldValue(varId, entity);
+                //记录下最新值供下次比较
+                if (newInstanceVarLastSyncValues.TryGetValue(variant.varId, out var instanceDict))
+                    instanceDict.Add(variant.instance, currentValue);
+                else
+                    newInstanceVarLastSyncValues.Add(variant.varId, new() { { variant.instance, currentValue } });
 
-                    //如果值没有变化就跳过
-                    if (Equals(variant.valueLastSync, currentValue))
-                        continue;
 
-                    //调用值改变方法
-                    var newValueBytes = Rpc.ObjectToBytes(currentValue);
-                    OnValueChange(varId, entity, Rpc.ObjectToBytes(variant.valueLastSync), newValueBytes);
 
-                    //更改字典中的值
-                    var newVar = new NMSyncVar(varId, entityNetId, newValueBytes, currentValue);
-                    instanceVars[varId][entityNetId] = newVar;
+                //* 如果值没有变化就跳过
+                if (!instanceVarLastSyncValues.TryGetValue(variant.varId, out var lastSyncDict) || !lastSyncDict.TryGetValue(variant.instance, out var lastSyncValue) || Equals(lastSyncValue, currentValue))
+                    continue;
 
-                    //将新值发送给所有客户端
-                    Server.Send(newVar);
-                }
+
+
+                ////Debug.Log(variant.varId);
+                //调用值改变方法
+                var currentValueBytes = Rpc.ObjectToBytes(currentValue);
+                OnValueChange(variant.varId, entity, Rpc.ObjectToBytes(variant.valueLastSync), currentValueBytes);
+
+                //更改列表中的值
+                var newVar = new NMSyncVar(variant.varId, variant.instance, currentValueBytes, currentValueBytes);
+                instanceVars[i] = newVar;
+
+                //将新值发送给所有客户端
+                Server.Send(newVar);
             }
+
+
+            staticVarLastSyncValues = newStaticVarLastSyncValues;
+            instanceVarLastSyncValues = newInstanceVarLastSyncValues;
         }
 
 
 
 
-
-
-
-
-
-
-        static void StaticOnValueChangeBind<T>(byte[] newValueBytes, FieldInfo fieldInfo)
-        {
-            T newValue = Rpc.BytesToObject<T>(newValueBytes);
-            fieldInfo.SetValue(null, newValue); //TODO: 可能要删除 fieldInfo.SetValue
-        }
-
-        static void StaticOnValueChangeBindWithHook<T>(byte[] oldValueBytes, byte[] newValueBytes, FieldInfo fieldInfo, MethodInfo hookMethod)
-        {
-            T newValue = Rpc.BytesToObject<T>(newValueBytes);
-            fieldInfo.SetValue(null, newValue);
-
-            hookMethod.Invoke(null, new object[] { oldValueBytes });
-        }
-
-
-        static void InstanceOnValueChangeBind<T>(byte[] newValueBytes, FieldInfo fieldInfo, Entity entity)
-        {
-            T newValue = Rpc.BytesToObject<T>(newValueBytes);
-            fieldInfo.SetValue(entity, newValue);
-        }
-
-        static void InstanceOnValueChangeBindWithHook<T>(byte[] oldValueBytes, byte[] newValueBytes, FieldInfo fieldInfo, MethodInfo hookMethod, Entity entity)
-        {
-            T newValue = Rpc.BytesToObject<T>(newValueBytes);
-            fieldInfo.SetValue(entity, newValue);
-
-            hookMethod.Invoke(entity, new object[] { oldValueBytes });
-        }
 
 
 
@@ -296,10 +281,6 @@ namespace GameCore
             /* --------------------------------- 获取定义的方法 --------------------------------- */
             var RegisterVar = typeof(SyncPacker).GetMethod(nameof(SyncPacker.RegisterVar), new Type[] { typeof(string), typeof(bool), typeof(byte[]) });
             var RpcBytesToObject = typeof(Rpc).GetMethod(nameof(Rpc.BytesToObject), 0, new Type[] { typeof(byte[]) });
-            var _StaticOnValueChangeBind = typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBind));
-            var _StaticOnValueChangeBindWithHook = typeof(SyncPacker).GetMethodFromAll(nameof(StaticOnValueChangeBindWithHook));
-            var _InstanceOnValueChangeBind = typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBind));
-            var _InstanceOnValueChangeBindWithHook = typeof(SyncPacker).GetMethodFromAll(nameof(InstanceOnValueChangeBindWithHook));
 
             ParameterExpression firstTempValue_id = Expression.Parameter(typeof(string), "id");
             ParameterExpression firstTempValue_instance = Expression.Parameter(typeof(Entity), "instance");
@@ -325,6 +306,14 @@ namespace GameCore
             ParameterExpression getInstanceFieldValueParam_entity = Expression.Parameter(typeof(Entity), "entity");
 
             Action staticVarsRegisterMethods = () => { };
+
+            static Expression CallRpcBytesToObject(Type type, Expression bytes)
+            {
+                return Expression.Call(
+                    null,
+                    typeof(Rpc).GetMethod(nameof(Rpc.BytesToObject), 1, new Type[] { typeof(byte[]) }).MakeGenericMethod(type),
+                    bytes);
+            }
 
             /* -------------------------------------------------------------------------- */
             //?                               更改方法内容                                 */
@@ -399,69 +388,60 @@ namespace GameCore
                             }
 
 
-
                             //绑定初始值设置
-                            lock (firstTempValueCases)
-                                firstTempValueCases.Add(
-                                    Expression.SwitchCase(
-                                            isStaticVar ?
-                                                Expression.Call(
-                                                        null,
-                                                        _StaticOnValueChangeBind.MakeGenericMethod(valueTypeArray),
-                                                        firstTempValue_newValueBytes,
-                                                        fieldConst
-                                                    ) :
-                                                Expression.Call(
-                                                        null,
-                                                        _InstanceOnValueChangeBind.MakeGenericMethod(valueTypeArray),
-                                                        firstTempValue_newValueBytes,
-                                                        fieldConst,
-                                                        firstTempValue_instance
-                                                    ),
-                                            fieldPathConst
-                                        )
-                                );
+                            firstTempValueCases.Add(
+                                Expression.SwitchCase(
+                                        Expression.Block(
+                                                typeof(void),
+                                                new Expression[] {
+                                                    isStaticVar ?
+                                                        //* @field = Rpc.BytesToObject<T>(newValueBytes);;
+                                                        Expression.Assign(Expression.Field(null, field), CallRpcBytesToObject(valueType, firstTempValue_newValueBytes))
+                                                                :
+                                                        //* @field = Rpc.BytesToObject<T>(newValueBytes);
+                                                        Expression.Assign(Expression.Field(Expression.Convert(firstTempValue_instance, field.DeclaringType), field), CallRpcBytesToObject(valueType, firstTempValue_newValueBytes))
+                                                }
+                                        ),
+                                        fieldPathConst
+                                    )
+                            );
 
 
                             //绑定值改变事件
-                            lock (onValueChangeCases)
-                                onValueChangeCases.Add((isStaticVar, hookMethod == null) switch
-                                {
-                                    (true, true) => Expression.SwitchCase(
-                                                    Expression.Call(
-                                                            null,
-                                                            _StaticOnValueChangeBind.MakeGenericMethod(valueTypeArray),
-                                                            onValueChangeParam_newValueBytes,
-                                                            fieldConst),
-                                                    fieldPathConst),
-                                    (true, false) => Expression.SwitchCase(
-                                                    Expression.Call(
-                                                            null,
-                                                            _StaticOnValueChangeBindWithHook.MakeGenericMethod(valueTypeArray),
-                                                            onValueChangeParam_oldValueBytes,
-                                                            onValueChangeParam_newValueBytes,
-                                                            fieldConst,
-                                                            Expression.Constant(hookMethod)),
-                                                    fieldPathConst),
-                                    (false, true) => Expression.SwitchCase(
-                                                    Expression.Call(
-                                                            null,
-                                                            _InstanceOnValueChangeBind.MakeGenericMethod(valueTypeArray),
-                                                            onValueChangeParam_newValueBytes,
-                                                            fieldConst,
-                                                            onValueChangeParam_instance),
-                                                    fieldPathConst),
-                                    (false, false) => Expression.SwitchCase(
-                                                    Expression.Call(
-                                                            null,
-                                                            _InstanceOnValueChangeBindWithHook.MakeGenericMethod(valueTypeArray),
-                                                            onValueChangeParam_oldValueBytes,
-                                                            onValueChangeParam_newValueBytes,
-                                                            fieldConst,
-                                                            Expression.Constant(hookMethod),
-                                                            onValueChangeParam_instance),
-                                                    fieldPathConst)
-                                });
+                            onValueChangeCases.Add(
+                                Expression.SwitchCase(
+                                    Expression.Block(
+                                        typeof(void),
+                                        new Expression[] {
+                                            (isStaticVar, hookMethod == null) switch
+                                            {
+                                                (true, true) =>
+                                                                //* @field = Rpc.BytesToObject<T>(newValueBytes);
+                                                                Expression.Assign(Expression.Field(null, field), CallRpcBytesToObject(valueType, onValueChangeParam_newValueBytes)),
+
+                                                (true, false) =>
+                                                                //* @field = Rpc.BytesToObject<T>(newValueBytes);
+                                                                //* hookMethod(oldValueBytes);
+                                                                Expression.Block(
+                                                                    Expression.Assign(Expression.Field(null, field), CallRpcBytesToObject(valueType, onValueChangeParam_newValueBytes)),
+                                                                    Expression.Call(null, hookMethod, onValueChangeParam_oldValueBytes)
+                                                                ),
+
+                                                (false, true) =>
+                                                                //* @field = Rpc.BytesToObject<T>(newValueBytes);
+                                                                Expression.Assign(Expression.Field(Expression.Convert(onValueChangeParam_instance, field.DeclaringType), field), CallRpcBytesToObject(valueType, onValueChangeParam_newValueBytes)),
+
+                                                (false, false) =>
+                                                                //* @field = Rpc.BytesToObject<T>(newValueBytes);
+                                                                //* hookMethod(oldValueBytes);
+                                                                Expression.Block(
+                                                                    Expression.Assign(Expression.Field(Expression.Convert(onValueChangeParam_instance, field.DeclaringType), field), CallRpcBytesToObject(valueType, onValueChangeParam_newValueBytes)),
+                                                                    Expression.Call(Expression.Convert(onValueChangeParam_instance, field.DeclaringType), hookMethod, onValueChangeParam_oldValueBytes)
+                                                                )
+                                            }
+                                    }),
+                                    fieldPathConst)
+                            );
 
                             #endregion
 
@@ -599,12 +579,10 @@ namespace GameCore
                 if (conn == Server.localConnection)
                     return;
 
-                foreach (KeyValuePair<string, NMSyncVar> entry in staticVars)
+                foreach (var variant in staticVars)
                 {
-                    var var = entry.Value;
-
                     //让指定客户端重新注册同步变量
-                    conn.Send<NMRegisterSyncVar>(new(var.varId, var.instance, var.value));
+                    conn.Send<NMRegisterSyncVar>(new(variant.varId, variant.instance, variant.value));
                 }
             };
 
@@ -647,52 +625,54 @@ namespace GameCore
                 //实例变量
                 if (nm.instance != uint.MaxValue)
                 {
-                    if (instanceVars.TryGetValue(nm.varId, out var inner) && inner.TryGetValue(nm.instance, out var var))
+                    for (int i = 0; i < instanceVars.Count; i++)
                     {
-                        //等待实体出现
-                        //TODO 注: 这里可能会导致不同步问题，请使用先入先出队列解决，将操作挂起
-                        while (Entity.GetEntityByNetIdWithCheckInvalid(var.instance) == null)
-                            await UniTask.NextFrame();
+                        var variant = instanceVars[i];
 
-                        var oldValue = var.value;
-                        var.value = nm.value;
-                        inner[nm.instance] = var;
-                        OnValueChange(var.varId, Entity.GetEntityByNetIdWithCheckInvalid(var.instance), oldValue, var.value);
+                        if (variant.varId == nm.varId && variant.instance == nm.instance)
+                        {
+                            //等待实体出现
+                            //TODO 注: 这里可能会导致不同步问题，请使用队列Queue解决，将操作挂起
+                            while (Entity.GetEntityByNetIdWithCheckInvalid(variant.instance) == null)
+                                await UniTask.NextFrame();
 
-                        ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
-                        return;
+                            OnValueChange(variant.varId, Entity.GetEntityByNetIdWithCheckInvalid(variant.instance), variant.value, variant.value);
+                            instanceVars[i] = new(nm.varId, nm.instance, nm.value);
+
+                            ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
+                            return;
+                        }
                     }
                 }
                 //静态变量
                 else
                 {
-                    if (staticVars.TryGetValue(nm.varId, out var var))
+                    for (int i = 0; i < staticVars.Count; i++)
                     {
-                        var oldValue = var.value;
-                        var.value = nm.value;
-                        staticVars[nm.varId] = var;
-                        OnValueChange(var.varId, null, oldValue, var.value);
+                        var variant = staticVars[i];
 
-                        ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
-                        return;
+                        if (variant.varId == nm.varId)
+                        {
+                            OnValueChange(variant.varId, null, variant.value, variant.value);
+                            staticVars[i] = new(nm.varId, nm.instance, nm.value);
+
+                            ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
+                            return;
+                        }
                     }
                 }
 
-                ////Debug.LogError($"同步变量 {var.varId} 的值为 {var.varValue} 失败");
+                ////我们不在这里报错, 因为客户端可能还没从服务器同步到所有变量, 所以会收到一些同步变量, 但这些变量还没注册到本地, 所以会报错
+                ////Debug.LogError($"从服务器接受同步变量 {nm.varId} 的值失败");
             }
 
             static void OnServerGetNMRequestInstanceVars(NetworkConnectionToClient conn, NMRequestInstanceVars _)
             {
                 //实例变量要等进入游戏场景才可以注册
-                foreach (KeyValuePair<string, Dictionary<uint, NMSyncVar>> entry in instanceVars)
+                foreach (var variant in instanceVars)
                 {
-                    foreach (var instanceEntry in entry.Value)
-                    {
-                        var var = instanceEntry.Value;
-
-                        //让指定客户端重新注册同步变量
-                        conn.Send<NMRegisterSyncVar>(new(var.varId, var.instance, var.value));
-                    }
+                    //让指定客户端重新注册同步变量
+                    conn.Send<NMRegisterSyncVar>(new(variant.varId, variant.instance, variant.value));
                 }
             }
 
@@ -732,32 +712,45 @@ namespace GameCore
                 //// Server.Send(nm);
             }
 
-            static void OnClientGetNMRegisterSyncVar(NMRegisterSyncVar nm)
+            static void OnClientGetNMRegisterSyncVar(NMRegisterSyncVar register)
             {
                 //服务器会提前进行注册, 不需要重复注册
                 if (Server.isServer)
                     return;
 
-                LocalRegisterSyncVar(nm);
+                LocalRegisterSyncVar(register);
             }
 
-            static void OnClientGetNMUnregisterVar(NMUnregisterSyncVar var)
+            static void OnClientGetNMUnregisterVar(NMUnregisterSyncVar unregister)
             {
                 //实例变量
-                if (var.instance != uint.MaxValue)
+                if (unregister.instance != uint.MaxValue)
                 {
-                    if (!instanceVars.TryGetValue(var.varId, out var instanceVar) || !instanceVar.Remove(var.instance))
+                    for (int i = 0; i < instanceVars.Count; i++)
                     {
-                        Debug.LogError($"取消注册同步变量 {var.varId}, {var.instance} 失败");
+                        var variant = instanceVars[i];
+                        if (variant.varId == unregister.varId && variant.instance == unregister.instance)
+                        {
+                            instanceVars.RemoveAt(i);
+                            return;
+                        }
                     }
+
+                    Debug.LogError($"取消注册实例同步变量 {unregister.varId}, {unregister.instance} 失败");
                 }
                 //静态变量
                 else
                 {
-                    if (!staticVars.Remove(var.varId))
+                    for (int i = 0; i < staticVars.Count; i++)
                     {
-                        Debug.LogError($"取消注册同步变量 {var.varId} 失败");
+                        if (staticVars[i].varId == unregister.varId)
+                        {
+                            staticVars.RemoveAt(i);
+                            return;
+                        }
                     }
+
+                    Debug.LogError($"取消注册静态同步变量 {unregister.varId} 失败");
                 }
             }
 
@@ -778,41 +771,19 @@ namespace GameCore
         {
             //Debug.Log($"注册了{var.varId}");
 
+            NMSyncVar variant = new(var.varId, var.instance, var.defaultValue);
+
             //实例变量
             if (var.instance != uint.MaxValue)
             {
-                Dictionary<uint, NMSyncVar> table;
-
-                if (!instanceVars.ContainsKey(var.varId))
-                {
-                    table = new();
-                    instanceVars.Add(var.varId, table);
-                }
-                else
-                {
-                    table = instanceVars[var.varId];
-                }
-
-                if (table.TryAdd(var.instance, new NMSyncVar(var.varId, var.instance, var.defaultValue)))
-                {
-                    //? 实例变量的缓存由 EntityInit 执行
-                }
-                else
-                {
-                    Debug.LogError($"注册 {var.varId}, {var.instance} 失败, 其已存在");
-                }
+                instanceVars.Add(variant);
+                //? 实例变量的缓存由 EntityInit 执行......
             }
             //静态变量
             else
             {
-                if (staticVars.TryAdd(var.varId, new(var.varId, var.instance, var.defaultValue)))
-                {
-                    FirstTempValue(var.varId, null, var.defaultValue);
-                }
-                else
-                {
-                    Debug.LogError($"注册 {var.varId} 失败, 其已存在");
-                }
+                staticVars.Add(variant);
+                FirstTempValue(var.varId, null, var.defaultValue);
             }
             //Debug.Log($"注册了同步变量 {var.varId}");
         }

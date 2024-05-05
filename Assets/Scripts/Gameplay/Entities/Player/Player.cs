@@ -307,6 +307,7 @@ namespace GameCore
         #endregion
 
 #if UNITY_EDITOR
+        [Button] void EditorPrintIs() => Debug.Log(GetUsingItemChecked() == null);
         [Button("输出玩家名称")] private void EditorOutputPlayerName() => Debug.Log($"玩家名: {playerName}");
         [Button("输出玩家血量")] private void EditorOutputHealth() => Debug.Log($"血量: {health}");
         [Button("输出区域序号")] private void EditorOutputRegionIndex() => Debug.Log($"区域序号: {regionIndex}");

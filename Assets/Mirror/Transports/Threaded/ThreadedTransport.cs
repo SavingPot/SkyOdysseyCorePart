@@ -612,7 +612,7 @@ namespace Mirror
         // querying this at runtime won't work for threaded transports.
         public override string ServerGetClientAddress(int connectionId)
         {
-            throw new NotImplementedException();
+            return "cannot-be-queried-in-threaded-transports";
         }
 
         public override void ServerStop()

@@ -371,7 +371,9 @@ namespace GameCore
         {
             public void GetObjectData(object obj, SerializationInfo info, StreamingContext context)
             {
-                info.AddValue("str", Compressor.CompressString(((JObject)obj)?.ToString(Formatting.None)));
+                string json = ((JObject)obj)?.ToString(Formatting.None);
+
+                info.AddValue("str", Compressor.CompressString(json));
             }
 
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context, ISurrogateSelector selector)

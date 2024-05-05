@@ -1227,7 +1227,7 @@ namespace GameCore
 
         public static string GetJsonFormatByPath(string path) => GetJsonFormat(File.ReadAllText(path));
 
-        public static string GetCorrectJsonFormatByPath(string path) => GetCorrectJsonFormatByJObject(JsonUtils.LoadJObjectByPath(path));
+        public static string GetCorrectJsonFormatByPath(string path) => GetCorrectJsonFormatByJObject(JsonUtils.LoadJObjectByPath(path) ?? new());
 
         public static string GetCorrectJsonFormatByJObject(JObject jo) => ModLoading.GetCorrectJsonFormatByJObject(jo);
 
