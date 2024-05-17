@@ -327,11 +327,8 @@ namespace GameCore
 
             ServerSetItem(usingItemIndex.ToString(), item);
         }
-        [Button("快速获取最大-替换手中物品")]
-        private void EditorSetUsingItem(string id = BlockID.GrassBlock)
-        {
-            EditorSetUsingItem(id, ushort.MaxValue);
-        }
+        [Button("快速获取最大-替换手中物品")] private void EditorSetUsingItem(string id = BlockID.GrassBlock) => EditorSetUsingItem(id, ushort.MaxValue);
+        [Button("刷新物品栏")] private void EditorRefreshInventory() => EntityInventoryOwnerBehaviour.RefreshInventory(this);
 #endif
         #endregion
 

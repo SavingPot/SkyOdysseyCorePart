@@ -58,7 +58,7 @@ namespace GameCore
         }
 
         /// <summary>
-        /// !!!= 当你需要 *直接* 操作物品栏里的物品, 而不是使用 Inventory 里定义好的方法时, 请务必使用这个方法 =!!!
+        /// !!!=   当你需要 *直接* 操作物品栏里的物品, 而不是使用 Inventory 里定义好的方法时, 请务必使用这个方法   =!!!
         /// </summary>
         public void ExecuteOperation(Action<Inventory> operation, string inventoryIndex)
         {
@@ -203,15 +203,15 @@ namespace GameCore
             return slots[index];
         }
 
-        public void CreateBehaviour(Item datum, string index, out ItemBehaviour behaviour)
+        public void CreateBehaviour(Item item, string index, out ItemBehaviour behaviour)
         {
-            if (datum == null || datum.data.behaviourType == null)
+            if (item == null || item.data.behaviourType == null)
             {
                 behaviour = null;
                 return;
             }
 
-            behaviour = (ItemBehaviour)Activator.CreateInstance(datum.data.behaviourType, owner, datum, index);
+            behaviour = (ItemBehaviour)Activator.CreateInstance(item.data.behaviourType, owner, item, index);
             behaviour.OnEnter();
         }
 
@@ -313,7 +313,7 @@ namespace GameCore
         public void AddItem(Item item)
         {
             //如果有一样的, 添加数量
-            //TODO: 有一样的, 但数量不足
+            //TODO: 如果有一样的, 但数量不足
             if (!GetIndexesToPutItemIntoItems(slots, item, out var indexes))
             {
                 Debug.LogError("异常: 槽位满了");
@@ -331,6 +331,7 @@ namespace GameCore
                 {
                     slot = item.data.DataToItem();
                     slot.count = count;
+                    CreateBehaviour(slot, i.ToString(), out slotsBehaviours[i]);
                 }
                 else
                 {
@@ -831,9 +832,8 @@ namespace GameCore
         {
             StringBuilder sb = Tools.stringBuilderPool.Get();
 
-            sb.Append("id=");
-            sb.AppendLine(id);
-            sb.Append(texture?.ToString());
+            sb.Append("id: ").AppendLine(id);
+            sb.Append("texture: ").AppendLine(texture?.ToString());
 
             string content = sb.ToString();
             Tools.stringBuilderPool.Recover(sb);

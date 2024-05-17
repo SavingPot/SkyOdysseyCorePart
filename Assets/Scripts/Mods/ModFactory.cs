@@ -1320,9 +1320,9 @@ namespace GameCore
 
             sb.AppendLine("{");
 
-            sb.Append(indentation).Append("id=").AppendLine(id);
-            sb.Append(indentation).Append("path=").AppendLine(texturePath);
-            sb.Append(indentation).Append("sprite-null=").AppendLine((sprite == null).ToString());
+            sb.Append(indentation).Append("id: ").AppendLine(id);
+            sb.Append(indentation).Append("path: ").AppendLine(texturePath);
+            sb.Append(indentation).Append("is-sprite-null: ").AppendLine((sprite == null).ToString());
 
             sb.AppendLine("}");
 

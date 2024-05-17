@@ -66,7 +66,7 @@ namespace GameCore
             float playTime = Tools.time;
             isPlaying = true;
 
-            var coroutine = PlayTween(fragmentTweensGeneration);
+            var coroutine = BeginPlayingTweens(fragmentTweensGeneration);
             playingCoroutine = coroutine;
             CoroutineStarter.Do(coroutine);
 
@@ -81,7 +81,7 @@ namespace GameCore
             }
         }
 
-        public IEnumerator PlayTween(Func<Tween>[] fragmentTweensGeneration)
+        public IEnumerator BeginPlayingTweens(Func<Tween>[] fragmentTweensGeneration)
         {
             //无限循环
             if (loops < 0)
