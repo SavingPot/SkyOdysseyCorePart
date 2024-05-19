@@ -633,10 +633,10 @@ namespace GameCore
                         {
                             //等待实体出现
                             //TODO 注: 这里可能会导致不同步问题，请使用队列Queue解决，将操作挂起
-                            while (Entity.GetEntityByNetIdWithCheckInvalid(variant.instance) == null)
+                            while (EntityCenter.GetEntityByNetIdWithInvalidCheck(variant.instance) == null)
                                 await UniTask.NextFrame();
 
-                            OnValueChange(variant.varId, Entity.GetEntityByNetIdWithCheckInvalid(variant.instance), variant.value, variant.value);
+                            OnValueChange(variant.varId, EntityCenter.GetEntityByNetIdWithInvalidCheck(variant.instance), variant.value, variant.value);
                             instanceVars[i] = new(nm.varId, nm.instance, nm.value);
 
                             ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");

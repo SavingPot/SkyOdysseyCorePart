@@ -102,7 +102,7 @@ namespace GameCore
 #endif
         }
 
-        public static Entity GetEntityByNetIdWithCheckInvalid(uint netIdToFind)
+        public static Entity GetEntityByNetIdWithInvalidCheck(uint netIdToFind)
         {
             if (netIdToFind != uint.MaxValue)
             {
@@ -135,15 +135,7 @@ namespace GameCore
         [RuntimeInitializeOnLoadMethod]
         private static void BindMethods()
         {
-            NetworkCallbacks.OnTimeToServerCallback += () =>
-            {
-
-            };
-            NetworkCallbacks.OnTimeToClientCallback += () =>
-            {
-
-            };
-            GM.OnUpdate += EntityCenter.Update;
+            GM.OnUpdate += Update;
         }
     }
 }

@@ -524,7 +524,7 @@ namespace GameCore
                             actualArgument.Add(
                                 Expression.Convert(
                                         Expression.Call(
-                                            typeof(Entity).GetMethod(nameof(Entity.GetEntityByNetId), new Type[] { typeof(uint), typeof(Type) }),
+                                            typeof(Entity).GetMethod(nameof(EntityCenter.GetEntityByNetId), new Type[] { typeof(uint), typeof(Type) }),
                                             localParam_instance,
                                             Expression.Constant(mtdCopy.GetParameters()[0].ParameterType)
                                         ),

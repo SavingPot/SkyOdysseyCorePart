@@ -70,7 +70,7 @@ namespace GameCore
             {
                 var netId = info.GetUInt32("netId");
 
-                return Entity.GetEntityByNetId<Entity>(netId);
+                return EntityCenter.GetEntityByNetId<Entity>(netId);
             }
         }
 
@@ -90,7 +90,7 @@ namespace GameCore
             {
                 var netId = info.GetUInt32("netId");
 
-                return Entity.GetEntityByNetId<Creature>(netId);
+                return EntityCenter.GetEntityByNetId<Creature>(netId);
             }
         }
 
@@ -110,7 +110,7 @@ namespace GameCore
             {
                 var netId = info.GetUInt32("netId");
 
-                return Entity.GetEntityByNetId<Player>(netId);
+                return EntityCenter.GetEntityByNetId<Player>(netId);
             }
         }
 
@@ -130,7 +130,7 @@ namespace GameCore
             {
                 var netId = info.GetUInt32("netId");
 
-                return Entity.GetEntityByNetId<Enemy>(netId);
+                return EntityCenter.GetEntityByNetId<Enemy>(netId);
             }
         }
 
@@ -150,7 +150,7 @@ namespace GameCore
             {
                 var netId = info.GetUInt32("netId");
 
-                return Entity.GetEntityByNetId<Drop>(netId);
+                return EntityCenter.GetEntityByNetId<Drop>(netId);
             }
         }
 
@@ -170,7 +170,7 @@ namespace GameCore
             {
                 var netId = info.GetUInt32("netId");
 
-                return Entity.GetEntityByNetId<NPC>(netId);
+                return EntityCenter.GetEntityByNetId<NPC>(netId);
             }
         }
 
