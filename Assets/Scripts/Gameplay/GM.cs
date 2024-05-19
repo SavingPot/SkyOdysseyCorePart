@@ -1,33 +1,33 @@
-using Mirror;
-using System;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
-using System.Text;
-using Sirenix.OdinInspector;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using UnityEngine.SceneManagement;
-using SP.Tools;
-using UnityEngine.Events;
-using SP.Tools.Unity;
+using GameCore.High;
+using GameCore.Network;
 using GameCore.UI;
-using Random = System.Random;
+using Mirror;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using GameCore.High;
+using Random = System.Random;
+using Sirenix.OdinInspector;
+using SP.Tools.Unity;
+using SP.Tools;
+using System.Collections.Generic;
+using System.Collections;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Threading;
-using GameCore.Network;
+using System;
+using UnityEngine.Events;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
+using UnityEngine;
 
 namespace GameCore
 {
     /// <summary>
     /// GM, 即 Game Manager, 游戏管理器
     /// </summary>
-    public class GM : SingletonToolsClass<GM>
+    public class GM : SingletonClass<GM>
     {
         public BloodParticlePool bloodParticlePool = new();
         public DamageTextPool damageTextPool = new();
@@ -316,7 +316,7 @@ namespace GameCore
             };
         }
 
-        //Unite StartGameHost and StartGameCLient
+        //TODO: Unite StartGameHost and StartGameCLient
         public static async void StartGameHost(string worldDirPath, Action callback)
         {
             ushort port = Tools.GetUnoccupiedPort();

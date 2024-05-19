@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using GameCore.High;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class ImageIdentity : UIIdentity<ImageIdentity>
     {

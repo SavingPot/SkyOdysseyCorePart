@@ -7,13 +7,14 @@ using Sirenix.OdinInspector;
 using Debug = UnityEngine.Debug;
 using System;
 using System.IO;
-using SP.Tools;
 using System.Linq;
+using SP.Tools;
+using SP.Tools.Unity;
 
 namespace GameCore.High
 {
     [ChineseName("音频管理器")]
-    public class ManagerAudio : SingletonToolsClass<ManagerAudio>
+    public class ManagerAudio : SingletonClass<ManagerAudio>
     {
 #if UNITY_EDITOR
         [Tooltip("游戏需要用到的音频, 模组管理器也会把音效存在这里"), LabelText("音频"), SerializeField] private List<AudioData> audios;

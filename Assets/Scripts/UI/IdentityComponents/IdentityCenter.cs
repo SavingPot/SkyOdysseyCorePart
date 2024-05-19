@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public static class IdentityCenter
     {
@@ -118,7 +118,7 @@ namespace GameCore
                 return;
             }
 
-            Debug.LogWarning($"删除ID消息 {identity.id} 时失败");
+            Debug.LogWarning($"删除ID标识 {identity.id} 时失败");
         }
     }
 }

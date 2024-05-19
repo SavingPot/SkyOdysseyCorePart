@@ -14,7 +14,7 @@ using UnityEngine.Rendering.Universal;
 namespace GameCore
 {
     [Serializable]
-    public sealed class Map : SingletonToolsClass<Map>
+    public sealed class Map : SingletonClass<Map>
     {
         [Serializable]
         public class BlockPool
@@ -313,7 +313,7 @@ namespace GameCore
 
 
             /* --------------------------------- 开关区块的显示 -------------------------------- */
-            if (!tools.mainCamera)
+            if (!Tools.instance.mainCamera)
                 return;
 
             foreach (var chunk in chunks)

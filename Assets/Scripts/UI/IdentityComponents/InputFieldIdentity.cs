@@ -7,7 +7,7 @@ using GameCore.High;
 using SP.Tools;
 using GameCore.UI;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class InputFieldIdentity : UIIdentity<InputFieldIdentity>
     {

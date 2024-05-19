@@ -8,7 +8,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>GameCore</RootNamespace>
     <ProjectGuid>{3e78e15f-e0ae-4a28-d982-4cf5a4747e1c}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -40,9 +40,7 @@
     <Analyzer Include="D:\Apps\UnityEditor\2022.3.14f1c1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\Attributes\ModIdBindingAttributes.cs" />
      <Compile Include="Assets\Scripts\Attributes\ChineseNameAttribute.cs" />
-     <Compile Include="Assets\Scripts\Attributes\IdAttribute.cs" />
      <None Include="Assets\Scripts\Attributes\GameCore.Attributes.asmdef" />
     <Reference Include="UnityEngine">
         <HintPath>D:\Apps\UnityEditor\2022.3.14f1c1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>

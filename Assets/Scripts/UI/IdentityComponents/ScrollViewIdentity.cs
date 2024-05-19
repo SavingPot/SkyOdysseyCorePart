@@ -2,7 +2,7 @@ using SP.Tools.Unity;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class ScrollViewIdentity : UIIdentity<ScrollViewIdentity>
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class RawImageIdentity : UIIdentity<RawImageIdentity>
     {

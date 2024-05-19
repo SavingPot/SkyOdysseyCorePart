@@ -1,11 +1,9 @@
-﻿using GameCore;
-using GameCore.UI;
-using SP.Tools.Unity;
+﻿using SP.Tools.Unity;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler, IRectTransform
     {

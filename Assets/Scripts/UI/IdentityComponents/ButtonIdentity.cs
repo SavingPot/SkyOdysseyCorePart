@@ -7,7 +7,7 @@ using UnityEngine.Events;
 using GameCore.UI;
 using System;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class ButtonIdentity : UIIdentity<ButtonIdentity>
     {

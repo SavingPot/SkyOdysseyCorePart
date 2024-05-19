@@ -7,7 +7,7 @@ using UnityEngine.Events;
 using GameCore.High;
 using SP.Tools.Unity;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class ToggleIdentity : UIIdentity<ToggleIdentity>
     {

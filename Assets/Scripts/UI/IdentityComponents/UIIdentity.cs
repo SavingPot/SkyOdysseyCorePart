@@ -1,11 +1,8 @@
-using GameCore.High;
 using SP.Tools.Unity;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
-namespace GameCore
+namespace GameCore.UI
 {
     [DisallowMultipleComponent]
     public class UIIdentity : MonoBehaviour, IStringId, IRectTransform

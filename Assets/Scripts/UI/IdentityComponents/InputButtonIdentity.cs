@@ -7,7 +7,7 @@ using UnityEngine.Events;
 using SP.Tools.Unity;
 using GameCore.High;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class InputButtonIdentity : UIIdentity<InputButtonIdentity>
     {

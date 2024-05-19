@@ -6,7 +6,7 @@ using TMPro;
 using UnityEngine.Events;
 using GameCore.High;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class ImageTextButtonIdentity : UIIdentity<ImageTextButtonIdentity>
     {

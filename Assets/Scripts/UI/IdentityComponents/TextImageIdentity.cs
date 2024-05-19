@@ -9,7 +9,7 @@ using System;
 using SP.Tools.Unity;
 using Sirenix.OdinInspector;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class TextImageIdentity : UIIdentity<TextImageIdentity>
     {

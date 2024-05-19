@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using GameCore.UI;
 
-namespace GameCore
+namespace GameCore.UI
 {
     public class TextIdentity : UIIdentity<TextIdentity>
     {

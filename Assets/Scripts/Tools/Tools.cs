@@ -146,7 +146,6 @@ namespace GameCore
             }
         }
 
-        [AwakeChineseName]
         protected override void Awake()
         {
             base.Awake();
@@ -181,7 +180,6 @@ namespace GameCore
 
         protected override void DestroyOrSave() => DontDestroyOnLoadSingleton();
 
-        [UpdateChineseName]
         void Update()
         {
             /* --------------------------- Performance 的性能采样 --------------------------- */
