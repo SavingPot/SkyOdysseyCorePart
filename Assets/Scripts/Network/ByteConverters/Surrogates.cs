@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 using System.Runtime.Serialization;
 using System.IO;
 
-namespace GameCore
+namespace GameCore.Network
 {
     public class SerializationSurrogatesClassAttribute : Attribute
     {

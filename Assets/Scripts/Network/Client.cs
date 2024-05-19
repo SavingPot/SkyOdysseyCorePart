@@ -6,7 +6,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using GameCore.High;
 
-namespace GameCore
+namespace GameCore.Network
 {
     public static class Client
     {

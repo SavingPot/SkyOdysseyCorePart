@@ -6,7 +6,7 @@ using Mirror;
 using SP.Tools;
 using SP.Tools.Unity;
 
-namespace GameCore.High
+namespace GameCore.Network
 {
     public static class NetworkCallbacks
     {

@@ -20,6 +20,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using GameCore.High;
 using System.Threading;
+using GameCore.Network;
 
 namespace GameCore
 {

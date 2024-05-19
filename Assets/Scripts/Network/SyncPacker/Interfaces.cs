@@ -1,4 +1,4 @@
-namespace GameCore
+namespace GameCore.Network
 {
     public interface IVarInstanceID
     {

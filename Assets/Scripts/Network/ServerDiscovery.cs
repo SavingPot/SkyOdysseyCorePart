@@ -10,7 +10,7 @@ using Mirror.Discovery;
 using SP.Tools;
 using UnityEngine;
 
-namespace GameCore
+namespace GameCore.Network
 {
     public struct ServerRequest : NetworkMessage { }
     public struct ServerResponse : NetworkMessage

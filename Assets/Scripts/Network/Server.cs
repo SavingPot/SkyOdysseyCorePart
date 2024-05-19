@@ -4,7 +4,7 @@ using UnityEngine;
 using Mirror;
 using System;
 
-namespace GameCore
+namespace GameCore.Network
 {
     public static class Server
     {

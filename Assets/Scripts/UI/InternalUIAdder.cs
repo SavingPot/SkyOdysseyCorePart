@@ -16,7 +16,8 @@ using TMPro;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using System.Runtime.Serialization;
-using static GameCore.SerializationSurrogates;
+using static GameCore.Network.SerializationSurrogates;
+using GameCore.Network;
 
 namespace GameCore.UI
 {

@@ -1,7 +1,7 @@
 using System;
 using Mirror;
 
-namespace GameCore
+namespace GameCore.Network
 {
     public struct NMRpc : NetworkMessage
     {

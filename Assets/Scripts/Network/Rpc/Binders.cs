@@ -1,6 +1,6 @@
 using System;
 
-namespace GameCore
+namespace GameCore.Network
 {
     [AttributeUsage(AttributeTargets.Method)]
     public abstract class RpcAttribute : Attribute

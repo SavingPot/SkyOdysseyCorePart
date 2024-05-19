@@ -1,6 +1,6 @@
 using System;
 
-namespace GameCore
+namespace GameCore.Network
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     public class ByteWriterAttribute : Attribute

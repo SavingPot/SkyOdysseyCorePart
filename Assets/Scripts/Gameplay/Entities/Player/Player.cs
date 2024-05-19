@@ -20,6 +20,8 @@ using UnityEngine.InputSystem.Controls;
 using UnityEngine.UI;
 using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
 using static GameCore.UI.PlayerUI;
+using GameCore.Network;
+using ClientRpcAttribute = GameCore.Network.ClientRpcAttribute;
 
 namespace GameCore
 {
@@ -1135,21 +1137,6 @@ namespace GameCore
 
 
         #region 生成区域
-
-        public void GenerateNeighborRegions()
-        {
-            for (int i = -1; i <= 1; i++)
-            {
-                for (int j = -1; j <= 1; j++)
-                {
-                    var index = regionIndex + new Vector2Int(i, j);
-                    if (index != regionIndex && !GM.instance.generatedExistingRegions.Exists(p => p.index == index))
-                    {
-                        GenerateExistingRegion(index);
-                    }
-                }
-            }
-        }
 
         /// <summary>
         /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端

@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SP.Tools;
 
-namespace GameCore
+namespace GameCore.Network
 {
     /// <summary>
     /// 这个类是用来序列化和反序列化JObject的

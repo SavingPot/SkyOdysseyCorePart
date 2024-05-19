@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using GameCore.High;
+using GameCore.Network;
 using GameCore.UI;
 using Mirror;
 using Newtonsoft.Json;
@@ -17,6 +18,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using ClientRpcAttribute = GameCore.Network.ClientRpcAttribute;
 using ReadOnlyAttribute = Unity.Collections.ReadOnlyAttribute;
 
 namespace GameCore

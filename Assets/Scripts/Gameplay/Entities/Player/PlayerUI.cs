@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using DG.Tweening;
+using GameCore.Network;
 
 namespace GameCore.UI
 {

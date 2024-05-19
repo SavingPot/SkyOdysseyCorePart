@@ -15,7 +15,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 
-namespace GameCore
+namespace GameCore.Network
 {
     //TODO: 性能优化
     public static class Rpc
@@ -524,7 +524,7 @@ namespace GameCore
                             actualArgument.Add(
                                 Expression.Convert(
                                         Expression.Call(
-                                            typeof(Entity).GetMethod(nameof(EntityCenter.GetEntityByNetId), new Type[] { typeof(uint), typeof(Type) }),
+                                            typeof(EntityCenter).GetMethod(nameof(EntityCenter.GetEntityByNetId), new Type[] { typeof(uint), typeof(Type) }),
                                             localParam_instance,
                                             Expression.Constant(mtdCopy.GetParameters()[0].ParameterType)
                                         ),

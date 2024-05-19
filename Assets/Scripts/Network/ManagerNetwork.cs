@@ -8,7 +8,7 @@ using UnityEngine;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 
-namespace GameCore.High
+namespace GameCore.Network
 {
     //TODO: 适配ipv6
     public class ManagerNetwork : NetworkManager

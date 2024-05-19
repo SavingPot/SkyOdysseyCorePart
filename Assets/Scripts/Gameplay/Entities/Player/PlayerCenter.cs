@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GameCore.High;
+using GameCore.Network;
 
 namespace GameCore
 {

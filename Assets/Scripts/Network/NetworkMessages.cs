@@ -8,7 +8,7 @@ using System.IO;
 using SP.Tools;
 using Unity.Collections.LowLevel.Unsafe;
 
-namespace GameCore.High
+namespace GameCore.Network
 {
     public struct NMPos : NetworkMessage
     {

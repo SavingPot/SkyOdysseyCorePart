@@ -1,6 +1,6 @@
 using System;
 
-namespace GameCore
+namespace GameCore.Network
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class SyncAttribute : Attribute

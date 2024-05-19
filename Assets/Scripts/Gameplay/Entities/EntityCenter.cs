@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GameCore.High;
+using GameCore.Network;
 using Mirror;
 using UnityEngine;
 
@@ -60,9 +61,6 @@ namespace GameCore
 
 
 
-        /* -------------------------------------------------------------------------- */
-        /*                                  Static 方法                                 */
-        /* -------------------------------------------------------------------------- */
 
         public static Component GetEntityByNetId(uint netIdToFind, Type type)
         {
@@ -131,6 +129,14 @@ namespace GameCore
 
             return result;
         }
+
+
+
+
+
+
+
+
 
         [RuntimeInitializeOnLoadMethod]
         private static void BindMethods()
