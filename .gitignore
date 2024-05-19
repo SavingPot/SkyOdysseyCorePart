@@ -4,6 +4,7 @@ Library
 *.sln
 ignore.conf
 UserSettings
+.VSCodeCounter
 Temp
 .plastic
 obj
