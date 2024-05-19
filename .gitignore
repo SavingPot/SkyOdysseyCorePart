@@ -1,10 +1,8 @@
 Logs
 Library
-*.csproj
-*.sln
+.VSCodeCounter
 ignore.conf
 UserSettings
-.VSCodeCounter
 Temp
 .plastic
 obj
