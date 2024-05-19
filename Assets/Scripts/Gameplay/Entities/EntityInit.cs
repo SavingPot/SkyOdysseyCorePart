@@ -39,6 +39,7 @@ namespace GameCore
         internal static bool isFirstEntityInit;
 
 
+        public static readonly string regionIndexVarId = $"{typeof(Entity).FullName}.{nameof(Entity.regionIndex)}";
         public static readonly string maxHealthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.maxHealth)}";
         public static readonly string healthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.health)}";
         public static readonly string customDataVarId = $"{typeof(Entity).FullName}.{nameof(Entity.customData)}";
@@ -151,7 +152,12 @@ namespace GameCore
                 {
                     var id = pair.fieldPath;
 
-                    if (pair.fieldPath == maxHealthVarId)
+                    if (pair.fieldPath == regionIndexVarId)
+                    {
+                        //注明：在 SummonEntity 中会调用 GameObject.Initialize 来初始化 EntityInit，此时 transform.position 也被赋值了
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(PosConvert.WorldPosToRegionIndex(transform.position)));
+                    }
+                    else if (pair.fieldPath == maxHealthVarId)
                     {
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(data.maxHealth));
                     }

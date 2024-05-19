@@ -203,6 +203,9 @@ namespace GameCore
             return slots[index];
         }
 
+        public Item this[string index] => GetItem(index);
+        public Item this[int index] => GetItem(index);
+
         public void CreateBehaviour(Item item, string index, out ItemBehaviour behaviour)
         {
             if (item == null || item.data.behaviourType == null)

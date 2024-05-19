@@ -242,6 +242,16 @@ namespace GameCore
 
             return result.location != null;
         }
+
+        public bool RemoveEntity(EntitySave entity)
+        {
+            return entities.Remove(entity);
+        }
+
+        public void AddEntity(EntitySave entity)
+        {
+            entities.Add(entity);
+        }
     }
 
     [Serializable]

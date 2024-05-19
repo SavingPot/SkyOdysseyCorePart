@@ -313,6 +313,7 @@ namespace GameCore
             return new PlayerSave()
             {
                 id = playerName,
+                coin = 30,
                 inventory = new(Player.inventorySlotCountConst, null),
                 hungerValue = Player.defaultHungerValue,
                 happinessValue = Player.defaultHappinessValue,

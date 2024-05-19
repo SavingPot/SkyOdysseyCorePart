@@ -201,7 +201,7 @@ namespace GameCore.High
                 {
                     if (GFiles.world.TryGetRegion(PosConvert.WorldPosToRegionIndex(saveDatum.pos), out var region))
                     {
-                        region.entities.Add(saveDatum);
+                        region.AddEntity(saveDatum);
                     }
                     else
                     {

@@ -34,6 +34,8 @@ namespace GameCore
         public List<string> tags = new();
         List<string> ITags.tags { get => tags; }
 
+        public bool IsConstructionWall() => this.GetTag("ori:construction_wall").hasTag;
+
         #endregion
 
         public bool Equals(BlockData block) => block?.id == id;

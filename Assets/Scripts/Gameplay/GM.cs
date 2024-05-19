@@ -1265,18 +1265,10 @@ namespace GameCore
 
 
 
-            if (index == Vector2Int.zero)
-            {
-                //如是初始区域, 生成 Nick
-                var nick = ModFactory.CompareEntity(EntityID.Nick);
-                EntitySave nickSave = new()
-                {
-                    id = nick.id,
-                    pos = generation.region.spawnPoint + new Vector2Int(10, 0),
-                    saveId = Tools.randomGUID
-                };
-                generation.region.entities.Add(nickSave);
-            }
+            //生成实体（脚本的绑定）
+            IslandGeneration.EntitiesGeneration(generation);
+
+
 
             MethodAgent.RunOnMainThread(() =>
             {
@@ -1362,15 +1354,31 @@ namespace GameCore
             BiomeData biome = null;
             if (specificBiome == null)
             {
-                foreach (var mod in ModFactory.mods)
+                if (index.x == 0)
                 {
-                    foreach (var currentBiome in mod.biomes)
+                    biome = ModFactory.CompareBiome(BiomeID.Center);
+                }
+                else
+                {
+                    List<BiomeData> biomes = new();
+
+                    foreach (var mod in ModFactory.mods)
                     {
-                        if (currentBiome.distribution == index.x)
+                        foreach (var currentBiome in mod.biomes)
                         {
-                            biome = currentBiome;
-                            break;
+                            //找到正负相符的群系
+                            if (Math.Sign(currentBiome.distribution) == Math.Sign(index.x))
+                            {
+                                biomes.Add(currentBiome);
+                            }
                         }
+                    }
+
+                    if (biomes.Count != 0)
+                    {
+                        biomes = biomes.OrderBy(b => Math.Abs(b.distribution)).ToList();
+                        biomes.ForEach(b => Debug.Log(b.id + " " + b.distribution));
+                        biome = biomes[Math.Min(Math.Abs(index.x) - 1, biomes.Count - 1)];
                     }
                 }
             }
@@ -1492,68 +1500,76 @@ namespace GameCore
 
         public static Action<IslandGeneration, Dictionary<int, int>, Action<string, int, int, bool, string>> LootGeneration = (generation, wallHighestPointFunction, AddBlockInIsland) =>
         {
+            //遍历每个最高点
             foreach (var highest in wallHighestPointFunction)
             {
                 Vector2Int lootBlockPos = new(highest.Key, highest.Value + 1);
+
+                /* ----------------------------------- 木桶 (只有中心空岛有) ----------------------------------- */
+                if (generation.biome.id == BiomeID.Center)
+                {
+                    if (lootBlockPos.x == -6)
+                    {
+                        AddBlockInIsland(BlockID.RemoteMarket, lootBlockPos.x, lootBlockPos.y, false, null);
+                    }
+                    else if (lootBlockPos.x == 15)
+                    {
+                        JToken[] group = new JToken[28];
+
+                        //填充每个栏位
+                        for (int i = 0; i < group.Length; i++)
+                        {
+                            /* --------------------------------- 抽取一个物品 --------------------------------- */
+                            Item item = null;
+
+                            switch (i)
+                            {
+                                case 0:
+                                    item = ModFactory.CompareItem(BlockID.Dirt).DataToItem();
+                                    item.count = 30;
+                                    break;
+
+                                case 1:
+                                    item = ModFactory.CompareItem(ItemID.SportsVest).DataToItem();
+                                    break;
+
+                                case 2:
+                                    item = ModFactory.CompareItem(ItemID.SportsShorts).DataToItem();
+                                    break;
+
+                                case 3:
+                                    item = ModFactory.CompareItem(ItemID.Sneakers).DataToItem();
+                                    break;
+
+                                case 4:
+                                    item = ModFactory.CompareItem(BlockID.OnionCrop).DataToItem();
+                                    item.count = 3;
+                                    break;
+                            }
+
+                            /* ---------------------------------- 填充物品 ---------------------------------- */
+                            if (item != null)  //如果获取失败了, 这个格子也会为空
+                            {
+                                group[i] = JToken.FromObject(item);
+                            }
+                        }
+
+                        JObject jo = new();
+
+                        jo.AddObject("ori:container");
+                        jo["ori:container"].AddObject("items");
+                        jo["ori:container"]["items"].AddArray("array", group);
+
+                        AddBlockInIsland(BlockID.Barrel, lootBlockPos.x, lootBlockPos.y, false, jo.ToString(Formatting.None));
+                    }
+                }
 
                 //如果位置被占用就跳过
                 if (generation.blockAdded.Any(added => added.pos == lootBlockPos && !added.isBackground))
                     continue;
 
-                /* ----------------------------------- 木桶 (只有中心空岛有) ----------------------------------- */
-                if (generation.biome.id == BiomeID.Center && lootBlockPos.x == 15)
-                {
-                    JToken[] group = new JToken[28];
-
-                    //填充每个栏位
-                    for (int i = 0; i < group.Length; i++)
-                    {
-                        /* --------------------------------- 抽取一个物品 --------------------------------- */
-                        Item item = null;
-
-                        switch (i)
-                        {
-                            case 0:
-                                item = ModFactory.CompareItem(BlockID.Dirt).DataToItem();
-                                item.count = 30;
-                                break;
-
-                            case 1:
-                                item = ModFactory.CompareItem(ItemID.SportsVest).DataToItem();
-                                break;
-
-                            case 2:
-                                item = ModFactory.CompareItem(ItemID.SportsShorts).DataToItem();
-                                break;
-
-                            case 3:
-                                item = ModFactory.CompareItem(ItemID.Sneakers).DataToItem();
-                                break;
-
-                            case 4:
-                                item = ModFactory.CompareItem(BlockID.OnionCrop).DataToItem();
-                                item.count = 3;
-                                break;
-                        }
-
-                        /* ---------------------------------- 填充物品 ---------------------------------- */
-                        if (item != null)  //如果获取失败了, 这个格子也会为空
-                        {
-                            group[i] = JToken.FromObject(item);
-                        }
-                    }
-
-                    JObject jo = new();
-
-                    jo.AddObject("ori:container");
-                    jo["ori:container"].AddObject("items");
-                    jo["ori:container"]["items"].AddArray("array", group);
-
-                    AddBlockInIsland(BlockID.Barrel, lootBlockPos.x, lootBlockPos.y, false, jo.ToString(Formatting.None));
-                }
-
                 /* ----------------------------------- 木箱 ----------------------------------- */
-                else if (Tools.Prob100(1.5f, generation.regionGeneration.random))
+                if (Tools.Prob100(1.5f, generation.regionGeneration.random))
                 {
                     JToken[] group = new JToken[21];
 
@@ -1653,6 +1669,34 @@ namespace GameCore
             }
         };
 
+        public static Action<RegionGeneration> EntitiesGeneration = (generation) =>
+        {
+            if (generation.index == Vector2Int.zero)
+            {
+                //如是初始区域, 生成 Nick
+                var nick = ModFactory.CompareEntity(EntityID.Nick);
+                EntitySave nickSave = new()
+                {
+                    id = nick.id,
+                    pos = generation.region.spawnPoint + new Vector2Int(10, 0),
+                    saveId = Tools.randomGUID
+                };
+                generation.region.AddEntity(nickSave);
+            }
+
+            if (generation.region.biomeId == BiomeID.GrasslandFighting)
+            {
+                //如是初始区域, 生成 Nick
+                var entityData = ModFactory.CompareEntity(EntityID.GrasslandGuard);
+                EntitySave entitySave = new()
+                {
+                    id = entityData.id,
+                    pos = generation.region.spawnPoint + new Vector2Int(0, 8),
+                    saveId = Tools.randomGUID
+                };
+                generation.region.AddEntity(entitySave);
+            }
+        };
 
 
 

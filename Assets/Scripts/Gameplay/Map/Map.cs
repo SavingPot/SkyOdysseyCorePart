@@ -346,6 +346,9 @@ namespace GameCore
             }
         }
 
+        public Block this[Vector2Int pos, bool isBackground] => GetBlock(pos, isBackground);
+        public Block this[int x, int y, bool isBackground] => GetBlock(new(x, y), isBackground);
+
         public Block GetBlock(Vector2Int pos, bool isBackground)
         {
             Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);

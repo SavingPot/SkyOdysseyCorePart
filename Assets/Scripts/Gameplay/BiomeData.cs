@@ -13,6 +13,7 @@ namespace GameCore
     [Serializable]
     public sealed class BiomeData : ModClass, ITags
     {
+        [LabelText("战斗群系")] public bool isFightingBiome;
         [LabelText("最小尺寸")] public Vector2 minScale;
         [LabelText("最大尺寸")] public Vector2 maxScale;
         [LabelText("分布")] public int distribution;

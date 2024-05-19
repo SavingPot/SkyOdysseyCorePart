@@ -136,9 +136,12 @@ namespace GameCore.UI
 
         public StringBuilder GetDetailText(ItemData item, StringBuilder sb)
         {
-            sb.AppendLine(GameUI.CompareText("ori:item.damage").text.Replace("{value}", item.damage.ToString()));
-            sb.AppendLine(GameUI.CompareText("ori:item.excavation_strength").text.Replace("{value}", item.excavationStrength.ToString()));
-            sb.AppendLine(GameUI.CompareText("ori:item.use_cd").text.Replace("{value}", item.useCD.ToString()));
+            if (item.damage != ItemData.defaultDamage)
+                sb.AppendLine(GameUI.CompareText("ori:item.damage").text.Replace("{value}", item.damage.ToString()));
+            if (item.excavationStrength != ItemData.defaultExcavationStrength)
+                sb.AppendLine(GameUI.CompareText("ori:item.excavation_strength").text.Replace("{value}", item.excavationStrength.ToString()));
+            if (item.useCD != ItemData.defaultUseCD)
+                sb.AppendLine(GameUI.CompareText("ori:item.use_cd").text.Replace("{value}", item.useCD.ToString()));
             sb.AppendLine(string.Empty);
 
             //如果成功匹配到了描述文本

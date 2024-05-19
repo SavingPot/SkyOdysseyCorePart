@@ -17,9 +17,9 @@ namespace GameCore
         public const string Drop = "ori:drop";
         public const string Duck = "ori:duck";
         public const string Earthworm = "ori:earthworm";
-        public const string ExtremeWeatherRegionGuard = "ori:extreme_weather_region_guard";
-        public const string ExtremeWeatherRegionGuardSand = "ori:extreme_weather_region_guard_sand";
-        public const string ExtremeWeatherRegionGuardSnowball = "ori:extreme_weather_region_guard_snowball";
+        public const string ExtremeWeatherGuard = "ori:extreme_weather_guard";
+        public const string ExtremeWeatherGuardSand = "ori:extreme_weather_guard_sand";
+        public const string ExtremeWeatherGuardSnowball = "ori:extreme_weather_guard_snowball";
         public const string FlintArrow = "ori:flint_arrow";
         public const string Fly = "ori:fly";
         public const string GrasslandSlime = "ori:grassland_slime";
@@ -35,8 +35,8 @@ namespace GameCore
         public const string OakTreeMan = "ori:oak_tree_man";
         public const string Pig = "ori:pig";
         public const string Pillworm = "ori:pillworm";
-        public const string PlantRegionGuard = "ori:plant_region_guard";
-        public const string PlantRegionGuardSapling = "ori:plant_region_guard_sapling";
+        public const string GrasslandGuard = "ori:grassland_guard";
+        public const string GrasslandGuardSapling = "ori:grassland_guard_sapling";
         public const string Player = "ori:player";
         public const string RainForestSlime = "ori:rain_forest_slime";
         public const string Savage = "ori:savage";

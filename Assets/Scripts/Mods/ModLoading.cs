@@ -688,6 +688,7 @@ namespace GameCore
                 if (GameTools.CompareVersions(temp.jsonFormat, "0.6.2", Operators.thanOrEqual))
                 {
                     temp.jsonFormatWhenLoad = "0.6.2";
+                    temp.isFightingBiome = entrance["is_fighting_biome"]?.ToBool() ?? false;
                     temp.minScale = entrance["size_scope"]?["min"]?.ToVector2() ?? new Vector2(0.3f, 0.25f);
                     temp.maxScale = entrance["size_scope"]?["max"]?.ToVector2() ?? new Vector2(0.4f, 0.4f);
 

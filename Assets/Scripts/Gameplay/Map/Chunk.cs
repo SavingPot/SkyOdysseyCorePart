@@ -100,6 +100,9 @@ namespace GameCore.High
             return null;
         }
 
+        public Block this[Vector2Int mapPos, bool isBackground] => GetBlock(mapPos, isBackground);
+        public Block this[int mapX, int mapY, bool isBackground] => GetBlock(new(mapX, mapY), isBackground);
+
         public bool TryGetBlock(Vector2Int mapPos, bool isBackground, out Block block)
         {
             block = GetBlock(mapPos, isBackground);

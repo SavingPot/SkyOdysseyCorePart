@@ -299,7 +299,7 @@ namespace GameCore
         {
             item = GetUsingItemChecked();
 
-            return item != null;
+            return !Item.Null(item);
         }
         public Item GetUsingItemChecked() => inventory.GetItemChecked(usingItemIndex);
         public ItemBehaviour GetUsingItemBehaviourChecked() => inventory.GetItemBehaviourChecked(usingItemIndex);
@@ -338,12 +338,12 @@ namespace GameCore
 
         #region 物品属性
 
-        public float excavationStrength => GetUsingItemChecked()?.data?.excavationStrength ?? ItemData.defaultExcavationStrength;
+        public float excavationStrength => TryGetUsingItem(out var item) ? item.data.excavationStrength : ItemData.defaultExcavationStrength;
 
         [BoxGroup("属性"), LabelText("使用时间")]
         public float itemUseTime;
         public float previousAttackTime;
-        public float interactiveRadius => defaultInteractiveRadius + (GetUsingItemChecked()?.data?.extraDistance ?? 0);
+        public float interactiveRadius => defaultInteractiveRadius + (TryGetUsingItem(out var item) ? item.data.extraDistance : 0);
 
 
 
@@ -499,7 +499,7 @@ namespace GameCore
                     transform.position = Init.save.pos;
                     fallenY = Init.save.pos.y;
                     hasSetPosBySave = true;
-                    regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos);
+                    regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos); //这里必须立刻设置 regionIndex，否则会导致 OnRegionIndexChanged 被调用
                 }
             }
 
@@ -1648,7 +1648,7 @@ namespace GameCore
 
 
 
-        public bool HasUseCDPast() => Tools.time >= itemUseTime + (GetUsingItemChecked()?.data?.useCD ?? ItemData.defaultUseCD);
+        public bool HasUseCDPast() => Tools.time >= itemUseTime + (TryGetUsingItem(out var item) ? item.data.useCD : ItemData.defaultUseCD);
 
         #endregion
 
