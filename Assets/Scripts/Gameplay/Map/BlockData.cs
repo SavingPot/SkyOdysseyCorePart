@@ -35,6 +35,7 @@ namespace GameCore
         List<string> ITags.tags { get => tags; }
 
         public bool IsConstructionWall() => this.GetTag("ori:construction_wall").hasTag;
+        public bool IsFurniture() => this.GetTag("ori:furniture").hasTag;
 
         #endregion
 

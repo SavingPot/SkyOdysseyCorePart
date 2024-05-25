@@ -700,6 +700,14 @@ namespace GameCore
                 }
 #endif
 
+                /* ---------------------------------- 检查房屋 ---------------------------------- */
+                if (Keyboard.current.gKey.wasPressedThisFrame)
+                {
+                    var pos = PosConvert.WorldToMapPos(cursorWorldPos);
+                    var roomCheck = new MapUtils.RoomCheck(pos);
+                    Debug.Log(roomCheck.IsValidConstruction() + "   Score: " + roomCheck.ScoreRoom());
+                }
+
                 /* ---------------------------------- 解锁区域 ---------------------------------- */
                 if (Keyboard.current.pKey.wasPressedThisFrame)
                 {

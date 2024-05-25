@@ -41,7 +41,6 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Scripts\Network\ByteConverters\Binders.cs" />
-     <Compile Include="Assets\Scripts\Tools\JsonUtils.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Creature.cs" />
      <Compile Include="Assets\Scripts\UI\InternalUIAdder.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Entity.cs" />
@@ -50,32 +49,33 @@
      <Compile Include="Assets\Scripts\UI\GameButton.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\InputButtonIdentity.cs" />
      <Compile Include="Assets\Scripts\Gameplay\GAudio.cs" />
-     <Compile Include="Assets\Scripts\Tools\ObjectTools.cs" />
-     <Compile Include="Assets\Scripts\Tools\TextureHandler.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\Chunk.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\EntityCenter.cs" />
+     <Compile Include="Assets\Scripts\Utils\MethodAgent.cs" />
      <Compile Include="Assets\Scripts\PreloadScene.cs" />
+     <Compile Include="Assets\Scripts\Utils\Anim\Timeline.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Controls\GControls.cs" />
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursorRaycaster.cs" />
-     <Compile Include="Assets\Scripts\Tools\Anim\Anim.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\SlotUIs.cs" />
      <Compile Include="Assets\Scripts\Gameplay\BiomeData.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\TextImageIdentity.cs" />
-     <Compile Include="Assets\Scripts\Tools\SpriteHandler.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ScrollViewIdentity.cs" />
      <Compile Include="Assets\Scripts\UI\GameUI.cs" />
      <Compile Include="Assets\Scripts\Mods\Spell.cs" />
+     <Compile Include="Assets\Scripts\Utils\ToolsExtensions.cs" />
      <Compile Include="Assets\Scripts\Mods\StructureData.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ButtonIdentity.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ImageIdentity.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Msg.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\NotSummonableAttribute.cs" />
+     <Compile Include="Assets\Scripts\Utils\ObjectTools.cs" />
      <Compile Include="Assets\Scripts\Network\ByteConverters\Surrogates.cs" />
      <Compile Include="Assets\Scripts\IdAttribute.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ImageTextButtonIdentity.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\RpcType.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Controls\CameraController.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\TextIdentity.cs" />
+     <Compile Include="Assets\Scripts\Utils\Converters\ByteConverter.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\Contollers\GamepadController.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\SliderIdentity.cs" />
      <Compile Include="Assets\Scripts\UI\ScrollingBackground.cs" />
@@ -83,26 +83,22 @@
      <Compile Include="Assets\Scripts\Gameplay\Entities\EntityInit.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\BlockData.cs" />
      <Compile Include="Assets\Scripts\UI\UniversalInputField.cs" />
-     <Compile Include="Assets\Scripts\Tools\SundryExtensions.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\NPC.cs" />
      <Compile Include="Assets\Scripts\Network\ServerDiscovery.cs" />
      <Compile Include="Assets\Scripts\Gameplay\GM.cs" />
-     <Compile Include="Assets\Scripts\Tools\RayTools.cs" />
-     <Compile Include="Assets\Scripts\Tools\Tools.cs" />
+     <Compile Include="Assets\Scripts\Utils\Anim\AnimWeb.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\PosConvert.cs" />
+     <Compile Include="Assets\Scripts\Utils\JsonExtensions.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\Interfaces.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\Binders.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Drop.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\ItemBehaviour.cs" />
      <Compile Include="Assets\Scripts\ManagerAudio.cs" />
+     <Compile Include="Assets\Scripts\Utils\Tools.cs" />
      <Compile Include="Assets\Scripts\Mods\ModInterfaces.cs" />
-     <Compile Include="Assets\Scripts\Tools\AngleTools.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\RawImageIdentity.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\EntityIdAttribute.cs" />
-     <Compile Include="Assets\Scripts\Tools\ToolsExtensions.cs" />
      <Compile Include="Assets\Scripts\Network\NetworkCallbacks.cs" />
-     <Compile Include="Assets\Scripts\Tools\Anim\AnimWeb.cs" />
-     <Compile Include="Assets\Scripts\Tools\Anim\EasyAnim.cs" />
      <Compile Include="Assets\Scripts\Network\ManagerNetwork.cs" />
      <Compile Include="Assets\Scripts\Mods\BiomeBlockPrefab.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Region.cs" />
@@ -110,6 +106,7 @@
      <Compile Include="Assets\Scripts\Mods\ModLoading.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Inventory.cs" />
      <Compile Include="Assets\Scripts\ModIdBindingAttributes.cs" />
+     <Compile Include="Assets\Scripts\Utils\AngleTools.cs" />
      <Compile Include="Assets\Scripts\UI\ParallaxBackground.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\Contollers\TouchscreenController.cs" />
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursorMover.cs" />
@@ -117,24 +114,25 @@
      <Compile Include="Assets\Scripts\Gameplay\GameCallbacks.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Magic\IManaContainer.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Enemy.cs" />
-     <Compile Include="Assets\Scripts\Tools\Anim\Timeline.cs" />
+     <Compile Include="Assets\Scripts\Utils\SundryExtensions.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Behaviours\CreatureHumanBodyPartsBehaviour.cs" />
-     <Compile Include="Assets\Scripts\Tools\ZipTools.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\InfoShowers.cs" />
-     <Compile Include="Assets\Scripts\Tools\ScreenTools.cs" />
+     <Compile Include="Assets\Scripts\Utils\JsonUtils.cs" />
      <Compile Include="Assets\Scripts\UI\NodeTree.cs" />
      <Compile Include="Assets\Scripts\UI\InfiniteBackground.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\Contollers\PlayerController.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Magic\ISpellContainer.cs" />
+     <Compile Include="Assets\Scripts\Utils\Anim\Anim.cs" />
+     <Compile Include="Assets\Scripts\Utils\RayTools.cs" />
+     <Compile Include="Assets\Scripts\Utils\ScreenTools.cs" />
      <Compile Include="Assets\Scripts\Network\JObjectReaderWriter.cs" />
      <Compile Include="Assets\Scripts\Gameplay\GTime.cs" />
+     <Compile Include="Assets\Scripts\Utils\TextureHandler.cs" />
      <Compile Include="Assets\Scripts\UI\Joystick.cs" />
      <Compile Include="Assets\Scripts\ManagerCommands.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ToggleIdentity.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Binders.cs" />
-     <Compile Include="Assets\Scripts\Tools\MethodAgent.cs" />
      <Compile Include="Assets\Scripts\Gameplay\RandomUpdater.cs" />
-     <Compile Include="Assets\Scripts\Tools\Anim\AnimFragments.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\EntityData.cs" />
      <Compile Include="Assets\Scripts\Network\NetworkMessages.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Behaviours\EntityInventoryOwnerBehaviour.cs" />
@@ -144,30 +142,32 @@
      <Compile Include="Assets\Scripts\Gameplay\Entities\BloodParticlePool.cs" />
      <Compile Include="Assets\Scripts\Mods\ModFactory.cs" />
      <Compile Include="Assets\Scripts\GScene.cs" />
-     <Compile Include="Assets\Scripts\Converters\ByteConverter.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\CoinEntity.cs" />
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursor.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\Map.cs" />
      <Compile Include="Assets\Scripts\Mods\ModCreate.cs" />
      <Compile Include="Assets\Scripts\Network\Client.cs" />
+     <Compile Include="Assets\Scripts\Utils\Converters\ModConvert.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Rpc.cs" />
      <Compile Include="Assets\Scripts\Mods\ModEntry.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\SyncPacker.cs" />
+     <Compile Include="Assets\Scripts\Utils\Anim\AnimFragments.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\Block.cs" />
+     <Compile Include="Assets\Scripts\Utils\Performance.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\MapUtils.cs" />
-     <Compile Include="Assets\Scripts\Tools\JsonExtensions.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\PanelIdentity.cs" />
-     <Compile Include="Assets\Scripts\Converters\ModConvert.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\StateMachine.cs" />
+     <Compile Include="Assets\Scripts\Utils\Anim\EasyAnim.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\PlayerUI.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\CreatureBodyPart.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\IdentityCenter.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Behaviours\EntityItemContainerBehaviour.cs" />
-     <Compile Include="Assets\Scripts\Tools\Performance.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Bullet.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\DamageTextPool.cs" />
      <Compile Include="Assets\Scripts\Network\Server.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\PlayerCenter.cs" />
+     <Compile Include="Assets\Scripts\Utils\SpriteHandler.cs" />
+     <Compile Include="Assets\Scripts\Utils\ZipTools.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\UIIdentity.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\Player.cs" />
      <None Include="Assets\Mirror\Readme.txt" />
@@ -953,10 +953,6 @@
     <ProjectReference Include="UniTask.Linq.csproj">
       <Project>{2070f21c-5c1b-2315-0b3f-f69367a0013e}</Project>
       <Name>UniTask.Linq</Name>
-    </ProjectReference>
-    <ProjectReference Include="GameCore.Attributes.csproj">
-      <Project>{3e78e15f-e0ae-4a28-d982-4cf5a4747e1c}</Project>
-      <Name>GameCore.Attributes</Name>
     </ProjectReference>
     <ProjectReference Include="Sirenix.OdinInspector.Modules.UnityMathematics.csproj">
       <Project>{9d14f432-0179-cdb1-baff-a3232e44ea73}</Project>

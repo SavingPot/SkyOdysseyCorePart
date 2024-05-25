@@ -8,7 +8,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>GameCore</RootNamespace>
     <ProjectGuid>{1e477c5f-7525-60f6-e80c-1e36288e5480}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -840,10 +840,6 @@
     <ProjectReference Include="UniTask.Linq.csproj">
       <Project>{2070f21c-5c1b-2315-0b3f-f69367a0013e}</Project>
       <Name>UniTask.Linq</Name>
-    </ProjectReference>
-    <ProjectReference Include="GameCore.Attributes.csproj">
-      <Project>{3e78e15f-e0ae-4a28-d982-4cf5a4747e1c}</Project>
-      <Name>GameCore.Attributes</Name>
     </ProjectReference>
     <ProjectReference Include="Sirenix.OdinInspector.Modules.UnityMathematics.csproj">
       <Project>{9d14f432-0179-cdb1-baff-a3232e44ea73}</Project>
