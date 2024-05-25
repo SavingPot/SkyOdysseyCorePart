@@ -1683,6 +1683,17 @@ namespace GameCore
                     saveId = Tools.randomGUID
                 };
                 generation.region.AddEntity(nickSave);
+
+
+                //如是初始区域, 生成商人
+                var trader = ModFactory.CompareEntity(EntityID.Trader);
+                EntitySave traderSave = new()
+                {
+                    id = trader.id,
+                    pos = generation.region.spawnPoint + new Vector2Int(0, 0),
+                    saveId = Tools.randomGUID
+                };
+                generation.region.AddEntity(traderSave);
             }
 
             if (generation.region.biomeId == BiomeID.GrasslandFighting)

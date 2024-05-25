@@ -22,6 +22,8 @@ namespace GameCore
         public const string ExtremeWeatherGuardSnowball = "ori:extreme_weather_guard_snowball";
         public const string FlintArrow = "ori:flint_arrow";
         public const string Fly = "ori:fly";
+        public const string GrasslandGuard = "ori:grassland_guard";
+        public const string GrasslandGuardSapling = "ori:grassland_guard_sapling";
         public const string GrasslandSlime = "ori:grassland_slime";
         public const string GrasslandSpore = "ori:grassland_spore";
         public const string HostileFarmer = "ori:hostile_farmer";
@@ -35,8 +37,6 @@ namespace GameCore
         public const string OakTreeMan = "ori:oak_tree_man";
         public const string Pig = "ori:pig";
         public const string Pillworm = "ori:pillworm";
-        public const string GrasslandGuard = "ori:grassland_guard";
-        public const string GrasslandGuardSapling = "ori:grassland_guard_sapling";
         public const string Player = "ori:player";
         public const string RainForestSlime = "ori:rain_forest_slime";
         public const string Savage = "ori:savage";
@@ -44,6 +44,7 @@ namespace GameCore
         public const string Snail = "ori:snail";
         public const string SnowfieldSlime = "ori:snowfield_slime";
         public const string Spark = "ori:spark";
+        public const string Trader = "ori:trader";
         public const string Zombie = "ori:zombie";
     }
 }

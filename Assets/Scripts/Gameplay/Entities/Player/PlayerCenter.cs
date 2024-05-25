@@ -42,7 +42,7 @@ namespace GameCore
                     int health = player.health;
 
                     float hungerValueDelta = frameTime * 0.01f;
-                    if (isMoving) hungerValueDelta += frameTime * 0.025f;
+                    if (isMoving) hungerValueDelta += frameTime * 0.02f;
                     player.hungerValue = hungerValue - hungerValueDelta;
 
                     float happinessValueDelta = frameTime * 0.02f;

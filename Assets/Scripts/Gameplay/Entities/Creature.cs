@@ -306,19 +306,18 @@ namespace GameCore
             //移动 (只有本地玩家和服务器上的非玩家实体会执行)
             if (isLocalPlayer || (isNotPlayer && isServer))
             {
+                //移动
                 var movementDirection = GetMovementDirection();
                 rb.velocity = GetMovementVelocityByMovementDirection(movementDirection);
-            }
 
-            if (isLocalPlayer)
-            {
+
                 //摔落伤害
                 if (rb && rb.velocity.y >= 0)
                 {
                     float fallingStartPoint = fallenY;
                     fallenY = transform.position.y;
                     float delta = fallingStartPoint - fallenY;
-                    float damageValue = (delta - fallenDamageHeight) * 1.2f;
+                    float damageValue = (delta - fallenDamageHeight) * 1.4f;
 
                     if (damageValue >= 3)
                     {
