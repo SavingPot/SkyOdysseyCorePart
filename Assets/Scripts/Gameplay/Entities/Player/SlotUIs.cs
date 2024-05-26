@@ -22,8 +22,8 @@ namespace GameCore.UI
 
         public ItemSlotUI(string buttonId, string imageId, Vector2 sizeDelta)
         {
-            button = GameUI.AddButton(UPC.Middle, buttonId);
-            content = GameUI.AddImage(UPC.Middle, imageId, null, button);
+            button = GameUI.AddButton(UIA.Middle, buttonId);
+            content = GameUI.AddImage(UIA.Middle, imageId, null, button);
 
             button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
             content.image.sprite = null;

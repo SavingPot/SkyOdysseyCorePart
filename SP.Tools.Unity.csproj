@@ -50,9 +50,7 @@
      <Compile Include="Assets\Plugins\SPUnityTools\Extensions\UAnimatorExtensions.cs" />
      <Compile Include="Assets\Plugins\SPUnityTools\Extensions\UIEnumerableExtensions.cs" />
      <Compile Include="Assets\Plugins\SPUnityTools\SingletonClass.cs" />
-     <Compile Include="Assets\Plugins\SPUnityTools\UPC.cs" />
      <Compile Include="Assets\Plugins\SPUnityTools\Extensions\UColorExtensions.cs" />
-     <Compile Include="Assets\Plugins\SPUnityTools\Extensions\UIExtensions.cs" />
      <Compile Include="Assets\Plugins\SPUnityTools\Extensions\UInterfaceExtensions.cs" />
      <Compile Include="Assets\Plugins\SPUnityTools\Extensions\URigibodyExtensions.cs" />
      <Compile Include="Assets\Plugins\SPUnityTools\Interfaces\IColor.cs" />

@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SP.Tools.Unity;
 using UnityEngine;
+using UnityEngine.UI;
 
-namespace SP.Tools.Unity
+namespace GameCore.UI
 {
     public static class UIExtensions
 	{
@@ -22,8 +21,26 @@ namespace SP.Tools.Unity
 		{
 			trans.SetParent(p);
 			trans.anchoredPosition = Vector2.zero;
-			trans.anchorMin = UPC.Middle;
-			trans.anchorMax = UPC.Middle;
+			trans.anchorMin = UIA.Middle;
+			trans.anchorMax = UIA.Middle;
+		}
+
+
+
+
+
+		public static void ClearColorEffects(this Selectable s)
+		{
+			s.colors = new()
+			{
+				normalColor = s.colors.normalColor,
+				highlightedColor = s.colors.normalColor,
+				pressedColor = s.colors.normalColor,
+				selectedColor = s.colors.normalColor,
+				fadeDuration = s.colors.fadeDuration,
+				disabledColor = s.colors.disabledColor,
+				colorMultiplier = s.colors.colorMultiplier
+			};
 		}
 	}
 }

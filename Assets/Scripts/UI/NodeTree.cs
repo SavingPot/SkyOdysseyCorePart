@@ -66,7 +66,7 @@ namespace GameCore.UI
 
 
 
-            nodeTreeView = GameUI.AddScrollView(UPC.StretchDouble, $"ori:view.{nodeTreeViewName}", nodeTreeViewParent);
+            nodeTreeView = GameUI.AddScrollView(UIA.StretchDouble, $"ori:view.{nodeTreeViewName}", nodeTreeViewParent);
             nodeTreeView.scrollViewImage.color = new(0.2f, 0.2f, 0.2f, 0.6f);
             nodeTreeView.rt.sizeDelta = Vector2.zero;
             nodeTreeView.content.anchoredPosition = new(GameUI.canvasScaler.referenceResolution.x / 2, GameUI.canvasScaler.referenceResolution.y / 2);  //将节点居中
@@ -177,7 +177,7 @@ namespace GameCore.UI
         {
             /* ---------------------------------- 初始化按钮 --------------------------------- */
             int space = 40;
-            node.button = GameUI.AddButton(UPC.Middle, $"ori:button.{nodeTreeViewName}.node.{node.data.id}", GameUI.canvas.transform, "ori:square_button");
+            node.button = GameUI.AddButton(UIA.Middle, $"ori:button.{nodeTreeViewName}.node.{node.data.id}", GameUI.canvas.transform, "ori:square_button");
             node.parent = parentNode;
             node.button.SetSizeDelta(space, space);   //设置按钮大小
             node.button.buttonText.RefreshUI();
@@ -250,7 +250,7 @@ namespace GameCore.UI
             node.button.buttonText.AddAPosY(-node.button.sd.y / 2 - node.button.buttonText.sd.y / 2 - 5);
 
             /* ---------------------------------- 设置图标 ---------------------------------- */
-            node.icon = GameUI.AddImage(UPC.Middle, $"ori:image.{nodeTreeViewName}.node.{node.data.id}", null, node.button);
+            node.icon = GameUI.AddImage(UIA.Middle, $"ori:image.{nodeTreeViewName}.node.{node.data.id}", null, node.button);
             node.icon.sd = node.button.sd;
 
             /* --------------------------------- 初始化连接线 --------------------------------- */
@@ -268,7 +268,7 @@ namespace GameCore.UI
 
             //如果没有线就创建
             if (!node.line)
-                node.line = GameUI.AddImage(UPC.Middle, $"ori:button.{nodeTreeViewName}.node.{node.data.id}.line", null, node.button);
+                node.line = GameUI.AddImage(UIA.Middle, $"ori:button.{nodeTreeViewName}.node.{node.data.id}.line", null, node.button);
 
             /* --------------------------------- 计算对应顶点 --------------------------------- */
             Vector2 buttonPoint = new(node.button.ap.x, node.button.ap.y + node.button.sd.y / 2);   //本身按钮上方

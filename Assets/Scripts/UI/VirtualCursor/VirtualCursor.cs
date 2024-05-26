@@ -30,7 +30,7 @@ namespace GameCore
             Canvas canvas = GetCursorCanvas();
             RectTransform rt = canvas.GetComponent<RectTransform>();
 
-            _image = GameUI.AddImage(UPC.LowerLeft, "ori:image.virtual_cursor", "ori:virtual_cursor", rt);
+            _image = GameUI.AddImage(UIA.LowerLeft, "ori:image.virtual_cursor", "ori:virtual_cursor", rt);
             _image.sd = new(40, 40);
             _image.ap = new(rt.sizeDelta.x / 2, rt.sizeDelta.y / 2);
         }

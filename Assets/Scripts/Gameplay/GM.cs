@@ -825,11 +825,20 @@ namespace GameCore
 
 
             //更新所有方块
-            foreach (var chunk in Map.instance.chunks)
+            lock (Map.instance.chunks)
             {
-                foreach (var block in chunk.blocks)
+                //要复制一份，防止在生成过程中迭代器变化
+                var chunks = Map.instance.chunks.ToArray();
+
+                foreach (var chunk in chunks)
                 {
-                    block?.OnUpdate();
+                    //要复制一份，防止在生成过程中迭代器变化
+                    var blocks = chunk.blocks.ToArray();
+
+                    foreach (var block in blocks)
+                    {
+                        block?.OnUpdate();
+                    }
                 }
             }
 

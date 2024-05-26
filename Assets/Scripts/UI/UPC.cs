@@ -1,11 +1,11 @@
 using UnityEngine;
 
-namespace SP.Tools.Unity
+namespace GameCore.UI
 {
     /// <summary>
-    /// 即 UIPositionCurrent, 界面位置指针
+    /// 即 User Interface Anchor, UI锚点
     /// </summary>
-    public static class UPC
+    public static class UIA
     {
         public static Vector4 Middle { get; } = new(0.5f, 0.5f, 0.5f, 0.5f);
         public static Vector4 Left { get; } = new(0, 0.5f, 0, 0.5f);

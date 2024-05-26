@@ -140,7 +140,7 @@ namespace GameCore.UI
             }
         }
         public static Canvas canvas { get { if (!_canvas) _canvas = GameObject.Find("/Canvas").GetComponent<Canvas>(); return _canvas; } }
-        public static RectTransform canvasRT { get { if (!_canvasRT) _canvasRT = _canvas.GetComponent<RectTransform>(); return _canvasRT; } }
+        public static RectTransform canvasRT { get { if (!_canvasRT) _canvasRT = canvas.GetComponent<RectTransform>(); return _canvasRT; } }
         public static CanvasScaler canvasScaler { get { if (!_canvasScaler) _canvasScaler = canvas.GetComponent<CanvasScaler>(); return _canvasScaler; } }
         public static Canvas worldSpaceCanvas { get { if (!_worldSpaceCanvas) _worldSpaceCanvas = GameObject.Find("/WSCanvas").GetComponent<Canvas>(); return _worldSpaceCanvas; } }
         public static RectTransform worldSpaceCanvasRT { get { if (!_worldSpaceCanvasRT) _worldSpaceCanvasRT = _worldSpaceCanvas.GetComponent<RectTransform>(); return _worldSpaceCanvasRT; } }
@@ -566,6 +566,19 @@ namespace GameCore.UI
 
             return msg;
         }
+
+        public static PanelIdentity AddBackpackFormedPanel(string id, IRectTransform parent, bool disable = false) => AddBackpackFormedPanel(id, parent.rectTransform, disable);
+        public static PanelIdentity AddBackpackFormedPanel(string id, Transform parent, bool disable = false)
+        {
+            var result = AddPanel(id, parent, disable);
+
+            result.SetSizeDelta(PlayerUI.backpackPanelWidth, PlayerUI.backpackPanelHeight);
+            result.SetAnchorMinMax(UIA.Middle);
+            result.panelImage.sprite = ModFactory.CompareTexture("ori:backpack_inventory_background").sprite;
+            result.panelImage.color = Color.white;
+
+            return result;
+        }
         #endregion
 
         #region 添加按钮
@@ -610,14 +623,14 @@ namespace GameCore.UI
             Vector2 rightFootSD = new(rightLegSD.x * 1.35f, rightLegSD.x * 1.35f / skin.rightFoot.texture.width * skin.rightFoot.texture.height);
             Vector2 leftFootSD = new(leftLegSD.x * 1.35f, leftLegSD.x * 1.35f / skin.leftFoot.texture.width * skin.leftFoot.texture.height);
 
-            var body = InitI("body", UPC.Middle, skin.body, BodyPartType.Body, bodySD, Vector2.zero, parent);
-            var head = InitI("head", UPC.Up, skin.head, BodyPartType.Head, headSD, new(-0.8f, headSD.y / 2 - 2.5f), body.transform);
-            var rightArm = InitI("rightArm", UPC.UpperLeft, skin.rightArm, BodyPartType.RightArm, rightArmSD, new(rightArmSD.x / 10, -rightArmSD.y / 2 - 3f), body.transform);
-            var leftArm = InitI("leftArm", UPC.UpperRight, skin.leftArm, BodyPartType.LeftArm, leftArmSD, Vector2.zero, body.transform);
-            var rightLeg = InitI("rightLeg", UPC.LowerLeft, skin.rightLeg, BodyPartType.RightLeg, rightLegSD, new(rightLegSD.x / 2, -rightLegSD.y / 2), body.transform);
-            var leftLeg = InitI("leftLeg", UPC.LowerRight, skin.leftLeg, BodyPartType.LeftLeg, leftLegSD, new(-leftLegSD.x / 2, -leftLegSD.y / 2), body.transform);
-            var rightFoot = InitI("rightFoot", UPC.Down, skin.rightFoot, BodyPartType.RightFoot, rightFootSD, new(0, -rightFootSD.y / 2), rightLeg.transform);
-            var leftFoot = InitI("leftFoot", UPC.Down, skin.leftFoot, BodyPartType.LeftFoot, leftFootSD, new(0, -leftFootSD.y / 2), leftLeg.transform);
+            var body = InitI("body", UIA.Middle, skin.body, BodyPartType.Body, bodySD, Vector2.zero, parent);
+            var head = InitI("head", UIA.Up, skin.head, BodyPartType.Head, headSD, new(-0.8f, headSD.y / 2 - 2.5f), body.transform);
+            var rightArm = InitI("rightArm", UIA.UpperLeft, skin.rightArm, BodyPartType.RightArm, rightArmSD, new(rightArmSD.x / 10, -rightArmSD.y / 2 - 3f), body.transform);
+            var leftArm = InitI("leftArm", UIA.UpperRight, skin.leftArm, BodyPartType.LeftArm, leftArmSD, Vector2.zero, body.transform);
+            var rightLeg = InitI("rightLeg", UIA.LowerLeft, skin.rightLeg, BodyPartType.RightLeg, rightLegSD, new(rightLegSD.x / 2, -rightLegSD.y / 2), body.transform);
+            var leftLeg = InitI("leftLeg", UIA.LowerRight, skin.leftLeg, BodyPartType.LeftLeg, leftLegSD, new(-leftLegSD.x / 2, -leftLegSD.y / 2), body.transform);
+            var rightFoot = InitI("rightFoot", UIA.Down, skin.rightFoot, BodyPartType.RightFoot, rightFootSD, new(0, -rightFootSD.y / 2), rightLeg.transform);
+            var leftFoot = InitI("leftFoot", UIA.Down, skin.leftFoot, BodyPartType.LeftFoot, leftFootSD, new(0, -leftFootSD.y / 2), leftLeg.transform);
 
             rightLeg.transform.SetAsFirstSibling();
             leftLeg.transform.SetAsFirstSibling();
@@ -629,7 +642,7 @@ namespace GameCore.UI
             head.transform.SetAsFirstSibling();
 
             //使得左手在身体的下面
-            leftArm.SetAnchorMinMax(UPC.Middle);
+            leftArm.SetAnchorMinMax(UIA.Middle);
             leftArm.transform.SetParent(body.transform.parent);
             leftArm.SetAPosOnBySizeRight(body, -leftArmSD.x / 2);
             leftArm.AddAPosY(-3f);
@@ -659,9 +672,9 @@ namespace GameCore.UI
             Transform parent)
         {
             var barBg = AddImage(positionCurrent, bgId, backgroundSprite, parent);
-            var barFull = AddImage(UPC.StretchMiddle, fullId, contentSprite, barBg);
-            var mascot = AddImage(UPC.Left, mascotId, mascotSprite, barBg);
-            var progressText = AddText(UPC.Middle, textId, barBg);
+            var barFull = AddImage(UIA.StretchMiddle, fullId, contentSprite, barBg);
+            var mascot = AddImage(UIA.Left, mascotId, mascotSprite, barBg);
+            var progressText = AddText(UIA.Middle, textId, barBg);
 
             barBg.sd = barScale;
             barBg.image.SetColorBrightness(0.35f);
@@ -699,7 +712,7 @@ namespace GameCore.UI
         {
             //初始化 UI
             var panel = AddPanel(panelId);
-            var text = AddText(UPC.Middle, textId, panel);
+            var text = AddText(UIA.Middle, textId, panel);
 
             //将面板设为黑色
             panel.panelImage.SetColorBrightness(0);
@@ -736,6 +749,25 @@ namespace GameCore.UI
         public static (PanelIdentity panel, TextIdentity text) LeavingGameMask(UnityAction<PanelIdentity, TextIdentity> afterFadingIn, UnityAction<PanelIdentity, TextIdentity> afterFadingOut)
         {
             return GenerateMask("ori:panel.mask.left_game", "ori:text.leaving_game", afterFadingIn, afterFadingOut);
+        }
+
+
+
+
+
+        public static (ImageIdentity backgroundImage, ButtonIdentity button) GenerateSidebarSwitchButton(string buttonBackgroundId, string buttonId, string switchButtonTexture, IRectTransform parent, int sidebarIndex, bool destroyButtonText = true) => GenerateSidebarSwitchButton(buttonBackgroundId, buttonId, switchButtonTexture, parent.rectTransform, sidebarIndex, destroyButtonText);
+        public static (ImageIdentity backgroundImage, ButtonIdentity button) GenerateSidebarSwitchButton(string buttonBackgroundId, string buttonId, string switchButtonTexture, Transform parent, int sidebarIndex, bool destroyButtonText = true)
+        {
+            var switchButtonBackground = AddImage(UIA.UpperLeft, buttonBackgroundId, "ori:backpack_panel_switch_button", parent);
+            switchButtonBackground.sd = new(50, 50);
+            switchButtonBackground.SetAPos(switchButtonBackground.sd.x / 2 + (switchButtonBackground.sd.x + 15) * sidebarIndex, switchButtonBackground.sd.y / 2);
+
+            var switchButton = AddButton(UIA.Middle, buttonId, switchButtonBackground, switchButtonTexture);
+            switchButton.sd = switchButtonBackground.sd;
+            if (destroyButtonText)
+                GameObject.Destroy(switchButton.buttonText.gameObject);
+
+            return (switchButtonBackground, switchButton);
         }
 
         #endregion
@@ -1038,22 +1070,5 @@ namespace GameCore.UI
 
         public UnityAction afterAnimation;
         public UnityAction beforeAnimation;
-    }
-
-    public static class UIExtensions
-    {
-        public static void ClearColorEffects(this Selectable s)
-        {
-            s.colors = new()
-            {
-                normalColor = s.colors.normalColor,
-                highlightedColor = s.colors.normalColor,
-                pressedColor = s.colors.normalColor,
-                selectedColor = s.colors.normalColor,
-                fadeDuration = s.colors.fadeDuration,
-                disabledColor = s.colors.disabledColor,
-                colorMultiplier = s.colors.colorMultiplier
-            };
-        }
     }
 }

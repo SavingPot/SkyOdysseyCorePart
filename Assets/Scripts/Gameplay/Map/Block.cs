@@ -116,7 +116,17 @@ namespace GameCore
 
         }
 
+        public virtual void OnEntityEnter(Entity entity)
+        {
+
+        }
+
         public virtual void OnEntityStay(Entity entity)
+        {
+
+        }
+
+        public virtual void OnEntityExit(Entity entity)
         {
 
         }

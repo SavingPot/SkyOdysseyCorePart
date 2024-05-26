@@ -74,13 +74,13 @@ namespace GameCore.UI
                 return;
 
             /* ------------------------ 添加文本, 设置向左对其, 不能溢出, 设置内容 ------------------------ */
-            var text = GameUI.AddText(UPC.Middle, $"ori:text.chat.{msg}");
+            var text = GameUI.AddText(UIA.Middle, $"ori:text.chat.{msg}");
             text.autoCompareText = false;
             text.text.alignment = TMPro.TextAlignmentOptions.Left;
             text.text.overflowMode = TMPro.TextOverflowModes.Ellipsis;
             text.text.text = $"{playerName}: {msg}";
 
-            var image = GameUI.AddImage(UPC.Left, $"ori:image.chat.{msg}", null, text);
+            var image = GameUI.AddImage(UIA.Left, $"ori:image.chat.{msg}", null, text);
             image.sd = new(instance.chatView.gridLayoutGroup.cellSize.y, instance.chatView.gridLayoutGroup.cellSize.y);
             image.ap = new(image.sd.x / 2, 0);
             image.image.sprite = portrait;
@@ -138,6 +138,8 @@ namespace GameCore.UI
 
         #region 背包界面
 
+        public static int backpackPanelWidth = 700;
+        public static int backpackPanelHeight = 450;
         public List<BackpackPanel> backpackPanels = new();
         public string currentBackpackPanel = string.Empty;
         public PanelIdentity backpackMask;
@@ -169,12 +171,12 @@ namespace GameCore.UI
         public CraftingViewButton GenerateCraftingViewButton()
         {
             //添加按钮
-            var button = GameUI.AddButton(UPC.Up, $"ori:button.player_crafting_recipe_{Tools.randomGUID}");
+            var button = GameUI.AddButton(UIA.Up, $"ori:button.player_crafting_recipe_{Tools.randomGUID}");
             button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
             craftingView.AddChild(button);
 
             //物品图标
-            var image = GameUI.AddImage(UPC.Middle, $"ori:image.player_crafting_recipe_{Tools.randomGUID}", "ori:item_tab", button);
+            var image = GameUI.AddImage(UIA.Middle, $"ori:image.player_crafting_recipe_{Tools.randomGUID}", "ori:item_tab", button);
             image.sd = craftingView.gridLayoutGroup.cellSize * 0.75f;
 
             //文本
@@ -572,12 +574,12 @@ namespace GameCore.UI
             /*                                     聊天                                     */
             /* -------------------------------------------------------------------------- */
             //生成面板, 设置颜色为深灰色半透明
-            chatView = GameUI.AddScrollView(UPC.StretchDouble, "ori:view.chat");
+            chatView = GameUI.AddScrollView(UIA.StretchDouble, "ori:view.chat");
             chatView.scrollViewImage.color = new(0.2f, 0.2f, 0.2f, 0.6f);
             chatView.rt.sizeDelta = Vector2.zero;
             chatView.gameObject.SetActive(false);
 
-            chatInput = GameUI.AddInputButton(UPC.Down, "ori:input_button.chat", chatView);
+            chatInput = GameUI.AddInputButton(UIA.Down, "ori:input_button.chat", chatView);
             chatInput.field.image.color = new(1, 1, 1, 0.8f);
             chatInput.button.image.color = new(1, 1, 1, 0.8f);
             chatInput.OnClickBind(() =>
@@ -613,7 +615,7 @@ namespace GameCore.UI
             /*                                    虚拟指针                                    */
             /* -------------------------------------------------------------------------- */
             {
-                touchScreenCursorImage = GameUI.AddImage(UPC.Middle, "ori:image.player_cursor", "ori:player_cursor", GameUI.worldSpaceCanvas.gameObject);
+                touchScreenCursorImage = GameUI.AddImage(UIA.Middle, "ori:image.player_cursor", "ori:player_cursor", GameUI.worldSpaceCanvas.gameObject);
                 touchScreenCursorImage.rt.sizeDelta = Vector2.one;
             }
 
@@ -624,7 +626,7 @@ namespace GameCore.UI
                 touchScreenMoveJoystick = Joystick.Create("PlayerMoveJoystick", "ori:image.player_move_joystick_background", "ori:image.player_move_joystick_handle");
 
                 touchScreenCursorJoystick = Joystick.Create("PlayerCursorJoystick", "ori:image.player_cursor_joystick_background", "ori:image.player_cursor_joystick_handle");
-                touchScreenCursorJoystick.SetAnchorMinMax(UPC.LowerRight);
+                touchScreenCursorJoystick.SetAnchorMinMax(UIA.LowerRight);
                 touchScreenCursorJoystick.SetAPos(-touchScreenMoveJoystick.rectTransform.anchoredPosition.x, touchScreenMoveJoystick.rectTransform.anchoredPosition.y);
             }
 
@@ -632,7 +634,7 @@ namespace GameCore.UI
             /*                                     攻击                                     */
             /* -------------------------------------------------------------------------- */
             {
-                touchScreenAttackButton = GameUI.AddButton(UPC.LowerRight, "ori:button.player_attack", GameUI.canvas.transform, "ori:player_attack_button");
+                touchScreenAttackButton = GameUI.AddButton(UIA.LowerRight, "ori:button.player_attack", GameUI.canvas.transform, "ori:player_attack_button");
                 Component.Destroy(touchScreenAttackButton.buttonText.gameObject);
                 touchScreenAttackButton.sd = touchScreenUniversalSize;
                 touchScreenAttackButton.SetAPosOnBySizeLeft(touchScreenCursorJoystick, 150);
@@ -645,14 +647,14 @@ namespace GameCore.UI
             /*                                     使用                                     */
             /* -------------------------------------------------------------------------- */
             {
-                touchScreenUseItemButton = GameUI.AddButton(UPC.LowerRight, "ori:button.player_use_item", GameUI.canvas.transform, "ori:player_use_item_button");
+                touchScreenUseItemButton = GameUI.AddButton(UIA.LowerRight, "ori:button.player_use_item", GameUI.canvas.transform, "ori:player_use_item_button");
                 Component.Destroy(touchScreenUseItemButton.buttonText.gameObject);
                 touchScreenUseItemButton.sd = touchScreenUniversalSize;
                 touchScreenUseItemButton.SetAPosOnBySizeDown(touchScreenAttackButton, 50);
                 touchScreenUseItemButton.button.HideClickAction();
                 touchScreenUseItemButton.button.onClick.RemoveAllListeners();
 
-                touchScreenUseItemButtonImage = GameUI.AddImage(UPC.Middle, "ori:image.player_use_item_icon", null, touchScreenUseItemButton);
+                touchScreenUseItemButtonImage = GameUI.AddImage(UIA.Middle, "ori:image.player_use_item_icon", null, touchScreenUseItemButton);
                 touchScreenUseItemButtonImage.sd = touchScreenUseItemButton.sd * 0.5f;
             }
 
@@ -660,7 +662,7 @@ namespace GameCore.UI
             /*                                     在脚下放方块                                     */
             /* -------------------------------------------------------------------------- */
             {
-                touchScreenPlaceBlockUnderPlayerButton = GameUI.AddButton(UPC.LowerRight, "ori:button.player_place_block_under_player", GameUI.canvas.transform, "ori:player_place_block_under_player_button");
+                touchScreenPlaceBlockUnderPlayerButton = GameUI.AddButton(UIA.LowerRight, "ori:button.player_place_block_under_player", GameUI.canvas.transform, "ori:player_place_block_under_player_button");
                 Component.Destroy(touchScreenPlaceBlockUnderPlayerButton.buttonText.gameObject);
                 touchScreenPlaceBlockUnderPlayerButton.sd = touchScreenUniversalSize;
                 touchScreenPlaceBlockUnderPlayerButton.SetAPosOnBySizeLeft(touchScreenUseItemButton, 50);
@@ -672,7 +674,7 @@ namespace GameCore.UI
             /*                                     暂停                                     */
             /* -------------------------------------------------------------------------- */
             {
-                touchScreenPauseButton = GameUI.AddButton(UPC.UpperRight, "ori:button.player_pause", GameUI.canvas.transform, "ori:player_pause_button");
+                touchScreenPauseButton = GameUI.AddButton(UIA.UpperRight, "ori:button.player_pause", GameUI.canvas.transform, "ori:player_pause_button");
                 touchScreenPauseButton.buttonText.gameObject.SetActive(false);
                 touchScreenPauseButton.image.rectTransform.sizeDelta = new(75, 75);
                 touchScreenPauseButton.image.rectTransform.anchoredPosition = new(-70, -75);
@@ -688,7 +690,7 @@ namespace GameCore.UI
             /*                                     合成                                     */
             /* -------------------------------------------------------------------------- */
             {
-                touchScreenCraftingButton = GameUI.AddButton(UPC.UpperRight, "ori:button.player_crafting", GameUI.canvas.transform, "ori:player_crafting_button");
+                touchScreenCraftingButton = GameUI.AddButton(UIA.UpperRight, "ori:button.player_crafting", GameUI.canvas.transform, "ori:player_crafting_button");
                 touchScreenCraftingButton.buttonText.gameObject.SetActive(false);
                 touchScreenCraftingButton.image.rectTransform.sizeDelta = new(75, 75);
                 touchScreenCraftingButton.SetAPosOnBySizeDown(touchScreenPauseButton, 20);
@@ -705,7 +707,7 @@ namespace GameCore.UI
             /*                                     任务                                     */
             /* -------------------------------------------------------------------------- */
             {
-                touchScreenShowTaskButton = GameUI.AddButton(UPC.UpperRight, "ori:button.player_show_task", GameUI.canvas.transform, "ori:player_show_task_button");
+                touchScreenShowTaskButton = GameUI.AddButton(UIA.UpperRight, "ori:button.player_show_task", GameUI.canvas.transform, "ori:player_show_task_button");
                 touchScreenShowTaskButton.buttonText.gameObject.SetActive(false);
                 touchScreenShowTaskButton.image.rectTransform.sizeDelta = new(75, 75);
                 touchScreenShowTaskButton.SetAPosOnBySizeDown(touchScreenCraftingButton, 20);
@@ -733,15 +735,15 @@ namespace GameCore.UI
                 dialogPanel.sd = Vector2.zero;
                 GameObject.Destroy(dialogPanel.buttonText.gameObject);
 
-                dialogHead = GameUI.AddImage(UPC.UpperLeft, "ori:image.dialog_head", null, dialogPanel);
+                dialogHead = GameUI.AddImage(UIA.UpperLeft, "ori:image.dialog_head", null, dialogPanel);
                 dialogHead.SetSizeDelta(160, 160);
                 dialogHead.ap = new(dialogHead.sd.x / 2, -dialogHead.sd.y / 2);
 
-                dialogNameText = GameUI.AddText(UPC.Down, "ori:text.dialog_name", dialogHead);
+                dialogNameText = GameUI.AddText(UIA.Down, "ori:text.dialog_name", dialogHead);
                 dialogNameText.SetAPosY(-dialogNameText.sd.y / 2 - 10);
                 dialogNameText.doRefresh = false;
 
-                dialogText = GameUI.AddText(UPC.Right, "ori:text.dialog", dialogHead);
+                dialogText = GameUI.AddText(UIA.Right, "ori:text.dialog", dialogHead);
                 dialogText.text.SetFontSize(28);
                 dialogText.doRefresh = false;
                 dialogText.OnUpdate += x =>
@@ -774,8 +776,8 @@ namespace GameCore.UI
                 {
                     int i = index;
                     int indexAs0 = index + quickInventorySlotCount / 2;
-                    var button = GameUI.AddButton(UPC.Down, "ori:button.item_tab_" + indexAs0, GameUI.canvas.transform, "ori:item_tab");
-                    var item = GameUI.AddImage(UPC.Down, "ori:image.item_tab_item_" + indexAs0, "ori:item_tab", button);
+                    var button = GameUI.AddButton(UIA.Down, "ori:button.item_tab_" + indexAs0, GameUI.canvas.transform, "ori:item_tab");
+                    var item = GameUI.AddImage(UIA.Down, "ori:image.item_tab_item_" + indexAs0, "ori:item_tab", button);
 
                     item.rectTransform.SetParentForUI(button.rectTransform);
                     button.rectTransform.sizeDelta = vecButtonSize;
@@ -784,8 +786,8 @@ namespace GameCore.UI
                     item.rectTransform.sizeDelta = vecButtonItemSize;
 
                     //Destroy(button.buttonText.gameObject);
-                    button.buttonText.rectTransform.anchorMin = UPC.Down;
-                    button.buttonText.rectTransform.anchorMax = UPC.Down;
+                    button.buttonText.rectTransform.anchorMin = UIA.Down;
+                    button.buttonText.rectTransform.anchorMax = UIA.Down;
                     button.buttonText.text.fontSize = buttonTextSize;
                     button.buttonText.autoCompareText = false;
                     button.buttonText.rectTransform.anchoredPosition = buttonTextAnchorPos;
@@ -821,8 +823,8 @@ namespace GameCore.UI
                 backpackMask.gameObject.SetActive(false);
                 backpackMask.OnUpdate += x => GameUI.SetUILayerToFirst(x);
 
-                backpackPanelBackground = GameUI.AddImage(UPC.Middle, "ori:image.backpack_panel_background", null, backpackMask);
-                backpackPanelBackground.SetSizeDelta(700, Player.backpackPanelHeight);
+                backpackPanelBackground = GameUI.AddImage(UIA.Middle, "ori:image.backpack_panel_background", null, backpackMask);
+                backpackPanelBackground.SetSizeDelta(backpackPanelWidth, backpackPanelHeight);
 
                 #region 物品栏
 
@@ -869,10 +871,10 @@ namespace GameCore.UI
                 inventoryLeggingUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
                 inventoryBootsUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
 
-                inventoryHelmetUI.button.SetAnchorMinMax(UPC.LowerLeft);
-                inventoryBreastplateUI.button.SetAnchorMinMax(UPC.LowerLeft);
-                inventoryLeggingUI.button.SetAnchorMinMax(UPC.LowerLeft);
-                inventoryBootsUI.button.SetAnchorMinMax(UPC.LowerLeft);
+                inventoryHelmetUI.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryBreastplateUI.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryLeggingUI.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryBootsUI.button.SetAnchorMinMax(UIA.LowerLeft);
 
                 inventoryHelmetUI.button.ap = inventoryHelmetUI.button.sd / 2;
                 inventoryBreastplateUI.button.SetAPosOnBySizeRight(inventoryHelmetUI.button, 0);
@@ -1011,11 +1013,11 @@ namespace GameCore.UI
                     int borderSize = 10;
                     int innerInterval = 3;
 
-                    ImageIdentity backgroundImage = GameUI.AddImage(UPC.Middle, "ori:image.crafting_info_shower_background", "ori:crafting_info_shower_background");
-                    ScrollViewIdentity ingredientsView = GameUI.AddScrollView(UPC.Up, "ori:scrollview.crafting_info_shower_ingredients", backgroundImage);
-                    ImageIdentity arrow = GameUI.AddImage(UPC.Up, "ori:image.crafting_info_shower_arrow", "ori:crafting_info_shower_arrow", backgroundImage);
-                    ScrollViewIdentity resultsView = GameUI.AddScrollView(UPC.Up, "ori:scrollview.crafting_info_shower_results", backgroundImage);
-                    TextIdentity maximumCraftingTimesText = GameUI.AddText(UPC.LowerRight, "ori:text.crafting_info_shower.maximum_crafting_times", backgroundImage);
+                    ImageIdentity backgroundImage = GameUI.AddImage(UIA.Middle, "ori:image.crafting_info_shower_background", "ori:crafting_info_shower_background");
+                    ScrollViewIdentity ingredientsView = GameUI.AddScrollView(UIA.Up, "ori:scrollview.crafting_info_shower_ingredients", backgroundImage);
+                    ImageIdentity arrow = GameUI.AddImage(UIA.Up, "ori:image.crafting_info_shower_arrow", "ori:crafting_info_shower_arrow", backgroundImage);
+                    ScrollViewIdentity resultsView = GameUI.AddScrollView(UIA.Up, "ori:scrollview.crafting_info_shower_results", backgroundImage);
+                    TextIdentity maximumCraftingTimesText = GameUI.AddText(UIA.LowerRight, "ori:text.crafting_info_shower.maximum_crafting_times", backgroundImage);
 
                     backgroundImage.OnUpdate += x => GameUI.SetUILayerToTop(x);
 
@@ -1056,11 +1058,11 @@ namespace GameCore.UI
 
                 pausePanel = GenerateBackpackPanel("ori:pause", "ori:switch_button.pause");
 
-                ButtonIdentity continueGame = GameUI.AddButton(UPC.Middle, "ori:button.pause_continue_game", pausePanel.panel).OnClickBind(() =>
+                ButtonIdentity continueGame = GameUI.AddButton(UIA.Middle, "ori:button.pause_continue_game", pausePanel.panel).OnClickBind(() =>
                 {
                     GameUI.SetPage(null);
                 });
-                ButtonIdentity quitGame = GameUI.AddButton(UPC.Middle, "ori:button.pause_quit_game", pausePanel.panel).OnClickBind(LeftGame);
+                ButtonIdentity quitGame = GameUI.AddButton(UIA.Middle, "ori:button.pause_quit_game", pausePanel.panel).OnClickBind(LeftGame);
 
                 continueGame.rt.AddLocalPosY(30);
                 quitGame.rt.AddLocalPosY(-30);
@@ -1070,7 +1072,7 @@ namespace GameCore.UI
                 #region 任务系统
 
                 /* -------------------------------- 生成任务完成图像 -------------------------------- */
-                taskCompleteBackground = GameUI.AddImage(UPC.UpperLeft, "ori:image.task_complete_background", "ori:task_complete");
+                taskCompleteBackground = GameUI.AddImage(UIA.UpperLeft, "ori:image.task_complete_background", "ori:task_complete");
                 taskCompleteBackground.SetSizeDelta(320, 100);
                 taskCompleteBackground.SetAPos(taskCompleteBackground.sd.x / 2, -taskCompleteBackground.sd.y / 2);
                 taskCompleteBackground.gameObject.SetActive(false);
@@ -1079,11 +1081,11 @@ namespace GameCore.UI
                     GameUI.SetUILayerToFirst(taskCompleteBackground);
                 };
 
-                taskCompleteIcon = GameUI.AddImage(UPC.Left, "ori:image.task_complete_icon", null, taskCompleteBackground);
+                taskCompleteIcon = GameUI.AddImage(UIA.Left, "ori:image.task_complete_icon", null, taskCompleteBackground);
                 taskCompleteIcon.SetSizeDelta(taskCompleteBackground.sd.y, taskCompleteBackground.sd.y);
                 taskCompleteIcon.SetAPosX(taskCompleteIcon.sd.x / 2);
 
-                taskCompleteText = GameUI.AddText(UPC.Middle, "ori:text.task_complete", taskCompleteBackground);
+                taskCompleteText = GameUI.AddText(UIA.Middle, "ori:text.task_complete", taskCompleteBackground);
                 taskCompleteText.sd = taskCompleteBackground.sd;
                 taskCompleteText.text.margin = new(taskCompleteIcon.sd.x + 5, 5, 5, 5);
                 taskCompleteText.autoCompareText = false;
@@ -1222,7 +1224,7 @@ namespace GameCore.UI
 
             #region 添加状态栏
             {
-                Vector4 posC = UPC.UpperRight;
+                Vector4 posC = UIA.UpperRight;
                 int xExtraOffset = -40;
                 int yExtraOffset = -35;
 
@@ -1260,11 +1262,11 @@ namespace GameCore.UI
 
             #region 昼夜条
             {
-                dayNightBar = GameUI.AddImage(UPC.Up, "ori:image.day_night_bar", "ori:day_night_bar");
+                dayNightBar = GameUI.AddImage(UIA.Up, "ori:image.day_night_bar", "ori:day_night_bar");
                 dayNightBar.SetSizeDelta(300, 50);
                 dayNightBar.SetAPosY(-dayNightBar.sd.y / 2 - 50);
 
-                dayNightBarPointer = GameUI.AddImage(UPC.UpperLeft, "ori:image.day_night_bar_pointer", "ori:day_night_bar_pointer", dayNightBar);
+                dayNightBarPointer = GameUI.AddImage(UIA.UpperLeft, "ori:image.day_night_bar_pointer", "ori:day_night_bar_pointer", dayNightBar);
                 dayNightBarPointer.SetSizeDelta(50, 50);
                 dayNightBarPointer.OnUpdate += i =>
                 {
@@ -1277,7 +1279,7 @@ namespace GameCore.UI
 
             #region 金币
             {
-                coinTextImage = GameUI.AddTextImage(UPC.LowerLeft, "ori:text_image.coin", "ori:coin");
+                coinTextImage = GameUI.AddTextImage(UIA.LowerLeft, "ori:text_image.coin", "ori:coin");
                 coinTextImage.SetSizeDeltaBoth(70, 70);
                 coinTextImage.ap = coinTextImage.sd / 2;
                 coinTextImage.OnUpdate += _ => coinTextImage.SetText(player.coin);
@@ -1288,9 +1290,9 @@ namespace GameCore.UI
             #region 重生
             {
                 rebornPanel = GameUI.AddPanel("ori:panel.reborn", GameUI.canvas.transform, true);
-                rebornButton = GameUI.AddButton(UPC.Middle, "ori:button.reborn", rebornPanel);
-                rebornPanelText = GameUI.AddText(UPC.Middle, "ori:text.reborn_info", rebornPanel);
-                rebornTimerText = GameUI.AddText(UPC.Middle, "ori:text.reborn_timer", rebornPanel);
+                rebornButton = GameUI.AddButton(UIA.Middle, "ori:button.reborn", rebornPanel);
+                rebornPanelText = GameUI.AddText(UIA.Middle, "ori:text.reborn_info", rebornPanel);
+                rebornTimerText = GameUI.AddText(UIA.Middle, "ori:text.reborn_timer", rebornPanel);
 
                 rebornPanelText.SetAPosY(100);
                 rebornPanelText.SetSizeDelta(500, 120);
@@ -1335,7 +1337,7 @@ namespace GameCore.UI
 
             #region 获得珍贵物品界面
 
-            gainRareItemButtonPanel = GameUI.AddButton(UPC.Middle, "ori:button.get_item", GameUI.canvas.transform, null);
+            gainRareItemButtonPanel = GameUI.AddButton(UIA.Middle, "ori:button.get_item", GameUI.canvas.transform, null);
             gainRareItemButtonPanel.SetSizeDelta(500, 200);
             gainRareItemButtonPanel.SetSprite(null);
             gainRareItemButtonPanel.SetColor(new(0.15f, 0.15f, 0.15f, 0.75f));
@@ -1351,11 +1353,11 @@ namespace GameCore.UI
             GameObject.Destroy(gainRareItemButtonPanel.buttonText.gameObject);
 
 
-            gainRareItemIcon = GameUI.AddImage(UPC.Left, "ori:image.get_item_icon", null, gainRareItemButtonPanel);
+            gainRareItemIcon = GameUI.AddImage(UIA.Left, "ori:image.get_item_icon", null, gainRareItemButtonPanel);
             gainRareItemIcon.SetAPosX(gainRareItemIcon.sd.x / 2 + 30);
 
 
-            gainRareItemNameText = GameUI.AddText(UPC.Up, "ori:text.get_item_name", gainRareItemButtonPanel);
+            gainRareItemNameText = GameUI.AddText(UIA.Up, "ori:text.get_item_name", gainRareItemButtonPanel);
             gainRareItemNameText.autoCompareText = false;
             gainRareItemNameText.SetAPos(50, -gainRareItemNameText.sd.y / 2 - 20);
             gainRareItemNameText.SetSizeDeltaY(40);
@@ -1363,7 +1365,7 @@ namespace GameCore.UI
             gainRareItemNameText.text.alignment = TMPro.TextAlignmentOptions.Left;
 
 
-            gainRareItemDescriptionText = GameUI.AddText(UPC.Up, "ori:text.get_item_description", gainRareItemButtonPanel);
+            gainRareItemDescriptionText = GameUI.AddText(UIA.Up, "ori:text.get_item_description", gainRareItemButtonPanel);
             gainRareItemDescriptionText.autoCompareText = false;
             gainRareItemDescriptionText.SetAPosOnBySizeDown(gainRareItemNameText, 3);
             gainRareItemDescriptionText.text.SetFontSize(14);
@@ -1423,22 +1425,12 @@ namespace GameCore.UI
             /* -------------------------------------------------------------------------- */
 
             /* ---------------------------------- 按钮显示 ---------------------------------- */
-            var switchButtonBackground = GameUI.AddImage(UPC.UpperLeft, $"{modId}:image.{panelName}_switch_background", "ori:backpack_panel_switch_button", backpackPanelBackground);
-            switchButtonBackground.sd = new(50, 50);
-
-            float signImageBackgroundX = switchButtonBackground.sd.x / 2;
-            foreach (var item in backpackPanels)
-            {
-                signImageBackgroundX += switchButtonBackground.sd.x + 15;
-            }
-            switchButtonBackground.SetAPos(signImageBackgroundX, switchButtonBackground.sd.y / 2);
-
-
-
-
-            var switchButton = GameUI.AddButton(UPC.Middle, $"{modId}:button.{panelName}_switch", switchButtonBackground, switchButtonTexture);
-            switchButton.sd = switchButtonBackground.sd;
-            GameObject.Destroy(switchButton.buttonText.gameObject);
+            (var switchButtonBackground, var switchButton) = GameUI.GenerateSidebarSwitchButton(
+                $"{modId}:image.{panelName}_switch_background",
+                $"{modId}:button.{panelName}_switch",
+                switchButtonTexture,
+                backpackPanelBackground,
+                backpackPanels.Count);
 
             /* ---------------------------------- 按钮功能 ---------------------------------- */
             switchButton.OnClickBind(() => SetBackpackPanel(id));
@@ -1598,7 +1590,7 @@ namespace GameCore.UI
             var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, texture);
             var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
             view.transform.SetParent(panel.panel.rt, false);
-            view.SetAnchorMinMax(UPC.StretchDouble);
+            view.SetAnchorMinMax(UIA.StretchDouble);
             view.content.anchoredPosition = Vector2.zero;
             view.content.sizeDelta = Vector2.zero;
             Component.Destroy(view.viewportImage);
@@ -1609,7 +1601,7 @@ namespace GameCore.UI
         public ScrollViewIdentity GenerateItemScrollView(string id, float cellSize, Vector2 viewSize, Vector2 cellSpacing, string backgroundTexture)
         {
             //桶的物品视图
-            var itemView = GameUI.AddScrollView(UPC.Middle, id);
+            var itemView = GameUI.AddScrollView(UIA.Middle, id);
             itemView.SetSizeDelta(viewSize);
             itemView.viewportImage.sprite = backgroundTexture == null ? null : ModFactory.CompareTexture(backgroundTexture).sprite;
 
@@ -2034,7 +2026,7 @@ namespace GameCore.UI
         {
             if (uiInstance == null || !uiInstance.image)
             {
-                ImageIdentity image = GameUI.AddImage(UPC.Middle, "ori:image.item_dragger", "ori:square_button_flat");
+                ImageIdentity image = GameUI.AddImage(UIA.Middle, "ori:image.item_dragger", "ori:square_button_flat");
                 image.OnUpdate += i =>
                 {
                     i.ap = GControls.cursorPosInMainCanvas;

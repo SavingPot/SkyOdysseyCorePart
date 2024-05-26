@@ -266,7 +266,7 @@ namespace GameCore
                 Destroy(nameText.gameObject);
 
             //初始化新的 nameText
-            nameText = GameUI.AddText(UPC.Middle, "ori:player_name_" + newValue, playerCanvas);
+            nameText = GameUI.AddText(UIA.Middle, "ori:player_name_" + newValue, playerCanvas);
             nameText.rectTransform.AddLocalPosY(30f);
             nameText.text.SetFontSize(7);
             nameText.text.text = newValue;
@@ -460,7 +460,6 @@ namespace GameCore
         [ReadOnly]
         public TextIdentity nameText;
 
-        public static int backpackPanelHeight = 450;
 
 
 
@@ -572,7 +571,7 @@ namespace GameCore
                     canvas.sortingOrder = 101;
                     canvas.transform.localScale = new(1 / scale, 1 / scale, 0);
 
-                    var textImage = GameUI.AddTextImage(UPC.Middle, $"ori:text_image.unlocked_region_color.{Tools.randomGUID}", "ori:coin", canvas.transform);
+                    var textImage = GameUI.AddTextImage(UIA.Middle, $"ori:text_image.unlocked_region_color.{Tools.randomGUID}", "ori:coin", canvas.transform);
                     textImage.SetSizeDeltaBoth(50, 50);
                     textImage.SetTextAttach(TextImageIdentity.TextAttach.Right);
                     textImage.text.doRefresh = false;

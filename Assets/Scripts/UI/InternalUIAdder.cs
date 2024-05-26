@@ -149,7 +149,7 @@ namespace GameCore.UI
 
             #region 状态文本
             {
-                statusText = GameUI.AddText(UPC.Down, "ori:text.player_status");
+                statusText = GameUI.AddText(UIA.Down, "ori:text.player_status");
                 statusText.SetAPosY(80);
                 statusText.SetSizeDeltaY(40);
                 statusText.text.SetFontSize(18);
@@ -174,7 +174,7 @@ namespace GameCore.UI
                             panel.panelImage.color = Tools.HexToColor("#070714");
 
                             var (barBg, barFull, mascotImage, progressText) = GameUI.GenerateLoadingBar(
-                                            UPC.StretchBottom,
+                                            UIA.StretchBottom,
                                             "ori:image.mod_loading_bar_bg",
                                             "ori:image.mod_loading_bar_full",
                                             "ori:image.mod_loading_bar_mascot",
@@ -207,7 +207,7 @@ namespace GameCore.UI
                             barBg.SetAPosY(barBg.sd.y / 2);
                             progressText.SetSizeDelta(400, 30);
 
-                            var houseImage = GameUI.AddImage(UPC.Middle, "ori:image.loading_house", "ori:loading_house_0", panel);
+                            var houseImage = GameUI.AddImage(UIA.Middle, "ori:image.loading_house", "ori:loading_house_0", panel);
                             houseImage.SetSizeDelta(300, 300);
                             houseImage.SetAPos(0, 75);
 
@@ -277,7 +277,7 @@ namespace GameCore.UI
                         #endregion
 
                         #region 游戏信息
-                        var gameInfoText = GameUI.AddText(UPC.LowerRight, "ori:text.game_info");
+                        var gameInfoText = GameUI.AddText(UIA.LowerRight, "ori:text.game_info");
                         gameInfoText.SetSizeDelta(350, 200);
                         gameInfoText.SetAPos(-gameInfoText.sd.x / 2, gameInfoText.sd.y / 2);
                         gameInfoText.text.SetFontSize(16);
@@ -309,10 +309,10 @@ namespace GameCore.UI
                         /* -------------------------------------------------------------------------- */
                         /*                                    First                                   */
                         /* -------------------------------------------------------------------------- */
-                        GameUI.AddButton(UPC.Middle, "ori:button.choose_world_panel", firstPanel).OnClickBind(() => GameUI.SetPage(chooseWorldPanel)).rt.AddLocalPosY(10);
-                        GameUI.AddButton(UPC.Middle, "ori:button.join_game_panel", firstPanel).OnClickBind(() => GameUI.SetPage(joinGamePanel)).rt.AddLocalPosY(-50);
-                        GameUI.AddButton(UPC.Middle, "ori:button.settings_panel", firstPanel).OnClickBind(() => GameUI.SetPage(settingsPanel)).rt.AddLocalPosY(-110);
-                        GameUI.AddButton(UPC.Down, "ori:button.quit_game", firstPanel).OnClickBind(() => { GInit.Quit(); }).AddAPosY(50);
+                        GameUI.AddButton(UIA.Middle, "ori:button.choose_world_panel", firstPanel).OnClickBind(() => GameUI.SetPage(chooseWorldPanel)).rt.AddLocalPosY(10);
+                        GameUI.AddButton(UIA.Middle, "ori:button.join_game_panel", firstPanel).OnClickBind(() => GameUI.SetPage(joinGamePanel)).rt.AddLocalPosY(-50);
+                        GameUI.AddButton(UIA.Middle, "ori:button.settings_panel", firstPanel).OnClickBind(() => GameUI.SetPage(settingsPanel)).rt.AddLocalPosY(-110);
+                        GameUI.AddButton(UIA.Down, "ori:button.quit_game", firstPanel).OnClickBind(() => { GInit.Quit(); }).AddAPosY(50);
 
                         /* -------------------------------------------------------------------------- */
                         /*                                  JoinGame                                  */
@@ -339,7 +339,7 @@ namespace GameCore.UI
                             Tools.stringBuilderPool.Recover(builder);
                         });
 
-                        var lanServersShow = GameUI.AddScrollView(UPC.Middle, "ori:sv.LANServers_show", joinGamePanel);
+                        var lanServersShow = GameUI.AddScrollView(UIA.Middle, "ori:sv.LANServers_show", joinGamePanel);
                         GameUI.AddButton(new(0.5f, 0.43f, 0.5f, 0.43f), "ori:button.refresh_LANServers", joinGamePanel).OnClickBind(() =>
                         {
                             ManagerNetwork.instance.discovery.StopDiscovery();
@@ -356,7 +356,7 @@ namespace GameCore.UI
                                 string targetIP = $"{sr.EndPoint.Address}:{Tools.defaultPort}";
                                 string text = $"{sr.worldName}[{sr.version}]\n({targetIP})";
 
-                                var lanServerButton = GameUI.AddButton(UPC.Middle, $"ori:button.LANServers_show.{sr.serverId}");
+                                var lanServerButton = GameUI.AddButton(UIA.Middle, $"ori:button.LANServers_show.{sr.serverId}");
                                 lanServerButton.OnClickBind(() => joinIPField.field.text = targetIP);
                                 lanServerButton.buttonText.AfterRefreshing += t => t.text.text = text;
                                 lanServerButton.buttonText.text.SetFontSize(16);
@@ -389,25 +389,25 @@ namespace GameCore.UI
                         /* -------------------------------------------------------------------------- */
                         /*                                 ChooseWorld                                */
                         /* -------------------------------------------------------------------------- */
-                        var chooseWorldScrollView = GameUI.AddScrollView(UPC.Middle, "ori:scrollview.choose_world", chooseWorldPanel);
+                        var chooseWorldScrollView = GameUI.AddScrollView(UIA.Middle, "ori:scrollview.choose_world", chooseWorldPanel);
 
                         RefreshWorldFiles();
                         RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
 
-                        GameUI.AddButton(UPC.Middle, "ori:button.to_create_world", chooseWorldPanel).OnClickBind(() =>
+                        GameUI.AddButton(UIA.Middle, "ori:button.to_create_world", chooseWorldPanel).OnClickBind(() =>
                         {
                             GameUI.SetPage(createWorldPanel);
                         }).rt.AddLocalPosY(-(chooseWorldScrollView.rt.sizeDelta.y / 2) - 25);
 
                         /* ------------------------------- CreateWorld ------------------------------ */
-                        var worldNameField = GameUI.AddInputField(UPC.Middle, "ori:inputfield.create_new_world_world_name", createWorldPanel);
-                        var worldSeedField = GameUI.AddInputField(UPC.Middle, "ori:inputfield.create_new_world_world_seed", createWorldPanel);
+                        var worldNameField = GameUI.AddInputField(UIA.Middle, "ori:inputfield.create_new_world_world_name", createWorldPanel);
+                        var worldSeedField = GameUI.AddInputField(UIA.Middle, "ori:inputfield.create_new_world_world_seed", createWorldPanel);
                         worldSeedField.SetAPosOnBySizeDown(worldNameField, 15);
                         worldSeedField.lockType = InputFieldIdentity.LockType.IntNumber;
                         worldSeedField.field.text = Tools.randomInt.ToString();
                         //TODO: World view fix
 
-                        ButtonIdentity create = GameUI.AddButton(UPC.Middle, "ori:button.create_new_world", createWorldPanel).OnClickBind(() =>
+                        ButtonIdentity create = GameUI.AddButton(UIA.Middle, "ori:button.create_new_world", createWorldPanel).OnClickBind(() =>
                         {
                             if (worldNameField.field.text.IsNullOrWhiteSpace())
                             {
@@ -439,7 +439,7 @@ namespace GameCore.UI
                         });
                         create.SetAPosOnBySizeDown(worldSeedField, 50);
 
-                        ButtonIdentity cancel = GameUI.AddButton(UPC.Middle, "ori:button.create_new_world_cancel", createWorldPanel).OnClickBind(() =>
+                        ButtonIdentity cancel = GameUI.AddButton(UIA.Middle, "ori:button.create_new_world_cancel", createWorldPanel).OnClickBind(() =>
                         {
                             GameUI.SetPage(chooseWorldPanel);
                         });
@@ -449,12 +449,12 @@ namespace GameCore.UI
                         worldConfigPanel = GameUI.AddPanel("ori:panel.delete_world", GameUI.canvasRT, true);
                         string pathToDelete = string.Empty;
 
-                        ButtonIdentity worldConfigPanel_back = GameUI.AddButton(UPC.Down, "ori:button.worldConfigPanel_back", worldConfigPanel).OnClickBind(() =>
+                        ButtonIdentity worldConfigPanel_back = GameUI.AddButton(UIA.Down, "ori:button.worldConfigPanel_back", worldConfigPanel).OnClickBind(() =>
                         {
                             GameUI.SetPage(chooseWorldPanel);
                         });
                         worldConfigPanel_back.SetAPosY(worldConfigPanel_back.sd.y / 2 + 30);
-                        ButtonIdentity deleteWorld = GameUI.AddButton(UPC.Middle, "ori:button.delete_world", worldConfigPanel).OnClickBind(() =>
+                        ButtonIdentity deleteWorld = GameUI.AddButton(UIA.Middle, "ori:button.delete_world", worldConfigPanel).OnClickBind(() =>
                         {
                             //删除世界
                             IOTools.DeleteDir(pathToDelete);
@@ -496,7 +496,7 @@ namespace GameCore.UI
                         GameUI.AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings_to_first", settingsPanel).OnClickBind(() => GameUI.SetPage(firstPanel));
 
                         /* -------------------------------- 玩家名称设置 -------------------------------- */
-                        var playerNameField = GameUI.AddInputField(UPC.Middle, "ori:field.settings.playerName", settingsPanel);
+                        var playerNameField = GameUI.AddInputField(UIA.Middle, "ori:field.settings.playerName", settingsPanel);
                         playerNameField.field.text = GFiles.settings.playerName;
                         playerNameField.field.characterLimit = 20;
                         playerNameField.OnUpdate += x => x.field.placeholder.enabled = true;
@@ -529,8 +529,8 @@ namespace GameCore.UI
                         });
 
                         /* ----------------------------------- 玩家皮肤 ----------------------------------- */
-                        var playerSkinSetButton = GameUI.AddButton(UPC.Middle, "ori:button.settings.playerSkinName", settingsPanel).OnClickBind(() => GameUI.SetPage(setPlayerSkinNamePanel));
-                        var svPlayerSkinNames = GameUI.AddScrollView(UPC.Middle, "ori:sv.playerSkinNames", setPlayerSkinNamePanel);
+                        var playerSkinSetButton = GameUI.AddButton(UIA.Middle, "ori:button.settings.playerSkinName", settingsPanel).OnClickBind(() => GameUI.SetPage(setPlayerSkinNamePanel));
+                        var svPlayerSkinNames = GameUI.AddScrollView(UIA.Middle, "ori:sv.playerSkinNames", setPlayerSkinNamePanel);
                         GameUI.AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.playerSkinName.back", setPlayerSkinNamePanel).OnClickBind(() => GameUI.SetPage(settingsPanel));
                         playerSkinSetButton.SetAPosOnBySizeUp(playerNameField, 35);
                         foreach (var path in IOTools.GetFoldersInFolder(GInit.playerSkinPath, true))
@@ -538,7 +538,7 @@ namespace GameCore.UI
                             PlayerSkin data = new(path);
                             data.Modify();
 
-                            var b = GameUI.AddButton(UPC.Middle, $"ori:button.playerSkinNames.{path}");
+                            var b = GameUI.AddButton(UIA.Middle, $"ori:button.playerSkinNames.{path}");
                             b.buttonText.autoCompareText = false;
                             b.buttonText.text.text = data.name;
                             b.OnClickBind(() =>
@@ -558,13 +558,13 @@ namespace GameCore.UI
                         }
 
                         /* ----------------------------------- 语言 ----------------------------------- */
-                        var languageSetButton = GameUI.AddButton(UPC.Middle, "ori:button.settings.language", settingsPanel).OnClickBind(() => GameUI.SetPage(setLanguagePanel));
-                        var svLanguages = GameUI.AddScrollView(UPC.Middle, "ori:sv.languages", setLanguagePanel);
+                        var languageSetButton = GameUI.AddButton(UIA.Middle, "ori:button.settings.language", settingsPanel).OnClickBind(() => GameUI.SetPage(setLanguagePanel));
+                        var svLanguages = GameUI.AddScrollView(UIA.Middle, "ori:sv.languages", setLanguagePanel);
                         GameUI.AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.language.back", setLanguagePanel).OnClickBind(() => GameUI.SetPage(settingsPanel));
                         languageSetButton.SetAPosOnBySizeUp(playerSkinSetButton, 20);
                         foreach (var data in ModFactory.finalTextData)
                         {
-                            var b = GameUI.AddButton(UPC.Middle, $"ori:button.languages.{data.id}");
+                            var b = GameUI.AddButton(UIA.Middle, $"ori:button.languages.{data.id}");
                             b.buttonText.autoCompareText = false;
                             b.buttonText.text.text = data.textName.IsNullOrWhiteSpace() ? data.id : data.textName;
                             b.OnClickBind(() =>
@@ -592,15 +592,15 @@ namespace GameCore.UI
 
                         /* ---------------------------------- 控制设置 ---------------------------------- */
                         var controlsPanel = GameUI.AddPanel("ori:panel.settings.controls", GameUI.canvas.transform, true);
-                        var controlsSetButton = GameUI.AddButton(UPC.Middle, "ori:button.settings.controls", settingsPanel).OnClickBind(() => GameUI.SetPage(controlsPanel));
+                        var controlsSetButton = GameUI.AddButton(UIA.Middle, "ori:button.settings.controls", settingsPanel).OnClickBind(() => GameUI.SetPage(controlsPanel));
                         GameUI.AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.controls.back", controlsPanel).OnClickBind(() => GameUI.SetPage(settingsPanel));
                         controlsSetButton.SetAPosOnBySizeDown(playerNameField, 20);
 
                         /* -------------------------------- 玩家光标速度设置 -------------------------------- */
-                        ImageIdentity playerCursorSpeedBackground = GameUI.AddImage(UPC.Middle, "ori:image.settings.playerCursorSpeed_background", "ori:clear_button", controlsPanel);
+                        ImageIdentity playerCursorSpeedBackground = GameUI.AddImage(UIA.Middle, "ori:image.settings.playerCursorSpeed_background", "ori:clear_button", controlsPanel);
                         playerCursorSpeedBackground.sd = new(languageSetButton.sd.x, 64);
 
-                        var playerCursorSpeedSlider = GameUI.AddSlider(UPC.Middle, "ori:slider.settings.playerCursorSpeed", playerCursorSpeedBackground);
+                        var playerCursorSpeedSlider = GameUI.AddSlider(UIA.Middle, "ori:slider.settings.playerCursorSpeed", playerCursorSpeedBackground);
                         playerCursorSpeedSlider.SetAPosY(-10);
                         playerCursorSpeedSlider.slider.minValue = 1f;
                         playerCursorSpeedSlider.slider.maxValue = 50f;
@@ -625,7 +625,7 @@ namespace GameCore.UI
 
                         /* ----------------------------------- 音量 ----------------------------------- */
                         var soundPanel = GameUI.AddPanel("ori:panel.settings.sound", GameUI.canvas.transform, true);
-                        var volumeSetButton = GameUI.AddButton(UPC.Middle, "ori:button.settings.sound", settingsPanel).OnClickBind(() => GameUI.SetPage(soundPanel));
+                        var volumeSetButton = GameUI.AddButton(UIA.Middle, "ori:button.settings.sound", settingsPanel).OnClickBind(() => GameUI.SetPage(soundPanel));
                         GameUI.AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.sound.back", soundPanel).OnClickBind(() => GameUI.SetPage(settingsPanel));
                         volumeSetButton.SetAPosOnBySizeDown(controlsSetButton, 20);
 
@@ -639,7 +639,7 @@ namespace GameCore.UI
 
                         void SetVolumeSlider(string id, string bgId, Func<int?, float> setter)
                         {
-                            ImageIdentity bg = GameUI.AddImage(UPC.Middle, bgId, "ori:clear_button", soundPanel);
+                            ImageIdentity bg = GameUI.AddImage(UIA.Middle, bgId, "ori:clear_button", soundPanel);
                             bg.sd = new(languageSetButton.sd.x, 64);
                             bg.ap = new(0, 0.5f * bg.sd.y);
 
@@ -649,7 +649,7 @@ namespace GameCore.UI
                                 sliderBgs[^1].SetAPosOnBySizeUp(bg, sliderBgs[^1].sd.y / 2);
                             }
 
-                            var slider = GameUI.AddSlider(UPC.Middle, id, bg);
+                            var slider = GameUI.AddSlider(UIA.Middle, id, bg);
                             slider.text.text.enableAutoSizing = true;
                             slider.SetAPosY(-10);
                             slider.slider.minValue = -80f;
@@ -674,15 +674,15 @@ namespace GameCore.UI
                         /*                                  ModView                                  */
                         /* -------------------------------------------------------------------------- */
                         {
-                            ButtonIdentity showButton = GameUI.AddButton(UPC.LowerLeft, "ori:button.mod_view_panel", firstPanel).OnClickBind(() => GameUI.SetPage(modViewPanel));
+                            ButtonIdentity showButton = GameUI.AddButton(UIA.LowerLeft, "ori:button.mod_view_panel", firstPanel).OnClickBind(() => GameUI.SetPage(modViewPanel));
                             showButton.rt.anchoredPosition = new(showButton.image.sprite.texture.width + 5, showButton.image.sprite.texture.height + 10);
 
                             GameUI.AddButton(new(0.5f, 0.1f, 0.5f, 0.1f), "ori:button.mod_view_to_first", modViewPanel).OnClickBind(() => GameUI.SetPage(firstPanel));
 
-                            modScrollView = GameUI.AddScrollView(UPC.Middle, "ori:scrollview.mod_view", modViewPanel);
+                            modScrollView = GameUI.AddScrollView(UIA.Middle, "ori:scrollview.mod_view", modViewPanel);
                             modScrollView.gridLayoutGroup.spacing = new(0, 5);
 
-                            var openSourceButton = GameUI.AddButton(UPC.Middle, "ori:button.mod_open_source", modViewPanel);
+                            var openSourceButton = GameUI.AddButton(UIA.Middle, "ori:button.mod_open_source", modViewPanel);
                             openSourceButton.SetAPosOnBySizeDown(modScrollView, 10);
                             openSourceButton.OnClickBind(() =>
                             {
@@ -708,7 +708,7 @@ namespace GameCore.UI
 
 
                             modConfiguringPanel = GameUI.AddPanel("ori:panel.mod_view.mod_config", GameUI.canvasRT, true);
-                            ButtonIdentity modConfiguringPanel_ActivityButton = GameUI.AddButton(UPC.Middle, "ori:button.mod_view.mod_config.activity", modConfiguringPanel).OnClickBind(() =>
+                            ButtonIdentity modConfiguringPanel_ActivityButton = GameUI.AddButton(UIA.Middle, "ori:button.mod_view.mod_config.activity", modConfiguringPanel).OnClickBind(() =>
                             {
                                 configuringModDir.info.jo["ori:mod_info"]["enabled"] = !configuringModDir.info.enabled;
                                 File.WriteAllText(configuringModDir.path, configuringModDir.info.jo.ToString());
@@ -810,7 +810,7 @@ namespace GameCore.UI
                 Vector2Int delBtnSize = new(40, 40);
 
                 Transform t = chooseWorldScrollView.transform.parent;
-                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.Middle, "ori:itb.choose_world_" + worldName + "_" + i).OnClickBind(() => MethodAgent.DebugRun(() =>
+                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UIA.Middle, "ori:itb.choose_world_" + worldName + "_" + i).OnClickBind(() => MethodAgent.DebugRun(() =>
                 {
                     GameUI.Disappear(t.gameObject);
 
@@ -818,7 +818,7 @@ namespace GameCore.UI
                     GM.StartGameHost(worldPath, () => GTime.time = GFiles.world.basicData.time);
                 }));
 
-                var configButton = GameUI.AddButton(UPC.LowerRight, "ori:button.config_world_" + worldPath, lb, "ori:square_button");
+                var configButton = GameUI.AddButton(UIA.LowerRight, "ori:button.config_world_" + worldPath, lb, "ori:square_button");
                 configButton.rt.SetParent(lb.rt);
                 string str = GameUI.CompareText("ori:button.config_world.text").text;
                 configButton.buttonText.AfterRefreshing += tc => tc.text.text = str;
@@ -861,7 +861,7 @@ namespace GameCore.UI
                 int i = index;
                 var dir = modDirs[i];
 
-                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UPC.Middle, "ori:button.edit_mod_" + dir.info.id).OnClickBind(() => MethodAgent.DebugRun(() =>
+                ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UIA.Middle, "ori:button.edit_mod_" + dir.info.id).OnClickBind(() => MethodAgent.DebugRun(() =>
                 {
                     configuringModDir = dir;
                     GameUI.SetPage(modConfiguringPanel);

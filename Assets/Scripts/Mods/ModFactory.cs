@@ -862,18 +862,18 @@ namespace GameCore
                 LoadModSubitem(cookingRecipesPath, newMod.cookingRecipes, path => ModLoading.LoadCookingRecipe(path));
 
                 #region 加载脚本 (Dll)
-                List<ImportType> importTypesTemp = new();
+                List<ImportedType> importTypesTemp = new();
                 if (Directory.Exists(scriptsPath))
                 {
                     string[] dllPaths = IOTools.GetFilesInFolder(scriptsPath, true, "dll");
 
 
 
-                    static void LoadDLLInternal(Type[] types, string dllPath, List<ImportType> importTypes)
+                    static void LoadDLLInternal(Type[] types, string dllPath, List<ImportedType> importTypes)
                     {
                         foreach (Type typeInEach in types)
                         {
-                            ImportType newTypeData = new()
+                            ImportedType newTypeData = new()
                             {
                                 type = typeInEach,
                                 dllPath = dllPath
@@ -903,7 +903,7 @@ namespace GameCore
                         LoadDLLInternal(Tools.coreAssembly.GetTypes(), string.Empty, importTypesTemp);
                     }
                 }
-                newMod.importTypes = importTypesTemp.ToArray();
+                newMod.importedTypes = importTypesTemp.ToArray();
                 #endregion
 
                 #region 加载实体
@@ -1012,7 +1012,7 @@ namespace GameCore
         public static void GetModEntry(Mod mod)
         {
             //遍历加载的所有 Type
-            foreach (ImportType importType in mod.importTypes)
+            foreach (ImportedType importType in mod.importedTypes)
             {
                 //如果不为空并继承自 ModEntry 就执行指定方法
                 if (importType.type != null && importType.type.IsSubclassOf(typeof(ModEntry)))
@@ -1027,7 +1027,7 @@ namespace GameCore
         {
             foreach (Mod mod in mods)
             {
-                foreach (ImportType importType in mod.importTypes)
+                foreach (ImportedType importType in mod.importedTypes)
                 {
                     //如果检测到 EntityBindingAttribute
                     if (AttributeGetter.TryGetAttribute(importType.type, out EntityBindingAttribute attribute))
@@ -1059,7 +1059,7 @@ namespace GameCore
         {
             foreach (Mod mod in mods)
             {
-                foreach (ImportType type in mod.importTypes)
+                foreach (ImportedType type in mod.importedTypes)
                 {
                     if (type.type.IsSubclassOf(typeof(ItemBehaviour)) &&
                         AttributeGetter.TryGetAttribute<ItemBindingAttribute>(type.type, out var attribute) &&
@@ -1078,7 +1078,7 @@ namespace GameCore
         {
             foreach (Mod mod in mods)
             {
-                foreach (ImportType type in mod.importTypes)
+                foreach (ImportedType type in mod.importedTypes)
                 {
                     if (type.type.IsSubclassOf(typeof(SpellBehaviour)) &&
                         AttributeGetter.TryGetAttribute<SpellBindingAttribute>(type.type, out var attribute) &&
@@ -1093,20 +1093,31 @@ namespace GameCore
             spell.behaviourType = typeof(SpellBehaviour);
         }
 
-        //TODO: To be like Item
         static void GetBlockBehaviour(BlockData block)
         {
+            if (block.behaviourName.IsNullOrWhiteSpace())
+                return;
+
             foreach (Mod mod in mods)
             {
-                foreach (ImportType type in mod.importTypes)
+                foreach (ImportedType type in mod.importedTypes)
                 {
-                    if (type.type.FullName == block.behaviourName && type.type.IsSubclassOf(typeof(Block)))
+                    if (type.type.FullName != block.behaviourName)
+                        continue;
+
+                    if (type.type.IsSubclassOf(typeof(Block)))
                     {
                         block.behaviourType = type.type;
                         return;
                     }
+                    else
+                    {
+                        Debug.LogError($"方块 {block.id} 所绑定的行为类 {block.behaviourName} 不继承于 {nameof(Block)}");
+                    }
                 }
             }
+
+            Debug.LogError($"方块 {block.id} 所绑定的行为包 {block.behaviourName} 无法找到");
         }
 
         public static void ReconfigureMod(ref Mod mod)
@@ -1209,12 +1220,12 @@ namespace GameCore
                 biome.blocks = blocksTemp.ToArray();
             }
 
-            for (int i = 0; i < mod.blocks.Count; i++)
+            foreach (var block in mod.blocks)
             {
-                mod.blocks[i].defaultTexture = ModFactory.CompareTexture(mod.blocks[i].defaultTexture.id);
+                block.defaultTexture = CompareTexture(block.defaultTexture.id);
 
-                mod.blocks[i].behaviourType = null;
-                GetBlockBehaviour(mod.blocks[i]);
+                block.behaviourType = null;
+                GetBlockBehaviour(block);
             }
 
             //调用 ModEntry 的 OnModReconfigured
@@ -1333,7 +1344,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public struct ImportType
+    public struct ImportedType
     {
         [JsonIgnore] public Type type;
         [JsonIgnore, LabelText("Dll路径")] public string dllPath;

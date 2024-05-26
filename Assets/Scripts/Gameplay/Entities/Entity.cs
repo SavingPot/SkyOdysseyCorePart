@@ -507,11 +507,27 @@ namespace GameCore
             }
         }
 
+        protected virtual void OnTriggerEnter2D(Collider2D other)
+        {
+            if (Block.TryGetBlockFromCollider(other, out Block block))
+            {
+                block.OnEntityEnter(this);
+            }
+        }
+
         protected virtual void OnTriggerStay2D(Collider2D other)
         {
             if (Block.TryGetBlockFromCollider(other, out Block block))
             {
                 block.OnEntityStay(this);
+            }
+        }
+
+        protected virtual void OnTriggerExit2D(Collider2D other)
+        {
+            if (Block.TryGetBlockFromCollider(other, out Block block))
+            {
+                block.OnEntityExit(this);
             }
         }
 

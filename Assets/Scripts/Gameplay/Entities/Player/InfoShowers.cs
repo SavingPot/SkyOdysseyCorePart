@@ -82,9 +82,9 @@ namespace GameCore.UI
             int borderSize = 5;
             int detailTextFontSize = 15;
 
-            backgroundImage = GameUI.AddImage(UPC.Middle, "ori:image.item_info_shower", "ori:item_info_shower");
-            nameText = GameUI.AddText(UPC.UpperLeft, "ori:text.item_info_shower.name", backgroundImage);
-            detailText = GameUI.AddText(UPC.UpperLeft, "ori:text.item_info_shower.detail", backgroundImage);
+            backgroundImage = GameUI.AddImage(UIA.Middle, "ori:image.item_info_shower", "ori:item_info_shower");
+            nameText = GameUI.AddText(UIA.UpperLeft, "ori:text.item_info_shower.name", backgroundImage);
+            detailText = GameUI.AddText(UIA.UpperLeft, "ori:text.item_info_shower.detail", backgroundImage);
 
             backgroundImage.OnUpdate += x => GameUI.SetUILayerToTop(x);
 
@@ -198,9 +198,9 @@ namespace GameCore.UI
                     Item itemGot = player.inventory.GetItem(ingredient.Key);
 
                     //图标
-                    var ingredientsBackground = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.ingredients_background_{recipe.id}", "ori:item_tab");
-                    var ingredientsIcon = GameUI.AddImage(UPC.Middle, $"ori:button.crafting_info_shower.ingredients_{ingredient.Key}", null, ingredientsBackground);
-                    var ingredientsText = GameUI.AddText(UPC.Middle, $"ori:text.crafting_info_shower.ingredients_{recipe.id}", ingredientsBackground);
+                    var ingredientsBackground = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.ingredients_background_{recipe.id}", "ori:item_tab");
+                    var ingredientsIcon = GameUI.AddImage(UIA.Middle, $"ori:button.crafting_info_shower.ingredients_{ingredient.Key}", null, ingredientsBackground);
+                    var ingredientsText = GameUI.AddText(UIA.Middle, $"ori:text.crafting_info_shower.ingredients_{recipe.id}", ingredientsBackground);
 
                     ingredientsIcon.SetSizeDelta(ingredientsView.gridLayoutGroup.cellSize);
                     ingredientsIcon.image.sprite = Item.Null(itemGot) ? null : itemGot.data.texture.sprite;
@@ -220,9 +220,9 @@ namespace GameCore.UI
             //显示结果
             resultsView.Clear();
 
-            var iconBackground = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.result_background_{recipe.id}", "ori:item_tab");
-            var icon = GameUI.AddImage(UPC.Middle, $"ori:image.crafting_info_shower.result_{recipe.id}", "ori:item_tab", iconBackground);
-            var iconText = GameUI.AddText(UPC.Middle, $"ori:text.crafting_info_shower.result_{recipe.id}", iconBackground);
+            var iconBackground = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.result_background_{recipe.id}", "ori:item_tab");
+            var icon = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.result_{recipe.id}", "ori:item_tab", iconBackground);
+            var iconText = GameUI.AddText(UIA.Middle, $"ori:text.crafting_info_shower.result_{recipe.id}", iconBackground);
 
             icon.SetSizeDelta(resultsView.gridLayoutGroup.cellSize);
             icon.image.sprite = ModFactory.CompareItem(recipe.result.id).texture.sprite;
