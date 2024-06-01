@@ -33,6 +33,7 @@ namespace GameCore
         public DamageTextPool damageTextPool = new();
 
         public ParticleSystem weatherParticle { get; protected set; }
+        public ParticleSystem.MainModule weatherParticleMain;
         public ParticleSystem.EmissionModule weatherParticleEmission;
         public Volume globalVolume { get; protected set; }
         public Light2D globalLight { get; protected set; }
@@ -189,7 +190,17 @@ namespace GameCore
             if (glP)
             {
                 weatherParticle = glP.GetComponent<ParticleSystem>();
+                weatherParticleMain = weatherParticle.main;
                 weatherParticleEmission = weatherParticle.emission;
+
+                //编辑粒子动画
+                weatherParticle.textureSheetAnimation.Clear();
+                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_0").sprite);
+                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_1").sprite);
+                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_2").sprite);
+                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_3").sprite);
+                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_4").sprite);
+                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_5").sprite);
             }
 
             /* -------------------------------------------------------------------------- */
@@ -200,40 +211,51 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    设置天气                                    */
             /* -------------------------------------------------------------------------- */
-            weatherParticle.textureSheetAnimation.Clear();
+            SetGlobalVolumeBloomToSunny();
+            SetGlobalVolumeColorAdjustmentsToSunny();
 
-            AddWeather("ori:sunny", () =>
+
+            //晴朗
+            AddWeather("ori:sunny", null, null);
+
+            //酸雨
+            AddWeather("ori:acid_rain", () =>
             {
-                if (globalVolume.profile.TryGet(out Bloom bloom))
-                {
-                    bloom.active = true;
-                    bloom.threshold.Override(0.95f);
-                    bloom.intensity.Override(0.5f);
-                }
-            }, null);
+                GAudio.Play(AudioID.Rain, true);
 
+                //开始发射
+                weatherParticleMain.startColor = Color.green;
+                weatherParticleEmission.enabled = true;
+
+                //设置模糊效果
+                SetGlobalVolumeBloomToRain();
+                SetGlobalVolumeColorAdjustmentsToAcidRain();
+            }, () =>
+            {
+                weatherParticleMain.startColor = Color.white;
+
+                //禁用发射
+                weatherParticleEmission.enabled = false;
+
+                //停止所有音效
+                GAudio.Stop(AudioID.Rain);
+
+                //设置模糊效果
+                SetGlobalVolumeBloomToSunny();
+                SetGlobalVolumeColorAdjustmentsToSunny();
+            });
+
+            //雨天
             AddWeather("ori:rain", () =>
             {
-                //编辑粒子动画
-                weatherParticle.textureSheetAnimation.Clear();
-                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_0").sprite);
-                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_1").sprite);
-                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_2").sprite);
-                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_3").sprite);
-                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_4").sprite);
-                weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_5").sprite);
-
                 GAudio.Play(AudioID.Rain, true);
 
                 //开始发射
                 weatherParticleEmission.enabled = true;
 
-                if (globalVolume.profile.TryGet(out Bloom bloom))
-                {
-                    bloom.active = true;
-                    bloom.threshold.Override(0.8f);
-                    bloom.intensity.Override(3f);
-                }
+                //设置模糊效果
+                SetGlobalVolumeBloomToRain();
+                SetGlobalVolumeColorAdjustmentsToRain();
             },
             () =>
             {
@@ -243,14 +265,40 @@ namespace GameCore
                 //停止所有音效
                 GAudio.Stop(AudioID.Rain);
 
-                if (globalVolume.profile.TryGet(out Bloom bloom))
-                {
-                    bloom.threshold.Override(0.95f);
-                    bloom.intensity.Override(0.5f);
-                }
+                //设置模糊效果
+                SetGlobalVolumeBloomToSunny();
+                SetGlobalVolumeColorAdjustmentsToSunny();
             });
 
             SetWeather("ori:sunny");
+        }
+
+
+
+        public void SetGlobalVolumeBloomToSunny() => SetGlobalVolumeBloom(0.95f, 0.5f);
+        public void SetGlobalVolumeBloomToRain() => SetGlobalVolumeBloom(0.8f, 2.5f);
+        public void SetGlobalVolumeBloom(float threshold, float intensity)
+        {
+            if (globalVolume.profile.TryGet(out Bloom bloom))
+            {
+                bloom.active = true;
+                bloom.threshold.Override(threshold);
+                bloom.intensity.Override(intensity);
+            }
+        }
+
+
+
+        public void SetGlobalVolumeColorAdjustmentsToSunny() => SetGlobalVolumeColorAdjustments(new(0.75f, 0.66f, 0.66f), 1.52f, 8.5f);
+        public void SetGlobalVolumeColorAdjustmentsToAcidRain() => SetGlobalVolumeColorAdjustments(new(0.8f, 1f, 0.92f), 1.1f, 6);
+        public void SetGlobalVolumeColorAdjustmentsToRain() => SetGlobalVolumeColorAdjustments(new(0.75f, 0.66f, 0.66f), 1.45f, 5);
+        public void SetGlobalVolumeColorAdjustments(Color colorFilter, float colorFilterIntensity, float saturation)
+        {
+            if (globalVolume.profile.TryGet(out ColorAdjustments colorAdjustments))
+            {
+                colorAdjustments.colorFilter.Override(colorFilter * colorFilterIntensity);
+                colorAdjustments.saturation.Override(saturation);
+            }
         }
 
 

@@ -128,7 +128,7 @@ namespace GameCore
             #endregion
 
             #region 天气
-            Bind("ori:weather_change", 0.05f, ChangeWeatherRandomly);
+            Bind("ori:weather_change", 0.09f, ChangeWeatherRandomly);
             #endregion
         }
 
@@ -189,10 +189,27 @@ namespace GameCore
 
         public static void ChangeWeatherRandomly()
         {
-            var newWeather = GM.instance.weathers.Extract(RandomUpdateRandom);
+            GM.WeatherData newWeather = null;
 
-            if (GM.instance.weather != newWeather)
-                GM.instance.SetWeather(newWeather.id);
+            //最多抽取 10 次，以找到一个不同的天气
+            for (int i = 0; i < 10; i++)
+            {
+                newWeather = GM.instance.weathers.Extract(RandomUpdateRandom);
+
+                if (GM.instance.weather != newWeather)
+                    break;
+            }
+
+            //检查天气
+            if (newWeather == null || newWeather.id == GM.instance.weather.id)
+            {
+                Debug.LogError("天气切换失败");
+                return;
+            }
+
+            //切换天气
+            GM.instance.SetWeather(newWeather.id);
+            Debug.Log("天气切换至 " + newWeather.id);
         }
     }
 }
