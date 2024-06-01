@@ -99,6 +99,7 @@ namespace GameCore
             Debug.Log(RandomUpdater.updates.Count);
             RandomUpdater.RandomUpdate();
         }
+        [Button("随机更改天气")] private void ChangeWeatherRandomly() => RandomUpdater.ChangeWeatherRandomly();
 #endif
 
         //随机更新只在服务器进行, 无需同步至客户端

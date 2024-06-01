@@ -91,7 +91,7 @@ namespace GameCore
                     for (int tryCount = 0; tryCount < entities.Count - 1; tryCount++)
                     {
                         //随机抽取一个实体并生成
-                        EntityData entity = entities.Extract(EntitySummonPosRandom);
+                        EntityData entity = entities.Extract(RandomUpdateRandom);
                         Vector2 pos = EntitySummonPos(entity);
 
                         entities.Remove(entity);
@@ -120,11 +120,15 @@ namespace GameCore
                 if (audios.Count > 0)
                 {
                     //随机抽取一个实体并生成
-                    AudioData audio = audios.Extract(EntitySummonPosRandom);
+                    AudioData audio = audios.Extract(RandomUpdateRandom);
 
                     GAudio.Play(audio.id);
                 }
             });
+            #endregion
+
+            #region 天气
+            Bind("ori:weather_change", 0.05f, ChangeWeatherRandomly);
             #endregion
         }
 
@@ -144,7 +148,7 @@ namespace GameCore
             }
         }
 
-        public static System.Random EntitySummonPosRandom = new();
+        public static System.Random RandomUpdateRandom = new();
         public static Func<EntityData, Vector2> EntitySummonPos = e =>
         {
             //TODO: 优化性能
@@ -152,7 +156,7 @@ namespace GameCore
             for (byte cTime = 0; cTime < 24; cTime++)
             {
                 //抽取一个区块
-                Chunk chunk = Map.instance.chunks.Extract(EntitySummonPosRandom);
+                Chunk chunk = Map.instance.chunks.Extract(RandomUpdateRandom);
 
                 if (!string.IsNullOrEmpty(e.summon.biome) && GFiles.world.TryGetRegion(chunk.regionIndex, out Region region) && e.summon.biome != region.biomeId)
                 {
@@ -163,7 +167,7 @@ namespace GameCore
                 for (byte bTime = 0; bTime < 32; bTime++)
                 {
                     //抽取一个方块并检查
-                    Block block = chunk.blocks.Extract(EntitySummonPosRandom);
+                    Block block = chunk.blocks.Extract(RandomUpdateRandom);
 
                     if (block != null &&
                         !block.isBackground &&
@@ -180,5 +184,15 @@ namespace GameCore
 
             return new(float.PositiveInfinity, float.PositiveInfinity);
         };
+
+
+
+        public static void ChangeWeatherRandomly()
+        {
+            var newWeather = GM.instance.weathers.Extract(RandomUpdateRandom);
+
+            if (GM.instance.weather != newWeather)
+                GM.instance.SetWeather(newWeather.id);
+        }
     }
 }
