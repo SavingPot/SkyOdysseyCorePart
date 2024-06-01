@@ -29,7 +29,7 @@ namespace GameCore
                 WallHoleTooLarge
             }
 
-            const int minRoomBlockCount = 22;
+            const int minRoomBlockCount = 20;
             const int maxRoomBlockCount = 200;
 
             (int x, int y, Block wallBlock)[] blocksInConstruction;
@@ -199,7 +199,7 @@ namespace GameCore
 
 
 
-                //继续递归检查周围的 3x3 个方块（不包括自己，即使这里不跳过，在 CheckRoom 的开头也会被跳过）
+                //继续递归检查周围的 3x3 个方块（不包括自己，即使这里不跳过，在 CheckIfIsEnclosedConstruction 的开头也会被跳过）
                 for (int newX = x - 1; newX <= x + 1; newX++)
                     for (int newY = y - 1; newY <= y + 1; newY++)
                         if (newX != x || newY != y)

@@ -20,6 +20,19 @@ namespace GameCore
             isHurtable = false;
         }
 
+        public override void AfterInitialization()
+        {
+            base.AfterInitialization();
+
+            NPCCenter.AddNPC(this);
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            NPCCenter.RemoveNPC(this);
+        }
 
         public virtual void PlayerInteraction(Player caller)
         {

@@ -509,7 +509,6 @@ namespace GameCore
             Debug.Log("开始重加载所有模组");
 
             //初始化资源
-            List<Mod> modsTemp = new();
             assemblies.Clear();
 
             if (!Directory.Exists(GInit.modsPath))
@@ -565,16 +564,16 @@ namespace GameCore
 
 
             //加载模组
-            foreach (var path in modPathsWithInfo)
+            mods = new Mod[modCountFound];
+            for (int i = 0; i < modCountFound; i++)
             {
-                LoadMod(path, modsTemp);
+                string modPath = modPathsWithInfo[i];
+                LoadMod(modPath, i);
                 //Task loading = new(() => LoadMod(modPathsWithInfo[i]));
 
                 //loading.Start();
                 //loading.Wait();
             }
-
-            mods = modsTemp.ToArray();
 
 
 
@@ -652,7 +651,7 @@ namespace GameCore
         }
 
         [ChineseName("加载模组")]
-        public static void LoadMod(string modPath, List<Mod> modsTemp)
+        public static void LoadMod(string modPath, int modIndex)
         {
             string folderName = IOTools.GetDirectoryName(modPath);
 
@@ -891,6 +890,7 @@ namespace GameCore
                         {
                             //Assembly.LoadFrom 也会顺带加载需要的程序集, 这会导致程序集被多次加载, 因此使用 LoadFile
                             var ass = Assembly.LoadFile(dllPath);
+                            Debug.Log($"加载了程序集 {dllPath}");
 
                             assemblies.Add(ass);
                             LoadDLLInternal(ass.GetTypes(), dllPath, importTypesTemp);
@@ -923,14 +923,12 @@ namespace GameCore
                 #endregion
 
 
-                modsTemp.Add(newMod);
+                mods[modIndex] = newMod;
 
 
                 #region 添加内置 UI
                 if (newMod.isOri)
                 {
-                    mods = new[] { newMod };
-
                     MethodAgent.RunOnMainThread(() =>
                     {
                         GScene.Next();
@@ -940,7 +938,7 @@ namespace GameCore
                 #endregion
 
                 //调用 ModEntry 的 OnModLoaded
-                MethodAgent.DebugRun(() => CallOnModLoaded(mods[^1]));
+                MethodAgent.DebugRun(() => CallOnModLoaded(newMod));
             });
         }
 
@@ -992,9 +990,9 @@ namespace GameCore
             });
         }
 
-        internal static void CallOnModLoaded(Mod mod) => CallModEntryMethod(mod, me => me.OnLoaded());
+        internal static void CallOnModLoaded(Mod mod) => CallModEntryMethod(mod, entry => entry.OnLoaded());
 
-        internal static void CallOnModReconfigured(Mod mod) => CallModEntryMethod(mod, me => me.OnReconfigured());
+        internal static void CallOnModReconfigured(Mod mod) => CallModEntryMethod(mod, entry => entry.OnReconfigured());
 
         internal static void CallModEntryMethod(Mod mod, Action<ModEntry> call) => MethodAgent.DebugQueueOnMainThread(() =>
         {

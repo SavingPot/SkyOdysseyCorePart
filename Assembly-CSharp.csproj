@@ -153,6 +153,7 @@
      <Compile Include="Assets\Scripts\Network\SyncPacker\SyncPacker.cs" />
      <Compile Include="Assets\Scripts\Utils\Anim\AnimFragments.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\Block.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\NPCCenter.cs" />
      <Compile Include="Assets\Scripts\Utils\Performance.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\MapUtils.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\PanelIdentity.cs" />

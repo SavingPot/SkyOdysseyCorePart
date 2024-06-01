@@ -35,5 +35,10 @@ namespace GameCore.UI
         {
             rt.SetParentForUI(content);
         }
+
+
+        public void SetGridLayoutGroupCellSizeToMax(float y) => SetGridLayoutGroupCellSize(sd.x - ((RectTransform)scrollRect.verticalScrollbar.transform).sizeDelta.x, y);
+        public void SetGridLayoutGroupCellSize(float x, float y) => gridLayoutGroup.cellSize = new(x, y);
+        public void SetGridLayoutGroupCellSize(Vector2 size) => gridLayoutGroup.cellSize = size;
     }
 }

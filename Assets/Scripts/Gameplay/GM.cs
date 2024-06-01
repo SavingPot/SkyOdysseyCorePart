@@ -290,7 +290,7 @@ namespace GameCore
 
 
         public void SetGlobalVolumeColorAdjustmentsToSunny() => SetGlobalVolumeColorAdjustments(new(0.75f, 0.66f, 0.66f), 1.52f, 8.5f);
-        public void SetGlobalVolumeColorAdjustmentsToAcidRain() => SetGlobalVolumeColorAdjustments(new(0.8f, 1f, 0.92f), 1.1f, 6);
+        public void SetGlobalVolumeColorAdjustmentsToAcidRain() => SetGlobalVolumeColorAdjustments(new(0.8f, 1f, 0.92f), 1.05f, 6);
         public void SetGlobalVolumeColorAdjustmentsToRain() => SetGlobalVolumeColorAdjustments(new(0.75f, 0.66f, 0.66f), 1.45f, 5);
         public void SetGlobalVolumeColorAdjustments(Color colorFilter, float colorFilterIntensity, float saturation)
         {
