@@ -184,11 +184,11 @@ namespace GameCore.UI
                                             "ori:mod_loading_mascot",
                                             15, 0,
                                             new(0, 24), new(50, 50),
-                                            () => (float)ModFactory.mods.Length / (float)ModFactory.modCountFound,
+                                            () => (float)ModFactory.mods.Length / (float)ModFactory.enabledModCount,
                                             () =>
                                             {
-                                                if (ModFactory.mods.Length != ModFactory.modCountFound)
-                                                    return $"Loading... {ModFactory.mods.Length}/{ModFactory.modCountFound}";
+                                                if (ModFactory.mods.Length != ModFactory.enabledModCount)
+                                                    return $"Loading... {ModFactory.mods.Length}/{ModFactory.enabledModCount}";
                                                 else if (!SyncPacker.initialized)
                                                     return "正在等待网络系统初始化";
                                                 else
@@ -199,7 +199,7 @@ namespace GameCore.UI
                             //刷新吉祥物位置
                             mascotImage.OnUpdate += img =>
                             {
-                                var progressFloat = (float)ModFactory.mods.Length / (float)ModFactory.modCountFound;
+                                var progressFloat = (float)ModFactory.mods.Length / (float)ModFactory.enabledModCount;
 
                                 mascotImage.SetAPosX(progressFloat * GameUI.canvasRT.sizeDelta.x);
                             };
@@ -229,7 +229,7 @@ namespace GameCore.UI
                             });
 
                             //等待模组加载
-                            while (ModFactory.mods.Length < ModFactory.modCountFound)
+                            while (ModFactory.mods.Length < ModFactory.enabledModCount)
                                 await UniTask.NextFrame();
 
                             //等待网络系统

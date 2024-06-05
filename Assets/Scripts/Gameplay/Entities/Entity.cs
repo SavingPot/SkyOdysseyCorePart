@@ -446,6 +446,8 @@ namespace GameCore
 
         public virtual void Initialize()
         {
+            customData = ModifyCustomData(customData);
+
             rb.gravityScale = data.gravity;
             mainCollider.size = data.colliderSize;
             mainCollider.offset = data.colliderOffset;
@@ -455,6 +457,8 @@ namespace GameCore
 
         public virtual void AfterInitialization()
         {
+            LoadFromCustomData();
+
             EntityCenter.AddEntity(this);
         }
 
@@ -809,7 +813,17 @@ namespace GameCore
             }
         }
 
-        public virtual void WriteDataToSaveObject(EntitySave save)
+        public virtual JObject ModifyCustomData(JObject data)
+        {
+            return data;
+        }
+
+        public virtual void LoadFromCustomData()
+        {
+
+        }
+
+        public virtual void WriteToEntitySave(EntitySave save)
         {
             save.WriteFromEntity(this);
         }
@@ -832,7 +846,7 @@ namespace GameCore
                 {
                     if (save.id == player.playerName)
                     {
-                        WriteDataToSaveObject(save);
+                        WriteToEntitySave(save);
 
                         return;
                     }
@@ -849,7 +863,7 @@ namespace GameCore
                         if (save.saveId == Init.save.saveId)
                         {
                             //写入数据
-                            WriteDataToSaveObject(save);
+                            WriteToEntitySave(save);
 
                             return;
                         }

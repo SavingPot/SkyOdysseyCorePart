@@ -132,6 +132,7 @@
      <Compile Include="Assets\Scripts\ManagerCommands.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ToggleIdentity.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Binders.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\EntitySave.cs" />
      <Compile Include="Assets\Scripts\Gameplay\RandomUpdater.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\EntityData.cs" />
      <Compile Include="Assets\Scripts\Network\NetworkMessages.cs" />

@@ -10,7 +10,7 @@ using SP.Tools;
 using System.Threading.Tasks;
 using GameCore.Network;
 
-namespace GameCore.High
+namespace GameCore
 {
     public sealed class Chunk : MonoBehaviour
     {
@@ -19,9 +19,10 @@ namespace GameCore.High
         public const float halfBlockCountPerAxis = blockCountPerAxis / 2f;
         public const float negativeHalfBlockCountPerAxis = -halfBlockCountPerAxis;
         public const int blockCountSingleLayer = blockCountPerAxis * blockCountPerAxis;
-        public const int blockCountMultiLayer = blockCountSingleLayer * 2;
+        public const int blockCountAllLayers = blockCountSingleLayer * 2;
 
-        [LabelText("方块")] public readonly Block[] blocks = new Block[blockCountMultiLayer];
+        public readonly Block[] wallBlocks = new Block[blockCountSingleLayer];
+        public readonly Block[] backgroundBlocks = new Block[blockCountSingleLayer];
         public Vector2Int chunkIndex { get; internal set; }
         public bool totalRendererEnabled = true;
         //public bool collidersEnabled = true;
@@ -77,24 +78,37 @@ namespace GameCore.High
 
         public static Action<Chunk, bool> SetRenderersEnabled = (chunk, value) =>
         {
-            foreach (Block block in chunk.blocks)
-            {
+            foreach (Block block in chunk.backgroundBlocks)
                 if (block != null && block.sr)
-                {
                     block.sr.enabled = value;
-                }
-            }
+
+            foreach (Block block in chunk.wallBlocks)
+                if (block != null && block.sr)
+                    block.sr.enabled = value;
 
             chunk.totalRendererEnabled = value;
         };
 
         public Block GetBlock(Vector2Int mapPos, bool isBackground)
         {
-            foreach (Block block in blocks)
+            if (isBackground)
             {
-                if (block != null && block.pos == mapPos && block.isBackground == isBackground)
+                foreach (Block block in backgroundBlocks)
                 {
-                    return block;
+                    if (block != null && block.pos == mapPos)
+                    {
+                        return block;
+                    }
+                }
+            }
+            else
+            {
+                foreach (Block block in wallBlocks)
+                {
+                    if (block != null && block.pos == mapPos)
+                    {
+                        return block;
+                    }
                 }
             }
 
@@ -113,22 +127,23 @@ namespace GameCore.High
 
         public void RecycleAllBlocks()
         {
-            foreach (Block block in blocks)
-            {
+            foreach (Block block in wallBlocks)
                 if (block != null)
-                {
                     Map.instance.blockPool.Recycle(block);
-                }
-            }
+
+            foreach (Block block in backgroundBlocks)
+                if (block != null)
+                    Map.instance.blockPool.Recycle(block);
         }
 
         public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion, bool executeBlockUpdate)
         {
             //遍历所有方块
+            Block[] blocks = isBackground ? backgroundBlocks : wallBlocks;
             foreach (var block in blocks)
             {
                 //找到对应的方块
-                if (block != null && block.pos == pos && block.isBackground == isBackground)
+                if (block != null && block.pos == pos)
                 {
                     //编辑区域存档
                     if (editRegion && Server.isServer)

@@ -68,13 +68,28 @@ namespace GameCore
                 block.transform.SetParent(block.chunk.transform);
 
                 bool addedToChunk = false;
-                for (int i = 0; i < block.chunk.blocks.Length; i++)
+                if (isBackground)
                 {
-                    if (block.chunk.blocks[i] == null)
+                    for (int i = 0; i < block.chunk.backgroundBlocks.Length; i++)
                     {
-                        block.chunk.blocks[i] = block;
-                        addedToChunk = true;
-                        break;
+                        if (block.chunk.backgroundBlocks[i] == null)
+                        {
+                            block.chunk.backgroundBlocks[i] = block;
+                            addedToChunk = true;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < block.chunk.wallBlocks.Length; i++)
+                    {
+                        if (block.chunk.wallBlocks[i] == null)
+                        {
+                            block.chunk.wallBlocks[i] = block;
+                            addedToChunk = true;
+                            break;
+                        }
                     }
                 }
                 if (!addedToChunk)
@@ -115,12 +130,26 @@ namespace GameCore
                 block.transform.SetParent(map.blockPoolTrans);
                 block.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
-                for (int i = 0; i < block.chunk.blocks.Length; i++)
+                if (block.isBackground)
                 {
-                    if (block.chunk.blocks[i] == block)
+                    for (int i = 0; i < block.chunk.backgroundBlocks.Length; i++)
                     {
-                        block.chunk.blocks[i] = null;
-                        break;
+                        if (block.chunk.backgroundBlocks[i] == block)
+                        {
+                            block.chunk.backgroundBlocks[i] = null;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < block.chunk.wallBlocks.Length; i++)
+                    {
+                        if (block.chunk.wallBlocks[i] == block)
+                        {
+                            block.chunk.wallBlocks[i] = null;
+                            break;
+                        }
                     }
                 }
 
@@ -382,18 +411,6 @@ namespace GameCore
             }
         }
 
-        public List<Block> GetBlocks()
-        {
-            List<Block> bs = new();
-
-            foreach (Chunk chunk in chunks)
-            {
-                bs.AddRange(chunk.blocks);
-            }
-
-            return bs;
-        }
-
         public void RecycleChunks()
         {
             for (int i = chunks.Count - 1; i >= 0; i--)
@@ -406,11 +423,24 @@ namespace GameCore
         {
             foreach (Chunk chunk in chunks)
             {
-                foreach (Block block in chunk.blocks)
+                if (isBackground)
                 {
-                    if (block != null && block.pos == pos && block.isBackground == isBackground)
+                    foreach (Block block in chunk.backgroundBlocks)
                     {
-                        return true;
+                        if (block != null && block.pos == pos)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (Block block in chunk.wallBlocks)
+                    {
+                        if (block != null && block.pos == pos)
+                        {
+                            return true;
+                        }
                     }
                 }
             }

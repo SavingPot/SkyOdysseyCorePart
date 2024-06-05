@@ -19,7 +19,8 @@ namespace GameCore
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore, //忽略循环引用
             NullValueHandling = NullValueHandling.Ignore, //忽略空值
             DefaultValueHandling = DefaultValueHandling.Ignore, //忽略默认值
-            ContractResolver = new ReadonlyPropertiesResolver(), //忽略只读
+            ContractResolver = new ReadonlyPropertiesResolver(), //忽略只读,
+            TypeNameHandling = TypeNameHandling.Auto, //自动处理类型名称
         };
 
 

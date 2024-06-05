@@ -167,7 +167,7 @@ namespace GameCore
                 for (byte bTime = 0; bTime < 32; bTime++)
                 {
                     //抽取一个方块并检查
-                    Block block = chunk.blocks.Extract(RandomUpdateRandom);
+                    Block block = chunk.wallBlocks.Extract(RandomUpdateRandom);
 
                     if (block != null &&
                         !block.isBackground &&

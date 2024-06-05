@@ -188,14 +188,11 @@ namespace GameCore.Network
             if (data != null)
             {
                 //生成并添加实体数据
-                EntitySave saveDatum = new()
-                {
-                    id = n.entityId,
-                    pos = n.pos,
-                    saveId = n.saveId,
-                    customData = n.customData,
-                    health = n.health,
-                };
+                var saveDatum = EntitySave.Create(n.entityId);
+                saveDatum.pos = n.pos;
+                saveDatum.saveId = n.saveId;
+                saveDatum.customData = n.customData;
+                saveDatum.health = n.health;
 
                 if (n.saveIntoRegion)
                 {

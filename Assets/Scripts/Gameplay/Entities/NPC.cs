@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace GameCore
@@ -10,6 +11,7 @@ namespace GameCore
     {
         //TODO: 所有实体都可用 PlayerInteraction
         public virtual Vector2 interactionSize { get; } = new(5, 5f);
+        protected string houseName;
 
 
 
@@ -37,6 +39,31 @@ namespace GameCore
         public virtual void PlayerInteraction(Player caller)
         {
 
+        }
+
+        public override JObject ModifyCustomData(JObject data)
+        {
+            data = base.ModifyCustomData(data) ?? new();
+
+            //添加 "ori:npc
+            if (!data.TryGetJToken("ori:npc", out _))
+            {
+                data.AddProperty("ori:npc", new JObject());
+            }
+
+            return data;
+        }
+
+        public override void LoadFromCustomData()
+        {
+            base.LoadFromCustomData();
+
+            LoadFromNpcJT(customData["ori:npc"]);
+        }
+
+        protected virtual void LoadFromNpcJT(JToken jt)
+        {
+            houseName = jt["house_name"]?.ToString();
         }
 
         public override Vector2 GetMovementDirection() => Vector2.zero;

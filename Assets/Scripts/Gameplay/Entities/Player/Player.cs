@@ -1060,9 +1060,9 @@ namespace GameCore
 
 
 
-        public override void WriteDataToSaveObject(EntitySave save)
+        public override void WriteToEntitySave(EntitySave save)
         {
-            base.WriteDataToSaveObject(save);
+            base.WriteToEntitySave(save);
 
             if (save is PlayerSave trueSave)
             {

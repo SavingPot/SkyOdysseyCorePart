@@ -882,7 +882,9 @@ namespace GameCore
                 foreach (var chunk in chunks)
                 {
                     //要复制一份，防止在生成过程中迭代器变化
-                    var blocks = chunk.blocks.ToArray();
+                    Block[] blocks = new Block[chunk.wallBlocks.Length + chunk.backgroundBlocks.Length];
+                    chunk.wallBlocks.CopyTo(blocks, 0);
+                    chunk.backgroundBlocks.CopyTo(blocks, chunk.wallBlocks.Length);
 
                     foreach (var block in blocks)
                     {
@@ -1733,38 +1735,26 @@ namespace GameCore
             if (generation.index == Vector2Int.zero)
             {
                 //如是初始区域, 生成 Nick
-                var nick = ModFactory.CompareEntity(EntityID.Nick);
-                EntitySave nickSave = new()
-                {
-                    id = nick.id,
-                    pos = generation.region.spawnPoint + new Vector2Int(10, 0),
-                    saveId = Tools.randomGUID
-                };
+                var nickSave = EntitySave.Create(EntityID.Nick);
+                nickSave.pos = generation.region.spawnPoint + new Vector2Int(10, 0);
+                nickSave.saveId = Tools.randomGUID;
                 generation.region.AddEntity(nickSave);
 
 
                 //如是初始区域, 生成商人
-                var trader = ModFactory.CompareEntity(EntityID.Trader);
-                EntitySave traderSave = new()
-                {
-                    id = trader.id,
-                    pos = generation.region.spawnPoint + new Vector2Int(0, 0),
-                    saveId = Tools.randomGUID
-                };
+                var traderSave = EntitySave.Create(EntityID.Trader);
+                traderSave.pos = generation.region.spawnPoint + new Vector2Int(0, 0);
+                traderSave.saveId = Tools.randomGUID;
                 generation.region.AddEntity(traderSave);
             }
 
             if (generation.region.biomeId == BiomeID.GrasslandFighting)
             {
                 //如是初始区域, 生成 Nick
-                var entityData = ModFactory.CompareEntity(EntityID.GrasslandGuard);
-                EntitySave entitySave = new()
-                {
-                    id = entityData.id,
-                    pos = generation.region.spawnPoint + new Vector2Int(0, 8),
-                    saveId = Tools.randomGUID
-                };
-                generation.region.AddEntity(entitySave);
+                var grasslandGuardSave = EntitySave.Create(EntityID.GrasslandGuard);
+                grasslandGuardSave.pos = generation.region.spawnPoint + new Vector2Int(0, 8);
+                grasslandGuardSave.saveId = Tools.randomGUID;
+                generation.region.AddEntity(grasslandGuardSave);
             }
         };
 

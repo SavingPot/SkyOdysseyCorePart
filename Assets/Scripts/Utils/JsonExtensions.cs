@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using SP.Tools.Unity;
 using SP.Tools;
+using System;
 
 namespace GameCore
 {
@@ -61,7 +62,7 @@ namespace GameCore
             jo.AddObject(name, content);
         }
 
-        
+
 
         public static void AddProperty(this JObject jo, string name)
         {
@@ -143,6 +144,14 @@ namespace GameCore
             AddArray((JObject)jt, name, content);
         }
 
+
+        public static void AddIfNone(this JToken jt, string name, Func<JToken> toAdd)
+        {
+            if (jt[name] != null)
+                return;
+
+            ((JObject)jt).Add(toAdd());
+        }
 
 
 
