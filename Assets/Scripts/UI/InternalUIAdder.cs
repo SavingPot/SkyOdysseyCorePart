@@ -765,10 +765,10 @@ namespace GameCore.UI
                         c2.positionDelta = new(0, 10);
                         c3.positionDelta = new(0, 10);
 
-                        c0.AddRenderers("ori:world_background_0", 8, 0);
-                        c1.AddRenderers("ori:world_background_1", 8, -1);
-                        c2.AddRenderers("ori:world_background_2", 8, -2);
-                        c3.AddRenderers("ori:world_background_3", 8, -3);
+                        c0.AddRenderers("ori:world_background_0", 8, -1);
+                        c1.AddRenderers("ori:world_background_1", 8, -2);
+                        c2.AddRenderers("ori:world_background_2", 8, -3);
+                        c3.AddRenderers("ori:world_background_3", 8, -4);
                         break;
                     }
             }

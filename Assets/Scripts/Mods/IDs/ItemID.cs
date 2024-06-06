@@ -26,6 +26,7 @@ namespace GameCore
         public const string IronHoe = "ori:iron_hoe";
         public const string IronKnife = "ori:iron_knife";
         public const string IronSword = "ori:iron_sword";
+        public const string LootBag = "ori:loot_bag";
         public const string ManaStone = "ori:mana_stone";
         public const string Onion = "ori:onion";
         public const string PlantFiber = "ori:plant_fiber";

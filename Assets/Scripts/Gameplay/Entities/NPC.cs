@@ -5,9 +5,10 @@ using UnityEngine;
 namespace GameCore
 {
     /// <summary>
-    /// 角色, 基于实体进行拓展, 不能直接生成
+    /// NPC
     /// </summary>
-    public class NPC : Creature
+    [NotSummonable]
+    public abstract class NPC : Creature
     {
         //TODO: 所有实体都可用 PlayerInteraction
         public virtual Vector2 interactionSize { get; } = new(5, 5f);

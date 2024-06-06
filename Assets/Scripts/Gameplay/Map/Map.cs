@@ -201,7 +201,7 @@ namespace GameCore
                 light.transform.position = block.transform.position;
 
                 light.pointLightOuterRadius = block.data.lightLevel * 1.5f;
-                light.intensity = block.data.lightLevel / 7f;
+                light.intensity = block.data.lightLevel / 8f;
 
                 return light;
             }

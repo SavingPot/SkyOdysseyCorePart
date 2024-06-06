@@ -22,6 +22,7 @@ namespace GameCore
         public const string ExtinguishedCampfire = "ori:extinguished_campfire";
         public const string Farmland = "ori:farmland";
         public const string FloweringCactus = "ori:flowering_cactus";
+        public const string Flowerpot = "ori:flowerpot";
         public const string FryingPan = "ori:frying_pan";
         public const string Grass = "ori:grass";
         public const string GrassBlock = "ori:grass_block";

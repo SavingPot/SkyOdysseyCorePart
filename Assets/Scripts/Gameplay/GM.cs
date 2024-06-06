@@ -52,7 +52,7 @@ namespace GameCore
             set => GTime.isMorning = value;
         }
 
-        public float timeOneDay //1440(s) = 24*60(s), 即 24min
+        public float timeOneDay
         {
             get => GTime.timeOneDay;
             [Button("设置一天的总时间")]

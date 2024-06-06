@@ -27,8 +27,8 @@ namespace GameCore
         #region 变量
 
         [Sync, SyncDefaultValue(true)] public static bool isMorning;
-        [Sync, SyncDefaultValue(1440f)] public static float timeOneDay;
-        [Sync(nameof(TimeModify)), SyncDefaultValue(420f)] public static float time;
+        [Sync, SyncDefaultValue(960f)] public static float timeOneDay; //一天有 960 秒, 即 16 分钟
+        [Sync(nameof(TimeModify)), SyncDefaultValue(300f)] public static float time;
 
         public static void TimeModify(byte[] _)
         {
