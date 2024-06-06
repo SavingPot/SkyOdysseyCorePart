@@ -97,7 +97,7 @@ namespace GameCore
             if (customData == null)
                 return;
 
-            var posInRegion = PosConvert.MapToRegionPos(pos, chunk.regionIndex);
+            var posInRegion = chunk.MapToRegionPos(pos);
 
             //获取存档中的值
             GFiles.world.GetRegion(chunk.regionIndex).GetBlock(posInRegion.x, posInRegion.y, isBackground).location.cd = customData.ToString(Formatting.None);
