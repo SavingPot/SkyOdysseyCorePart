@@ -14,11 +14,11 @@ namespace GameCore
         public static List<EventForStageSwitch> EventsForSwitchToTomorrow = new()
         {
             new(true, () => {
+                //重置所有事件的状态为今日未调用
                 for (int i = 0; i < EventsForTime.Count; i++)
                 {
                     var bind = EventsForTime[i];
                     bind.hasNotCalledToday = true;
-
                     EventsForTime[i] = bind;
                 }
             })
@@ -35,22 +35,27 @@ namespace GameCore
             _time12Format = GetTime12ByStandard(time);
             _time24Format = GetTime24By12(time12Format);
 
+            //调用时间时间
             for (int i = EventsForTime.Count - 1; i >= 0; i--)
             {
                 var bind = EventsForTime[i];
 
+                //如果今日未调用，且时间符合条件
                 if (bind.hasNotCalledToday && _time24Format >= bind.time)
                 {
+                    //调用事件
                     bind.action();
-                    bind.hasNotCalledToday = false;
 
-                    if (!bind.repeat)
+                    //如果是重复事件，那么修改状态
+                    if (bind.repeat)
                     {
-                        EventsForTime.RemoveAt(i);
+                        bind.hasNotCalledToday = false;
+                        EventsForTime[i] = bind;
                     }
+                    //否则删除事件
                     else
                     {
-                        EventsForTime[i] = bind;
+                        EventsForTime.RemoveAt(i);
                     }
                 }
             }

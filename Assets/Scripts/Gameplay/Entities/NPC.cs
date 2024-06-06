@@ -11,7 +11,6 @@ namespace GameCore
     {
         //TODO: 所有实体都可用 PlayerInteraction
         public virtual Vector2 interactionSize { get; } = new(5, 5f);
-        protected string houseName;
 
 
 
@@ -46,9 +45,10 @@ namespace GameCore
             data = base.ModifyCustomData(data) ?? new();
 
             //添加 "ori:npc
-            if (!data.TryGetJToken("ori:npc", out _))
+            if (!data.TryGetJToken("ori:npc", out var npcJT))
             {
                 data.AddProperty("ori:npc", new JObject());
+                npcJT = data["ori:npc"];
             }
 
             return data;
@@ -63,7 +63,7 @@ namespace GameCore
 
         protected virtual void LoadFromNpcJT(JToken jt)
         {
-            houseName = jt["house_name"]?.ToString();
+            
         }
 
         public override Vector2 GetMovementDirection() => Vector2.zero;

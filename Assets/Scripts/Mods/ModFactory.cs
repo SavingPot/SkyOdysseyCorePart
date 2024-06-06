@@ -380,11 +380,11 @@ namespace GameCore
         [ChineseName("在指定的模组中匹配物品")] public static Spell CompareSpell(string id, IList<Mod> mods) => CompareModElement(id, ModFactory.mods, mod => mod.spells);
 
 
-        [ChineseName("在已加载的全局模组中匹配文本")] public static GameLang CompareText(string id) => CompareText(id, mods);
+        [ChineseName("在已加载的全局模组中匹配文本")] public static GameLang CompareLang(string id) => CompareLang(id, mods);
 
-        [ChineseName("在指定的模组中匹配文本")] public static GameLang CompareText(string id, Mod targetMod) => CompareText(id, new[] { targetMod });
+        [ChineseName("在指定的模组中匹配文本")] public static GameLang CompareLang(string id, Mod targetMod) => CompareLang(id, new[] { targetMod });
 
-        [ChineseName("在指定的模组中匹配文本")] public static GameLang CompareText(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.langs);
+        [ChineseName("在指定的模组中匹配文本")] public static GameLang CompareLang(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.langs);
 
 
         [ChineseName("在已加载的全局模组中匹配实体")] public static EntityData CompareEntity(string id) => CompareEntity(id, mods);

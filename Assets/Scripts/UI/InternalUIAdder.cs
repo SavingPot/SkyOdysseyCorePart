@@ -758,7 +758,7 @@ namespace GameCore.UI
                         c0.parallaxFactor = 0.5f;
                         c1.parallaxFactor = 0.65f;
                         c2.parallaxFactor = 0.8f;
-                        c3.parallaxFactor = 0.95f;
+                        c3.parallaxFactor = 1f;
 
                         c0.positionDelta = new(0, 10);
                         c1.positionDelta = new(0, 10);

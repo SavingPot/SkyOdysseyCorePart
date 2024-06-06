@@ -57,8 +57,27 @@ namespace GameCore.UI
             buttonText.text.text = text;
         }
 
+        public ButtonIdentity BindButtonAudio()
+        {
+            button.onClick.AddListener(() => GAudio.Play(AudioID.Button));
+            return this;
+        }
+
         public ButtonIdentity OnClickBind(UnityAction call)
         {
+            button.onClick.AddListener(call);
+            return this;
+        }
+
+        public ButtonIdentity ClearOnClickBind()
+        {
+            button.onClick.RemoveAllListeners();
+            return this;
+        }
+
+        public ButtonIdentity SetOnClickBind(UnityAction call)
+        {
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(call);
             return this;
         }
