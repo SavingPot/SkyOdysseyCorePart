@@ -632,6 +632,19 @@ namespace GameCore
         //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMSetBlockCustomData(NetworkConnection conn, NMSetBlockCustomData n)
         {
+            if (GScene.name != SceneNames.GameScene)
+                return;
+
+            if (map.TryGetBlock(n.pos, n.isBackground, out Block block))
+            {
+                //把自定义数据写入存档
+                block.WriteCustomDataToSave(n.customData);
+            }
+            else
+            {
+                Debug.LogError("未找到要求的方块, 自定义数据设置失败");
+            }
+
             //将消息转发给客户端
             Server.Send(n);
         }

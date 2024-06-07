@@ -27,6 +27,13 @@ namespace GameCore
         public static int ToInt(this JToken j) => j.ToString().ToInt();
 
 
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                   JObject                                  */
+        /* -------------------------------------------------------------------------- */
         public static void AddObject(this JObject jo, string name)
         {
             jo.Add(new JProperty(name, new JObject()));

@@ -393,16 +393,6 @@ namespace GameCore
             return block != null;
         }
 
-        public void SetBlockCustomDataOL(Block block)
-        {
-            Client.Send<NMSetBlockCustomData>(new(block.pos, block.isBackground, block.customData.ToString(Formatting.None)));
-        }
-
-        public void SetBlockCustomDataOL(Vector2Int pos, bool isBackground, string customData)
-        {
-            Client.Send<NMSetBlockCustomData>(new(pos, isBackground, customData));
-        }
-
         public void ClearAllBlocks()
         {
             foreach (Chunk chunk in chunks)

@@ -92,25 +92,23 @@ namespace GameCore
 
 
 
-        public void WriteCustomDataToSave()
+
+
+
+        public virtual void DoStart()
         {
-            if (customData == null)
-                return;
-
-            var posInRegion = chunk.MapToRegionPos(pos);
-
-            //获取存档中的值
-            GFiles.world.GetRegion(chunk.regionIndex)
-                        .GetBlock(posInRegion.x, posInRegion.y, isBackground)
-                        .location.cd = customData.ToString(Formatting.None);
+            sr.sprite = data.defaultTexture.sprite;
+            blockCollider.isTrigger = !data.collidible || isBackground;
         }
 
-        public virtual void OutputDrops(Vector3 pos)
+        public virtual void OnUpdate()
         {
-            data.drops.For(drop =>
-            {
-                GM.instance.SummonDrop(pos, drop.id, drop.count, customData?.ToString());
-            });
+
+        }
+
+        public virtual bool PlayerInteraction(Player player)
+        {
+            return false;
         }
 
         public virtual void OnRecovered()
@@ -138,20 +136,36 @@ namespace GameCore
 
         }
 
-        public virtual bool PlayerInteraction(Player player)
+
+        public void PushCustomDataToServer() => PushCustomDataToServer(customData.ToString(Formatting.None));
+        public void PushCustomDataToServer(string newCustomData)
         {
-            return false;
+            //* 注：服务端会把这里的 newCustomData 写入存档，然后发送给客户端，客户端会在收到后更新 Block 的 customData
+            Client.Send<NMSetBlockCustomData>(new(pos, isBackground, newCustomData));
         }
 
-        public virtual void DoStart()
+
+        public void WriteCustomDataToSave() => WriteCustomDataToSave(customData.ToString(Formatting.None));
+        public void WriteCustomDataToSave(string newCustomData)
         {
-            sr.sprite = data.defaultTexture.sprite;
-            blockCollider.isTrigger = !data.collidible || isBackground;
+            if (customData == null)
+                return;
+
+            var posInRegion = chunk.MapToRegionPos(pos);
+
+            //获取存档中的值
+            GFiles.world.GetRegion(chunk.regionIndex)
+                        .GetBlock(posInRegion.x, posInRegion.y, isBackground)
+                        .location.cd = newCustomData;
         }
 
-        public virtual void OnUpdate()
-        {
 
+        public virtual void OutputDrops(Vector3 pos)
+        {
+            data.drops.For(drop =>
+            {
+                GM.instance.SummonDrop(pos, drop.id, drop.count, customData?.ToString());
+            });
         }
 
 
