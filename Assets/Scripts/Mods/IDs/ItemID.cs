@@ -5,6 +5,7 @@ namespace GameCore
         public const string Bark = "ori:bark";
         public const string BarkVest = "ori:bark_vest";
         public const string Berry = "ori:berry";
+        public const string BlockGun = "ori:block_gun";
         public const string Bottle = "ori:bottle";
         public const string CactusFlower = "ori:cactus_flower";
         public const string Carrot = "ori:carrot";

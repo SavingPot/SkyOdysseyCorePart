@@ -17,6 +17,21 @@ Update()
 }
 
 
+------- 射线检测的好处理 -------
+
+1. 如何解决射线检测的碰撞体问题？
+
+解决方法：
+
+    //向指针方向发射出长度为 10 的射线
+    var direction = AngleTools.GetAngleVector2(owner.transform.position, point).normalized;
+    var hit = RayTools.Hit(owner.transform.position, direction, shootDistance, Block.blockLayerMask);
+
+    //找到光线的终止点
+    var endPoint = hit.collider ? hit.point + hit.normal * 0.3f :   // hit.normal 时射线与碰撞体的法线向量，其指向碰撞体的外侧，我们可以通过它来使 endPoint 不处在碰撞体内
+                                  hit.point + direction * shootDistance;
+
+
 ------- 极度容易忽视的错误!!!!!!!!! -----------
 
 遇到Editor与运行时结果不一致时, 尝试开启Debug编译/开发导出

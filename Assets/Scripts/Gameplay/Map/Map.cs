@@ -16,6 +16,234 @@ namespace GameCore
     [Serializable]
     public sealed class Map : SingletonClass<Map>
     {
+        public BlockPool blockPool;
+        public BlockCrackPool blockCrackPool;
+        public BlockLightPool blockLightPool;
+        public ChunkPool chunkPool;
+        public Transform blockPoolTrans { get; private set; }
+
+
+
+        public List<Chunk> chunks = new();
+        public Dictionary<Vector2Int, Chunk> chunkTable = new();
+        public List<Block> blocksToCheckHealths = new();
+
+
+
+
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            blockPoolTrans = new GameObject("Block Pool").transform;
+            blockPoolTrans.SetParent(transform);
+            blockPoolTrans.gameObject.SetActive(false);
+
+            blockPool = new(this);
+            blockCrackPool = new();
+            blockLightPool = new();
+            chunkPool = new(this);
+
+            gameObject.layer = Block.blockLayer;
+        }
+
+        private void Update()
+        {
+            /* ---------------------------------- 为方块回血 --------------------------------- */
+            if (Player.TryGetLocal(out Player localPlayer) && localPlayer.Init.isServerCompletelyReady && localPlayer.TryGetRegion(out _))
+            {
+                var deltaHealth = 20f * Performance.frameTime;
+
+                for (int i = blocksToCheckHealths.Count - 1; i >= 0; i--)
+                {
+                    var block = blocksToCheckHealths[i];
+
+                    if (Tools.time >= block.lastDamageTime + 7.5f)
+                    {
+                        block.SetHealth(block.health + deltaHealth);
+                    }
+                }
+            }
+
+
+
+            /* --------------------------------- 开关区块的显示 -------------------------------- */
+            if (!Tools.instance.mainCamera)
+                return;
+
+            foreach (var chunk in chunks)
+            {
+                if (chunk.IsOutOfView())
+                {
+                    if (chunk.totalRendererEnabled)
+                    {
+                        chunk.DisableRenderers();
+                    }
+                }
+                else
+                {
+                    if (!chunk.totalRendererEnabled)
+                    {
+                        chunk.EnableRenderers();
+                    }
+                }
+            }
+        }
+
+        public Chunk AddChunk(Vector2Int chunkIndex)
+        {
+            if (chunkTable.TryGetValue(chunkIndex, out Chunk chunk))
+            {
+                return chunk;
+            }
+            else
+            {
+                return chunkPool.Get(chunkIndex);
+            }
+        }
+
+        public Block this[Vector2Int pos, bool isBackground] => GetBlock(pos, isBackground);
+        public Block this[int x, int y, bool isBackground] => GetBlock(new(x, y), isBackground);
+
+        public Block GetBlock(Vector2Int pos, bool isBackground)
+        {
+            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
+
+            return AddChunk(chunkIndexTo).GetBlock(pos, isBackground);
+        }
+
+        public bool TryGetBlock(Vector2Int pos, bool isBackground, out Block block)
+        {
+            block = GetBlock(pos, isBackground);
+
+            return block != null;
+        }
+
+        public void ClearAllBlocks()
+        {
+            foreach (Chunk chunk in chunks)
+            {
+                chunk.RecycleAllBlocks();
+            }
+        }
+
+        public void RecycleChunks()
+        {
+            for (int i = chunks.Count - 1; i >= 0; i--)
+            {
+                chunkPool.Recycle(chunks[i]);
+            }
+        }
+
+        public bool HasBlock(Vector2Int pos, bool isBackground)
+        {
+            foreach (Chunk chunk in chunks)
+            {
+                if (isBackground)
+                {
+                    foreach (Block block in chunk.backgroundBlocks)
+                    {
+                        if (block != null && block.pos == pos)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (Block block in chunk.wallBlocks)
+                    {
+                        if (block != null && block.pos == pos)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public bool HasBlockPlayerCursorPos(Player player, bool isBackground)
+        {
+            var pos = GetPlayerCursorMapPos(player);
+
+            return HasBlock(pos, isBackground);
+        }
+
+        public bool GetBlockWorldPos(Vector2 pos, bool isBackground)
+        {
+            return GetBlock(PosConvert.WorldToMapPos(pos), isBackground) != null;
+        }
+
+        public bool HasBlockWorldPos(Vector2 pos, bool isBackground)
+        {
+            return HasBlock(PosConvert.WorldToMapPos(pos), isBackground);
+        }
+
+        public Vector2Int GetPlayerCursorMapPos(Player player) => PosConvert.WorldToMapPos(player.cursorWorldPos);
+
+        public void SetBlockNet(Vector2Int pos, bool isBackground, string id, string customData) => Client.Send<NMSetBlock>(new(pos, isBackground, id, customData));
+
+#if UNITY_EDITOR
+        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editRegion) => SetBlock(pos, isBackground, ModFactory.CompareBlockData(block), null, editRegion, true);
+#endif
+
+        public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion, bool executeBlockUpdate)
+        {
+            Chunk chunk = AddChunk(PosConvert.MapPosToChunkIndex(pos));
+
+            //Remove 不执行生命周期，等到 Add 再更新，以节约性能
+            chunk.RemoveBlock(pos, isBackground, editRegion, false);
+
+            return chunk.AddBlock(pos, isBackground, block, customData, editRegion, executeBlockUpdate);
+        }
+
+        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData blockData, string customData, bool editRegion, bool executeBlockUpdate)
+        {
+            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
+
+            return AddChunk(chunkIndexTo).AddBlock(pos, isBackground, blockData, customData, editRegion, executeBlockUpdate);
+        }
+
+        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion, bool executeBlockUpdate)
+        {
+            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
+
+            AddChunk(chunkIndexTo).RemoveBlock(pos, isBackground, editRegion, executeBlockUpdate);
+        }
+
+        public void UpdateAt(Vector2Int pos, bool isBackground)
+        {
+            Vector2Int[] points = new[]
+            {
+                new (pos.x - 1, pos.y - 1),
+                new (pos.x - 1, pos.y),
+                new (pos.x - 1, pos.y + 1),
+                new (pos.x, pos.y - 1),
+                pos,
+                new (pos.x, pos.y + 1),
+                new (pos.x + 1, pos.y - 1),
+                new (pos.x + 1, pos.y),
+                new (pos.x + 1, pos.y + 1)
+            };
+
+            foreach (Vector2Int p in points)
+            {
+                var block = GetBlock(p, isBackground);
+
+                block?.OnUpdate();
+            }
+        }
+
+
+
+
+
+
+
+
         [Serializable]
         public class BlockPool
         {
@@ -273,240 +501,6 @@ namespace GameCore
                 chunk.RecycleAllBlocks();
 
                 stack.Push(chunk);
-            }
-        }
-
-        public BlockPool blockPool;
-        public BlockCrackPool blockCrackPool;
-        public BlockLightPool blockLightPool;
-        public ChunkPool chunkPool;
-        public Transform blockPoolTrans { get; private set; }
-
-
-
-        public List<Chunk> chunks = new();
-        public Dictionary<Vector2Int, Chunk> chunkTable = new();
-        public List<Block> blocksToCheckHealths = new();
-
-
-        protected override void Awake()
-        {
-            base.Awake();
-
-            blockPoolTrans = new GameObject("Block Pool").transform;
-            blockPoolTrans.SetParent(transform);
-            blockPoolTrans.gameObject.SetActive(false);
-
-            blockPool = new(this);
-            blockCrackPool = new();
-            blockLightPool = new();
-            chunkPool = new(this);
-
-            gameObject.layer = Block.blockLayer;
-        }
-
-        protected override void Start()
-        {
-            base.Start();
-
-            // for (int x = -100; x < 100; x++)
-            // {
-            //     for (int y = -80; y < 80; y++)
-            //     {
-            //         Vector2Int ci = BlockToChunkIndex(new(x, y));
-            //         Vector2Int sbi = ChunkToRegionIndex(ci);
-
-            //         Debug.Log($"({x}, {y}) {ci}, {sbi}");
-            //     }
-            // }
-        }
-
-        private void Update()
-        {
-            /* ---------------------------------- 为方块回血 --------------------------------- */
-            if (Player.TryGetLocal(out Player localPlayer) && localPlayer.Init.isServerCompletelyReady && localPlayer.TryGetRegion(out _))
-            {
-                var deltaHealth = 20f * Performance.frameTime;
-
-                for (int i = blocksToCheckHealths.Count - 1; i >= 0; i--)
-                {
-                    var block = blocksToCheckHealths[i];
-
-                    if (Tools.time >= block.lastDamageTime + 7.5f)
-                    {
-                        block.SetHealth(block.health + deltaHealth);
-                    }
-                }
-            }
-
-
-
-            /* --------------------------------- 开关区块的显示 -------------------------------- */
-            if (!Tools.instance.mainCamera)
-                return;
-
-            foreach (var chunk in chunks)
-            {
-                if (chunk.IsOutOfView())
-                {
-                    if (chunk.totalRendererEnabled)
-                    {
-                        chunk.DisableRenderers();
-                    }
-                }
-                else
-                {
-                    if (!chunk.totalRendererEnabled)
-                    {
-                        chunk.EnableRenderers();
-                    }
-                }
-            }
-        }
-
-        public Chunk AddChunk(Vector2Int chunkIndex)
-        {
-            if (chunkTable.TryGetValue(chunkIndex, out Chunk chunk))
-            {
-                return chunk;
-            }
-            else
-            {
-                return chunkPool.Get(chunkIndex);
-            }
-        }
-
-        public Block this[Vector2Int pos, bool isBackground] => GetBlock(pos, isBackground);
-        public Block this[int x, int y, bool isBackground] => GetBlock(new(x, y), isBackground);
-
-        public Block GetBlock(Vector2Int pos, bool isBackground)
-        {
-            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
-
-            return AddChunk(chunkIndexTo).GetBlock(pos, isBackground);
-        }
-
-        public bool TryGetBlock(Vector2Int pos, bool isBackground, out Block block)
-        {
-            block = GetBlock(pos, isBackground);
-
-            return block != null;
-        }
-
-        public void ClearAllBlocks()
-        {
-            foreach (Chunk chunk in chunks)
-            {
-                chunk.RecycleAllBlocks();
-            }
-        }
-
-        public void RecycleChunks()
-        {
-            for (int i = chunks.Count - 1; i >= 0; i--)
-            {
-                chunkPool.Recycle(chunks[i]);
-            }
-        }
-
-        public bool HasBlock(Vector2Int pos, bool isBackground)
-        {
-            foreach (Chunk chunk in chunks)
-            {
-                if (isBackground)
-                {
-                    foreach (Block block in chunk.backgroundBlocks)
-                    {
-                        if (block != null && block.pos == pos)
-                        {
-                            return true;
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (Block block in chunk.wallBlocks)
-                    {
-                        if (block != null && block.pos == pos)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        public bool HasBlockPlayerCursorPos(Player player, bool isBackground)
-        {
-            var pos = GetPlayerCursorMapPos(player);
-
-            return HasBlock(pos, isBackground);
-        }
-
-        public bool GetBlockWorldPos(Vector2 pos, bool isBackground)
-        {
-            return GetBlock(PosConvert.WorldToMapPos(pos), isBackground) != null;
-        }
-
-        public bool HasBlockWorldPos(Vector2 pos, bool isBackground)
-        {
-            return HasBlock(PosConvert.WorldToMapPos(pos), isBackground);
-        }
-
-        public Vector2Int GetPlayerCursorMapPos(Player player) => PosConvert.WorldToMapPos(player.cursorWorldPos);
-
-        public void SetBlockNet(Vector2Int pos, bool isBackground, string id, string customData) => Client.Send<NMSetBlock>(new(pos, isBackground, id, customData));
-
-#if UNITY_EDITOR
-        [Button("放置方块")] private Block EditorSetBlock(Vector2Int pos, bool isBackground, string block, bool editRegion) => SetBlock(pos, isBackground, ModFactory.CompareBlockData(block), null, editRegion, true);
-#endif
-
-        public Block SetBlock(Vector2Int pos, bool isBackground, BlockData block, string customData, bool editRegion, bool executeBlockUpdate)
-        {
-            Chunk chunk = AddChunk(PosConvert.MapPosToChunkIndex(pos));
-
-            //Remove 不执行生命周期，等到 Add 再更新，以节约性能
-            chunk.RemoveBlock(pos, isBackground, editRegion, false);
-
-            return chunk.AddBlock(pos, isBackground, block, customData, editRegion, executeBlockUpdate);
-        }
-
-        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData blockData, string customData, bool editRegion, bool executeBlockUpdate)
-        {
-            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
-
-            return AddChunk(chunkIndexTo).AddBlock(pos, isBackground, blockData, customData, editRegion, executeBlockUpdate);
-        }
-
-        public void RemoveBlock(Vector2Int pos, bool isBackground, bool editRegion, bool executeBlockUpdate)
-        {
-            Vector2Int chunkIndexTo = PosConvert.MapPosToChunkIndex(pos);
-
-            AddChunk(chunkIndexTo).RemoveBlock(pos, isBackground, editRegion, executeBlockUpdate);
-        }
-
-        public void UpdateAt(Vector2Int pos, bool isBackground)
-        {
-            Vector2Int[] points = new[]
-            {
-                new (pos.x - 1, pos.y - 1),
-                new (pos.x - 1, pos.y),
-                new (pos.x - 1, pos.y + 1),
-                new (pos.x, pos.y - 1),
-                pos,
-                new (pos.x, pos.y + 1),
-                new (pos.x + 1, pos.y - 1),
-                new (pos.x + 1, pos.y),
-                new (pos.x + 1, pos.y + 1)
-            };
-
-            foreach (Vector2Int p in points)
-            {
-                var block = GetBlock(p, isBackground);
-
-                block?.OnUpdate();
             }
         }
     }
