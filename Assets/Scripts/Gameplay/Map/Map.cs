@@ -395,7 +395,7 @@ namespace GameCore
 
         public void SetBlockCustomDataOL(Block block)
         {
-            Client.Send<NMSetBlockCustomData>(new(block.pos, block.isBackground, block.customData.ToString()));
+            Client.Send<NMSetBlockCustomData>(new(block.pos, block.isBackground, block.customData.ToString(Formatting.None)));
         }
 
         public void SetBlockCustomDataOL(Vector2Int pos, bool isBackground, string customData)
