@@ -675,8 +675,7 @@ namespace GameCore
 
             if (map.TryGetBlock(n.pos, n.isBackground, out Block block))
             {
-                Debug.Log($"n: {n.pos}, {n.isBackground}");
-                Debug.Log($"b: {block.pos}, {block.isBackground}");
+                Debug.Log($"设置了方块 {n.pos} [{n.isBackground}] 的自定义数据: {n.customData}");
                 block.customData = JsonUtils.LoadJObjectByString(n.customData);
                 block.OnServerSetCustomData();
             }

@@ -54,6 +54,7 @@
      <Compile Include="Assets\Scripts\Utils\MethodAgent.cs" />
      <Compile Include="Assets\Scripts\PreloadScene.cs" />
      <Compile Include="Assets\Scripts\Utils\Anim\Timeline.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\IItemContainer.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Controls\GControls.cs" />
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursorRaycaster.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\SlotUIs.cs" />
@@ -164,7 +165,6 @@
      <Compile Include="Assets\Scripts\UI\UPC.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\CreatureBodyPart.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\IdentityCenter.cs" />
-     <Compile Include="Assets\Scripts\Gameplay\Entities\Behaviours\EntityItemContainerBehaviour.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Bullet.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\DamageTextPool.cs" />
      <Compile Include="Assets\Scripts\Network\Server.cs" />

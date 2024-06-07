@@ -100,7 +100,9 @@ namespace GameCore
             var posInRegion = chunk.MapToRegionPos(pos);
 
             //获取存档中的值
-            GFiles.world.GetRegion(chunk.regionIndex).GetBlock(posInRegion.x, posInRegion.y, isBackground).location.cd = customData.ToString(Formatting.None);
+            GFiles.world.GetRegion(chunk.regionIndex)
+                        .GetBlock(posInRegion.x, posInRegion.y, isBackground)
+                        .location.cd = customData.ToString(Formatting.None);
         }
 
         public virtual void OutputDrops(Vector3 pos)
