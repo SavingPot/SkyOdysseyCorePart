@@ -169,6 +169,7 @@
      <Compile Include="Assets\Scripts\Gameplay\Entities\DamageTextPool.cs" />
      <Compile Include="Assets\Scripts\Network\Server.cs" />
      <Compile Include="Assets\Scripts\UI\UIExtensions.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\WorldGeneration.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\PlayerCenter.cs" />
      <Compile Include="Assets\Scripts\Utils\SpriteHandler.cs" />
      <Compile Include="Assets\Scripts\Utils\ZipTools.cs" />

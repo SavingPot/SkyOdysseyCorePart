@@ -237,6 +237,26 @@ namespace GameCore
             }
         }
 
+        public void UpdateAllBlocks()
+        {
+            //要复制一份，防止在生成过程中迭代器变化
+            var chunksTemp = chunks.ToArray();
+
+            foreach (var chunk in chunksTemp)
+            {
+                //要复制一份，防止在生成过程中迭代器变化
+                Block[] blocks = new Block[chunk.wallBlocks.Length + chunk.backgroundBlocks.Length];
+                chunk.wallBlocks.CopyTo(blocks, 0);
+                chunk.backgroundBlocks.CopyTo(blocks, chunk.wallBlocks.Length);
+
+                //更新
+                foreach (var block in blocks)
+                {
+                    block?.OnUpdate();
+                }
+            }
+        }
+
 
 
 
