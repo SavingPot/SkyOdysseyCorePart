@@ -1021,7 +1021,7 @@ namespace GameCore
 
         void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
-            hungerValue = 20;
+            hungerValue = 30;
         }
 
         void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller)

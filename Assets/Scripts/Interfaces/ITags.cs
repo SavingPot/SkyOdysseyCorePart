@@ -46,12 +46,28 @@ namespace GameCore
             return new(false);
         }
 
-        public static ValueTag<int> GetValueTagToInt(this ITags t, string id, int defaultValue = 0)
+        public static bool TryGetTag(this ITags t, string id, out ModTag tag)
         {
-            return GetValueTag<int>(t, id, str => str.ToInt(), defaultValue);
+            tag = GetTag(t, id);
+            return tag.hasTag;
         }
 
-        public static ValueTag<T> GetValueTag<T>(this ITags t, string id, Func<string, T> func, T defaultValue)
+
+
+        public static ValueTag<int> GetValueTagToInt(this ITags t, string id, int defaultValue = 0)
+        {
+            return GetValueTag(t, id, str => str.ToInt(), defaultValue);
+        }
+
+        public static bool TryGetValueTagToInt(this ITags t, string id, out ValueTag<int> tag, int defaultValue = 0)
+        {
+            tag = GetValueTagToInt(t, id, defaultValue);
+            return tag.hasTag;
+        }
+
+
+
+        public static ValueTag<T> GetValueTag<T>(this ITags t, string id, Func<string, T> stringToTargetType, T defaultValue)
         {
             for (int i = 0; i < t.tags.Count; i++)
             {
@@ -65,10 +81,16 @@ namespace GameCore
                 if (splitted.Length != 2 || splitted[0] != id)
                     continue;
 
-                return new(true, func(splitted[1]));
+                return new(true, stringToTargetType(splitted[1]));
             }
 
             return new(false, defaultValue);
+        }
+
+        public static bool TryGetValueTag<T>(this ITags t, string id, Func<string, T> stringToTargetType, out ValueTag<T> tag, T defaultValue)
+        {
+            tag = GetValueTag(t, id, stringToTargetType, defaultValue);
+            return tag.hasTag;
         }
     }
 }
