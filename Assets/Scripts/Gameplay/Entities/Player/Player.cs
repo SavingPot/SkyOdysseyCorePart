@@ -836,7 +836,7 @@ namespace GameCore
                     UseItem(cursorWorldPos);
                 }
 
-                //如果按S
+                //如果按 S
                 if (playerController.PlaceBlockUnderPlayer())
                 {
                     var usingItem = GetUsingItemChecked();

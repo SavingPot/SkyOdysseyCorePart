@@ -126,7 +126,7 @@ namespace GameCore
 
         public static int GetRegionUnlockingCost(Vector2Int index)
         {
-            return Math.Abs(index.x) * 100 + Math.Abs(index.y) * 300;
+            return Math.Abs(index.x) * 250 + Math.Abs(index.y) * 150;
         }
 
 
