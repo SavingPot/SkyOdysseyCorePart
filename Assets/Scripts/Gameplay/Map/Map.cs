@@ -257,6 +257,15 @@ namespace GameCore
             }
         }
 
+        public void GenerateStructure(StructureData structure, Vector2Int anchorPos)
+        {
+            //放置方块
+            foreach (var structBlock in structure.fixedBlocks)
+            {
+                SetBlockNet(anchorPos + structBlock.offset, structBlock.isBackground, structBlock.blockId, null);
+            }
+        }
+
 
 
 

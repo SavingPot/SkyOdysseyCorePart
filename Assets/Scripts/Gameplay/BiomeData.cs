@@ -75,6 +75,11 @@ namespace GameCore
     public sealed class BiomeData_Structure
     {
         public StructureData structure;
+
+        public BiomeData_Structure(StructureData structure)
+        {
+            this.structure = structure;
+        }
     }
 
     [Serializable]
@@ -108,6 +113,24 @@ namespace GameCore
         [LabelText("ID")] public string blockId;
         [LabelText("偏移")] public Vector2Int offset;
         [LabelText("背景")] public bool isBackground;
+
+        public JObject ToJObject()
+        {
+            //转换位置为数组
+            var posJArray = new JArray
+                {
+                    offset.x,
+                    offset.y
+                };
+            if (isBackground) posJArray.Add(-1);
+
+            //返回结果
+            return new JObject
+            {
+                { "id", blockId },
+                { "pos", posJArray }
+            };
+        }
 
         public AttachedBlockDatum(string id, Vector2Int offset, bool isBackground)
         {

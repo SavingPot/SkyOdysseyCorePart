@@ -493,9 +493,32 @@ namespace GameCore
                 //玩家的数据是自行管理的，这里要排除玩家
                 if (isNotPlayer)
                 {
-                    Debug.Log($"实体 {name} 从 {regionIndex} 区域移到 {newRegionIndex} 区域");
+                    //从当前区域移除实体
                     GFiles.world.GetOrAddRegion(regionIndex).RemoveEntity(Init.save);
-                    GFiles.world.GetOrAddRegion(newRegionIndex).AddEntity(Init.save);
+
+                    //创建新区域（如果不存在）
+                    if (!GFiles.world.TryGetRegion(newRegionIndex, out Region region))
+                    {
+                        region = new()
+                        {
+                            index = newRegionIndex,
+                        };
+                        GFiles.world.AddRegion(region);
+                    }
+
+                    //添加实体到新区域
+                    region.AddEntity(Init.save);
+
+                    //如果新区域未生成过，则销毁实体
+                    if (!region.generatedAlready)
+                    {
+                        Debug.Log($"实体 {name} 从 {regionIndex} 区域移到了未生成过的区域 {newRegionIndex}, 同时实体被销毁");
+                        Kill();
+                    }
+                    else
+                    {
+                        Debug.Log($"实体 {name} 从 {regionIndex} 区域移到了已生成过的区域 {newRegionIndex}");
+                    }
                 }
 
                 //更改值

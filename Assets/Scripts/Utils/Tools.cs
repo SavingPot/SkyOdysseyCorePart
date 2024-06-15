@@ -639,6 +639,7 @@ namespace GameCore
 
 
         static readonly Regex HighlightedStackTraceRegex = new(@"at\s(.*)\s(\(.*\))\s\[\w+\]\sin\s(.*:\d+)");
+        static readonly Regex HighlightedStackTraceRegexWithoutAt = new(@"(.*)at\s(.*:\d+)");
 
         public static string HighlightedStackTraceForMarkdown()
         {
@@ -677,6 +678,12 @@ namespace GameCore
             return HighlightedStackTraceRegex.Replace(stackTrace, replacement);
         }
 
+        public static string HighlightedStackTraceWithoutAt(string stackTrace)
+        {
+            string replacement = @"<color=#e5c072>$1</color> <color=#4988ff>[$2]</color>";
+
+            return HighlightedStackTraceRegexWithoutAt.Replace(stackTrace, replacement);
+        }
 
 
 

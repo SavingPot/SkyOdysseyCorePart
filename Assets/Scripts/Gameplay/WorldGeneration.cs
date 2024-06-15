@@ -25,7 +25,12 @@ namespace GameCore
 
         public IslandGeneration NewIsland(Vector2Int centerPoint)
         {
-            var islandGeneration = new IslandGeneration(this, centerPoint);
+            IslandGeneration islandGeneration = index.y switch
+            {
+                0 => new SkyIslandGeneration(this, centerPoint),
+                -1 => new MoistZoneGeneration(this, centerPoint),
+                _ => throw new NotImplementedException(),
+            };
             return islandGeneration;
         }
 
@@ -151,7 +156,12 @@ namespace GameCore
         }
     }
 
-    public class IslandGeneration
+
+
+
+
+
+    public abstract class IslandGeneration
     {
         public Vector2Int maxPoint;
         public Vector2Int minPoint;
@@ -169,10 +179,11 @@ namespace GameCore
         public Dictionary<int, int> wallHighestPointFunction = new();
         public Dictionary<int, int> backgroundHighestPointFunction = new();
 
-        BiomeData_Block[] directBlocks;
-        BiomeData_Block[] perlinBlocks;
-        BiomeData_Block[] postProcessBlocks;
-        BiomeData_Block[] unexpectedBlocks;
+        protected BiomeData_Block[] directBlocks;
+        protected BiomeData_Block[] perlinBlocks;
+        protected BiomeData_Block[] postProcessBlocks;
+        protected BiomeData_Block[] unexpectedBlocks;
+        protected BiomeData_Structure[] structures;
 
 
 
@@ -219,6 +230,8 @@ namespace GameCore
 
 
 
+
+
         public void AddBlock(string blockId, int x, int y, bool isBackground, string customData = null)
         {
             //? 添加到区域生成，需要根据岛的中心位置做偏移，而在添加到岛屿生成则不需要
@@ -226,7 +239,6 @@ namespace GameCore
 
             blockAdded.Add((new(x, y), isBackground)); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
         }
-
 
         public void AddBlockForAreas(string blockId, int x, int y, Vector3Int[] areas)
         {
@@ -247,7 +259,28 @@ namespace GameCore
             }
         }
 
-        public void GenerateDirectBlocks()
+        public void UpdateHighestPointFunction()
+        {
+            foreach (var oneAdded in blockAdded)
+            {
+                var pos = oneAdded.pos;
+                var isBackground = oneAdded.isBackground;
+
+                var dic = isBackground ? backgroundHighestPointFunction : wallHighestPointFunction;
+
+                //如果该 x 值没有被记录过, 那就记录该 x 值
+                if (!dic.ContainsKey(pos.x))
+                    dic.Add(pos.x, pos.y);
+                else if (dic[pos.x] < pos.y)  //如果该 x 值已经被记录过, 但是记录的 y 值比当前 y 值要小, 那就更新记录的 y 值
+                    dic[pos.x] = pos.y;
+            }
+        }
+
+
+
+
+
+        public virtual void GenerateDirectBlocks()
         {
             //遍历每个点
             for (int x = minPoint.x; x < maxPoint.x; x++)
@@ -282,7 +315,7 @@ namespace GameCore
             }
         }
 
-        public void GeneratePerlinBlocks()
+        public virtual void GeneratePerlinBlocks()
         {
             foreach (var perlinBlock in perlinBlocks)
             {
@@ -333,24 +366,7 @@ namespace GameCore
             }
         }
 
-        public void UpdateHighestPointFunction()
-        {
-            foreach (var oneAdded in blockAdded)
-            {
-                var pos = oneAdded.pos;
-                var isBackground = oneAdded.isBackground;
-
-                var dic = isBackground ? backgroundHighestPointFunction : wallHighestPointFunction;
-
-                //如果该 x 值没有被记录过, 那就记录该 x 值
-                if (!dic.ContainsKey(pos.x))
-                    dic.Add(pos.x, pos.y);
-                else if (dic[pos.x] < pos.y)  //如果该 x 值已经被记录过, 但是记录的 y 值比当前 y 值要小, 那就更新记录的 y 值
-                    dic[pos.x] = pos.y;
-            }
-        }
-
-        public void GeneratePostProcessBlocks()
+        public virtual void GeneratePostProcessBlocks()
         {
             //先获取地面最高点
             UpdateHighestPointFunction();
@@ -408,66 +424,65 @@ namespace GameCore
             }
         }
 
-        public void GenerateStructures()
+        public virtual void GenerateStructures()
         {
-            if (biome.structures?.Length > 0)
+            //检查是否有结构
+            if (structures.Length == 0)
+                return;
+
+            for (int x = minPoint.x; x < maxPoint.x; x++)
             {
-                //全部生成完后再生成结构
-                for (int x = minPoint.x; x < maxPoint.x; x++)
+                for (int y = minPoint.y; y < maxPoint.y; y++)
                 {
-                    for (int y = minPoint.y; y < maxPoint.y; y++)
+                    foreach (var l in biome.structures)
                     {
-                        //当前遍历到的点
-                        Vector2Int pos = new(x, y);
+                        //概率抽取
+                        if (!Tools.Prob100(l.structure.probability, regionGeneration.random))
+                            continue;
 
-                        foreach (var l in biome.structures)
+                        //检查空间是否足够
+                        if (l.structure.mustEnough)
                         {
-                            if (Tools.Prob100(l.structure.probability, regionGeneration.random))
+                            foreach (var fixedBlock in l.structure.fixedBlocks)
                             {
-                                //检查空间是否足够
-                                if (l.structure.mustEnough)
+                                int tempPosX = x + fixedBlock.offset.x + centerPoint.x;
+                                int tempPosY = y + fixedBlock.offset.y + centerPoint.y;
+
+                                if (regionGeneration.region.GetBlock(tempPosX, tempPosY, fixedBlock.isBackground).location != null)
                                 {
-                                    foreach (var fixedBlock in l.structure.fixedBlocks)
-                                    {
-                                        int tempPosX = pos.x + fixedBlock.offset.x + centerPoint.x;
-                                        int tempPosY = pos.y + fixedBlock.offset.y + centerPoint.y;
-
-                                        if (regionGeneration.region.GetBlock(tempPosX, tempPosY, fixedBlock.isBackground).location != null)
-                                        {
-                                            goto stopGeneration;
-                                        }
-                                    }
+                                    goto continueToNextStructure;
                                 }
-
-                                //检查是否满足所有需求
-                                foreach (var require in l.structure.require)
-                                {
-                                    int tempPosX = pos.x + require.offset.x + centerPoint.x;
-                                    int tempPosY = pos.y + require.offset.y + centerPoint.y;
-
-                                    if (regionGeneration.region.GetBlock(tempPosX, tempPosY, require.isBackground).save?.blockId != require.blockId)
-                                    {
-                                        goto stopGeneration;
-                                    }
-                                }
-
-                                //如果可以就继续
-                                foreach (var fixedBlock in l.structure.fixedBlocks)
-                                {
-                                    var tempPosX = pos.x + fixedBlock.offset.x;
-                                    var tempPosY = pos.y + fixedBlock.offset.y;
-
-                                    AddBlock(fixedBlock.blockId, tempPosX, tempPosY, fixedBlock.isBackground);
-                                }
-
-                            stopGeneration:
-                                continue;
                             }
                         }
-                    };
-                }
+
+                        //检查是否满足所有需求
+                        foreach (var require in l.structure.require)
+                        {
+                            int tempPosX = x + require.offset.x + centerPoint.x;
+                            int tempPosY = y + require.offset.y + centerPoint.y;
+
+                            if (regionGeneration.region.GetBlock(tempPosX, tempPosY, require.isBackground).save?.blockId != require.blockId)
+                            {
+                                goto continueToNextStructure;
+                            }
+                        }
+
+                        //如果可以就继续
+                        foreach (var fixedBlock in l.structure.fixedBlocks)
+                        {
+                            var tempPosX = x + fixedBlock.offset.x;
+                            var tempPosY = y + fixedBlock.offset.y;
+
+                            AddBlock(fixedBlock.blockId, tempPosX, tempPosY, fixedBlock.isBackground);
+                        }
+
+                    continueToNextStructure:
+                        continue;
+                    }
+                };
             }
         }
+
 
 
 
@@ -732,6 +747,8 @@ namespace GameCore
 
 
 
+
+
         public IslandGeneration(RegionGeneration regionGeneration, Vector2Int centerPoint)
         {
             this.regionGeneration = regionGeneration;
@@ -741,9 +758,9 @@ namespace GameCore
             //决定群系
             biome = ModFactory.CompareBiome(regionGeneration.region.biomeId);
 
-            //决定岛的大小
-            size = new(regionGeneration.random.Next((int)(Region.placeVec.x * biome.minScale.x), (int)(Region.placeVec.x * biome.maxScale.x)).IRange(10, Region.place.x),
-                                regionGeneration.random.Next((int)(Region.placeVec.y * biome.minScale.y), (int)(Region.placeVec.y * biome.maxScale.y)).IRange(10, Region.place.y));
+            //决定岛的大小 (偶数)
+            size = new(Mathf.Clamp(regionGeneration.random.Next((int)(Region.placeVec.x * biome.minScale.x), (int)(Region.placeVec.x * biome.maxScale.x)), 10, Region.place.x),
+                        Mathf.Clamp(regionGeneration.random.Next((int)(Region.placeVec.y * biome.minScale.y), (int)(Region.placeVec.y * biome.maxScale.y)), 10, Region.place.y));
             if (size.x % 2 != 0) size.x++;
             if (size.y % 2 != 0) size.y++;
 
@@ -752,7 +769,7 @@ namespace GameCore
             minPoint = -maxPoint;
 
             //使空岛有 y轴 偏移
-            yOffset = regionGeneration.random.Next(15, 35);
+            yOffset = regionGeneration.random.Next(15, 30);
             surface = maxPoint.y - yOffset;
             surfaceExtra1 = surface + 1;
 
@@ -764,10 +781,10 @@ namespace GameCore
 
 
             //获取方块生成规则
-            List<BiomeData_Block> directBlocksTemp = new();
-            List<BiomeData_Block> perlinBlocksTemp = new();
-            List<BiomeData_Block> postProcessBlocksTemp = new();
-            List<BiomeData_Block> unexpectedBlocksTemp = new();
+            Queue<BiomeData_Block> directBlocksTemp = new();
+            Queue<BiomeData_Block> perlinBlocksTemp = new();
+            Queue<BiomeData_Block> postProcessBlocksTemp = new();
+            Queue<BiomeData_Block> unexpectedBlocksTemp = new();
 
             foreach (var g in biome.blocks)
             {
@@ -782,20 +799,69 @@ namespace GameCore
                     continue;
                 }
 
-                if (g.type == "direct")
-                    directBlocksTemp.Add(g);
-                else if (g.type == "perlin")
-                    perlinBlocksTemp.Add(g);
-                else if (g.type == "post_process")
-                    postProcessBlocksTemp.Add(g);
+                if (IsValidDirectBlock(g))
+                    directBlocksTemp.Enqueue(g);
+                else if (IsValidPerlinBlock(g))
+                    perlinBlocksTemp.Enqueue(g);
+                else if (IsValidPostProcessBlock(g))
+                    postProcessBlocksTemp.Enqueue(g);
                 else
-                    unexpectedBlocksTemp.Add(g);
+                    unexpectedBlocksTemp.Enqueue(g);
             }
 
             directBlocks = directBlocksTemp.ToArray();
             perlinBlocks = perlinBlocksTemp.ToArray();
             postProcessBlocks = postProcessBlocksTemp.ToArray();
             unexpectedBlocks = unexpectedBlocksTemp.ToArray();
+            if (unexpectedBlocks.Length > 0) Debug.LogWarning($"生成岛屿时发现了 {unexpectedBlocks.Length} 个未知的方块生成规则, 它们将被忽略:\n{string.Join(",\n", unexpectedBlocks.Select(b => b.id))}");
+
+
+
+            //获取结构
+            Queue<BiomeData_Structure> structuresTemp = new();
+            if (biome.structures != null)
+            {
+                foreach (var structure in biome.structures)
+                {
+                    if (structure == null)
+                    {
+                        Debug.Log($"生成岛屿时发现了一个空的结构生成规则");
+                        continue;
+                    }
+
+                    if (IsValidStructure(structure))
+                        structuresTemp.Enqueue(structure);
+                }
+            }
+            structures = structuresTemp.ToArray();
+        }
+
+        public virtual bool IsValidDirectBlock(BiomeData_Block block) => block.type == "direct";
+        public virtual bool IsValidPerlinBlock(BiomeData_Block block) => block.type == "perlin";
+        public virtual bool IsValidPostProcessBlock(BiomeData_Block block) => block.type == "post_process";
+        public virtual bool IsValidStructure(BiomeData_Structure structure) => true;
+    }
+
+    public class SkyIslandGeneration : IslandGeneration
+    {
+        public SkyIslandGeneration(RegionGeneration regionGeneration, Vector2Int centerPoint) : base(regionGeneration, centerPoint)
+        {
+
+        }
+    }
+
+    public class MoistZoneGeneration : IslandGeneration
+    {
+        public override bool IsValidDirectBlock(BiomeData_Block block) => false;
+        public override bool IsValidPerlinBlock(BiomeData_Block block) => false;
+        public override bool IsValidPostProcessBlock(BiomeData_Block block) => false;
+        public override bool IsValidStructure(BiomeData_Structure structure) => false;
+
+        public MoistZoneGeneration(RegionGeneration regionGeneration, Vector2Int centerPoint) : base(regionGeneration, centerPoint)
+        {
+            var structureTemp = structures.ToList();
+            structureTemp.Add(new(ModFactory.CompareStructure(StructureID.GhostShip)));
+            structures = structureTemp.ToArray();
         }
     }
 }

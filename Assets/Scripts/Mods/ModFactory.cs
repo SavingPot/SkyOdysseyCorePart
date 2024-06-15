@@ -629,6 +629,12 @@ namespace GameCore
             //完成
             MethodAgent.RunOnMainThread(_ =>
             {
+                //调用所有模组的 OnAllModsLoaded
+                foreach (var mod in mods)
+                {
+                    CallModEntryMethod(mod, entry => entry.OnAllModsLoaded());
+                }
+
                 afterReload?.Invoke();
                 Performance.CollectMemory();
             });

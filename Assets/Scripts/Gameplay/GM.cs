@@ -160,7 +160,7 @@ namespace GameCore
             if (Client.isClient)
             {
                 /* -------------------------------- 设置全局光照亮度 -------------------------------- */
-                globalLight.intensity = (time * 2 / timeOneDay).Range(0.1f, 0.85f);
+                globalLight.intensity = Mathf.Clamp(time * 2 / timeOneDay, 0.1f, 0.85f);
 
                 /* --------------------------------- 设置天空颜色 --------------------------------- */
                 byte delta = (byte)Mathf.Min(GTime.darknessLevel * 12, 180);   //* xx 是为了扩大时间的影响, 要限制在 <= 180, 否则天会变绿
@@ -992,7 +992,7 @@ namespace GameCore
                     }
                     catch (Exception ex)
                     {
-                        Debug.Log($"选取出生点时失败, 堆栈如下: {ex}");
+                        Debug.LogError($"选取出生点时失败, 堆栈如下: {ex}");
                         generation.region.spawnPoint = new(middleX, middleY);
                     }
                 }

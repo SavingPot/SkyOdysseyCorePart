@@ -23,15 +23,9 @@ namespace GameCore
         };
         public static event Action<Region> AfterGeneratingNewRegion = _ => { };
 
-        public static Action<Vector2Int, bool, BlockData> OnBlockDestroyed = (_, _, _) => { };
-        public static Action<Vector2Int, bool, bool, bool> OnRemoveBlock = (pos, layer, editRegion, successful) =>
-        {
-            
-        };
-        public static Action<Vector2Int, bool, Block, Chunk> OnAddBlock = (pos, layer, block, chunk) =>
-        {
-            
-        };
+        public static OnBlockDestroyedDelegate OnBlockDestroyed = (_, _, _) => { };
+        public static OnRemoveBlockDelegate OnRemoveBlock = (pos, isBackground, editRegion, successful) => { };
+        public static OnAddBlockDelegate OnAddBlock = (pos, isBackground, block, chunk) => { };
 
 
         public static event Action OnSaveAllDataToFiles = () => { Debug.Log("保存了所有数据至文件"); };
@@ -43,5 +37,12 @@ namespace GameCore
         internal static void CallAfterGeneratingNewRegion(Region region) => AfterGeneratingNewRegion(region);
 
         internal static void CallOnSaveAllDataToFiles() => OnSaveAllDataToFiles();
+
+
+
+
+        public delegate void OnBlockDestroyedDelegate(Vector2Int pos, bool isBackground, BlockData blockData);
+        public delegate void OnRemoveBlockDelegate(Vector2Int pos, bool isBackground, bool editRegion, bool successful);
+        public delegate void OnAddBlockDelegate(Vector2Int pos, bool isBackground, Block block, Chunk chunk);
     }
 }

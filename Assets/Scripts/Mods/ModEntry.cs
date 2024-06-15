@@ -8,6 +8,7 @@ namespace GameCore
 
         public virtual void OnLoaded() { }
         public virtual void OnReconfigured() { }
+        public virtual void OnAllModsLoaded() { }
         public virtual void OnUnloaded() { }//TODO: Finish
     }
 }

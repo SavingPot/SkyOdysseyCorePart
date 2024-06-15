@@ -689,8 +689,8 @@ namespace GameCore
                 {
                     temp.jsonFormatWhenLoad = "0.6.2";
                     temp.isFightingBiome = entrance["is_fighting_biome"]?.ToBool() ?? false;
-                    temp.minScale = entrance["size_scope"]?["min"]?.ToVector2() ?? new Vector2(0.3f, 0.25f);
-                    temp.maxScale = entrance["size_scope"]?["max"]?.ToVector2() ?? new Vector2(0.4f, 0.4f);
+                    temp.minScale = entrance["size_scope"]?["min"]?.ToVector2() ?? new Vector2(0.4f, 0.25f);
+                    temp.maxScale = entrance["size_scope"]?["max"]?.ToVector2() ?? new Vector2(0.55f, 0.4f);
 
                     if (entrance.TryGetJToken("distribution", out var distribution))
                     {
@@ -723,13 +723,12 @@ namespace GameCore
                     List<BiomeData_Structure> structuresTempList = new();
                     entrance["structures"]?.For(structJT =>
                     {
-                        structuresTempList.Add(new()
-                        {
-                            structure = new()
+                        structuresTempList.Add(new(
+                            new()
                             {
                                 id = structJT["id"].ToString()
                             }
-                        });
+                        ));
                     });
                     temp.structures = structuresTempList.ToArray();
 
