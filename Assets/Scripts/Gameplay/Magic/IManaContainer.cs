@@ -7,6 +7,21 @@ namespace GameCore
         public int totalMana { get; set; }
         public int maxMana { get; }
 
+        public static void FixJObject(JObject jo)
+        {
+            if (!jo.TryGetJToken("ori:mana_container", out var containerJT))
+            {
+                containerJT = new JObject();
+                jo.Add(new JProperty("ori:mana_container", containerJT));
+            }
+
+            if (!containerJT.TryGetJToken("total_mana", out var totalManaJT))
+            {
+                totalManaJT = new JValue(0);
+                ((JObject)containerJT).Add(new JProperty("total_mana", totalManaJT));
+            }
+        }
+
         public static void LoadFromJObject(IManaContainer container, JObject jo)
         {
             var jt = jo["ori:mana_container"];
@@ -22,6 +37,12 @@ namespace GameCore
                 jo.AddObject("ori:mana_container");
 
             jt["total_mana"] = container.totalMana;
+        }
+
+        public static void SetTotalMana(JObject customData, int totalMana)
+        {
+            FixJObject(customData);
+            customData["ori:mana_container"]["total_mana"] = totalMana;
         }
     }
 }

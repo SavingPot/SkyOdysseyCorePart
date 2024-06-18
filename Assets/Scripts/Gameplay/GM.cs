@@ -980,6 +980,12 @@ namespace GameCore
                 //生成 PostProcess
                 islandGeneration.GeneratePostProcessBlocks();
 
+                //生成战利品
+                IslandGeneration.LootGeneration(islandGeneration);
+
+                //生成结构
+                islandGeneration.GenerateStructures();
+
                 //确定出生点
                 if (centerPoint == Vector2Int.zero)
                 {
@@ -988,6 +994,10 @@ namespace GameCore
 
                     try
                     {
+                        //更新最高点函数
+                        islandGeneration.UpdateHighestPointFunction();
+
+                        //设置出生点
                         generation.region.spawnPoint = new(middleX, middleY + islandGeneration.wallHighestPointFunction[0] + 3);
                     }
                     catch (Exception ex)
@@ -996,12 +1006,6 @@ namespace GameCore
                         generation.region.spawnPoint = new(middleX, middleY);
                     }
                 }
-
-                //生成战利品
-                IslandGeneration.LootGeneration(islandGeneration);
-
-                //生成结构
-                islandGeneration.GenerateStructures();
             }
 
             //生成矿石团块

@@ -149,7 +149,6 @@
      <Compile Include="Assets\Scripts\Gameplay\Map\Map.cs" />
      <Compile Include="Assets\Scripts\Mods\ModCreate.cs" />
      <Compile Include="Assets\Scripts\Network\Client.cs" />
-     <Compile Include="Assets\Scripts\Utils\Converters\ModConvert.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Rpc.cs" />
      <Compile Include="Assets\Scripts\Mods\ModEntry.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\SyncPacker.cs" />

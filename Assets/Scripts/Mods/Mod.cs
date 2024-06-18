@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using Random = System.Random;
 
 namespace GameCore
 {
@@ -38,6 +39,39 @@ namespace GameCore
         public void FixWrongPart()
         {
             importedTypes ??= new Type[0];
+        }
+
+
+        public ItemData GetRandomItem(Func<ItemData, bool> condition) => GetRandomItem(Tools.staticRandom, condition);
+        public ItemData GetRandomItem(Random random, Func<ItemData, bool> condition)
+        {
+            //抽取一个
+            ItemData item = null;
+            while (item == null)
+            {
+                item = items.Extract(random);
+
+                //如果不符合就跳到下一个
+                if (!condition(item))
+                    item = null;
+            }
+            return item;
+        }
+
+        public Spell GetRandomSpell(Func<Spell, bool> condition) => GetRandomSpell(Tools.staticRandom, condition);
+        public Spell GetRandomSpell(Random random, Func<Spell, bool> condition)
+        {
+            //抽取一个
+            Spell spell = null;
+            while (spell == null)
+            {
+                spell = spells.Extract(random);
+
+                //如果不符合就跳到下一个
+                if (!condition(spell))
+                    spell = null;
+            }
+            return spell;
         }
 
 

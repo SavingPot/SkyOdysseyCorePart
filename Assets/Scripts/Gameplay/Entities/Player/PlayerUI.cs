@@ -224,7 +224,6 @@ namespace GameCore.UI
         public ImageIdentity happinessBarBg;
         public ImageIdentity healthBarBg;
         public ImageIdentity hungerBarFull;
-        public ImageIdentity happinessBarFull;
         public ImageIdentity healthBarFull;
 
 
@@ -960,8 +959,8 @@ namespace GameCore.UI
                                 viewButton.buttonIdentity.button.OnPointerExitAction = _ => craftingInfoShower.Hide();
                                 viewButton.buttonIdentity.button.onClick.AddListener(() =>
                                 {
-                                    var resultItem = ModConvert.ItemDataToItem(ModFactory.CompareItem(recipe.result.id));
-                                    resultItem.count = recipe.result.count;
+                                    //获取结果并设置数量
+                                    var resultItem = ModFactory.CompareItem(recipe.result.id).DataToItem().SetCount(recipe.result.count);
 
                                     //检查背包空间
                                     if (!Inventory.GetIndexesToPutItemIntoItems(player.inventory.slots, resultItem, out var _))
@@ -1227,10 +1226,6 @@ namespace GameCore.UI
                 Vector4 posC = UIA.UpperRight;
                 int xExtraOffset = -40;
                 int yExtraOffset = -35;
-
-                happinessBarBg = GameUI.AddImage(posC, "ori:image.happiness_bar_bg", "ori:happiness_bar");
-                happinessBarFull = GameUI.AddImage(posC, "ori:image.happiness_bar_full", "ori:happiness_bar");
-                SetIt(happinessBarBg, happinessBarFull, xExtraOffset, yExtraOffset * 2);
 
                 hungerBarBg = GameUI.AddImage(posC, "ori:image.hunger_bar_bg", "ori:hunger_bar");
                 hungerBarFull = GameUI.AddImage(posC, "ori:image.hunger_bar_full", "ori:hunger_bar");
@@ -1769,7 +1764,6 @@ namespace GameCore.UI
         public void RefreshPropertiesBar()
         {
             hungerBarFull.image.fillAmount = player.hungerValue / Player.maxHungerValue;
-            happinessBarFull.image.fillAmount = player.happinessValue / Player.maxHappinessValue;
             healthBarFull.image.fillAmount = (float)player.health / player.maxHealth;
         }
 

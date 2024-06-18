@@ -63,7 +63,6 @@ namespace GameCore
             inventory = player.inventory;
             hungerValue = player.hungerValue;
             coin = player.coin;
-            happinessValue = player.happinessValue;
             completedTasks = player.completedTasks;
             unlockedSkills = player.unlockedSkills;
         }
@@ -76,7 +75,6 @@ namespace GameCore
                 coin = 30,
                 inventory = new(Player.inventorySlotCountConst, null),
                 hungerValue = Player.defaultHungerValue,
-                happinessValue = Player.defaultHappinessValue,
                 completedTasks = new(),
                 unlockedSkills = new()
             }; ;

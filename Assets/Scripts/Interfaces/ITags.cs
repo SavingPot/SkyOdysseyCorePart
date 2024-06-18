@@ -52,6 +52,11 @@ namespace GameCore
             return tag.hasTag;
         }
 
+        public static bool HasTag(this ITags t, string id)
+        {
+            return GetTag(t, id).hasTag;
+        }
+
 
 
         public static ValueTag<int> GetValueTagToInt(this ITags t, string id, int defaultValue = 0)

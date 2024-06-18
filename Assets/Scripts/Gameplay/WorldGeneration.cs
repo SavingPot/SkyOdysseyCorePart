@@ -434,52 +434,66 @@ namespace GameCore
             {
                 for (int y = minPoint.y; y < maxPoint.y; y++)
                 {
-                    foreach (var l in biome.structures)
+                    foreach (var structure in structures)
                     {
-                        //概率抽取
-                        if (!Tools.Prob100(l.structure.probability, regionGeneration.random))
+                        //检查条件
+                        if (!CheckStructureConditions(x, y, structure))
                             continue;
 
-                        //检查空间是否足够
-                        if (l.structure.mustEnough)
-                        {
-                            foreach (var fixedBlock in l.structure.fixedBlocks)
-                            {
-                                int tempPosX = x + fixedBlock.offset.x + centerPoint.x;
-                                int tempPosY = y + fixedBlock.offset.y + centerPoint.y;
-
-                                if (regionGeneration.region.GetBlock(tempPosX, tempPosY, fixedBlock.isBackground).location != null)
-                                {
-                                    goto continueToNextStructure;
-                                }
-                            }
-                        }
-
-                        //检查是否满足所有需求
-                        foreach (var require in l.structure.require)
-                        {
-                            int tempPosX = x + require.offset.x + centerPoint.x;
-                            int tempPosY = y + require.offset.y + centerPoint.y;
-
-                            if (regionGeneration.region.GetBlock(tempPosX, tempPosY, require.isBackground).save?.blockId != require.blockId)
-                            {
-                                goto continueToNextStructure;
-                            }
-                        }
-
-                        //如果可以就继续
-                        foreach (var fixedBlock in l.structure.fixedBlocks)
-                        {
-                            var tempPosX = x + fixedBlock.offset.x;
-                            var tempPosY = y + fixedBlock.offset.y;
-
-                            AddBlock(fixedBlock.blockId, tempPosX, tempPosY, fixedBlock.isBackground);
-                        }
-
-                    continueToNextStructure:
-                        continue;
+                        //如果所有条件均满足，则正式开始生成结构
+                        GenerateStructure(x, y, structure);
                     }
                 };
+            }
+        }
+
+        protected virtual bool CheckStructureConditions(int x, int y, BiomeData_Structure structure)
+        {
+            //概率抽取
+            if (!Tools.Prob100(structure.structure.probability, regionGeneration.random))
+                return false;
+
+            //检查空间是否足够
+            if (structure.structure.mustEnough)
+            {
+                foreach (var fixedBlock in structure.structure.fixedBlocks)
+                {
+                    int tempPosX = x + fixedBlock.offset.x + centerPoint.x;
+                    int tempPosY = y + fixedBlock.offset.y + centerPoint.y;
+
+                    //如果有方块就不能生成
+                    if (regionGeneration.region.GetBlock(tempPosX, tempPosY, fixedBlock.isBackground).location != null)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            //检查是否满足所有特定需求
+            foreach (var require in structure.structure.require)
+            {
+                int tempPosX = x + require.offset.x + centerPoint.x;
+                int tempPosY = y + require.offset.y + centerPoint.y;
+
+                //检测是否是要求的方块
+                if (regionGeneration.region.GetBlock(tempPosX, tempPosY, require.isBackground).save?.blockId != require.blockId)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        protected virtual void GenerateStructure(int x, int y, BiomeData_Structure structure)
+        {
+            //遍历每个方块
+            foreach (var fixedBlock in structure.structure.fixedBlocks)
+            {
+                var blockX = x + fixedBlock.offset.x;
+                var blockY = y + fixedBlock.offset.y;
+
+                AddBlock(fixedBlock.blockId, blockX, blockY, fixedBlock.isBackground);
             }
         }
 
@@ -567,43 +581,26 @@ namespace GameCore
                         //填充每个栏位
                         for (int i = 0; i < group.Length; i++)
                         {
-                            /* --------------------------------- 抽取一个物品 --------------------------------- */
-                            Item item = null;
-
-                            switch (i)
+                            //抽取一个物品
+                            Item item = i switch
                             {
-                                case 0:
-                                    item = ModFactory.CompareItem(BlockID.Dirt).DataToItem();
-                                    item.count = 30;
-                                    break;
+                                0 => ModFactory.CompareItem(BlockID.Dirt).DataToItem().SetCount(30),
+                                1 => ModFactory.CompareItem(ItemID.SportsVest).DataToItem(),
+                                2 => ModFactory.CompareItem(ItemID.SportsShorts).DataToItem(),
+                                3 => ModFactory.CompareItem(ItemID.Sneakers).DataToItem(),
+                                4 => ModFactory.CompareItem(BlockID.OnionCrop).DataToItem().SetCount(3),
+                                _ => null
+                            };
 
-                                case 1:
-                                    item = ModFactory.CompareItem(ItemID.SportsVest).DataToItem();
-                                    break;
-
-                                case 2:
-                                    item = ModFactory.CompareItem(ItemID.SportsShorts).DataToItem();
-                                    break;
-
-                                case 3:
-                                    item = ModFactory.CompareItem(ItemID.Sneakers).DataToItem();
-                                    break;
-
-                                case 4:
-                                    item = ModFactory.CompareItem(BlockID.OnionCrop).DataToItem();
-                                    item.count = 3;
-                                    break;
-                            }
-
-                            /* ---------------------------------- 填充物品 ---------------------------------- */
+                            //填充物品
                             if (item != null)  //如果获取失败了, 这个格子也会为空
                             {
                                 group[i] = JToken.FromObject(item);
                             }
                         }
 
+                        //把物品写入 customData
                         JObject jo = new();
-
                         jo.AddObject("ori:container");
                         jo["ori:container"].AddObject("items");
                         jo["ori:container"]["items"].AddArray("array", group);
@@ -627,78 +624,39 @@ namespace GameCore
                         if (Tools.Prob100(65, islandGeneration.regionGeneration.random))
                             return;
 
-                        Mod mod = null;
-                        while (mod == null)
-                        {
-                            mod = ModFactory.mods.Extract(islandGeneration.regionGeneration.random);
-                            if (mod.items.Count == 0)
-                                mod = null;
-                        }
-
                         //从模组中抽取一种魔咒
-                        static string ExtractSpell(Random random)
+                        static string RandomSpell(Random random)
                         {
-                            Spell spell = null;
-                            Mod mod = null;
-
-                            //获取模组
-                            while (mod == null)
-                            {
-                                mod = ModFactory.mods.Extract(random);
-                                if (mod.spells.Count == 0)
-                                    mod = null;
-                            }
-
-                            //从获得到的模组中抽取一种魔咒
-                            for (var inner = 0; inner < mod.spells.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的魔咒
-                            {
-                                spell = mod.spells.Extract(random);
-
-                                if (spell == null)
-                                    continue;
-
-                                //如果是木箱的战利品就通过
-                                if (spell.GetTag("ori:loot.wooden_chest").hasTag)
-                                    break;
-                                else
-                                    spell = null;
-                            }
+                            Mod mod = ModFactory.GetRandomModWithSpells();
+                            Spell spell = mod.GetRandomSpell(random, spell => spell.HasTag("ori:loot.wooden_chest"));
 
                             return spell?.id;
                         }
 
+                        //尝试抽取一个战利品（就算失败了也不会报错，不会有影响）
                         ItemData item = null;
-                        for (var inner = 0; inner < mod.items.Count / 5 + 1; inner++)  //最多尝试抽取 1/5 的物品
-                        {
-                            item = mod.items.Extract(islandGeneration.regionGeneration.random);
+                        Mod mod = ModFactory.GetRandomModWithItems();
+                        MethodAgent.TryRun(() => item = mod.GetRandomItem(islandGeneration.regionGeneration.random, item => item.HasTag("ori:loot.wooden_chest")));
 
-                            if (item == null)
-                                continue;
-
-                            //如果是木箱的战利品就通过
-                            if (item.GetTag("ori:loot.wooden_chest").hasTag)
-                                break;
-                            else
-                                item = null;
-                        }
                         if (item != null)  //如果获取失败了, 这个格子也会为空
                         {
                             var extendedItem = item.DataToItem();
 
                             if (item.id == ItemID.ManaStone)
                             {
+                                //初始化 customData 并写入魔能和魔咒
                                 var jo = new JObject();
-                                jo.AddObject("ori:mana_container");
-                                jo["ori:mana_container"].AddProperty("total_mana", islandGeneration.regionGeneration.random.Next(0, 100));
-                                jo.AddObject("ori:spell_container");
-                                jo["ori:spell_container"].AddProperty("spell", ExtractSpell(islandGeneration.regionGeneration.random));
+                                IManaContainer.SetTotalMana(jo, islandGeneration.regionGeneration.random.Next(0, 100));
+                                ISpellContainer.SetSpell(jo, RandomSpell(islandGeneration.regionGeneration.random));
+
                                 extendedItem.customData = jo;
                             }
                             else if (item.id == ItemID.SpellManuscript)
                             {
+                                //初始化 customData 并写入魔咒
                                 var jo = new JObject();
-                                jo.AddObject("ori:spell_container");
-                                jo["ori:spell_container"].AddProperty("spell", ExtractSpell(islandGeneration.regionGeneration.random));
+                                ISpellContainer.SetSpell(jo, RandomSpell(islandGeneration.regionGeneration.random));
+
                                 extendedItem.customData = jo;
                             }
 
@@ -856,6 +814,58 @@ namespace GameCore
         public override bool IsValidPerlinBlock(BiomeData_Block block) => false;
         public override bool IsValidPostProcessBlock(BiomeData_Block block) => false;
         public override bool IsValidStructure(BiomeData_Structure structure) => false;
+
+        protected override bool CheckStructureConditions(int x, int y, BiomeData_Structure structure)
+        {
+            return x == 0 && y == 0;
+        }
+
+        protected override void GenerateStructure(int x, int y, BiomeData_Structure structure)
+        {
+            base.GenerateStructure(x, y, structure);
+
+            foreach (var block in structure.structure.fixedBlocks)
+            {
+                if (block.blockId != BlockID.WoodenChest)
+                    continue;
+
+                //计算出战利品的位置
+                var lootX = x + block.offset.x;
+                var lootY = y + block.offset.y;
+
+                //虽然直到一般会是战利品，但还是检查一下
+                if (!regionGeneration.region.TryGetBlock(lootX, lootY, false, out var blockSave) || blockSave.save.blockId == BlockID.WoodenChest)
+                    continue;
+
+                JToken[] group = new JToken[28];
+
+                //填充每个栏位
+                for (int i = 0; i < group.Length; i++)
+                {
+                    //抽取一个物品
+                    Item item = i switch
+                    {
+                        0 => ModFactory.CompareItem(ItemID.ManaStone).DataToItem(),
+                        _ => null
+                    };
+
+                    //填充物品
+                    if (item != null)  //如果获取失败了, 这个格子也会为空
+                    {
+                        group[i] = JToken.FromObject(item);
+                    }
+                }
+
+                JObject jo = new();
+
+                jo.AddObject("ori:container");
+                jo["ori:container"].AddObject("items");
+                jo["ori:container"]["items"].AddArray("array", group);
+
+                //设置 customData
+                blockSave.location.cd = jo.ToString(Formatting.None);
+            }
+        }
 
         public MoistZoneGeneration(RegionGeneration regionGeneration, Vector2Int centerPoint) : base(regionGeneration, centerPoint)
         {

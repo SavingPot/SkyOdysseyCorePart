@@ -434,7 +434,7 @@ namespace GameCore
         {
             foreach (var slot in slots)
             {
-                if (slot.data.GetTag(tag).hasTag)
+                if (slot.data.HasTag(tag))
                 {
                     return true;
                 }
@@ -449,7 +449,7 @@ namespace GameCore
 
             foreach (var slot in slots)
             {
-                if (slot.data.GetTag(tag).hasTag)
+                if (slot.data.HasTag(tag))
                 {
                     temp += slot.count;
 
@@ -669,6 +669,14 @@ namespace GameCore
         [LabelText("自定义数据")] public JObject customData;
         public ItemData data;
         //TODO: behaviour include in this
+
+
+        public Item SetCount(ushort count)
+        {
+            this.count = count;
+            return this;
+        }
+
 
         public Item()
         {
@@ -919,7 +927,11 @@ namespace GameCore
             //texture = block.defaultTextureLoaded;
         }
 
-        public Item DataToItem() => ModConvert.ItemDataToItem(this);
+        public Item DataToItem() => new()
+        {
+            count = 1,
+            data = this
+        };
     }
 
     [Serializable]

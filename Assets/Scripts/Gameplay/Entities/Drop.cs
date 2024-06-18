@@ -65,7 +65,7 @@ namespace GameCore
             if (ConvertStringItem(customData?["ori:item_data"].ToString(), out string id, out ushort count, out string itemCustomData, out string error))
             {
                 /* ---------------------------------- 获取物品 ---------------------------------- */
-                item = ModConvert.ItemDataToItem(ModFactory.CompareItem(id));
+                item = ModFactory.CompareItem(id).DataToItem();
 
                 if (item == null)
                 {

@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
+using Random = System.Random;
 
 namespace GameCore
 {
@@ -445,6 +446,39 @@ namespace GameCore
 
             return ids;
         }
+
+
+
+
+
+
+        public static Mod GetRandomModWithItems() => GetRandomModWithItems(Tools.staticRandom);
+        public static Mod GetRandomModWithItems(Random random) => GetRandomModWithCondition(random, mod => mod.items.Count > 0);
+
+        public static Mod GetRandomModWithSpells() => GetRandomModWithSpells(Tools.staticRandom);
+        public static Mod GetRandomModWithSpells(Random random) => GetRandomModWithCondition(random, mod => mod.spells.Count > 0);
+
+        public static Mod GetRandomModWithCondition(Func<Mod, bool> condition) => GetRandomModWithCondition(Tools.staticRandom, condition);
+        public static Mod GetRandomModWithCondition(Random random, Func<Mod, bool> condition)
+        {
+            Mod mod = null;
+            while (mod == null)
+            {
+                mod = mods.Extract(random);
+
+                //如果不符合就跳到下一个
+                if (!condition(mod))
+                    mod = null;
+            }
+            return mod;
+        }
+
+
+
+
+
+
+
 
         #region 获取目录
         public static string GetInfoPath(string modPath) => Path.Combine(modPath, "mod_info.json");

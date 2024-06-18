@@ -38,17 +38,11 @@ namespace GameCore
 
                     bool isMoving = player.isMoving;
                     float hungerValue = player.hungerValue;
-                    float happinessValue = player.happinessValue;
                     int health = player.health;
 
                     float hungerValueDelta = frameTime * 0.01f;
                     if (isMoving) hungerValueDelta += frameTime * 0.02f;
                     player.hungerValue = hungerValue - hungerValueDelta;
-
-                    float happinessValueDelta = frameTime * 0.02f;
-                    if (isMoving) happinessValueDelta += frameTime * 0.001f;
-                    if (hungerValue <= 30) happinessValueDelta += frameTime * 0.03f;
-                    player.happinessValue = happinessValue - happinessValueDelta;
 
                     //一秒回一次血
                     if (Tools.time >= playerHealthUpTimer)

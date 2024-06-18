@@ -34,8 +34,8 @@ namespace GameCore
         public List<string> tags = new();
         List<string> ITags.tags { get => tags; }
 
-        public bool IsConstructionWall() => this.GetTag("ori:construction_wall").hasTag;
-        public bool IsFurniture() => this.GetTag("ori:furniture").hasTag;
+        public bool IsConstructionWall() => this.HasTag("ori:construction_wall");
+        public bool IsFurniture() => this.HasTag("ori:furniture");
 
         #endregion
 

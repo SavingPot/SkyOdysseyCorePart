@@ -237,18 +237,10 @@ namespace GameCore
 
         #endregion
 
-        #region 属性
-
         #region 饥饿值
         [Sync] public float hungerValue;
         public static float defaultHungerValue = 100;
         public static float maxHungerValue = 100;
-        #endregion
-
-        #region 幸福值
-        [Sync] public float happinessValue;
-        public static float defaultHappinessValue = 50;
-        public static float maxHappinessValue = 100;
         #endregion
 
         #region 玩家名
@@ -306,32 +298,6 @@ namespace GameCore
         public Item GetUsingItemChecked() => inventory.GetItemChecked(usingItemIndex);
         public ItemBehaviour GetUsingItemBehaviourChecked() => inventory.GetItemBehaviourChecked(usingItemIndex);
 
-        #endregion
-
-#if UNITY_EDITOR
-        [Button] void EditorPrintIs() => Debug.Log(GetUsingItemChecked() == null);
-        [Button("输出玩家名称")] private void EditorOutputPlayerName() => Debug.Log($"玩家名: {playerName}");
-        [Button("输出玩家血量")] private void EditorOutputHealth() => Debug.Log($"血量: {health}");
-        [Button("输出区域序号")] private void EditorOutputRegionIndex() => Debug.Log($"区域序号: {regionIndex}");
-        [Button("设置手中物品")]
-        private void EditorSetUsingItem(string id = "ori:", ushort count = 1)
-        {
-            var data = ModFactory.CompareItem(id);
-
-            if (data == null)
-            {
-                Debug.LogWarning($"获取物品失败: 无法匹配到 id {id}");
-                return;
-            }
-
-            var item = ModConvert.ItemDataToItem(data);
-            item.count = count;
-
-            ServerSetItem(usingItemIndex.ToString(), item);
-        }
-        [Button("快速获取最大-替换手中物品")] private void EditorSetUsingItem(string id = BlockID.GrassBlock) => EditorSetUsingItem(id, ushort.MaxValue);
-        [Button("刷新物品栏")] private void EditorRefreshInventory() => EntityInventoryOwnerBehaviour.RefreshInventory(this);
-#endif
         #endregion
 
         #endregion
@@ -1755,7 +1721,7 @@ namespace GameCore
             if (IsPointInteractable(cursorWorldPos) &&
                 map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
                 block.gameObject.activeInHierarchy &&
-                !block.data.GetTag("ori:liquid").hasTag)
+                !block.data.HasTag("ori:liquid"))
             {
                 ExcavateBlock(block);
             }
@@ -1900,6 +1866,38 @@ namespace GameCore
             ControlMode.Gamepad => new GamepadController(player),
             _ => throw new()
         };
+
+
+
+
+
+
+
+
+
+#if UNITY_EDITOR
+        [Button("输出玩家名称")] private void EditorOutputPlayerName() => Debug.Log($"玩家名: {playerName}");
+        [Button("输出玩家血量")] private void EditorOutputHealth() => Debug.Log($"血量: {health}");
+        [Button("输出区域序号")] private void EditorOutputRegionIndex() => Debug.Log($"区域序号: {regionIndex}");
+        [Button("设置手中物品")]
+        private void EditorSetUsingItem(string id = "ori:", ushort count = 1)
+        {
+            var data = ModFactory.CompareItem(id);
+
+            if (data == null)
+            {
+                Debug.LogWarning($"获取物品失败: 无法匹配到 id {id}");
+                return;
+            }
+
+            var item = data.DataToItem();
+            item.count = count;
+
+            ServerSetItem(usingItemIndex.ToString(), item);
+        }
+        [Button("快速获取最大-替换手中物品")] private void EditorSetUsingItem(string id = BlockID.GrassBlock) => EditorSetUsingItem(id, ushort.MaxValue);
+        [Button("刷新物品栏")] private void EditorRefreshInventory() => EntityInventoryOwnerBehaviour.RefreshInventory(this);
+#endif
     }
 
 

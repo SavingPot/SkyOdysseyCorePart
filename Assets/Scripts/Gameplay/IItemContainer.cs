@@ -4,14 +4,14 @@ namespace GameCore
 {
     public static class ItemContainerBehaviour
     {
-        public static JArray FixCustomDataAsItemContainer(this IItemContainer container, int defaultItemCount, ref JObject jo)
+        public static JArray FixCustomDataAsItemContainer(int defaultItemCount, ref JObject customData)
         {
-            jo ??= new();
+            customData ??= new();
 
-            if (!jo.TryGetJToken("ori:container", out var containerToken))
+            if (!customData.TryGetJToken("ori:container", out var containerToken))
             {
-                jo.AddObject("ori:container");
-                containerToken = jo["ori:container"];
+                customData.AddObject("ori:container");
+                containerToken = customData["ori:container"];
             }
             if (!containerToken.TryGetJToken("items", out var itemsToken))
             {
@@ -28,10 +28,12 @@ namespace GameCore
             return arrayToken as JArray;
         }
 
-        public static void LoadItemsFromCustomData(this IItemContainer container, int defaultItemCount, ref JObject jo)
+
+
+        public static void LoadItemsFromCustomData(this IItemContainer container, int defaultItemCount, ref JObject customData)
         {
             //修正 JObject
-            var array = FixCustomDataAsItemContainer(container, defaultItemCount, ref jo);
+            var array = FixCustomDataAsItemContainer(defaultItemCount, ref customData);
 
             /* -------------------------------------------------------------------------- */
             /*                                    读取数据                                    */
@@ -51,16 +53,33 @@ namespace GameCore
             }
         }
 
-        public static void WriteItemsToCustomData(this IItemContainer container, int defaultItemCount, ref JObject jo)
+
+
+        public static void WriteItemsToCustomData(this IItemContainer container, int defaultItemCount, ref JObject customData)
         {
             //修正 JObject
-            var array = FixCustomDataAsItemContainer(container, defaultItemCount, ref jo);
+            var array = FixCustomDataAsItemContainer(defaultItemCount, ref customData);
 
+            //写入
+            WriteItemsToCustomData(array, container.items);
+        }
+
+        public static void WriteItemsToCustomData(Item[] items, int defaultItemCount, ref JObject customData)
+        {
+            //修正 JObject
+            var array = FixCustomDataAsItemContainer(defaultItemCount, ref customData);
+
+            //写入
+            WriteItemsToCustomData(array, items);
+        }
+
+        public static void WriteItemsToCustomData(JArray array, Item[] items)
+        {
             //清除数据
             array.Clear();
 
-            //写入数据
-            foreach (var item in container.items)
+            //逐个写入物品
+            foreach (var item in items)
             {
                 if (Item.Null(item))
                 {
