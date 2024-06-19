@@ -22,7 +22,8 @@ namespace GameCore
         {
             base.GenerateStructure(x, y, structure);
 
-            WriteBlockCustomDataInStructure(BlockID.WoodenChest, x, y, structure, (_, _, _) => GenerateLootCustomData(40));
+            WriteBlockCustomDataInStructure(BlockID.WoodenChest, x, y, structure,
+            (_, _, _) => GenerateLootCustomData(40, item => item.HasTag("ori:loot.ghost_ship"), spell => spell.HasTag("ori:loot.ghost_ship")));
         }
 
         public MoistZoneGeneration(RegionGeneration regionGeneration, Vector2Int centerPoint) : base(regionGeneration, centerPoint)

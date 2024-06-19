@@ -1,6 +1,7 @@
 using GameCore.UI;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ namespace GameCore
         //TODO: Implement loot bag behaviour
         public override bool Use(Vector2 point)
         {
+            //目前只支持玩家使用
             if (owner is not Player player)
             {
                 Debug.LogWarning("Loot bag can only be used by player");
@@ -41,6 +43,7 @@ namespace GameCore
                 foreach (var item in itemsToGive)
                 {
                     player.ServerAddItem(item);
+                    player.pui.ShowGainRareItemUI(item);
                 }
             }
 

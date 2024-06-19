@@ -285,10 +285,12 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         public List<SkillData> skills = new()
         {
-            new("ori:agriculture", "ori:skill.agriculture", null, "ori:skill_description.agriculture", 5),
+            new("ori:skill", "ori:skill.skill", null, "ori:skill_description.skill", 5),
+            new("ori:agriculture", "ori:skill.agriculture", "ori:skill", "ori:skill_description.agriculture", 5),
             new("ori:agriculture.quick", "ori:skill.agriculture.quick", "ori:agriculture", "ori:skill_description.agriculture.quick", 10),
             new("ori:agriculture.coin", "ori:skill.agriculture.coin", "ori:agriculture", "ori:skill_description.agriculture.coin", 10),
-            new("ori:agriculture.harvest", "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 10)
+            new("ori:agriculture.harvest", "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 10),
+            new("ori:agriculture.fishing", "ori:skill.agriculture.fishing", "ori:agriculture", "ori:skill_description.agriculture.fishing", 10),
         };
         public BackpackPanel skillPanel;
         public NodeTree<SkillNode, SkillData> skillNodeTree;
@@ -457,6 +459,7 @@ namespace GameCore.UI
         public ImageIdentity gainRareItemIcon;
         public TextIdentity gainRareItemNameText;
         public TextIdentity gainRareItemDescriptionText;
+        public Queue<Item> gainRareItemQueue = new();
 
         public void ShowGainRareItemUI(string itemId)
         {
@@ -470,15 +473,30 @@ namespace GameCore.UI
 
             ShowGainRareItemUI(item);
         }
-
-        public void ShowGainRareItemUI(ItemData item)
+        public void ShowGainRareItemUI(ItemData item) => ShowGainRareItemUI(item.DataToItem());
+        public void ShowGainRareItemUI(Item item)
         {
-            gainRareItemIcon.SetSprite(item.texture.sprite);
-            gainRareItemNameText.SetText(GameUI.CompareText(item.id).text);
-            gainRareItemDescriptionText.SetText(GameUI.CompareTextNullable(item.description)?.text);
+            if (GameUI.page.ui == gainRareItemButtonPanel)
+            {
+                gainRareItemQueue.Enqueue(item);
+                return;
+            }
+
+            gainRareItemIcon.SetSprite(item.data.texture.sprite);
+            gainRareItemNameText.SetText($"{GameUI.CompareText(item.data.id).text}{(item.count == 0 ? "" : $" x{item.count}")}");
+            gainRareItemDescriptionText.SetText(GameUI.CompareTextNullable(item.data.description)?.text);
 
             gainRareItemButtonPanel.ap = Vector2.zero;
             GameUI.SetPage(gainRareItemButtonPanel, GameUI.DisappearType.PositionDownToUp, GameUI.AppearType.PositionDownToUp);
+        }
+
+        void CheckGainRareItemQueue()
+        {
+            //珍惜物品界面关闭且队列不为空, 则尝试弹出队列的第一个物品
+            if (!gainRareItemButtonPanel.gameObject.activeInHierarchy && gainRareItemQueue.TryDequeue(out var item))
+            {
+                ShowGainRareItemUI(item);
+            }
         }
 
 
@@ -914,6 +932,10 @@ namespace GameCore.UI
                         //遍历每个配方
                         foreach (var recipe in recipes)
                         {
+                            //如果配方不能被合成
+                            if (!recipe.IsEligibleFor(player))
+                                continue;
+
                             /* ----------------------------- 获取一个 ViewButton ---------------------------- */
 
                             CraftingViewButton viewButton = null;
@@ -1338,7 +1360,7 @@ namespace GameCore.UI
             #region 获得珍贵物品界面
 
             gainRareItemButtonPanel = GameUI.AddButton(UIA.Middle, "ori:button.get_item", GameUI.canvas.transform, null);
-            gainRareItemButtonPanel.SetSizeDelta(500, 200);
+            gainRareItemButtonPanel.SetSizeDelta(600, 250);
             gainRareItemButtonPanel.SetSprite(null);
             gainRareItemButtonPanel.SetColor(new(0.15f, 0.15f, 0.15f, 0.75f));
             gainRareItemButtonPanel.button.ClearColorEffects();
@@ -1474,16 +1496,32 @@ namespace GameCore.UI
 
         public void SetBackpackPanel(string id)
         {
-            foreach (var item in backpackPanels)
-                if (item.id == currentBackpackPanel)
-                    item.Deactivate();
-
-            foreach (var item in backpackPanels)
+            //先关闭当前面板
+            foreach (var panel in backpackPanels)
             {
-                if (item.id == id)
+                if (panel.id == currentBackpackPanel)
                 {
-                    item.Refresh?.Invoke();
-                    item.Activate();
+                    //改变按钮大小
+                    panel.switchButtonBackground.sd /= 1.3f;
+                    panel.switchButton.sd /= 1.3f;
+                    panel.switchButtonBackground.SetAPosY(panel.switchButtonBackground.sd.y / 2);
+
+                    panel.Deactivate();
+                }
+            }
+
+            //然后打开指定面板
+            foreach (var panel in backpackPanels)
+            {
+                if (panel.id == id)
+                {
+                    //改变按钮大小
+                    panel.switchButtonBackground.sd *= 1.3f;
+                    panel.switchButton.sd *= 1.3f;
+                    panel.switchButtonBackground.SetAPosY(panel.switchButtonBackground.sd.y / 2);
+
+                    panel.Refresh?.Invoke();
+                    panel.Activate();
                     currentBackpackPanel = id;
                     return;
                 }
@@ -1705,6 +1743,10 @@ namespace GameCore.UI
                         break;
                 }
             }
+
+            /* ------------------------------- 检查获取珍惜物品队列 ------------------------------- */
+            CheckGainRareItemQueue();
+
 
 
 

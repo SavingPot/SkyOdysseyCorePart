@@ -760,7 +760,7 @@ namespace GameCore.UI
         {
             var switchButtonBackground = AddImage(UIA.UpperLeft, buttonBackgroundId, "ori:backpack_panel_switch_button", parent);
             switchButtonBackground.sd = new(50, 50);
-            switchButtonBackground.SetAPos(switchButtonBackground.sd.x / 2 + (switchButtonBackground.sd.x + 15) * sidebarIndex, switchButtonBackground.sd.y / 2);
+            switchButtonBackground.SetAPos(switchButtonBackground.sd.x / 2 + (switchButtonBackground.sd.x + 10) * sidebarIndex, switchButtonBackground.sd.y / 2);
 
             var switchButton = AddButton(UIA.Middle, buttonId, switchButtonBackground, switchButtonTexture);
             switchButton.sd = switchButtonBackground.sd;

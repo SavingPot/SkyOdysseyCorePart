@@ -991,7 +991,13 @@ namespace GameCore
     [Serializable]
     public class CraftingRecipe : Recipe<CraftingRecipe_Item>
     {
-
+        public static Dictionary<string, Func<Player, bool>> conditions = new()
+        {
+            { "ori:flint_hoe", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
+            { "ori:iron_hoe", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
+            { "ori:fishing_rod", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Fishing) },
+        };
+        public bool IsEligibleFor(Player player) => !conditions.ContainsKey(id) || conditions[id](player);
     }
 
     [Serializable]

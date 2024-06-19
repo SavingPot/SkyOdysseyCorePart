@@ -533,8 +533,8 @@ namespace GameCore
         {
             if (LoadModClass(path, "ori:structure", out StructureData temp, out var entrance))
             {
-                // 0.4.5 -> 0.4.8
-                if (GameTools.CompareVersions(temp.jsonFormat, "0.6.4", Operators.lessOrEqual))
+                // 0.6.4 -> _
+                if (GameTools.CompareVersions(temp.jsonFormat, "0.6.4", Operators.thanOrEqual))
                 {
                     temp.jsonFormatWhenLoad = "0.6.4";
 
@@ -544,30 +544,24 @@ namespace GameCore
                     List<AttachedBlockDatum> requireBlockTemp = new();
                     entrance["generation"]?["require"]?.For(i =>
                     {
-                        if (i["id"] != null)
-                        {
-                            if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
-                                requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
-                            else if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
-                                requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
-                            else
-                                requireBlockTemp.Add(new(i["id"]?.ToString(), Vector2Int.zero, false));
-                        }
+                        if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
+                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
+                        else if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
+                            requireBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
+                        else
+                            requireBlockTemp.Add(new(i["id"]?.ToString(), Vector2Int.zero, false));
                     });
                     temp.require = requireBlockTemp.ToArray();
 
                     List<AttachedBlockDatum> fixedBlockTemp = new();
                     entrance["blocks"]?["fixed"]?.For(i =>
                     {
-                        if (i["id"] != null)
-                        {
-                            if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
-                                fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
-                            if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
-                                fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
-                            else
-                                fixedBlockTemp.Add(new(i["id"]?.ToString(), new(), false));
-                        }
+                        if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 2)
+                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), false));
+                        else if (i["pos"] != null && i["pos"].ToObject<int[]>().Length == 3)
+                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(i["pos"].ElementAt(0).ToInt(), i["pos"].ElementAt(1).ToInt()), i["pos"].ElementAt(2).ToInt() < 0));
+                        else
+                            fixedBlockTemp.Add(new(i["id"]?.ToString(), new(), false));
                     });
                     temp.fixedBlocks = fixedBlockTemp.ToArray();
                 }
@@ -689,7 +683,7 @@ namespace GameCore
                 {
                     temp.jsonFormatWhenLoad = "0.6.2";
                     temp.isFightingBiome = entrance["is_fighting_biome"]?.ToBool() ?? false;
-                    temp.minScale = entrance["size_scope"]?["min"]?.ToVector2() ?? new Vector2(0.4f, 0.25f);
+                    temp.minScale = entrance["size_scope"]?["min"]?.ToVector2() ?? new Vector2(0.4f, 0.35f);
                     temp.maxScale = entrance["size_scope"]?["max"]?.ToVector2() ?? new Vector2(0.55f, 0.4f);
 
                     if (entrance.TryGetJToken("distribution", out var distribution))

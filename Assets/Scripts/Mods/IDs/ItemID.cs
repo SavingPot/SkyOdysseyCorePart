@@ -20,6 +20,7 @@ namespace GameCore
         public const string DogTailGrassNoodles = "ori:dog_tail_grass_noodles";
         public const string DogTailGrassPowder = "ori:dog_tail_grass_powder";
         public const string FeatherWing = "ori:feather_wing";
+        public const string FishingRod = "ori:fishing_rod";
         public const string Flint = "ori:flint";
         public const string FlintHoe = "ori:flint_hoe";
         public const string FlintKnife = "ori:flint_knife";

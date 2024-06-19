@@ -243,6 +243,13 @@ namespace GameCore
             return result.location != null;
         }
 
+        public bool TryGetBlock(string blockId, bool isBackground, out BlockSave result)
+        {
+            result = GetBlock(blockId, isBackground);
+
+            return result != null;
+        }
+
         public bool RemoveEntity(EntitySave entity)
         {
             return entities.Remove(entity);
@@ -329,10 +336,13 @@ namespace GameCore
 
                 if (location.x == x && location.y == y)
                 {
+                    //覆写
                     if (overwriteIfContains)
                         locations[i] = new(x, y, customData);
+                    //不覆写，报错
                     else
                         Debug.LogError($"添加方块 {blockId} (({x},{y}), {isBg}) 失败：方块已存在");
+
                     return;
                 }
             }

@@ -358,7 +358,7 @@ namespace GameCore
                 block.health = Block.totalMaxHealth;
                 block.customData = JsonUtils.LoadJObjectByString(customData);
                 block.data = data;
-                block.gameObject.name = data.id;
+                block.gameObject.name = $"{data.id} {pos}";
 
                 /* ----------------------------------- 初始化 ---------------------------------- */
                 if (data.lightLevel > 0)

@@ -11,7 +11,7 @@ namespace GameCore
         protected override bool CheckStructureConditions(int x, int y, BiomeData_Structure structure)
         {
             if (structure.structure.id == StructureID.UndergroundRelics)
-                return x == -9 && y == -3;
+                return x == -9 && y == surface - 7;
             else
                 return base.CheckStructureConditions(x, y, structure);
         }
@@ -20,25 +20,28 @@ namespace GameCore
         {
             base.GenerateStructure(x, y, structure);
 
-            if (structure.structure.id == StructureID.UndergroundRelics)
-                WriteBlockCustomDataInStructure(BlockID.WoodenChest, x, y, structure, (_, _, _) =>
-                {
-                    var result = GenerateLootCustomData(40);
-                    var array = result["ori:container"]["items"]["array"];
+            if (structure.structure.id != StructureID.UndergroundRelics)
+                return;
 
-                    //随机填充 1 个战利品袋
-                    var index = regionGeneration.random.Next(array.Count());
-                    array[index] = ModFactory.CompareItem(ItemID.LootBag)
-                                        .DataToItem()
-                                        .SetCustomData(LootBagBehaviour.NewCustomData(
-                                            ModFactory.CompareItem(ItemID.SportsVest).DataToItem(),
-                                            ModFactory.CompareItem(ItemID.SportsShorts).DataToItem(),
-                                            ModFactory.CompareItem(ItemID.Sneakers).DataToItem(),
-                                            ModFactory.CompareItem(BlockID.OnionCrop).DataToItem().SetCount(6))).
-                                        ToJToken();
+            //为地下遗迹添加战利品
+            WriteBlockCustomDataInStructure(BlockID.WoodenChest, x, y, structure, (_, _, _) =>
+            {
+                var result = GenerateLootCustomData(40, item => true, item => true);
+                var array = result["ori:container"]["items"]["array"];
 
-                    return result;
-                });
+                //随机填充 1 个战利品袋
+                var index = regionGeneration.random.Next(array.Count());
+                array[index] = ModFactory.CompareItem(ItemID.LootBag)
+                                    .DataToItem()
+                                    .SetCustomData(LootBagBehaviour.NewCustomData(
+                                        ModFactory.CompareItem(ItemID.SportsVest).DataToItem(),
+                                        ModFactory.CompareItem(ItemID.SportsShorts).DataToItem(),
+                                        ModFactory.CompareItem(ItemID.Sneakers).DataToItem(),
+                                        ModFactory.CompareItem(BlockID.OnionCrop).DataToItem().SetCount(6))).
+                                    ToJToken();
+
+                return result;
+            });
         }
 
         public SkyIslandGeneration(RegionGeneration regionGeneration, Vector2Int centerPoint) : base(regionGeneration, centerPoint)

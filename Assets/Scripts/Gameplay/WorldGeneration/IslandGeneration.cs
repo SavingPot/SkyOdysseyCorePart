@@ -339,12 +339,12 @@ namespace GameCore
         protected virtual void GenerateStructure(int x, int y, BiomeData_Structure structure)
         {
             //遍历每个方块
-            foreach (var fixedBlock in structure.structure.fixedBlocks)
+            foreach (var block in structure.structure.fixedBlocks)
             {
-                var blockX = x + fixedBlock.offset.x;
-                var blockY = y + fixedBlock.offset.y;
+                var blockX = x + block.offset.x;
+                var blockY = y + block.offset.y;
 
-                AddBlock(fixedBlock.blockId, blockX, blockY, fixedBlock.isBackground);
+                AddBlock(block.blockId, blockX, blockY, block.isBackground);
             }
         }
 
@@ -362,18 +362,19 @@ namespace GameCore
                 var blockIsBackground = block.isBackground;
 
                 //虽然知道一般会是预计的方块，但还是检查一下
-                if (!regionGeneration.region.TryGetBlock(blockX, blockY, blockIsBackground, out var blockSave) || blockSave.save.blockId != blockId)
+                if (!regionGeneration.region.TryGetBlock(block.blockId,blockIsBackground, out var blockSave) ||
+                    !blockSave.TryGetLocation(blockX, blockY, out var blockLocation))
                 {
-                    Debug.LogError($"写入方块自定义数据失败: 方块的位置不正确, 位置 ({blockX}, {blockY}) 应当是 {blockId} 方块");
+                    Debug.LogError($"写入方块自定义数据失败: 方块的位置不正确, 位置 ({blockX}, {blockY}) 应当是 {blockId} 方块, 但实际上是 {blockSave?.blockId} (偏移为 {block.offset.x}, {block.offset.y})");
                     continue;
                 }
 
                 //检查成功，写入 customData
-                blockSave.location.cd = GetCustomData(blockX, blockY, blockIsBackground)?.ToString(Formatting.None);
+                blockLocation.cd = GetCustomData(blockX, blockY, blockIsBackground)?.ToString(Formatting.None);
             }
         }
 
-        protected virtual JObject GenerateLootCustomData(float lootProbability)
+        protected virtual JObject GenerateLootCustomData(float lootProbability, Func<ItemData, bool> itemCondition, Func<Spell, bool> spellCondition)
         {
             var random = regionGeneration.random;
             var tokens = new JToken[21];
@@ -388,7 +389,7 @@ namespace GameCore
 
                 //尝试抽取一个战利品（就算失败了也不会报错，不会有影响）
                 ItemData item = null;
-                MethodAgent.TryRun(() => item = ModFactory.GetRandomItem(random, item => item.HasTag("ori:loot.ghost_ship")));
+                MethodAgent.TryRun(() => item = ModFactory.GetRandomItem(random, itemCondition));
 
                 //如果获取失败了, 这个格子会为空
                 if (item == null)
@@ -401,7 +402,7 @@ namespace GameCore
                 {
                     //抽取一种魔咒
                     Spell spell = null;
-                    MethodAgent.TryRun(() => spell = ModFactory.GetRandomSpell(random, spell => spell.HasTag("ori:loot.ghost_ship")));
+                    MethodAgent.TryRun(() => spell = ModFactory.GetRandomSpell(random, spellCondition));
 
                     //初始化 customData 并写入魔能和魔咒
                     var customData = new JObject();
