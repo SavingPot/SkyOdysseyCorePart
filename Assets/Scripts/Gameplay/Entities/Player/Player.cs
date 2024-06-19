@@ -1576,17 +1576,16 @@ namespace GameCore
 
         public void UseItem(Vector2 point)
         {
+            //实体交互
             foreach (var entity in EntityCenter.all)
             {
-                /* --------------------------------- 筛选出 NPC -------------------------------- */
-                if (entity is not IInteractableEntity)
+                //筛选出可以交互的实体
+                if (entity is not IInteractableEntity interactable)
                     continue;
 
-                var interactable = (IInteractableEntity)entity;
-
-                /* ------------------------------- 如果在两倍的互动范围内  ------------------------------- */
-                if ((entity.transform.position.x - transform.position.x).Abs() < interactable.interactionSize.x &&
-                    (entity.transform.position.y - transform.position.y).Abs() < interactable.interactionSize.y &&
+                //检测是否在互动范围内
+                if ((entity.transform.position.x - transform.position.x).Abs() <= interactable.interactionSize.x &&
+                    (entity.transform.position.y - transform.position.y).Abs() <= interactable.interactionSize.y &&
                     entity.mainCollider.IsInCollider(point))
                 {
                     interactable.PlayerInteraction(this);
