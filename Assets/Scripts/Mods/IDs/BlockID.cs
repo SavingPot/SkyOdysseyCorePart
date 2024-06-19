@@ -27,6 +27,7 @@ namespace GameCore
         public const string Grass = "ori:grass";
         public const string GrassBlock = "ori:grass_block";
         public const string Gravel = "ori:gravel";
+        public const string Ladder = "ori:ladder";
         public const string MangroveBoard = "ori:mangrove_board";
         public const string MangroveLeaf = "ori:mangrove_leaf";
         public const string MangroveLog = "ori:mangrove_log";
@@ -51,6 +52,7 @@ namespace GameCore
         public const string Stone = "ori:stone";
         public const string SugarCane = "ori:sugar_cane";
         public const string TomatoCrop = "ori:tomato_crop";
+        public const string Torch = "ori:torch";
         public const string Water = "ori:water";
         public const string WatermelonCrop = "ori:watermelon_crop";
         public const string WoodenChest = "ori:wooden_chest";

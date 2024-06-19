@@ -45,6 +45,7 @@
      <Compile Include="Assets\Scripts\UI\InternalUIAdder.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Entity.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\Contollers\KeyboardAndMouseController.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\WorldGeneration\SkyIslandGeneration.cs" />
      <Compile Include="Assets\Scripts\Mods\Mod.cs" />
      <Compile Include="Assets\Scripts\UI\GameButton.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\InputButtonIdentity.cs" />
@@ -55,6 +56,7 @@
      <Compile Include="Assets\Scripts\PreloadScene.cs" />
      <Compile Include="Assets\Scripts\Utils\Anim\Timeline.cs" />
      <Compile Include="Assets\Scripts\Gameplay\IItemContainer.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\LootBagBehaviour.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Controls\GControls.cs" />
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursorRaycaster.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\SlotUIs.cs" />
@@ -113,10 +115,10 @@
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursorMover.cs" />
      <Compile Include="Assets\Scripts\GInit.cs" />
      <Compile Include="Assets\Scripts\Gameplay\GameCallbacks.cs" />
-     <Compile Include="Assets\Scripts\Gameplay\Magic\IManaContainer.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Enemy.cs" />
      <Compile Include="Assets\Scripts\Utils\SundryExtensions.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Behaviours\CreatureHumanBodyPartsBehaviour.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\WorldGeneration\IslandGeneration.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\InfoShowers.cs" />
      <Compile Include="Assets\Scripts\Utils\JsonUtils.cs" />
      <Compile Include="Assets\Scripts\UI\NodeTree.cs" />
@@ -134,10 +136,12 @@
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ToggleIdentity.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Binders.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\EntitySave.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\WorldGeneration\MoistZoneGeneration.cs" />
      <Compile Include="Assets\Scripts\Gameplay\RandomUpdater.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\EntityData.cs" />
      <Compile Include="Assets\Scripts\Network\NetworkMessages.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Behaviours\EntityInventoryOwnerBehaviour.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\WorldGeneration\RegionGeneration.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Magic\SpellBehaviour.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\InputFieldIdentity.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\PlayerSkin.cs" />
@@ -168,7 +172,6 @@
      <Compile Include="Assets\Scripts\Gameplay\Entities\DamageTextPool.cs" />
      <Compile Include="Assets\Scripts\Network\Server.cs" />
      <Compile Include="Assets\Scripts\UI\UIExtensions.cs" />
-     <Compile Include="Assets\Scripts\Gameplay\WorldGeneration.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\PlayerCenter.cs" />
      <Compile Include="Assets\Scripts\Utils\SpriteHandler.cs" />
      <Compile Include="Assets\Scripts\Utils\ZipTools.cs" />

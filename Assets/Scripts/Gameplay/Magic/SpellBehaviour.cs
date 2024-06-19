@@ -4,7 +4,6 @@ namespace GameCore
 {
     public class SpellBehaviour
     {
-        public IManaContainer manaContainer;
         public ISpellContainer spellContainer;
         public Spell instance;
 
@@ -24,9 +23,8 @@ namespace GameCore
 
         }
 
-        public SpellBehaviour(IManaContainer manaContainer, ISpellContainer spellContainer, Spell instance)
+        public SpellBehaviour(ISpellContainer spellContainer, Spell instance)
         {
-            this.manaContainer = manaContainer;
             this.spellContainer = spellContainer;
             this.instance = instance;
         }

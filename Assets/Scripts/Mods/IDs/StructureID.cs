@@ -14,5 +14,6 @@ namespace GameCore
         public const string OakTree = "ori:oak_tree";
         public const string SeaHibiscusTree = "ori:sea_hibiscus_tree";
         public const string TangerineTree = "ori:tangerine_tree";
+        public const string UndergroundRelics = "ori:underground_relics";
     }
 }

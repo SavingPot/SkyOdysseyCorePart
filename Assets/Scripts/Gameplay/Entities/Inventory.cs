@@ -591,10 +591,10 @@ namespace GameCore
 
 
 
-        public static bool GetIndexesToPutItemIntoItems(Item[] items, Item item, out Dictionary<int, ushort> result)
-            => GetIndexesToPutItemIntoItems(items, item.data.id, item.count, item.data.maxCount, out result);
+        public static bool GetIndexesToPutItemIntoItems(Item[] slots, Item item, out Dictionary<int, ushort> result)
+            => GetIndexesToPutItemIntoItems(slots, item.data.id, item.count, item.data.maxCount, out result);
 
-        public static bool GetIndexesToPutItemIntoItems(Item[] items, string neededId, uint neededCount, ushort perSlotMaxCount, out Dictionary<int, ushort> result)
+        public static bool GetIndexesToPutItemIntoItems(Item[] slots, string neededId, uint neededCount, ushort perSlotMaxCount, out Dictionary<int, ushort> result)
         {
             Dictionary<int, ushort> resultTemp = new();
             ushort comparedCount = 0;
@@ -615,13 +615,13 @@ namespace GameCore
 
 
             //第一轮先检测占用的槽位能不能堆叠
-            for (int i = 0; i < items.Length; i++)
+            for (int i = 0; i < slots.Length; i++)
             {
                 //已经匹配成功了就无须继续
                 if (comparedCount == neededCount)
                     break;
 
-                var current = items[i];
+                var current = slots[i];
 
 
 
@@ -636,13 +636,13 @@ namespace GameCore
             //如果第一轮没有找到足够的已占用槽位，就开始第二轮循环，寻找空槽位
             if (comparedCount != neededCount)
             {
-                for (int i = 0; i < items.Length; i++)
+                for (int i = 0; i < slots.Length; i++)
                 {
                     //已经匹配成功了就无须继续
                     if (comparedCount == neededCount)
                         break;
 
-                    var current = items[i];
+                    var current = slots[i];
 
 
 
@@ -676,6 +676,14 @@ namespace GameCore
             this.count = count;
             return this;
         }
+
+        public Item SetCustomData(JObject customData)
+        {
+            this.customData = customData;
+            return this;
+        }
+
+        public JToken ToJToken() => JToken.FromObject(this);
 
 
         public Item()
@@ -827,6 +835,7 @@ namespace GameCore
 
 
         public ValueTag<int> Edible() => this.GetValueTagToInt("ori:edible");
+        public bool IsSpellContainer() => this.HasTag("ori:spell_container");
 
 
 

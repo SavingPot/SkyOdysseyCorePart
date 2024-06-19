@@ -98,5 +98,6 @@ namespace GameCore
 
         Item GetItem(string index);
         void SetItem(string index, Item value);
+        //TODO: void AddItem(Item value);
     }
 }

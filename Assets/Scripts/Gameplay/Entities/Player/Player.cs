@@ -243,6 +243,12 @@ namespace GameCore
         public static float maxHungerValue = 100;
         #endregion
 
+        #region 能量值
+        [Sync] public float mana;
+        public static float defaultMana = 50;
+        public static float maxMana = 100;
+        #endregion
+
         #region 玩家名
         [Sync(nameof(OnNameChangeMethod)), SyncDefaultValue("")] public string playerName;
 

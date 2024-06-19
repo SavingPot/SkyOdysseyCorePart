@@ -42,9 +42,9 @@ namespace GameCore
     //该类只在 ManagerNetwork 的 AddPlayer 环节中创建
     public sealed class PlayerSave : EntitySave
     {
-        public float hungerValue;
-        public float happinessValue;
         public int coin;
+        public float mana;
+        public float hungerValue;
         public Inventory inventory;// = new();
         public List<TaskStatusForSave> completedTasks = new();
         public List<SkillStatusForSave> unlockedSkills = new();
@@ -60,9 +60,10 @@ namespace GameCore
 
         public void WriteFromPlayer(Player player)
         {
-            inventory = player.inventory;
-            hungerValue = player.hungerValue;
             coin = player.coin;
+            mana = player.mana;
+            hungerValue = player.hungerValue;
+            inventory = player.inventory;
             completedTasks = player.completedTasks;
             unlockedSkills = player.unlockedSkills;
         }
@@ -73,8 +74,9 @@ namespace GameCore
             {
                 id = playerName,
                 coin = 30,
-                inventory = new(Player.inventorySlotCountConst, null),
+                mana = Player.defaultMana,
                 hungerValue = Player.defaultHungerValue,
+                inventory = new(Player.inventorySlotCountConst, null),
                 completedTasks = new(),
                 unlockedSkills = new()
             }; ;

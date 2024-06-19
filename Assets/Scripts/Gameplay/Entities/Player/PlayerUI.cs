@@ -221,9 +221,10 @@ namespace GameCore.UI
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
         public ImageIdentity hungerBarBg;
-        public ImageIdentity happinessBarBg;
+        public ImageIdentity manaBarBg;
         public ImageIdentity healthBarBg;
         public ImageIdentity hungerBarFull;
+        public ImageIdentity manaBarFull;
         public ImageIdentity healthBarFull;
 
 
@@ -1227,6 +1228,10 @@ namespace GameCore.UI
                 int xExtraOffset = -40;
                 int yExtraOffset = -35;
 
+                manaBarBg = GameUI.AddImage(posC, "ori:image.mana_bar_bg", "ori:mana_bar");
+                manaBarFull = GameUI.AddImage(posC, "ori:image.mana_bar_full", "ori:mana_bar");
+                SetIt(manaBarBg, manaBarFull, xExtraOffset, yExtraOffset * 2);
+
                 hungerBarBg = GameUI.AddImage(posC, "ori:image.hunger_bar_bg", "ori:hunger_bar");
                 hungerBarFull = GameUI.AddImage(posC, "ori:image.hunger_bar_full", "ori:hunger_bar");
                 SetIt(hungerBarBg, hungerBarFull, xExtraOffset, yExtraOffset);
@@ -1763,6 +1768,7 @@ namespace GameCore.UI
 
         public void RefreshPropertiesBar()
         {
+            manaBarFull.image.fillAmount = player.mana / Player.maxMana;
             hungerBarFull.image.fillAmount = player.hungerValue / Player.maxHungerValue;
             healthBarFull.image.fillAmount = (float)player.health / player.maxHealth;
         }

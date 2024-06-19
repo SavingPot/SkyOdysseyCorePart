@@ -34,7 +34,7 @@ namespace GameCore
             else
             {
                 container.spell = ModFactory.CompareSpell(spellString);
-                container.spellBehaviour = (SpellBehaviour)Activator.CreateInstance(container.spell.behaviourType, container as IManaContainer, container, container.spell);
+                container.spellBehaviour = (SpellBehaviour)Activator.CreateInstance(container.spell.behaviourType, container, container.spell);
             }
         }
 

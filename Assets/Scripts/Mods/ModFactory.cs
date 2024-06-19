@@ -473,6 +473,22 @@ namespace GameCore
             return mod;
         }
 
+        public static ItemData GetRandomItem(Func<ItemData, bool> condition) => GetRandomItem(Tools.staticRandom, condition);
+        public static ItemData GetRandomItem(Random random, Func<ItemData, bool> condition)
+        {
+            var mod = GetRandomModWithItems();
+            return mod.GetRandomItem(random, condition);
+        }
+
+        public static Spell GetRandomSpell(Func<Spell, bool> condition) => GetRandomSpell(Tools.staticRandom, condition);
+        public static Spell GetRandomSpell(Random random, Func<Spell, bool> condition)
+        {
+            var mod = GetRandomModWithSpells();
+            return mod.GetRandomSpell(random, condition);
+        }
+
+
+
 
 
 
