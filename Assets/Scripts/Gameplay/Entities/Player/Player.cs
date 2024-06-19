@@ -1579,17 +1579,17 @@ namespace GameCore
             foreach (var entity in EntityCenter.all)
             {
                 /* --------------------------------- 筛选出 NPC -------------------------------- */
-                if (entity is not NPC)
+                if (entity is not IInteractableEntity)
                     continue;
 
-                NPC npc = (NPC)entity;
+                var interactable = (IInteractableEntity)entity;
 
                 /* ------------------------------- 如果在两倍的互动范围内  ------------------------------- */
-                if ((npc.transform.position.x - transform.position.x).Abs() < npc.interactionSize.x &&
-                    (npc.transform.position.y - transform.position.y).Abs() < npc.interactionSize.y &&
-                    npc.mainCollider.IsInCollider(point))
+                if ((entity.transform.position.x - transform.position.x).Abs() < interactable.interactionSize.x &&
+                    (entity.transform.position.y - transform.position.y).Abs() < interactable.interactionSize.y &&
+                    entity.mainCollider.IsInCollider(point))
                 {
-                    npc.PlayerInteraction(this);
+                    interactable.PlayerInteraction(this);
                     return;
                 }
             }

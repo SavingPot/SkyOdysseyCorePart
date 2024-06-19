@@ -148,6 +148,7 @@
      <Compile Include="Assets\Scripts\Gameplay\Entities\BloodParticlePool.cs" />
      <Compile Include="Assets\Scripts\Mods\ModFactory.cs" />
      <Compile Include="Assets\Scripts\GScene.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\IInteractableEntity.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\CoinEntity.cs" />
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursor.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\Map.cs" />

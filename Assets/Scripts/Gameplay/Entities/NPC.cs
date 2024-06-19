@@ -8,9 +8,8 @@ namespace GameCore
     /// NPC
     /// </summary>
     [NotSummonable]
-    public abstract class NPC : Creature
+    public abstract class NPC : Creature, IInteractableEntity
     {
-        //TODO: 所有实体都可用 PlayerInteraction
         public virtual Vector2 interactionSize { get; } = new(5, 5f);
 
 
@@ -64,7 +63,7 @@ namespace GameCore
 
         protected virtual void LoadFromNpcJT(JToken jt)
         {
-            
+
         }
 
         public override Vector2 GetMovementDirection() => Vector2.zero;
