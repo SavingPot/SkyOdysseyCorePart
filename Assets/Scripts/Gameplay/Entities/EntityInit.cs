@@ -20,11 +20,12 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    独留变量                                    */
         /* -------------------------------------------------------------------------- */
-        [BoxGroup("独留变量"), LabelText("生成ID"), SyncVar] public string generationId;
+        [BoxGroup("独留变量"), LabelText("实体ID"), SyncVar] public string entityId;
         [BoxGroup("独留变量"), LabelText("服务器是否完全准备好"), SyncVar] public bool isServerCompletelyReady;
+        [BoxGroup("独留变量"), LabelText("保存ID"), SyncVar] public string saveId;
         [BoxGroup("变量注册")] public string waitingRegisteringVar;
         public Entity entity;
-        public bool hasGotGeneratingId => !generationId.IsNullOrWhiteSpace();
+        public bool hasGotEntityId => !entityId.IsNullOrWhiteSpace();
         public bool hasDestroyed { get; private set; }
         public bool hasRegisteredSyncVars;
 
@@ -109,8 +110,8 @@ namespace GameCore
             StartCoroutine(IECallWhenGetGeneratingId(() =>
             {
                 if (!isServer)
-                    data = ModFactory.CompareEntity(generationId);
-                if (generationId == EntityID.Player)
+                    data = ModFactory.CompareEntity(entityId);
+                if (entityId == EntityID.Player)
                     data.behaviourType = typeof(Player);
                 if (data == null)
                     Debug.LogError($"严重错误!! 该实体的 {nameof(data)} 为空!!!!!!!", this);
@@ -123,7 +124,7 @@ namespace GameCore
 
         public IEnumerator IECallWhenGetGeneratingId(Action action)
         {
-            while (!hasGotGeneratingId)
+            while (!hasGotEntityId)
                 yield return null;
 
             action();
@@ -367,7 +368,7 @@ namespace GameCore
 
         void CreateEntityComponent()
         {
-            entity = generationId == EntityID.Player ? gameObject.AddComponent<Player>() : (Entity)gameObject.AddComponent(data.behaviourType);
+            entity = entityId == EntityID.Player ? gameObject.AddComponent<Player>() : (Entity)gameObject.AddComponent(data.behaviourType);
             entity.Init = this;
             entity.data = data;
 

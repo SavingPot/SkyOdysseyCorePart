@@ -210,7 +210,8 @@ namespace GameCore.Network
                 EntityInit init = GameObject.Instantiate(GetEntityPrefab(data), n.pos, Quaternion.identity);
 
                 /* ---------------------------------- 执行初始化 --------------------------------- */
-                init.generationId = data.id;
+                init.entityId = data.id;
+                init.saveId = n.saveId;
                 init.data = data;
                 init.save = saveDatum;
                 init.gameObject.name = data.id;

@@ -15,7 +15,7 @@ namespace GameCore
         public override bool SkipDialog() => Apply();
         public override Vector2Int DialogOptions() => GControls.GetWASDVec();
         public override bool Backpack() => Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame;
-        public override bool UseItem() => Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame;
+        public override bool Interact() => Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame;
         public override bool PlaceBlockUnderPlayer() => Keyboard.current != null && Keyboard.current.sKey.wasPressedThisFrame;
         public override bool ThrowItem() => Keyboard.current?.backquoteKey?.wasPressedThisFrame ?? false;
         public override bool SwitchToPreviousItem() => Mouse.current != null && Mouse.current.scroll.y.ReadValue() > 0;

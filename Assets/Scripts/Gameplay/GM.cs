@@ -749,12 +749,12 @@ namespace GameCore
             Client.Send<NMSummon>(new(pos, id, saveId, saveIntoRegion, health, customData));
         }
 
-        public void SummonEntityAndCallbackWhenSummoned(Vector3 pos, string id, Action<Entity> callback, string saveId = null, bool saveIntoRegion = true, int? health = null, string customData = null)
+        public void SummonEntityAndCallback(Vector3 pos, string id, Action<Entity> callback, string saveId = null, bool saveIntoRegion = true, int? health = null, string customData = null)
         {
             saveId ??= Tools.randomGUID;
 
             //绑定回调
-            EntityCenter.BindEventOnEntitySummoned(saveId, callback);
+            EntityCenter.BindGenerationEvent(saveId, callback);
 
             //发送生成消息给服务器
             Client.Send<NMSummon>(new(pos, id, saveId, saveIntoRegion, health, customData));

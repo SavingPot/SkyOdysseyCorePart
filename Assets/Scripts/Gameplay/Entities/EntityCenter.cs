@@ -9,22 +9,31 @@ namespace GameCore
 {
     public static class EntityCenter
     {
+        public class EntityGenerationBinding
+        {
+            public float createdTime;
+            public Action<Entity> action;
+
+            public EntityGenerationBinding(float createdTime, Action<Entity> action)
+            {
+                this.createdTime = createdTime;
+                this.action = action;
+            }
+        }
         public static readonly List<Entity> all = new();
+        public static readonly Dictionary<string, EntityGenerationBinding> entityGenerationBindings = new();
         public static Action<Entity> OnAddEntity = _ => { };
         public static Action<Entity> OnRemoveEntity = _ => { };
 
-        public static void BindEventOnEntitySummoned(string targetEntitySaveId, Action<Entity> action)
+        public static void BindGenerationEvent(string saveId, Action<Entity> action)
         {
-            void Event(Entity entity)
+            if (entityGenerationBindings.ContainsKey(saveId))
             {
-                if (entity.Init.save.saveId == targetEntitySaveId)
-                {
-                    action(entity);
-                    OnAddEntity -= Event;
-                }
+                Debug.LogError($"EntityGenerationBinding for {saveId} already exists.");
+                return;
             }
 
-            OnAddEntity += Event;
+            entityGenerationBindings.Add(saveId, new(Tools.time, action));
         }
 
         public static void AddEntity(Entity entity)
@@ -51,6 +60,16 @@ namespace GameCore
 
                     if (invincibleTime > 0)
                         entity.invincibleTime = invincibleTime - Mathf.Min(frameTime, invincibleTime);
+                }
+            }
+
+            //检查过时的实体生成绑定
+            foreach (var binding in entityGenerationBindings)
+            {
+                if (Tools.time - binding.Value.createdTime > 30) //30秒后过期
+                {
+                    entityGenerationBindings.Remove(binding.Key);
+                    Debug.LogError($"EntityGenerationBinding for {binding.Key} has expired.");
                 }
             }
         }

@@ -12,6 +12,7 @@ namespace GameCore
         public const string ChickenDrumstick = "ori:chicken_drumstick";
         public const string ChickenFeather = "ori:chicken_feather";
         public const string ChickenSoup = "ori:chicken_soup";
+        public const string Cod = "ori:cod";
         public const string DewGrass = "ori:dew_grass";
         public const string DewPotion = "ori:dew_potion";
         public const string DishInWoodenBowl = "ori:dish_in_wooden_bowl";

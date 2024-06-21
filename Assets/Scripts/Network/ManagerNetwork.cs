@@ -237,7 +237,7 @@ namespace GameCore.Network
                     player.name = $"Player {nm.playerName} [{conn.address}, id={conn.connectionId}]";
 
                     var init = player.GetComponent<EntityInit>();
-                    init.generationId = EntityID.Player;
+                    init.entityId = EntityID.Player;
                     init.data = ModFactory.CompareEntity(EntityID.Player);
 
                     PlayerSave playerSaveTemp = null;

@@ -798,17 +798,17 @@ namespace GameCore
                     {
                         var touchWorldPos = Tools.instance.mainCamera.ScreenToWorldPoint(tc.position.ReadValue());
 
-                        UseItem(touchWorldPos);
+                        Interact(touchWorldPos);
                     }
                 }
 
                 //如果按右键
-                if (playerController.UseItem())
+                if (playerController.Interact())
                 {
-                    UseItem(cursorWorldPos);
+                    Interact(cursorWorldPos);
                 }
 
-                //如果按 S
+                //在脚底下放方块
                 if (playerController.PlaceBlockUnderPlayer())
                 {
                     var usingItem = GetUsingItemChecked();
@@ -824,7 +824,7 @@ namespace GameCore
                 isControllingBackground = playerController.IsControllingBackground();
             }
 
-            //血量低于 10 就播放心跳声 (死了不播放声音)
+            //血量低于 15 就播放心跳声 (死了不播放声音)
             if (health <= 15)
             {
                 GAudio.Play(AudioID.Heartbeat, true);
@@ -1092,7 +1092,7 @@ namespace GameCore
             {
                 //播放挖掘动画
                 if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)
-                    animWeb.SwitchPlayingTo("attack_rightarm");
+                    animWeb.SwitchPlayingTo("attack_rightarm", 0);
 
                 //让方块扣血
                 block.TakeDamage(excavationStrength);
@@ -1574,7 +1574,7 @@ namespace GameCore
 
 
 
-        public void UseItem(Vector2 point)
+        public void Interact(Vector2 point)
         {
             //实体交互
             foreach (var entity in EntityCenter.all)

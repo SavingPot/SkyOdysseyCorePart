@@ -453,6 +453,7 @@ namespace GameCore
             mainCollider.offset = data.colliderOffset;
 
             SetAutoDestroyTime();
+            CallGenerationBindings();
         }
 
         public virtual void AfterInitialization()
@@ -465,6 +466,10 @@ namespace GameCore
         protected virtual void OnDestroy()
         {
             EntityCenter.RemoveEntity(this);
+
+            //调用生成绑定
+            CallGenerationBindings();
+
             SyncPacker.EntitiesIDTable.Remove(netId);
         }
 
@@ -538,6 +543,7 @@ namespace GameCore
         {
             if (Block.TryGetBlockFromCollider(other, out Block block))
             {
+                OnBlockEnter(block);
                 block.OnEntityEnter(this);
             }
         }
@@ -546,6 +552,7 @@ namespace GameCore
         {
             if (Block.TryGetBlockFromCollider(other, out Block block))
             {
+                OnBlockStay(block);
                 block.OnEntityStay(this);
             }
         }
@@ -554,6 +561,7 @@ namespace GameCore
         {
             if (Block.TryGetBlockFromCollider(other, out Block block))
             {
+                OnBlockExit(block);
                 block.OnEntityExit(this);
             }
         }
@@ -576,6 +584,19 @@ namespace GameCore
         }
 #endif
         #endregion
+
+        protected virtual void OnBlockEnter(Block block) { }
+        protected virtual void OnBlockStay(Block block) { }
+        protected virtual void OnBlockExit(Block block) { }
+
+        void CallGenerationBindings()
+        {
+            if (EntityCenter.entityGenerationBindings.TryGetValue(Init.saveId, out var binding))
+            {
+                binding.action(this);
+                EntityCenter.entityGenerationBindings.Remove(Init.saveId);
+            }
+        }
 
         public bool ShouldBeAutoDestroyed()
         {

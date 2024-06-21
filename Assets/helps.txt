@@ -1,7 +1,7 @@
 ﻿在我们的这个项目中，要非常重视 !!!Update!!! 与 FixedUpdate 的时间开销
 能在值改变时立刻更改显示，就不要每帧更改显示
 
-优化方法：少用 List 甚至是 Array，多用 Queue 和 Stack
+优化方法：少用 List 多用 Array，可以试着用 Queue 和 Stack，HashSet Dictionary HashTable 是一家
 
 
 ------- 让物体随机晃动的好解决方案 -------

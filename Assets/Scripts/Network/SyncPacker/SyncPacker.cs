@@ -613,6 +613,7 @@ namespace GameCore.Network
                 staticVars.Clear();
                 instanceVars.Clear();
                 EntitiesIDTable.Clear();
+                EntityCenter.entityGenerationBindings.Clear();
                 Debug.Log($"已清空 SyncPacker 同步变量");
             }
 

@@ -20,7 +20,7 @@ namespace GameCore
         public override bool SkipDialog() => pui != null && pui.dialogPanel.button.isPressed;
         public override Vector2Int DialogOptions() => throw new NotImplementedException();
         public override bool Backpack() => false;
-        public override bool UseItem() => pui != null && pui.touchScreenUseItemButton.button.wasPressedThisFrame;
+        public override bool Interact() => pui != null && pui.touchScreenUseItemButton.button.wasPressedThisFrame;
         public override bool PlaceBlockUnderPlayer() => pui != null && pui.touchScreenPlaceBlockUnderPlayerButton.button.wasPressedThisFrame;
         public override bool ThrowItem() => false;
         public override bool SwitchToPreviousItem() => false;

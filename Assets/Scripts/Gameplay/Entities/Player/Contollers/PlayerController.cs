@@ -18,7 +18,7 @@ namespace GameCore
         public abstract bool SkipDialog();
         public abstract Vector2Int DialogOptions();
         public abstract bool Backpack();
-        public abstract bool UseItem();
+        public abstract bool Interact();
         public abstract bool PlaceBlockUnderPlayer();
         public abstract PlayerOrientation SetPlayerOrientation();
         public abstract bool ThrowItem();
