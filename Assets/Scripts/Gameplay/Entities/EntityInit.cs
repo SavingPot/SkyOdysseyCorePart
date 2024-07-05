@@ -70,6 +70,10 @@ namespace GameCore
 
         private void OnDestroy()
         {
+            //调用生成绑定 (如果实体在生成时被瞬间销毁)
+            if (entity)
+                CallGenerationBindings();
+
             hasDestroyed = true;
         }
 
@@ -384,6 +388,18 @@ namespace GameCore
             hasRegisteredSyncVars = true;
             entity.Initialize();
             entity.AfterInitialization();
+
+            //调用生成绑定
+            CallGenerationBindings();
+        }
+
+        void CallGenerationBindings()
+        {
+            if (EntityCenter.entityGenerationBindings.TryGetValue(saveId, out var binding))
+            {
+                binding.action(entity);
+                EntityCenter.entityGenerationBindings.Remove(saveId);
+            }
         }
 
 

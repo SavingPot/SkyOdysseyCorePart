@@ -749,7 +749,7 @@ namespace GameCore
             Client.Send<NMSummon>(new(pos, id, saveId, saveIntoRegion, health, customData));
         }
 
-        public void SummonEntityAndCallback(Vector3 pos, string id, Action<Entity> callback, string saveId = null, bool saveIntoRegion = true, int? health = null, string customData = null)
+        public void SummonEntityCallback(Vector3 pos, string id, Action<Entity> callback, string saveId = null, bool saveIntoRegion = true, int? health = null, string customData = null)
         {
             saveId ??= Tools.randomGUID;
 
