@@ -71,7 +71,7 @@ namespace GameCore.Network
         #region Client
 
         /// <summary>
-        /// 创建将在网络上广播以发现服务器的消息
+        /// 创建将在网络上广播给服务器的消息
         /// </summary>
         /// <returns>想要广播的消息实例</returns>
         protected override ServerRequest GetRequest() => new();
@@ -82,8 +82,8 @@ namespace GameCore.Network
         /// <remarks>
         /// 客户端受到服务器的回复, 而这个方法会处理回复，并触发一个事件
         /// </remarks>
-        /// <param name="response">Response that came from the server</param>
-        /// <param name="endpoint">Address of the server that replied</param>
+        /// <param name="response">服务器的回应</param>
+        /// <param name="endpoint">服务器的地址</param>
         protected override void ProcessResponse(ServerResponse response, IPEndPoint endpoint)
         {
             //接收到了消息
