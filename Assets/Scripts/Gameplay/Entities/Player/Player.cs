@@ -185,15 +185,14 @@ namespace GameCore
 
         #region 区域生成
 
-        Coroutine coroutineWaitingForRegionSegments;
-        public bool askingForGeneratingRegion { get; private set; }
-        public float askingForGeneratingRegionTime { get; internal set; } = float.NegativeInfinity;
-        public bool generatedFirstRegion;
+        public bool hasGeneratedFirstRegion;
         private bool hasSetPosBySave;
-        bool regionGenerationIsFirstGeneration;
-        List<BlockSave> regionGenerationSaves = null;
-        int regionGenerationBlocksCount;
-        Region regionGenerationRegion = null;
+        Coroutine coroutineWaitingForRegionSegments;
+        public bool isAskingForGeneratingRegion { get; private set; }
+        bool regionGeneration_isFirstGeneration;
+        List<BlockSave> regionGeneration_blockSaves = null;
+        int regionGeneration_blocksCount;
+        Region regionGeneration_region = null;
 
         #endregion
 
@@ -202,6 +201,20 @@ namespace GameCore
         #region 同步变量
 
         [Sync] public int coin;
+        [Sync] public Sprite skinHead;
+        [Sync] public Sprite skinBody;
+        [Sync] public Sprite skinLeftArm;
+        [Sync] public Sprite skinRightArm;
+        [Sync] public Sprite skinLeftLeg;
+        [Sync] public Sprite skinRightLeg;
+        [Sync] public Sprite skinLeftFoot;
+        [Sync] public Sprite skinRightFoot;
+        [Sync] public float hungerValue;
+        public static float defaultHungerValue = 100;
+        public static float maxHungerValue = 100;
+        [Sync] public float mana;
+        public static float defaultMana = 50;
+        public static float maxMana = 100;
 
         #region 任务
         [Sync] public List<TaskStatusForSave> completedTasks;
@@ -225,49 +238,22 @@ namespace GameCore
         }
         #endregion
 
-        #region 皮肤
-        [Sync] public Sprite skinHead;
-        [Sync] public Sprite skinBody;
-        [Sync] public Sprite skinLeftArm;
-        [Sync] public Sprite skinRightArm;
-        [Sync] public Sprite skinLeftLeg;
-        [Sync] public Sprite skinRightLeg;
-        [Sync] public Sprite skinLeftFoot;
-        [Sync] public Sprite skinRightFoot;
-
-        #endregion
-
-        #region 饥饿值
-        [Sync] public float hungerValue;
-        public static float defaultHungerValue = 100;
-        public static float maxHungerValue = 100;
-        #endregion
-
-        #region 能量值
-        [Sync] public float mana;
-        public static float defaultMana = 50;
-        public static float maxMana = 100;
-        #endregion
-
         #region 玩家名
         [Sync(nameof(OnNameChangeMethod)), SyncDefaultValue("")] public string playerName;
 
-        void OnNameChangeMethod(byte[] _)
-        {
-            OnNameChange(playerName);
-        }
+        void OnNameChangeMethod(byte[] _) => OnNameChange(playerName);
 
-        public void OnNameChange(string newValue)
+        public void OnNameChange(string newName)
         {
             //销毁原先的 nameText
             if (nameText && nameText.gameObject)
                 Destroy(nameText.gameObject);
 
             //初始化新的 nameText
-            nameText = GameUI.AddText(UIA.Middle, "ori:player_name_" + newValue, playerCanvas);
+            nameText = GameUI.AddText(UIA.Middle, "ori:player_name_" + newName, playerCanvas);
             nameText.rectTransform.AddLocalPosY(30f);
             nameText.text.SetFontSize(7);
-            nameText.text.text = newValue;
+            nameText.text.text = newName;
             nameText.autoCompareText = false;
         }
         #endregion
@@ -366,7 +352,7 @@ namespace GameCore
         public static float itemPickUpRadius = 1.8f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
-        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.generatedFirstRegion && Application.isFocused;
+        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.hasGeneratedFirstRegion && Application.isFocused;
         public const float playerDefaultGravity = 6f;
         public const float defaultInteractiveRadius = 2.8f;
 
@@ -554,10 +540,7 @@ namespace GameCore
 
 
 
-                Debug.Log("本地客户端玩家是: " + gameObject.name);
-
-                //if (!isServer)
-                //    CmdCheckMods();
+                Debug.Log("本地客户端玩家是: " + gameObject.name, gameObject);
 
                 managerGame.weatherParticle.transform.SetParent(transform);
                 managerGame.weatherParticle.transform.localPosition = new(0, 40);
@@ -1054,7 +1037,7 @@ namespace GameCore
 
         public static Action<Player> GravitySet = caller =>
         {
-            if (!caller.generatedFirstRegion ||
+            if (!caller.hasGeneratedFirstRegion ||
                 !GM.instance.generatedExistingRegions.Any(p => p.index == PosConvert.WorldPosToRegionIndex(caller.transform.position)))  //获取区域序号不用 caller.regionIndex 是因为只有区域加载成功, caller.regionIndex才会正式改编
             {
                 caller.gravity = 0;
@@ -1124,14 +1107,14 @@ namespace GameCore
         public void GenerateExistingRegion(Vector2Int index)
         {
             //检查是否正在生成
-            if (regionGenerationSaves != null || regionGenerationRegion != null)
+            if (regionGeneration_blockSaves != null || regionGeneration_region != null)
             {
                 return;
             }
 
             //初始化资源
-            askingForGeneratingRegion = true;
-            regionGenerationSaves = new();
+            isAskingForGeneratingRegion = true;
+            regionGeneration_blockSaves = new();
 
             //向服务器发送请求
             ServerGenerateExistingRegion(index);
@@ -1147,15 +1130,15 @@ namespace GameCore
         public void GenerateRegion(Vector2Int index, bool isFirstGeneration, string specificBiome = null)
         {
             //检查是否正在生成
-            if (regionGenerationSaves != null || regionGenerationRegion != null)
+            if (regionGeneration_blockSaves != null || regionGeneration_region != null)
             {
                 Debug.LogError("正在生成区域, 请等待");
                 return;
             }
 
             //初始化资源
-            askingForGeneratingRegion = true;
-            regionGenerationSaves = new();
+            isAskingForGeneratingRegion = true;
+            regionGeneration_blockSaves = new();
 
             //向服务器发送请求
             ServerGenerateRegion(index, isFirstGeneration, specificBiome);
@@ -1167,41 +1150,41 @@ namespace GameCore
 
         IEnumerator IEWaitForRegionSegments()
         {
-            yield return new WaitUntil(() => regionGenerationRegion != null);
-            yield return new WaitUntil(() => regionGenerationSaves.Count == regionGenerationBlocksCount);
+            yield return new WaitUntil(() => regionGeneration_region != null);
+            yield return new WaitUntil(() => regionGeneration_blockSaves.Count == regionGeneration_blocksCount);
 
 
             //恢复方块数据 (浅拷贝时方块数据被清除了)
-            regionGenerationRegion.blocks = regionGenerationSaves;
+            regionGeneration_region.blocks = regionGeneration_blockSaves;
 
 
             //如果是服务器的话要恢复实体数据 (浅拷贝时实体数据被清除了)
             if (isServer)
-                regionGenerationRegion.entities = GetRegionToGenerate(regionGenerationRegion.index).entities;
+                regionGeneration_region.entities = GetRegionToGenerate(regionGeneration_region.index).entities;
 
 
-            Debug.Log($"收到服务器回调, 正在生成已有区域 {regionGenerationRegion.index}");
+            Debug.Log($"收到服务器回调, 正在生成已有区域 {regionGeneration_region.index}");
 
 
             //生成出区域
-            GM.instance.GenerateExistingRegion(regionGenerationRegion, () =>
+            GM.instance.GenerateExistingRegion(regionGeneration_region, () =>
             {
-                if (regionGenerationIsFirstGeneration)
+                if (regionGeneration_isFirstGeneration)
                 {
                     //如果先前没获取过位置, 则将玩家的位置设置到该区域出生点
-                    if (regionGenerationRegion.spawnPoint != Vector2Int.zero)
-                        transform.position = regionGenerationRegion.spawnPoint.To2();
+                    if (regionGeneration_region.spawnPoint != Vector2Int.zero)
+                        transform.position = regionGeneration_region.spawnPoint.To2();
 
                     fallenY = transform.position.y;
-                    generatedFirstRegion = true;
+                    hasGeneratedFirstRegion = true;
                 }
 
                 //清理资源
-                askingForGeneratingRegion = false;
-                regionGenerationRegion = null;
-                regionGenerationSaves = null;
+                isAskingForGeneratingRegion = false;
+                regionGeneration_region = null;
+                regionGeneration_blockSaves = null;
                 //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
-            }, null, (ushort)(GFiles.settings.performanceLevel * (regionGenerationIsFirstGeneration ? 4 : 0.8f)));
+            }, null, (ushort)(GFiles.settings.performanceLevel * (regionGeneration_isFirstGeneration ? 4 : 0.8f)));
         }
 
         public Region GetRegionToGenerate(Vector2Int index)
@@ -1310,15 +1293,15 @@ namespace GameCore
         [ConnectionRpc]
         void ConnectionGenerateRegionTotal(Region regionToGenerate, int regionToGenerateBlocksCount, bool isFirstGeneration, NetworkConnection caller)
         {
-            regionGenerationRegion = regionToGenerate;
-            regionGenerationBlocksCount = regionToGenerateBlocksCount;
-            regionGenerationIsFirstGeneration = isFirstGeneration;
+            regionGeneration_region = regionToGenerate;
+            regionGeneration_blocksCount = regionToGenerateBlocksCount;
+            regionGeneration_isFirstGeneration = isFirstGeneration;
         }
 
         [ConnectionRpc]
         void ConnectionGenerateRegionSegment(BlockSave block, NetworkConnection caller)
         {
-            regionGenerationSaves.Add(block);
+            regionGeneration_blockSaves.Add(block);
         }
 
 

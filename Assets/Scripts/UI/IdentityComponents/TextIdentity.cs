@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using GameCore.UI;
+using Org.BouncyCastle.Tls.Crypto;
 
 namespace GameCore.UI
 {
@@ -30,14 +31,28 @@ namespace GameCore.UI
                 text.text = GameUI.CompareText(id).text;
         }
 
-        public void SetText(object text)
+        public TextIdentity DisableAutoCompare()
         {
-            this.text.text = text.ToString();
+            autoCompareText = false;
+            return this;
         }
 
-        public void SetText(string text)
+        public TextIdentity SetAutoCompare(bool autoCompare)
+        {
+            autoCompareText = autoCompare;
+            return this;
+        }
+
+        public TextIdentity SetText(object text)
+        {
+            this.text.text = text.ToString();
+            return this;
+        }
+
+        public TextIdentity SetText(string text)
         {
             this.text.text = text;
+            return this;
         }
     }
 }

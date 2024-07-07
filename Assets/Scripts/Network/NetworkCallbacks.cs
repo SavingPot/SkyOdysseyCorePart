@@ -18,7 +18,7 @@ namespace GameCore.Network
         public static event Action<NetworkConnectionToClient> OnClientConnect = conn =>
         {
             //如果是 Host 模式, 且客户端不是 Host 连接, 就检查服务器是否还未添加玩家或是未加载第一区域, 如果是就断开连接
-            if (Client.isClient && conn != Server.localConnection && (!Player.TryGetLocal(out Player player) || !player.generatedFirstRegion))
+            if (Client.isClient && conn != Server.localConnection && (!Player.TryGetLocal(out Player player) || !player.hasGeneratedFirstRegion))
             {
                 Debug.LogWarning($"客户端 {conn.address} (id={conn.connectionId}) 加入服务器时, 服务器正在加载第一区域, 请稍等");
                 conn.Disconnect();

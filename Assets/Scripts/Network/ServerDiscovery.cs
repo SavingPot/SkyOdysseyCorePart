@@ -53,9 +53,7 @@ namespace GameCore.Network
                 {
                     response.worldName = GFiles.world.basicData.worldName;
 
-                    //TODO:
-                    // if (File.Exists(GFiles.world.worldImagePath))
-                    //     response.worldIcon = IOTools.LoadBytes(GFiles.world.worldImagePath);
+                    //TODO: Send world icon
                 }
 
                 return response;

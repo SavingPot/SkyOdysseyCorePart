@@ -12,6 +12,7 @@ using System.Text;
 using System;
 using TMPro;
 using UnityEngine;
+using GameCore.Converters;
 
 namespace GameCore.UI
 {
@@ -341,6 +342,7 @@ namespace GameCore.UI
                             lanServersShow.Clear();
                             Client.respones.Clear();
 
+                            //处理搜索到的服务器列表
                             ManagerNetwork.instance.discovery.OnServerFound.AddListener(sr =>
                             {
                                 if (Client.respones.ContainsKey(sr.serverId))
@@ -350,11 +352,13 @@ namespace GameCore.UI
                                 string targetIP = $"{sr.EndPoint.Address}:{Tools.defaultPort}";
                                 string text = $"{sr.worldName}[{sr.version}]\n({targetIP})";
 
+                                //初始化按钮
                                 var lanServerButton = GameUI.AddButton(UIA.Middle, $"ori:button.LANServers_show.{sr.serverId}");
                                 lanServerButton.OnClickBind(() => joinIPField.field.text = targetIP);
                                 lanServerButton.buttonText.AfterRefreshing += t => t.text.text = text;
                                 lanServerButton.buttonText.text.SetFontSize(16);
 
+                                //添加到显示列表
                                 lanServersShow.AddChild(lanServerButton);
                             });
 
@@ -495,7 +499,7 @@ namespace GameCore.UI
                         playerNameField.field.characterLimit = 20;
                         playerNameField.OnUpdate += x => x.field.placeholder.enabled = true;
                         playerNameField.field.placeholder.rectTransform.AddPosY(playerNameField.rt.sizeDelta.y / 2 + playerNameField.field.placeholder.rectTransform.sizeDelta.y / 2);
-                        playerNameField.field.placeholder.color = Color.white;//TODO: 给世界名称也加上类似的机制
+                        playerNameField.field.placeholder.color = Color.white;//TODO: 给世界名称也加上类似的机制 (placeholder)
                         playerNameField.mask.enabled = false;
                         playerNameField.field.onValueChanged.AddListener(v =>
                         {

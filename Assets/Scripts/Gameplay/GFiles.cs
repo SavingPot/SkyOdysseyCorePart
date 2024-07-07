@@ -14,6 +14,12 @@ namespace GameCore
     {
         public static GameSettings settings;
         public static World world;
+        public static Action SaveAllBlockDataToFiles = () => { };
+        public static Action OnSaveAllDataToFiles = () => { Debug.Log("保存了所有数据至文件"); };
+
+
+
+
 
         public static void CreateWorld(int seed, string name)
         {
@@ -70,7 +76,7 @@ namespace GameCore
             }
         }
 
-        public static Action SaveAllDataToFiles = () =>
+        public static void SaveAllDataToFiles()
         {
             CheckPaths();
 
@@ -78,11 +84,11 @@ namespace GameCore
             if (world != null)
             {
                 //将时间写入
-                if (Server.isServer)
-                {
-                    world.basicData.time = GTime.time;
-                    world.basicData.isAM = GTime.isMorning;
-                }
+                world.basicData.time = GTime.time;
+                world.basicData.isAM = GTime.isMorning;
+
+                //将方块数据写入
+                SaveAllBlockDataToFiles();
 
                 //将实体数据写入
                 List<Entity> entities = EntityCenter.all;
@@ -101,8 +107,8 @@ namespace GameCore
             //保存设置文件
             SaveFileJson(GInit.settingsPath, settings, false, true);
 
-            GameCallbacks.CallOnSaveAllDataToFiles();
-        };
+            OnSaveAllDataToFiles();
+        }
 
         public static void LoadGame()
         {

@@ -28,15 +28,12 @@ namespace GameCore
         public static OnAddBlockDelegate OnAddBlock = (pos, isBackground, block, chunk) => { };
 
 
-        public static event Action OnSaveAllDataToFiles = () => { Debug.Log("保存了所有数据至文件"); };
 
         internal static void CallBeforeGeneratingExistingRegion(Region region) => BeforeGeneratingExistingRegion(region);
         internal static void CallAfterGeneratingExistingRegion(Region region) => AfterGeneratingExistingRegion(region);
 
         internal static void CallBeforeGeneratingNewRegion(RegionGeneration generation) => BeforeGeneratingNewRegion(generation);
         internal static void CallAfterGeneratingNewRegion(Region region) => AfterGeneratingNewRegion(region);
-
-        internal static void CallOnSaveAllDataToFiles() => OnSaveAllDataToFiles();
 
 
 

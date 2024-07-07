@@ -1,20 +1,20 @@
 using Cysharp.Threading.Tasks;
-using GameCore;
+using DG.Tweening;
 using GameCore.Converters;
-using GameCore.High;
-using SP.Tools;
+using GameCore.Network;
+using GameCore;
 using SP.Tools.Unity;
-using System;
-using System.Collections;
+using SP.Tools;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UnityEngine;
+using System;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
-using DG.Tweening;
-using GameCore.Network;
+using UnityEngine;
+using System.Threading;
 
 namespace GameCore.UI
 {
@@ -141,7 +141,8 @@ namespace GameCore.UI
         public static int backpackPanelWidth = 700;
         public static int backpackPanelHeight = 450;
         public List<BackpackPanel> backpackPanels = new();
-        public string currentBackpackPanel = string.Empty;
+        public BackpackPanel currentBackpackPanel = null;
+        public string currentBackpackPanelId = string.Empty;
         public PanelIdentity backpackMask;
         public ImageIdentity backpackPanelBackground;
         public Color backpackColor = Color.white;
@@ -358,8 +359,8 @@ namespace GameCore.UI
                 dialogText.text.text = string.Empty;
 
                 //获取当前对话文本
-                string fullContent = current.text;
-                char[] fullContentChars = fullContent.ToCharArray();
+                var fullContent = current.text;
+                var fullContentChars = fullContent.ToCharArray();
 
                 //更改对话者的头像和名字
                 dialogHead.image.sprite = ModFactory.CompareTexture(current.head).sprite;
@@ -368,9 +369,9 @@ namespace GameCore.UI
                 //遍历文本
                 for (int t = 0; t < fullContent.Length;)
                 {
-                    var item = fullContent[t];
-                    var charsAfterItem = new ArraySegment<char>(fullContentChars, t, fullContent.Length - t).ToArray(); //? 包括 item
-                    var strAfterItem = new string(charsAfterItem);
+                    var currentLetter = fullContent[t];
+                    var charsAfterLetter = new ArraySegment<char>(fullContentChars, t, fullContent.Length - t).ToArray(); //? 包括当前的字和之后所有的字
+                    var strAfterItem = new string(charsAfterLetter);
 
                     string output;
                     int tDelta;
@@ -381,12 +382,12 @@ namespace GameCore.UI
                         var endIndex = strAfterItem.IndexOf('>') + 1; //? 如果不 +1, 富文本会瞬间闪烁然后消失 
 
                         tDelta = endIndex;
-                        output = new string(new ArraySegment<char>(charsAfterItem, 0, endIndex).ToArray());
+                        output = new string(new ArraySegment<char>(charsAfterLetter, 0, endIndex).ToArray());
                     }
                     //如果不是富文本，就正常的一个字一个字输出
                     else
                     {
-                        output = item.ToString();
+                        output = currentLetter.ToString();
                         tDelta = 1;
                     }
 
@@ -394,7 +395,7 @@ namespace GameCore.UI
                     dialogText.text.text += output;
 
 
-                    //判断是否达到等待时间
+                    //判断是否达到字输出的等待时间
                     float timer = Tools.time + current.waitTime;
                     while (Tools.time < timer)
                     {
@@ -506,46 +507,7 @@ namespace GameCore.UI
 
 
 
-        public void LeftGame()
-        {
-            //保存数据
-            GFiles.SaveAllDataToFiles();
 
-            if (Server.isServer)
-            {
-                //如果是服务器, 截图并关闭 Host
-                GameUI.canvas.gameObject.SetActive(false);
-
-                ScreenTools.CaptureSquare(GFiles.world.worldImagePath, () =>
-                {
-                    GameUI.canvas.gameObject.SetActive(true);
-                    (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
-                    {
-                        //清除方块防止警告
-                        if (Map.HasInstance())
-                        {
-                            Map.instance.RecycleChunks();
-                        }
-
-                        ManagerNetwork.instance.StopHost();
-                    }), null);
-
-                    panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
-                    panel.CustomMethod("fade_in", null);
-                });
-            }
-            //如果是单纯的客户端
-            else
-            {
-                (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
-                {
-                    Client.Disconnect();
-                }), null);
-
-                panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
-                panel.CustomMethod("fade_in", null);
-            }
-        }
 
         public void Chat()
         {
@@ -899,7 +861,7 @@ namespace GameCore.UI
                 inventoryLeggingUI.button.SetAPosOnBySizeRight(inventoryBreastplateUI.button, 0);
                 inventoryBootsUI.button.SetAPosOnBySizeRight(inventoryLeggingUI.button, 0);
 
-                //设置背包面板
+                //设置背包面板为物品栏
                 SetBackpackPanel("ori:inventory");
 
                 #endregion
@@ -1084,7 +1046,7 @@ namespace GameCore.UI
                 {
                     GameUI.SetPage(null);
                 });
-                ButtonIdentity quitGame = GameUI.AddButton(UIA.Middle, "ori:button.pause_quit_game", pausePanel.panel).OnClickBind(LeftGame);
+                ButtonIdentity quitGame = GameUI.AddButton(UIA.Middle, "ori:button.pause_quit_game", pausePanel.panel).OnClickBind(GM.instance.LeftGame);
 
                 continueGame.rt.AddLocalPosY(30);
                 quitGame.rt.AddLocalPosY(-30);
@@ -1405,7 +1367,7 @@ namespace GameCore.UI
 
         #region  背包界面
 
-        public void RefreshCurrentBackpackPanel() => RefreshBackpackPanel(currentBackpackPanel);
+        public void RefreshCurrentBackpackPanel() => currentBackpackPanel?.Refresh?.Invoke();
 
         public void RefreshBackpackPanel(string id)
         {
@@ -1427,6 +1389,7 @@ namespace GameCore.UI
             Action Refresh = null,
             Action OnActivate = null,
             Action OnDeactivate = null,
+            Action Update = null,
             string texture = "ori:backpack_inventory_background")
         {
             (var modId, var panelName) = Tools.SplitModIdAndName(id);
@@ -1474,7 +1437,7 @@ namespace GameCore.UI
                 OnDeactivate?.Invoke();
             });
 
-            BackpackPanel result = new(id, panel, switchButtonBackground, switchButton, Refresh, ActualActivate, ActualDeactivate);
+            BackpackPanel result = new(id, panel, switchButtonBackground, switchButton, Refresh, ActualActivate, ActualDeactivate, Update);
             backpackPanels.Add(result);
             return result;
         }
@@ -1486,7 +1449,13 @@ namespace GameCore.UI
                 if (item.id == id)
                 {
                     GameObject.Destroy(item.panel.gameObject);
+                    GameObject.Destroy(item.switchButtonBackground.gameObject);
                     backpackPanels.Remove(item);
+
+                    //如果当前面板是该面板，则切换到背包面板
+                    if (currentBackpackPanelId == id)
+                        SetBackpackPanel("ori:inventory");
+
                     return;
                 }
             }
@@ -1499,14 +1468,16 @@ namespace GameCore.UI
             //先关闭当前面板
             foreach (var panel in backpackPanels)
             {
-                if (panel.id == currentBackpackPanel)
+                if (panel.id == currentBackpackPanelId)
                 {
                     //改变按钮大小
                     panel.switchButtonBackground.sd /= 1.3f;
                     panel.switchButton.sd /= 1.3f;
                     panel.switchButtonBackground.SetAPosY(panel.switchButtonBackground.sd.y / 2);
 
+                    //取消激活
                     panel.Deactivate();
+                    currentBackpackPanel = null;
                 }
             }
 
@@ -1522,7 +1493,8 @@ namespace GameCore.UI
 
                     panel.Refresh?.Invoke();
                     panel.Activate();
-                    currentBackpackPanel = id;
+                    currentBackpackPanelId = id;
+                    currentBackpackPanel = panel;
                     return;
                 }
             }
@@ -1535,7 +1507,7 @@ namespace GameCore.UI
             if (GameUI.page.ui == backpackMask)
             {
                 //如果处于背包界面，并且是指定面板，就关闭
-                if (currentBackpackPanel == backpackPanelId)
+                if (currentBackpackPanelId == backpackPanelId)
                 {
                     ShowOrHideBackpack();
                     GameUI.SetPage(null);
@@ -1621,11 +1593,12 @@ namespace GameCore.UI
             Action Refresh = null,
             Action OnActivate = null,
             Action OnDeactivate = null,
+            Action Update = null,
             string texture = "ori:backpack_inventory_background")
         {
             (var modId, var panelName) = Tools.SplitModIdAndName(id);
 
-            var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, texture);
+            var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, Update, texture);
             var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
             view.transform.SetParent(panel.panel.rt, false);
             view.SetAnchorMinMax(UIA.StretchDouble);
@@ -1673,6 +1646,12 @@ namespace GameCore.UI
 
         public void Update()
         {
+            //更新背包界面（需要 ToArray 以及 null 检查是因为在 Update 中移除面板会导致列表变化）
+            foreach (var panel in backpackPanels.ToArray())
+            {
+                panel?.Update?.Invoke();
+            }
+
             /* --------------------------------- 刷新快捷物品栏 -------------------------------- */
             //缓存物品栏以保证性能
             var inventoryTemp = player.inventory;
@@ -2015,8 +1994,9 @@ namespace GameCore.UI
         public Action Refresh;
         public Action Activate;
         public Action Deactivate;
+        public Action Update;
 
-        public BackpackPanel(string id, PanelIdentity panel, ImageIdentity switchButtonBackground, ButtonIdentity switchButton, Action Refresh, Action Activate, Action Deactivate)
+        public BackpackPanel(string id, PanelIdentity panel, ImageIdentity switchButtonBackground, ButtonIdentity switchButton, Action Refresh, Action Activate, Action Deactivate, Action Update)
         {
             this.id = id;
             this.panel = panel;
@@ -2025,6 +2005,7 @@ namespace GameCore.UI
             this.Refresh = Refresh;
             this.Activate = Activate;
             this.Deactivate = Deactivate;
+            this.Update = Update;
         }
 
         public RectTransform rectTransform => panel.rectTransform;

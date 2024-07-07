@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using GameCore.Network;
 using UnityEngine;
 
 namespace GameCore
@@ -10,7 +11,7 @@ namespace GameCore
     {
         public bool destroyOnHit = true;
         public int damage;
-        public uint ownerId;
+        [Sync] public uint? ownerId;
         [HideInInspector] public Collider2D[] besideObjectsDetected = new Collider2D[15];
 
         protected override void Awake()
@@ -18,20 +19,6 @@ namespace GameCore
             base.Awake();
 
             isHurtable = false;
-        }
-
-        public override void Initialize()
-        {
-            base.Initialize();
-
-            try
-            {
-                ownerId = customData["ori:bullet"]["ownerId"].ToObject<uint>();
-            }
-            catch
-            {
-                Death();
-            }
         }
 
         protected override void ServerUpdate()

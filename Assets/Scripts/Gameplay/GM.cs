@@ -749,6 +749,11 @@ namespace GameCore
             Client.Send<NMSummon>(new(pos, id, saveId, saveIntoRegion, health, customData));
         }
 
+        public void SummonEntity(EntitySave save)
+        {
+            SummonEntity(save.pos, save.id, save.saveId, false, save.health, save.customData);
+        }
+
         public void SummonEntityCallback(Vector3 pos, string id, Action<Entity> callback, string saveId = null, bool saveIntoRegion = true, int? health = null, string customData = null)
         {
             saveId ??= Tools.randomGUID;
@@ -760,9 +765,71 @@ namespace GameCore
             Client.Send<NMSummon>(new(pos, id, saveId, saveIntoRegion, health, customData));
         }
 
-        public void SummonEntity(EntitySave save)
+        public void SummonBullet(Vector3 pos, string id, Vector2 velocity, uint ownerId, string saveId = null, bool saveIntoRegion = true, string customData = null)
         {
-            SummonEntity(save.pos, save.id, save.saveId, false, save.health, save.customData);
+            SummonEntityCallback(pos, id, entity =>
+            {
+                var bullet = (Bullet)entity;
+                bullet.ServerSetVelocity(velocity);
+                bullet.ownerId = ownerId;
+            }, saveId, saveIntoRegion, null, customData);
+        }
+
+        public void SummonBulletCallback(Vector3 pos, string id, Vector2 velocity, uint ownerId, Action<Entity> callback, string saveId = null, bool saveIntoRegion = true, string customData = null)
+        {
+            SummonEntityCallback(pos, id, entity =>
+            {
+                var bullet = (Bullet)entity;
+                bullet.ServerSetVelocity(velocity);
+                bullet.ownerId = ownerId;
+                callback(entity);
+            }, saveId, saveIntoRegion, null, customData);
+        }
+
+        public void LeftGame()
+        {
+            //保存数据
+            GFiles.SaveAllDataToFiles();
+
+            //如果是服务器
+            if (Server.isServer)
+            {
+                //截图
+                GameUI.canvas.gameObject.SetActive(false);
+                ScreenTools.CaptureSquare(GFiles.world.worldImagePath, () =>
+                {
+                    //生成蒙版
+                    GameUI.canvas.gameObject.SetActive(true);
+                    (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
+                    {
+                        //清除方块防止警告
+                        if (Map.HasInstance())
+                        {
+                            Map.instance.RecycleChunks();
+                        }
+
+                        //关闭 Host
+                        ManagerNetwork.instance.StopHost();
+                    }), null);
+
+                    //显示蒙版
+                    panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
+                    panel.CustomMethod("fade_in", null);
+                });
+            }
+            //如果是单纯的客户端
+            else
+            {
+                //生成蒙版
+                (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
+                {
+                    Client.Disconnect();
+                }), null);
+
+                //显示蒙版
+                panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
+                panel.CustomMethod("fade_in", null);
+            }
         }
 
         private void OnDestroy()
