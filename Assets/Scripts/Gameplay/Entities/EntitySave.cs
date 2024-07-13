@@ -48,6 +48,7 @@ namespace GameCore
         public Inventory inventory;// = new();
         public List<TaskStatusForSave> completedTasks = new();
         public List<SkillStatusForSave> unlockedSkills = new();
+        public uint skillPoints;
 
         [NonSerialized] public byte[] skinHead;
         [NonSerialized] public byte[] skinBody;
@@ -66,6 +67,7 @@ namespace GameCore
             inventory = player.inventory;
             completedTasks = player.completedTasks;
             unlockedSkills = player.unlockedSkills;
+            skillPoints = player.skillPoints;
         }
 
         public static PlayerSave NewPlayer(string playerName)
@@ -78,7 +80,8 @@ namespace GameCore
                 hungerValue = Player.defaultHungerValue,
                 inventory = new(Player.inventorySlotCountConst, null),
                 completedTasks = new(),
-                unlockedSkills = new()
+                unlockedSkills = new(),
+                skillPoints = 0,
             }; ;
         }
     }

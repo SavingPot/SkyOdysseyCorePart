@@ -89,7 +89,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         [HideInInspector] public float timeToAutoDestroy;
         public bool isHurting => invincibleTime > 0.05f;
-        public int maxHealth => data.maxHealth;
         public bool isHurtable = true;
         public float previousHurtTime;
 
@@ -139,6 +138,17 @@ namespace GameCore
         {
             OnHealthChange();
         }
+        #endregion
+
+        #region 最大生命值
+
+        [Sync, SyncDefaultValueFromMethod(nameof(GetDefaultMaxHealth), true)] public int maxHealth;
+
+        public static int GetDefaultMaxHealth(EntityData data)
+        {
+            return data.maxHealth;
+        }
+
         #endregion
 
         #region 当前区域序列

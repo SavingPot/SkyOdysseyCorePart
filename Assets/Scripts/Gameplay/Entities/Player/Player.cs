@@ -229,6 +229,7 @@ namespace GameCore
 
         #region 技能树
         [Sync] public List<SkillStatusForSave> unlockedSkills;
+        [Sync] public uint skillPoints;
 
         public void AddUnlockedSkills(SkillStatusForSave task)
         {

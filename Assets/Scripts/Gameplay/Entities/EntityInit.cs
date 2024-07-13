@@ -12,6 +12,9 @@ using GameCore.High;
 using Cysharp.Threading.Tasks;
 using System.Linq;
 using GameCore.Network;
+using static GameCore.EntityInit.SyncAttributeData;
+using System.Linq.Expressions;
+using Sirenix.Serialization;
 
 namespace GameCore
 {
@@ -42,7 +45,6 @@ namespace GameCore
 
 
         public static readonly string regionIndexVarId = $"{typeof(Entity).FullName}.{nameof(Entity.regionIndex)}";
-        public static readonly string maxHealthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.maxHealth)}";
         public static readonly string healthVarId = $"{typeof(Entity).FullName}.{nameof(Entity.health)}";
         public static readonly string customDataVarId = $"{typeof(Entity).FullName}.{nameof(Entity.customData)}";
 
@@ -52,6 +54,7 @@ namespace GameCore
         public static readonly string inventoryVarId = $"{typeof(Player).FullName}.{nameof(Player.inventory)}";
         public static readonly string completedTasksVarId = $"{typeof(Player).FullName}.{nameof(Player.completedTasks)}";
         public static readonly string unlockedSkillsVarId = $"{typeof(Player).FullName}.{nameof(Player.unlockedSkills)}";
+        public static readonly string skillPointsVarId = $"{typeof(Player).FullName}.{nameof(Player.skillPoints)}";
         public static readonly string playerNameVarId = $"{typeof(Player).FullName}.{nameof(Player.playerName)}";
         public static readonly string skinHeadVarId = $"{typeof(Player).FullName}.{nameof(Player.skinHead)}";
         public static readonly string skinBodyVarId = $"{typeof(Player).FullName}.{nameof(Player.skinBody)}";
@@ -92,7 +95,7 @@ namespace GameCore
                 return;
             }
 
-            var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
+            var syncVarTemps = ReadFromSyncAttributeTemps(data);
 
             foreach (SyncAttributeData pair in syncVarTemps)
             {
@@ -149,102 +152,76 @@ namespace GameCore
 
         public void AutoRegisterVars()
         {
-            var syncVarTemps = ReadFromSyncAttributeTemps(data.behaviourType);
+            var syncVarTemps = ReadFromSyncAttributeTemps(data);
 
             //遍历每个属性
             if (isServer)
             {
+                PlayerSave saveAsPlayer = save as PlayerSave;
+
                 foreach (SyncAttributeData pair in syncVarTemps)
                 {
                     var id = pair.fieldPath;
 
-                    if (pair.fieldPath == regionIndexVarId)
+                    if (id == regionIndexVarId)
                     {
                         //注明：在 SummonEntity 中会调用 GameObject.Initialize 来初始化 EntityInit，此时 transform.position 也被赋值了
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(PosConvert.WorldPosToRegionIndex(transform.position)));
                     }
-                    else if (pair.fieldPath == maxHealthVarId)
+                    else if (id == healthVarId)
                     {
-                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(data.maxHealth));
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(save.health == null ? Entity.GetDefaultMaxHealth(data) : save.health.Value));
                     }
-                    else if (pair.fieldPath == healthVarId)
-                    {
-                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(save.health == null ? data.maxHealth : save.health.Value));
-                    }
-                    else if (pair.fieldPath == customDataVarId)
+                    else if (id == customDataVarId)
                     {
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(JsonUtils.LoadJObjectByString(save.customData)));
                     }
-                    else if (pair.fieldPath == manaVarId)
+                    else if (id == manaVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.mana));
                     }
-                    else if (pair.fieldPath == hungerValueVarId)
+                    else if (id == hungerValueVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.hungerValue));
                     }
-                    else if (pair.fieldPath == coinVarId)
+                    else if (id == coinVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.coin));
                     }
-                    else if (pair.fieldPath == skinHeadVarId)
+                    else if (id == skinHeadVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinHead);
                     }
-                    else if (pair.fieldPath == skinBodyVarId)
+                    else if (id == skinBodyVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinBody);
                     }
-                    else if (pair.fieldPath == skinLeftArmVarId)
+                    else if (id == skinLeftArmVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinLeftArm);
                     }
-                    else if (pair.fieldPath == skinRightArmVarId)
+                    else if (id == skinRightArmVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinRightArm);
                     }
-                    else if (pair.fieldPath == skinLeftLegVarId)
+                    else if (id == skinLeftLegVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinLeftLeg);
                     }
-                    else if (pair.fieldPath == skinRightLegVarId)
+                    else if (id == skinRightLegVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinRightLeg);
                     }
-                    else if (pair.fieldPath == skinLeftFootVarId)
+                    else if (id == skinLeftFootVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinLeftFoot);
                     }
-                    else if (pair.fieldPath == skinRightFootVarId)
+                    else if (id == skinRightFootVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, saveAsPlayer.skinRightFoot);
                     }
-                    else if (pair.fieldPath == inventoryVarId)
+                    else if (id == inventoryVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         if (saveAsPlayer.inventory == null)
                         {
                             SyncPacker.RegisterVar(id, netId, null);
@@ -258,19 +235,19 @@ namespace GameCore
                             SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.inventory));
                         }
                     }
-                    else if (pair.fieldPath == completedTasksVarId)
+                    else if (id == completedTasksVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.completedTasks ?? new()));
                     }
-                    else if (pair.fieldPath == unlockedSkillsVarId)
+                    else if (id == unlockedSkillsVarId)
                     {
-                        PlayerSave saveAsPlayer = (PlayerSave)save;
-
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.unlockedSkills ?? new()));
                     }
-                    else if (pair.fieldPath == playerNameVarId)
+                    else if (id == skillPointsVarId)
+                    {
+                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.skillPoints));
+                    }
+                    else if (id == playerNameVarId)
                     {
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(save.id));
                     }
@@ -278,10 +255,16 @@ namespace GameCore
                     {
                         if (!pair.includeDefaultValue)
                             SyncPacker.RegisterVar(id, netId, null);
-                        else if (pair.defaultValueMethod == null)
+                        else if (pair.defaultValueMethodCallType == DefaultValueMethodCallType.DontCall)
                             SyncPacker.RegisterVar(id, netId, pair.defaultValue);
-                        else
-                            SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(pair.defaultValueMethod.Invoke(null, null)));
+                        else if (pair.defaultValueMethodCallType == DefaultValueMethodCallType.NoneParam)
+                            SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(pair.defaultValueActionNoneParam()));
+                        else if (pair.defaultValueMethodCallType == DefaultValueMethodCallType.EntityDataParam)
+                            SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(pair.defaultValueActionEntityDataParam(data)));
+                        else if (pair.defaultValueMethodCallType == DefaultValueMethodCallType.EntitySaveParam)
+                            SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(pair.defaultValueActionEntitySaveParam(save)));
+                        else if (pair.defaultValueMethodCallType == DefaultValueMethodCallType.EntityDataAndSaveParam)
+                            SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(pair.defaultValueActionEntityDataAndSaveParam(data, save)));
                     }
                 }
             }
@@ -437,16 +420,30 @@ namespace GameCore
 
         internal class SyncAttributeData
         {
-            public string fieldPath;
-            public bool includeDefaultValue;
-            public byte[] defaultValue;
-            public MethodInfo defaultValueMethod;
-            public string valueType;
+            internal string fieldPath;
+            internal bool includeDefaultValue;
+            internal byte[] defaultValue;
+            internal MethodInfo defaultValueMethod;
+            internal Func<object> defaultValueActionNoneParam;
+            internal Func<EntityData, object> defaultValueActionEntityDataParam;
+            internal Func<EntitySave, object> defaultValueActionEntitySaveParam;
+            internal Func<EntityData, EntitySave, object> defaultValueActionEntityDataAndSaveParam;
+            internal DefaultValueMethodCallType defaultValueMethodCallType;
+            internal string valueType;
+
+            internal enum DefaultValueMethodCallType : byte
+            {
+                NoneParam,
+                EntityDataParam,
+                EntitySaveParam,
+                EntityDataAndSaveParam,
+                DontCall,
+            }
         }
 
-        internal static SyncAttributeData[] ReadFromSyncAttributeTemps(Type type)
+        internal static SyncAttributeData[] ReadFromSyncAttributeTemps(EntityData data)
         {
-            if (TotalSyncVarAttributeTemps.TryGetValue(type, out SyncAttributeData[] value))
+            if (TotalSyncVarAttributeTemps.TryGetValue(data.behaviourType, out SyncAttributeData[] value))
             {
                 return value;
             }
@@ -454,7 +451,7 @@ namespace GameCore
             //如果没有就添加
             List<SyncAttributeData> ts = new();
 
-            foreach (var field in type.GetFields())
+            foreach (var field in data.behaviourType.GetFields())
             {
                 //如果存在 SyncAttribute 就添加到列表
                 if (AttributeGetter.TryGetAttribute<SyncAttribute>(field, out var att))
@@ -463,6 +460,12 @@ namespace GameCore
                     bool includeDefaultValue = false;
                     byte[] defaultValue = null;
                     MethodInfo defaultValueMethod = null;
+                    SyncDefaultValueFromMethodAttribute defaultValueFromMethodAtt = null;
+                    DefaultValueMethodCallType defaultValueMethodCallType = DefaultValueMethodCallType.DontCall;
+                    Func<object> defaultValueActionNoneParam = null;
+                    Func<EntityData, object> defaultValueActionEntityDataParam = null;
+                    Func<EntitySave, object> defaultValueActionEntitySaveParam = null;
+                    Func<EntityData, EntitySave, object> defaultValueActionEntityDataAndSaveParam = null;
 
                     if (AttributeGetter.TryGetAttribute<SyncDefaultValueAttribute>(field, out var defaultValueAtt))
                     {
@@ -479,22 +482,95 @@ namespace GameCore
                             includeDefaultValue = true;
                         }
                     }
-                    else if (AttributeGetter.TryGetAttribute<SyncDefaultValueFromMethodAttribute>(field, out var defaultValueFromMethodAtt))
+                    else if (AttributeGetter.TryGetAttribute(field, out defaultValueFromMethodAtt))
                     {
-                        defaultValueMethod = !defaultValueFromMethodAtt.methodName.Contains(".") ? type.GetMethodFromAllIncludingBases(defaultValueFromMethodAtt.methodName) : ModFactory.SearchUserMethod(defaultValueFromMethodAtt.methodName);
+                        defaultValueMethod = !defaultValueFromMethodAtt.methodName.Contains(".") ? data.behaviourType.GetMethodFromAllIncludingBases(defaultValueFromMethodAtt.methodName) : ModFactory.SearchUserMethod(defaultValueFromMethodAtt.methodName);
 
+                        //检查方法是否存在
                         if (defaultValueMethod == null)
                         {
                             Debug.LogError($"无法找到同步变量 {fieldPath} 的默认值获取方法 {defaultValueFromMethodAtt.methodName}");
                             continue;
                         }
 
+                        //检查返回类型
                         if (field.FieldType.FullName != defaultValueMethod.ReturnType.FullName)
                         {
                             Debug.LogError($"同步变量 {fieldPath} 错误: 返回值的类型为 {field.FieldType.FullName} , 但默认值的类型为 {defaultValueMethod.ReturnType.FullName}");
                             continue;
                         }
 
+                        //检查方法是否是静态方法
+                        if (!defaultValueMethod.IsStatic)
+                        {
+                            Debug.LogError($"同步变量 {fieldPath} 的默认值获取方法 {defaultValueFromMethodAtt.methodName} 必须是静态方法");
+                            continue;
+                        }
+
+                        //获取方法调用类型
+                        switch (defaultValueMethod.GetParameters())
+                        {
+                            //无参数
+                            case var parameters when parameters.Length == 0:
+                                //只有临时获取才需要缓存
+                                if (defaultValueFromMethodAtt.getValueUntilRegister)
+                                {
+                                    defaultValueActionNoneParam = Expression.Lambda<Func<object>>(Expression.Call(defaultValueMethod).Box()).Compile();
+                                }
+                                defaultValueMethodCallType = DefaultValueMethodCallType.NoneParam;
+                                break;
+
+                            //参数为 EntityData
+                            case var parameters when parameters.Length == 1 && parameters[0].ParameterType.FullName == typeof(EntityData).FullName:
+                                //只有临时获取才需要缓存
+                                if (defaultValueFromMethodAtt.getValueUntilRegister)
+                                {
+                                    //缓存方法
+                                    var arguments = new ParameterExpression[] { Expression.Parameter(typeof(EntityData)) };
+                                    defaultValueActionEntityDataParam = Expression.Lambda<Func<EntityData, object>>(Expression.Call(defaultValueMethod, arguments).Box(), arguments).Compile();
+                                }
+                                defaultValueMethodCallType = DefaultValueMethodCallType.EntityDataParam;
+                                break;
+
+                            //参数为 EntitySave
+                            case var parameters when parameters.Length == 1 && parameters[0].ParameterType.FullName == typeof(EntitySave).FullName:
+                                if (defaultValueFromMethodAtt.getValueUntilRegister)
+                                {
+                                    //缓存方法
+                                    var arguments = new ParameterExpression[] { Expression.Parameter(typeof(EntitySave)) };
+                                    defaultValueActionEntitySaveParam = Expression.Lambda<Func<EntitySave, object>>(Expression.Call(defaultValueMethod, arguments).Box(), arguments).Compile();
+                                    defaultValueMethodCallType = DefaultValueMethodCallType.EntitySaveParam;
+                                }
+                                else
+                                {
+                                    Debug.LogError($"同步变量 {fieldPath} 的默认值获取方法 {defaultValueFromMethodAtt.methodName} 不能包含 EntitySave 参数, 因为它的值在注册变量时才会确定");
+                                    continue;
+                                }
+                                break;
+
+                            //参数为 EntityData, EntitySave
+                            case var parameters when parameters.Length == 2 && parameters[0].ParameterType.FullName == typeof(EntityData).FullName && parameters[1].ParameterType.FullName == typeof(EntitySave).FullName:
+                                if (defaultValueFromMethodAtt.getValueUntilRegister)
+                                {
+                                    //缓存方法
+                                    var arguments = new ParameterExpression[] { Expression.Parameter(typeof(EntityData)), Expression.Parameter(typeof(EntitySave)) };
+                                    defaultValueActionEntityDataAndSaveParam = Expression.Lambda<Func<EntityData, EntitySave, object>>(Expression.Call(defaultValueMethod, arguments).Box(), arguments).Compile();
+                                    defaultValueMethodCallType = DefaultValueMethodCallType.EntityDataAndSaveParam;
+                                }
+                                else
+                                {
+                                    Debug.LogError($"同步变量 {fieldPath} 的默认值获取方法 {defaultValueFromMethodAtt.methodName} 不能包含 EntitySave 参数, 因为它的值在注册变量时才会确定");
+                                    continue;
+                                }
+                                break;
+
+                            //不受支持的参数列表
+                            default:
+                                Debug.LogError($"同步变量 {fieldPath} 的默认值获取方法 {defaultValueFromMethodAtt.methodName} 的参数列表不受支持");
+                                continue;
+                        }
+
+                        //获取成功
                         includeDefaultValue = true;
 
                         if (defaultValueFromMethodAtt.getValueUntilRegister)
@@ -503,11 +579,16 @@ namespace GameCore
                         }
                         else
                         {
-                            byte[] temp = null;
+                            //获取默认值
+                            defaultValue = Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, defaultValueMethodCallType switch
+                            {
+                                DefaultValueMethodCallType.NoneParam => null,
+                                DefaultValueMethodCallType.EntityDataParam => new object[] { data },
+                                _ => throw new NotImplementedException(defaultValueMethodCallType.ToString()),
+                            }));
 
-                            //TODO: 检查方法是否实例, 参数列表
-                            temp = Rpc.ObjectToBytes(defaultValueMethod.Invoke(null, null));
-                            defaultValue = temp;
+                            //防止二次调用
+                            defaultValueMethodCallType = DefaultValueMethodCallType.DontCall;
                         }
                     }
 
@@ -517,6 +598,11 @@ namespace GameCore
                         includeDefaultValue = includeDefaultValue,
                         defaultValue = defaultValue,
                         defaultValueMethod = defaultValueMethod,
+                        defaultValueMethodCallType = defaultValueMethodCallType,
+                        defaultValueActionNoneParam = defaultValueActionNoneParam,
+                        defaultValueActionEntityDataParam = defaultValueActionEntityDataParam,
+                        defaultValueActionEntitySaveParam = defaultValueActionEntitySaveParam,
+                        defaultValueActionEntityDataAndSaveParam = defaultValueActionEntityDataAndSaveParam,
                         valueType = field.FieldType.FullName,
                     });
                 }
@@ -525,7 +611,7 @@ namespace GameCore
 
             //将数据写入字典
             value = ts.ToArray();
-            TotalSyncVarAttributeTemps.Add(type, value);
+            TotalSyncVarAttributeTemps.Add(data.behaviourType, value);
 
             return value;
         }

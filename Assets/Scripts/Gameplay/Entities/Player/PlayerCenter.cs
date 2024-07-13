@@ -48,7 +48,7 @@ namespace GameCore
                     if (Tools.time >= playerHealthUpTimer)
                     {
                         //受伤的八秒内不回血
-                        if (health < 100 && Tools.time > player.previousHurtTime + 8)
+                        if (health < player.maxHealth && Tools.time > player.previousHurtTime + 8)
                         {
                             playerHealthUpTimer = Tools.time + 1f;
                             player.health = health + 1;
