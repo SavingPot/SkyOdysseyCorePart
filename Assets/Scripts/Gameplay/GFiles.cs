@@ -6,7 +6,6 @@ using System.Collections;
 using System.IO;
 using System;
 using UnityEngine;
-using GameCore.Network;
 
 namespace GameCore
 {
@@ -21,10 +20,10 @@ namespace GameCore
 
 
 
-        public static void CreateWorld(int seed, string name)
+        public static void CreateWorld(int seed, string name, bool isShortTerm, float requiredTotalTime = GTime.timeOneDay * 3)
         {
             SaveAllDataToFiles();
-            world = new(seed, name);
+            world = new(seed, name, isShortTerm, requiredTotalTime);
             SaveAllDataToFiles();
         }
 
@@ -86,6 +85,7 @@ namespace GameCore
                 //将时间写入
                 world.basicData.time = GTime.time;
                 world.basicData.isAM = GTime.isMorning;
+                world.basicData.totalTime = GTime.totalTime;
 
                 //将方块数据写入
                 SaveAllBlockDataToFiles();
@@ -172,11 +172,13 @@ namespace GameCore
 
 
 
-        public World(int seed, string worldName)
+        public World(int seed, string worldName, bool isShortTerm, float requiredTotalTime = GTime.timeOneDay * 3)
         {
-            this.basicData.seed = seed;
-            this.basicData.gameVersion = GInit.gameVersion;
-            this.basicData.worldName = worldName;
+            basicData.seed = seed;
+            basicData.gameVersion = GInit.gameVersion;
+            basicData.worldName = worldName;
+            basicData.isShortTerm = isShortTerm;
+            basicData.requiredTotalTime = requiredTotalTime;
         }
 
         public World(WorldBasicData basicData, List<Region> regionData, List<PlayerSave> playerData)
@@ -257,8 +259,11 @@ namespace GameCore
         public int seed;
         public string worldName;
         public string gameVersion;
-        public float time = 420;
+        public float time = 300;
+        public float totalTime = 0;
+        public float requiredTotalTime;
         public bool isAM = true;
+        public bool isShortTerm;
 
 
 

@@ -388,6 +388,9 @@ namespace GameCore.UI
                         /*                                 ChooseWorld                                */
                         /* -------------------------------------------------------------------------- */
                         var chooseWorldScrollView = GameUI.AddScrollView(UIA.Middle, "ori:scrollview.choose_world", chooseWorldPanel);
+                        chooseWorldScrollView.SetSizeDelta(450, 300);
+                        chooseWorldScrollView.SetAPosY(30);
+                        chooseWorldScrollView.gridLayoutGroup.cellSize = new(450 - chooseWorldScrollView.scrollRect.verticalScrollbar.handleRect.sizeDelta.x, 70);
 
                         RefreshWorldFiles();
                         RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
@@ -405,8 +408,13 @@ namespace GameCore.UI
                         worldSeedField.field.text = Tools.randomInt.ToString();
                         //TODO: World view fix
 
+                        var worldModeToggle = GameUI.AddToggle(UIA.Middle, "ori:toggle.create_new_world_world_mode", createWorldPanel);
+                        worldModeToggle.toggle.isOn = true;
+                        worldModeToggle.SetAPosOnBySizeDown(worldSeedField, 10);
+
                         ButtonIdentity create = GameUI.AddButton(UIA.Middle, "ori:button.create_new_world", createWorldPanel).OnClickBind(() =>
                         {
+                            //检查是否为空
                             if (worldNameField.field.text.IsNullOrWhiteSpace())
                             {
                                 var message = "世界名不能为空，创建失败";
@@ -415,9 +423,16 @@ namespace GameCore.UI
                                 return;
                             }
 
+                            //获取世界名
+                            var worldNameBuilder = Tools.stringBuilderPool.Get().Append(worldNameField.field.text);
+                            StringTools.ModifySpecialPath(worldNameBuilder, "New World", "x");
+                            var worldName = worldNameBuilder.ToString();
+                            Tools.stringBuilderPool.Recover(worldNameBuilder);
+
+                            //检查同名世界
                             foreach (var worldFile in worldFiles)
                             {
-                                if (worldFile.worldName == worldNameField.field.text)
+                                if (worldFile.worldName == worldName)
                                 {
                                     var message = "存在一个同名世界，创建失败";
                                     SetStatusText(message);
@@ -426,14 +441,11 @@ namespace GameCore.UI
                                 }
                             }
 
-                            var worldNameBuilder = Tools.stringBuilderPool.Get().Append(worldNameField.field.text);
-                            StringTools.ModifySpecialPath(worldNameBuilder, "New World", "x");
-
-                            GFiles.CreateWorld(worldSeedField.field.text.ToInt(), worldNameBuilder.ToString());
+                            //创建世界并刷新
+                            GFiles.CreateWorld(worldSeedField.field.text.ToInt(), worldName, worldModeToggle.toggle.isOn);
                             RefreshWorldFiles();
                             RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
                             GameUI.SetPage(chooseWorldPanel);
-                            Tools.stringBuilderPool.Recover(worldNameBuilder);
                         });
                         create.SetAPosOnBySizeDown(worldSeedField, 50);
 
@@ -805,7 +817,7 @@ namespace GameCore.UI
                 var file = worldFiles[i];
                 string worldPath = file.worldPath;
                 string worldName = file.worldName;
-                Vector2Int delBtnSize = new(40, 40);
+                Vector2Int configButtonSize = new(40, 40);
 
                 Transform t = chooseWorldScrollView.transform.parent;
                 ImageTextButtonIdentity lb = GameUI.AddImageTextButton(UIA.Middle, "ori:itb.choose_world_" + worldName + "_" + i).OnClickBind(() => MethodAgent.DebugRun(() =>
@@ -815,22 +827,6 @@ namespace GameCore.UI
                     //开始并设置游戏时间
                     GM.StartGameHost(worldPath, () => GTime.time = GFiles.world.basicData.time);
                 }));
-
-                var configButton = GameUI.AddButton(UIA.LowerRight, "ori:button.config_world_" + worldPath, lb, "ori:square_button");
-                configButton.rt.SetParent(lb.rt);
-                string str = GameUI.CompareText("ori:button.config_world.text").text;
-                configButton.buttonText.AfterRefreshing += tc => tc.text.text = str;
-                configButton.sd = delBtnSize;
-                configButton.SetAPos(-configButton.sd.x / 2, configButton.sd.y / 2);
-                configButton.buttonText.sd = configButton.sd;
-                configButton.buttonText.text.SetFontSize(10);
-                configButton.OnClickBind(() =>
-                {
-                    worldConfigPanel.CustomMethod("ori:refresh", worldPath);
-                    GameUI.SetPage(worldConfigPanel);
-                });
-                configButton.RefreshUI();
-
                 lb.image.AfterRefreshing += _ =>
                 {
                     string imagePath = World.GetImagePath(worldPath);
@@ -840,8 +836,22 @@ namespace GameCore.UI
                     else
                         lb.image.image.sprite = GInit.instance.textureUnknown.sprite;
                 };
-                lb.buttonTextUp.AfterRefreshing += o => o.text.text = worldName;
-                lb.buttonTextDown.AfterRefreshing += o => o.text.text = $"{file.seed} [{file.gameVersion}] ({file.time})";
+                lb.buttonTextUp.DisableAutoCompare().SetText(worldName);
+                lb.buttonTextDown.DisableAutoCompare().SetText($"模式：{(file.isShortTerm ? "短期" : "长期")}   时间 {(file.totalTime / 60f):F1}{(file.isShortTerm ? $"/{(file.requiredTotalTime / 60f):F1}" : "")} 分钟\n版本：{file.gameVersion}\n种子：{file.seed}").text.SetFontSize(12);
+
+                var configButton = GameUI.AddButton(UIA.LowerRight, "ori:button.config_world_" + worldPath, lb, "ori:square_button");
+                configButton.rt.SetParent(lb.rt);
+                configButton.sd = configButtonSize;
+                configButton.SetAPos(-configButton.sd.x / 2, configButton.sd.y / 2);
+                configButton.buttonText.DisableAutoCompare().SetText(GameUI.CompareText("ori:button.config_world.text").text);
+                configButton.buttonText.sd = configButton.sd;
+                configButton.buttonText.text.SetFontSize(10);
+                configButton.OnClickBind(() =>
+                {
+                    worldConfigPanel.CustomMethod("ori:refresh", worldPath);
+                    GameUI.SetPage(worldConfigPanel);
+                });
+                configButton.RefreshUI();
 
                 chooseWorldScrollView.AddChild(lb.rt);
                 lb.ResetStatusInScrollView(chooseWorldScrollView);

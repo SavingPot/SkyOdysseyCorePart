@@ -65,6 +65,7 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         public ScrollViewIdentity chatView;
         public InputButtonIdentity chatInput;
+        private readonly StringBuilder chatStringBuilder = new();
 
 
 
@@ -567,7 +568,15 @@ namespace GameCore.UI
                 if (!Player.local)
                     return;
 
-                Client.Send<NMChat>(new(ByteConverter.ToBytes(Player.local.head.sr.sprite), Player.local.playerName, chatInput.field.field.text));
+                //处理屏蔽词
+                StringTools.ModifyObscenities(chatStringBuilder.Clear().Append(chatInput.field.field.text), "*");
+                var messageContent = chatStringBuilder.ToString();
+
+                //将消息发送给服务器
+                Client.Send<NMChat>(new(
+                    ByteConverter.ToBytes(Player.local.head.sr.sprite),
+                    Player.local.playerName,
+                    messageContent));
             });
 
             chatView.OnUpdate += _ =>

@@ -42,39 +42,12 @@ namespace GameCore
 
 
 
-        #region 时间系统
-        #region 变量
 
-        public bool isMorning
-        {
-            get => GTime.isMorning;
-            [Button("设置是否是上午")]
-            set => GTime.isMorning = value;
-        }
-
-        public float timeOneDay
-        {
-            get => GTime.timeOneDay;
-            [Button("设置一天的总时间")]
-            set => GTime.timeOneDay = value;
-        }
-
-        public float time
-        {
-            get => GTime.time;
-            [Button("设置时间")]
-            set => GTime.time = value;
-        }
-
-        public float timeSpeed
-        {
-            get => GTime.timeSpeed;
-            [Button("设置时间流速")]
-            set => GTime.timeSpeed = value;
-        }
-        #endregion
-
-        #endregion
+#if UNITY_EDITOR
+        [Button("设置是否是上午")] void Editor_SetIsMorning(bool value) => GTime.isMorning = value;
+        [Button("设置时间")] void Editor_SetTime(float value) => GTime.time = value;
+        [Button("设置时间流速")] void Editor_SetTimeSpeed(float value) => GTime.timeSpeed = value;
+#endif
 
 
 
@@ -160,7 +133,7 @@ namespace GameCore
             if (Client.isClient)
             {
                 /* -------------------------------- 设置全局光照亮度 -------------------------------- */
-                globalLight.intensity = Mathf.Clamp(time * 2 / timeOneDay, 0.1f, 0.85f);
+                globalLight.intensity = Mathf.Clamp(GTime.time * 2 / GTime.timeOneDay, 0.1f, 0.85f);
 
                 /* --------------------------------- 设置天空颜色 --------------------------------- */
                 byte delta = (byte)Mathf.Min(GTime.darknessLevel * 12, 180);   //* xx 是为了扩大时间的影响, 要限制在 <= 180, 否则天会变绿
@@ -575,6 +548,7 @@ namespace GameCore
             {
                 GTime.isMorning = GFiles.world.basicData.isAM;
                 GTime.time = GFiles.world.basicData.time;
+                GTime.totalTime = GFiles.world.basicData.totalTime;
             }
 
             if (Server.isServer)

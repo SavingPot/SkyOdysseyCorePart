@@ -80,7 +80,7 @@ namespace GameCore
         public void AttackEntity(Entity entity)
         {
             entity.TakeDamage(
-                data.normalAttackDamage,
+                Mathf.CeilToInt(data.normalAttackDamage * (1 + GTime.difficultyFactor)),
                 0.3f,
                 transform.position,
                 transform.position.x < targetEntity.transform.position.x ? Vector2.right * 12 : Vector2.left * 12

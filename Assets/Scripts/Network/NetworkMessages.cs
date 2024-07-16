@@ -242,10 +242,10 @@ namespace GameCore.Network
         public string playerName;
         public string msg;
 
-        public NMChat(byte[] portrait, string playName, string msg)
+        public NMChat(byte[] portrait, string playerName, string msg)
         {
             this.portrait = portrait;
-            this.playerName = playName;
+            this.playerName = playerName;
             this.msg = msg;
         }
     }

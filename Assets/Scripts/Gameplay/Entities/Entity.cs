@@ -146,6 +146,19 @@ namespace GameCore
 
         public static int GetDefaultMaxHealth(EntityData data)
         {
+            //玩家是固定的
+            if (data.IsPlayer)
+            {
+                return DEFAULT_HEALTH;
+            }
+
+            //敌人会改变
+            if (data.behaviourType != null && data.behaviourType.IsSubclassOf(typeof(Enemy)))
+            {
+                return Mathf.CeilToInt(data.maxHealth * GTime.difficultyFactor);
+            }
+
+            //其他一律按照 json 来
             return data.maxHealth;
         }
 
@@ -715,17 +728,16 @@ namespace GameCore
                 return;
 
 
-            //根据防御值计算实际伤害
+            //根据防御值等数据计算实际伤害
             CalculateActualDamage(ref damage);
+
 
             //扣血并刷新无敌时间
             health -= damage;
             this.invincibleTime = invincibleTime;
 
-            OnGetHurtServer(damage, invincibleTime, damageOriginPos, impactForce, caller);
 
-
-
+            //排除玩家是因为玩家的速度由各自的客户端控制
             if (isNotPlayer)
             {
                 //应用击退效果
@@ -736,14 +748,16 @@ namespace GameCore
             }
 
 
-
             Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}, 新血量为 {health}");
 
+
+            OnGetHurtServer(damage, invincibleTime, damageOriginPos, impactForce, caller);
             ClientTakeDamage(damage, invincibleTime, damageOriginPos, impactForce, caller);
         }
 
         public void CalculateActualDamage(ref int damage)
         {
+            //计算防御值
             if (this is IInventoryOwner owner)
             {
                 var inventory = owner.GetInventory();
@@ -769,7 +783,7 @@ namespace GameCore
 
             OnGetHurtClient(damage, invincibleTime, damageOriginPos, impactForce, caller);
 
-            //应用击退效果
+            //应用本地玩家击退效果
             if (isPlayer && isOwned)
                 rb.velocity = impactForce;
 

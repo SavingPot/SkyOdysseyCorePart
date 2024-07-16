@@ -26,6 +26,9 @@ namespace GameCore
         public Type behaviourType;
         [LabelText("掉落的物品")] public DropData[] drops;
         [LabelText("掉落的金币数")] public int coinCount;
+
+
+        public bool IsPlayer => id == EntityID.Player;
     }
 
     [Serializable]
