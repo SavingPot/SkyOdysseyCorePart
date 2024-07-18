@@ -317,11 +317,11 @@ namespace GameCore
         public static int modCountFound;
         public static int enabledModCount;
 
-        public static List<FinalLang> finalTextData = new();
+        public static List<FinalLang> finalLangs = new();
 
         public static FinalLang CompareFinalDatumText(string id)
         {
-            foreach (var item in finalTextData)
+            foreach (var item in finalLangs)
             {
                 if (item.id == id)
                 {
@@ -694,11 +694,11 @@ namespace GameCore
         {
             if (CompareFinalDatumText(text.id) == null)
             {
-                finalTextData.Add(new(text));
+                finalLangs.Add(new(text));
             }
             else
             {
-                foreach (var data in finalTextData)
+                foreach (var data in finalLangs)
                 {
                     if (data.id == text.id)
                     {
@@ -1416,48 +1416,52 @@ namespace GameCore
     [Serializable]
     public sealed class FinalLang : IdClassBase
     {
-        public List<GameLang_Text> texts = new();
+        public Dictionary<string, string> texts = new();
         public string textName;
 
-        public GameLang_Text CompareOrCreateText(string id)
+        public string CompareOrCreateText(string id)
         {
-            for (int i = 0; i < texts.Count; i++)
-                if (texts[i].id == id)
-                    return texts[i];
-
-            GameLang_Text text = new() { id = id, text = id };
-            return text;
+            if (texts.TryGetValue(id, out var value))
+            {
+                return value;
+            }
+            else
+            {
+                return id;
+            }
         }
 
-        public bool TryCompareText(string id, out GameLang_Text text)
+        public bool TryCompareText(string id, out string text)
         {
             if (id.IsNullOrWhiteSpace())
                 goto failure;
 
-            foreach (var t in texts)
-                if (t.id == id)
-                {
-                    text = t;
-                    return true;
-                }
+            if (texts.TryGetValue(id, out text))
+            {
+                return true;
+            }
 
-            failure:
+        failure:
             text = null;
             return false;
         }
 
-        public FinalLang(GameLang datumText)
+        public FinalLang(GameLang lang)
         {
-            id = datumText.id;
-            texts = new(datumText.texts);
-            textName = datumText.textName;
+            id = lang.id;
+            textName = lang.textName;
+
+            foreach (var item in lang.texts)
+            {
+                texts.Add(item.id, item.text);
+            }
         }
 
-        public void AddTexts(GameLang datumText)
+        public void AddTexts(GameLang lang)
         {
-            foreach (var t in datumText.texts)
+            foreach (var item in lang.texts)
             {
-                texts.Add(t);
+                texts.Add(item.id, item.text);
             }
         }
     }

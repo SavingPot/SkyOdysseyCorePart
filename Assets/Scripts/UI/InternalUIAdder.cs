@@ -281,9 +281,9 @@ namespace GameCore.UI
                         {
                             var sb = Tools.stringBuilderPool.Get();
 
-                            sb.Append(GameUI.CompareText("ori:game_version").text).AppendLine(GInit.gameVersion);
-                            sb.Append(GameUI.CompareText("ori:engine_version").text).AppendLine(GInit.unityVersion);
-                            sb.Append(GameUI.CompareText("ori:mod_count").text).AppendLine(ModFactory.mods.Length.ToString());
+                            sb.Append(GameUI.CompareText("ori:game_version")).AppendLine(GInit.gameVersion);
+                            sb.Append(GameUI.CompareText("ori:engine_version")).AppendLine(GInit.unityVersion);
+                            sb.Append(GameUI.CompareText("ori:mod_count")).AppendLine(ModFactory.mods.Length.ToString());
 
                             t.text.text = sb.ToString();
                             Tools.stringBuilderPool.Recover(sb);
@@ -481,7 +481,7 @@ namespace GameCore.UI
                         {
                             try
                             {
-                                t.text.text = GameUI.CompareText("ori:button.delete_world.text").text.Replace("{world_name}", IOTools.GetDirectoryName(pathToDelete));
+                                t.text.text = GameUI.CompareText("ori:button.delete_world.text").Replace("{world_name}", IOTools.GetDirectoryName(pathToDelete));
                             }
                             catch
                             {
@@ -519,7 +519,7 @@ namespace GameCore.UI
 
                             if (string.IsNullOrWhiteSpace(playerNameField.field.text))
                             {
-                                placeholder.text = GameUI.CompareText($"{playerNameField.id}_empty").text;
+                                placeholder.text = GameUI.CompareText($"{playerNameField.id}_empty");
                                 return;
                             }
 
@@ -530,11 +530,11 @@ namespace GameCore.UI
 
                             if (playerNameField.field.text.Length < 2)
                             {
-                                placeholder.text = GameUI.CompareText($"{playerNameField.id}_short").text;
+                                placeholder.text = GameUI.CompareText($"{playerNameField.id}_short");
                                 return;
                             }
 
-                            placeholder.text = GameUI.CompareText($"{playerNameField.id}_success").text.Replace("{value}", playerNameField.field.text);
+                            placeholder.text = GameUI.CompareText($"{playerNameField.id}_success").Replace("{value}", playerNameField.field.text);
                             GFiles.settings.playerName = playerNameField.field.text;
                         });
 
@@ -572,7 +572,7 @@ namespace GameCore.UI
                         var svLanguages = GameUI.AddScrollView(UIA.Middle, "ori:sv.languages", setLanguagePanel);
                         GameUI.AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.language.back", setLanguagePanel).OnClickBind(() => GameUI.SetPage(settingsPanel));
                         languageSetButton.SetAPosOnBySizeUp(playerSkinSetButton, 20);
-                        foreach (var data in ModFactory.finalTextData)
+                        foreach (var data in ModFactory.finalLangs)
                         {
                             var b = GameUI.AddButton(UIA.Middle, $"ori:button.languages.{data.id}");
                             b.buttonText.autoCompareText = false;
@@ -618,7 +618,7 @@ namespace GameCore.UI
                         playerCursorSpeedSlider.slider.value = GFiles.settings.playerCursorSpeed;
                         playerCursorSpeedSlider.text.text.enableAutoSizing = true;
                         playerCursorSpeedSlider.text.autoCompareText = false;
-                        playerCursorSpeedSlider.text.AfterRefreshing += x => x.text.text = $"{GameUI.CompareText("ori:player_cursor_speed").text}: {playerCursorSpeedSlider.slider.value}";
+                        playerCursorSpeedSlider.text.AfterRefreshing += x => x.text.text = $"{GameUI.CompareText("ori:player_cursor_speed")}: {playerCursorSpeedSlider.slider.value}";
                         playerCursorSpeedSlider.slider.onValueChanged.AddListener(v =>
                         {
                             GFiles.settings.playerCursorSpeed = Convert.ToInt32(v);
@@ -667,7 +667,7 @@ namespace GameCore.UI
                             slider.slider.wholeNumbers = true;
                             slider.slider.value = setter(null);
                             slider.text.autoCompareText = false;
-                            slider.text.AfterRefreshing += x => x.text.text = $"{GameUI.CompareText($"{id}.text").text}: {slider.slider.value}";
+                            slider.text.AfterRefreshing += x => x.text.text = $"{GameUI.CompareText($"{id}.text")}: {slider.slider.value}";
                             slider.slider.onValueChanged.AddListener(v =>
                             {
                                 setter(Convert.ToInt32(v));
@@ -737,9 +737,9 @@ namespace GameCore.UI
                                 if (id == "ori:refresh")
                                 {
                                     if (configuringModDir.info.enabled)
-                                        modConfiguringPanel_ActivityButton.buttonText.text.text = GameUI.currentLang.CompareOrCreateText("ori:disable").text;
+                                        modConfiguringPanel_ActivityButton.buttonText.text.text = GameUI.currentLang.CompareOrCreateText("ori:disable");
                                     else
-                                        modConfiguringPanel_ActivityButton.buttonText.text.text = GameUI.currentLang.CompareOrCreateText("ori:enable").text;
+                                        modConfiguringPanel_ActivityButton.buttonText.text.text = GameUI.currentLang.CompareOrCreateText("ori:enable");
                                     return;
                                 }
                             };
@@ -843,7 +843,7 @@ namespace GameCore.UI
                 configButton.rt.SetParent(lb.rt);
                 configButton.sd = configButtonSize;
                 configButton.SetAPos(-configButton.sd.x / 2, configButton.sd.y / 2);
-                configButton.buttonText.DisableAutoCompare().SetText(GameUI.CompareText("ori:button.config_world.text").text);
+                configButton.buttonText.DisableAutoCompare().SetText(GameUI.CompareText("ori:button.config_world.text"));
                 configButton.buttonText.sd = configButton.sd;
                 configButton.buttonText.text.SetFontSize(10);
                 configButton.OnClickBind(() =>
@@ -875,9 +875,9 @@ namespace GameCore.UI
                     GameUI.SetPage(modConfiguringPanel);
                 }));
 
-                string newName = dir.info.name == null ? dir.info.id : GameUI.currentLang.CompareOrCreateText(dir.info.name).text;
+                string newName = dir.info.name == null ? dir.info.id : GameUI.currentLang.CompareOrCreateText(dir.info.name);
                 string newID = dir.info.id;
-                string newDescription = dir.info.description == null ? string.Empty : GameUI.currentLang.CompareOrCreateText(dir.info.description).text;
+                string newDescription = dir.info.description == null ? string.Empty : GameUI.currentLang.CompareOrCreateText(dir.info.description);
                 string newVersion = dir.info.version;
 
                 lb.buttonTextUp.text.SetFontSize(15);

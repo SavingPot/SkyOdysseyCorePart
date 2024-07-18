@@ -233,7 +233,7 @@ namespace GameCore
 #if UNITY_EDITOR
             //更新日志消息
             modsToDebug = ModFactory.mods;
-            finalTextDataToDebug = ModFactory.finalTextData;
+            finalTextDataToDebug = ModFactory.finalLangs;
             gameSettingsDatumToDebug = GFiles.settings;
             currentWorldToDebug = GFiles.world;
             worldToDebug = GFiles.world;

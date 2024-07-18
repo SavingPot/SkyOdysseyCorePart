@@ -772,38 +772,51 @@ namespace GameCore
                 GameUI.canvas.gameObject.SetActive(false);
                 ScreenTools.CaptureSquare(GFiles.world.worldImagePath, () =>
                 {
-                    //生成蒙版
                     GameUI.canvas.gameObject.SetActive(true);
-                    (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
-                    {
-                        //清除方块防止警告
-                        if (Map.HasInstance())
-                        {
-                            Map.instance.RecycleChunks();
-                        }
 
-                        //关闭 Host
-                        ManagerNetwork.instance.StopHost();
-                    }), null);
-
-                    //显示蒙版
-                    panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
-                    panel.CustomMethod("fade_in", null);
+                    //关闭 Host
+                    ShutDownHostWithMask();
                 });
             }
             //如果是单纯的客户端
             else
             {
-                //生成蒙版
-                (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
-                {
-                    Client.Disconnect();
-                }), null);
-
-                //显示蒙版
-                panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
-                panel.CustomMethod("fade_in", null);
+                //关闭客户端
+                ShutDownClientWithMask();
             }
+        }
+
+        public void ShutDownHostWithMask()
+        {
+            //生成蒙版
+            (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
+            {
+                //清除方块防止警告
+                if (Map.HasInstance())
+                {
+                    Map.instance.RecycleChunks();
+                }
+
+                //关闭 Host
+                ManagerNetwork.instance.StopHost();
+            }), null);
+
+            //显示蒙版
+            panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
+            panel.CustomMethod("fade_in", null);
+        }
+
+        public void ShutDownClientWithMask()
+        {
+            //生成蒙版
+            (var panel, _) = GameUI.LeavingGameMask(new((_, _) =>
+            {
+                Client.Disconnect();
+            }), null);
+
+            //显示蒙版
+            panel.OnUpdate += x => GameUI.SetUILayerToTop(x);
+            panel.CustomMethod("fade_in", null);
         }
 
         private void OnDestroy()

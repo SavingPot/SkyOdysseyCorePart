@@ -130,23 +130,23 @@ namespace GameCore.UI
 
         public void Show(Item item) => Show(item.data);
 
-        public void Show(ItemData item) => Show(GameUI.CompareText(item.id).text, $"<color=#E0E0E0>{GetDetailText(item, stringBuilder.Clear())}</color>");
+        public void Show(ItemData item) => Show(GameUI.CompareText(item.id), $"<color=#E0E0E0>{GetDetailText(item, stringBuilder.Clear())}</color>");
 
         public StringBuilder GetDetailText(Item item) => GetDetailText(item.data, stringBuilder);
 
         public StringBuilder GetDetailText(ItemData item, StringBuilder sb)
         {
             if (item.damage != ItemData.defaultDamage)
-                sb.AppendLine(GameUI.CompareText("ori:item.damage").text.Replace("{value}", item.damage.ToString()));
+                sb.AppendLine(GameUI.CompareText("ori:item.damage").Replace("{value}", item.damage.ToString()));
             if (item.excavationStrength != ItemData.defaultExcavationStrength)
-                sb.AppendLine(GameUI.CompareText("ori:item.excavation_strength").text.Replace("{value}", item.excavationStrength.ToString()));
+                sb.AppendLine(GameUI.CompareText("ori:item.excavation_strength").Replace("{value}", item.excavationStrength.ToString()));
             if (item.useCD != ItemData.defaultUseCD)
-                sb.AppendLine(GameUI.CompareText("ori:item.use_cd").text.Replace("{value}", item.useCD.ToString()));
+                sb.AppendLine(GameUI.CompareText("ori:item.use_cd").Replace("{value}", item.useCD.ToString()));
             sb.AppendLine(string.Empty);
 
             //如果成功匹配到了描述文本
             if (GameUI.TryCompareTextNullable(item.description, out var description))
-                sb.Append(description.text);
+                sb.Append(description);
 
             return sb;
         }
@@ -178,7 +178,7 @@ namespace GameCore.UI
         public void Show(CraftingRecipe recipe, List<Dictionary<int, ushort>> ingredients)
         {
             stringBuilder.Clear();
-            stringBuilder.AppendLine(GameUI.CompareText("可合成次数(TODO)").text.Replace("{value}", recipe.ingredients.Length.ToString()));
+            stringBuilder.AppendLine(GameUI.CompareText("可合成次数(TODO)").Replace("{value}", recipe.ingredients.Length.ToString()));
 
 
             Vector2 pos = GControls.cursorPosInMainCanvas;
@@ -208,7 +208,7 @@ namespace GameCore.UI
                     ingredientsText.autoCompareText = false;
                     ingredientsText.text.enableAutoSizing = true;
                     ingredientsText.text.fontSizeMin = 0;
-                    ingredientsText.text.text = $"{GameUI.CompareText(itemGot.data.id)?.text}x{ingredient.Value}";
+                    ingredientsText.text.text = $"{GameUI.CompareText(itemGot.data.id)}x{ingredient.Value}";
                     ingredientsText.text.margin = Vector4.zero;
                     ingredientsText.SetSizeDelta(ingredientsIcon.sd.x, 8);
                     ingredientsText.SetAPosY(ingredientsIcon.ap.y / 2 - ingredientsIcon.sd.y / 2 - ingredientsText.sd.y / 2);
@@ -230,7 +230,7 @@ namespace GameCore.UI
             iconText.autoCompareText = false;
             iconText.text.enableAutoSizing = true;
             iconText.text.fontSizeMin = 0;
-            iconText.text.text = $"{GameUI.CompareText(recipe.result.id)?.text}x{recipe.result.count}";
+            iconText.text.text = $"{GameUI.CompareText(recipe.result.id)}x{recipe.result.count}";
             iconText.text.margin = Vector4.zero;
             iconText.SetSizeDelta(icon.sd.x, 8);
             iconText.SetAPosY(icon.ap.y / 2 - icon.sd.y / 2 - iconText.sd.y / 2);
@@ -299,7 +299,7 @@ namespace GameCore.UI
 
                     if (Drop.ConvertStringItem(reward, out string id, out ushort count, out _, out _))
                     {
-                        sb.AppendLine(GameUI.CompareText("ori:task.rewards").text.Replace("{id}", GameUI.CompareText(id).text).Replace("{count}", count.ToString()));
+                        sb.AppendLine(GameUI.CompareText("ori:task.rewards").Replace("{id}", GameUI.CompareText(id)).Replace("{count}", count.ToString()));
                     }
                 }
             }
@@ -326,7 +326,7 @@ namespace GameCore.UI
     {
         public void Show(SkillNode node)
         {
-            Show(node.button.buttonText.text.text, GameUI.CompareText(node.data.description).text);
+            Show(node.button.buttonText.text.text, GameUI.CompareText(node.data.description));
 
             backgroundImage.transform.SetParent(node.button.transform);
             backgroundImage.transform.localPosition = new(backgroundImage.sd.x, -backgroundImage.sd.y);

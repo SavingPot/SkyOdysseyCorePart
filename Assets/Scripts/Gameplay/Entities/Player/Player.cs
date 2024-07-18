@@ -22,6 +22,7 @@ using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
 using static GameCore.UI.PlayerUI;
 using GameCore.Network;
 using ClientRpcAttribute = GameCore.Network.ClientRpcAttribute;
+using System.IO;
 
 namespace GameCore
 {
@@ -356,7 +357,7 @@ namespace GameCore
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.hasGeneratedFirstRegion && Application.isFocused;
         public const float playerDefaultGravity = 6f;
         public const float defaultInteractiveRadius = 2.8f;
-        public const float REBORN_WAIT_TIME = 20;
+        public const float REBORN_WAIT_TIME = 35;
 
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);
         public static float deathLowestColorFloat = 0.45f;
@@ -920,33 +921,55 @@ namespace GameCore
 
         public override void OnDeathServer()
         {
-            //如果有其他玩家存活
-            if (Server.playerCount > 1 && !PlayerCenter.all.Any(p => !p.isDead))
+            if (GFiles.world.basicData.isShortTerm)
             {
-                Debug.Log("有别人");
-                return;
-            }
+                //如果有其他玩家存活，那么等待救援
+                if (PlayerCenter.all.Any(p => !p.isDead))
+                {
+                    Debug.Log("有别人");
+                }
+                //如果没有那么就删除存档
+                else
+                {
+                    //TODO: 展示一个蒙版告诉玩家他失败了
+                    Debug.Log("删除存档");
 
-            Debug.Log("没别人了");
+                    //关闭并删除存档
+                    GM.instance.ShutDownHostWithMask();
+                    IOTools.DeleteDir(GFiles.world.basicData.worldPath);
+                }
+            }
+            else
+            {
+                //通知客户端等待重生
+                ClientWaitForReborn();
+                Debug.Log("等待重生");
+            }
         }
 
         public override void OnDeathClient()
         {
-            rebornTimer = Tools.time + REBORN_WAIT_TIME;
-
             //设置颜色
             foreach (var sr in spriteRenderers)
             {
                 sr.color = deathLowestColor;
             }
 
+            //播放音效、显示重生界面
             if (isLocalPlayer)
             {
                 GAudio.Play(AudioID.Death);
-                MethodAgent.CallUntil(() => pui != null, () => pui.ShowRebornPanel());
             }
 
             animWeb.Stop();
+        }
+
+        [ClientRpc]
+        public void ClientWaitForReborn(NetworkConnection caller = null)
+        {
+            rebornTimer = Tools.time + REBORN_WAIT_TIME;
+
+            MethodAgent.CallUntil(() => pui != null, () => pui.ShowRebornPanel());
         }
 
 
@@ -1559,11 +1582,11 @@ namespace GameCore
             GAudio.Play(AudioID.SwitchQuickInventorySlot);
 
             //改变状态文本
-            string itemName = GameUI.CompareText(GetUsingItemChecked()?.data?.id).text;
+            string itemName = GameUI.CompareText(GetUsingItemChecked()?.data?.id);
             if (itemName.IsNullOrWhiteSpace())
-                itemName = GameUI.CompareText("ori:empty_item").text;
+                itemName = GameUI.CompareText("ori:empty_item");
 
-            InternalUIAdder.instance.SetStatusText(GameUI.CompareText("ori:switch_item").text.Replace("{item_id}", itemName));
+            InternalUIAdder.instance.SetStatusText(GameUI.CompareText("ori:switch_item").Replace("{item_id}", itemName));
         }
 
 

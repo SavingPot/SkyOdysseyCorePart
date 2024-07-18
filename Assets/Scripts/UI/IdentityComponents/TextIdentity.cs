@@ -28,7 +28,7 @@ namespace GameCore.UI
             base.InternalRefreshUI();
 
             if (autoCompareText)
-                text.text = GameUI.CompareText(id).text;
+                text.text = GameUI.CompareText(id);
         }
 
         public TextIdentity DisableAutoCompare()

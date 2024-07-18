@@ -158,7 +158,7 @@ namespace GameCore.UI
                 var itemData = ModFactory.CompareItem(item.itemId);
 
                 slotUI.content.image.sprite = itemData.texture.sprite;
-                slotUI.button.SetText($"\n\n{GameUI.CompareText(item.itemId).text}x{item.itemCount}\nCost:{item.cost}");
+                slotUI.button.SetText($"\n\n{GameUI.CompareText(item.itemId)}x{item.itemCount}\nCost:{item.cost}");
             }
         }
 
@@ -199,7 +199,7 @@ namespace GameCore.UI
                     //检查金币
                     if (player.coin < item.cost)
                     {
-                        InternalUIAdder.instance.SetStatusText(GameUI.CompareText("ori:trade_not_enough_coin").text);
+                        InternalUIAdder.instance.SetStatusText(GameUI.CompareText("ori:trade_not_enough_coin"));
                         return;
                     }
 

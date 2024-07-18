@@ -182,24 +182,24 @@ namespace GameCore.UI
             return _currentLang;
         }
 
-        public static GameLang_Text CompareTextNullable(string id)
+        public static string CompareTextNullable(string id)
         {
-            if (currentLang.TryCompareText(id, out GameLang_Text cText))
+            if (currentLang.TryCompareText(id, out var cText))
             {
                 return cText;
             }
             else
             {
-                if (defaultLang.TryCompareText(id, out GameLang_Text dText))
+                if (defaultLang.TryCompareText(id, out var dText))
                 {
                     return dText;
                 }
 
-                foreach (var data in ModFactory.finalTextData)
+                foreach (var data in ModFactory.finalLangs)
                 {
                     if (data.id != currentLang.id && data.id != defaultLang.id)
                     {
-                        if (data.TryCompareText(id, out GameLang_Text aText))
+                        if (data.TryCompareText(id, out var aText))
                         {
                             return aText;
                         }
@@ -210,18 +210,18 @@ namespace GameCore.UI
             }
         }
 
-        public static bool TryCompareTextNullable(string id, out GameLang_Text result)
+        public static bool TryCompareTextNullable(string id, out string result)
         {
             result = CompareTextNullable(id);
 
             return result != null;
         }
 
-        public static GameLang_Text CompareText(string id)
+        public static string CompareText(string id)
         {
             var nullable = CompareTextNullable(id);
 
-            return nullable ?? new() { id = id, text = id };
+            return nullable ?? id;
         }
 
         #endregion

@@ -58,10 +58,9 @@ namespace GameCore.UI
         {
             base.InternalRefreshUI();
 
-            var t = GameUI.CompareText(id);
-            if (t.text != id)
+            if (GameUI.TryCompareTextNullable(id, out var result))
             {
-                placeholder.text = t.text;
+                placeholder.text = result;
             }
         }
     }

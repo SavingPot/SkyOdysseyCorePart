@@ -365,7 +365,7 @@ namespace GameCore.UI
 
                 //更改对话者的头像和名字
                 dialogHead.image.sprite = ModFactory.CompareTexture(current.head).sprite;
-                dialogNameText.text.text = GameUI.CompareText(displayingDialog.name).text;
+                dialogNameText.text.text = GameUI.CompareText(displayingDialog.name);
 
                 //遍历文本
                 for (int t = 0; t < fullContent.Length;)
@@ -485,8 +485,8 @@ namespace GameCore.UI
             }
 
             gainRareItemIcon.SetSprite(item.data.texture.sprite);
-            gainRareItemNameText.SetText($"{GameUI.CompareText(item.data.id).text}{(item.count == 0 ? "" : $" x{item.count}")}");
-            gainRareItemDescriptionText.SetText(GameUI.CompareTextNullable(item.data.description)?.text);
+            gainRareItemNameText.SetText($"{GameUI.CompareText(item.data.id)}{(item.count == 0 ? "" : $" x{item.count}")}");
+            gainRareItemDescriptionText.SetText(GameUI.CompareTextNullable(item.data.description));
 
             gainRareItemButtonPanel.ap = Vector2.zero;
             GameUI.SetPage(gainRareItemButtonPanel, GameUI.DisappearType.PositionDownToUp, GameUI.AppearType.PositionDownToUp);
@@ -934,7 +934,7 @@ namespace GameCore.UI
 
                             //按钮
                             viewButton.buttonIdentity.button.onClick.RemoveAllListeners();
-                            viewButton.buttonIdentity.buttonText.text.text = $"{GameUI.CompareText(itemGot.id)?.text}x{recipe.result.count}";
+                            viewButton.buttonIdentity.buttonText.text.text = $"{GameUI.CompareText(itemGot.id)}x{recipe.result.count}";
 
 
 
