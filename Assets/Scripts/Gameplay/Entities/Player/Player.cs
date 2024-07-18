@@ -121,7 +121,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         [LabelText("是否控制背景"), BoxGroup("状态")] public bool isControllingBackground;
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
-        [BoxGroup("属性"), LabelText("死亡计时器"), HideInInspector] public float deathTimer;
+        [BoxGroup("属性"), LabelText("重生计时器"), HideInInspector] public float rebornTimer;
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
         public bool isAttacking { get; private set; }
         public float playerCameraScale { get; private set; } = 1;
@@ -356,7 +356,7 @@ namespace GameCore
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.hasGeneratedFirstRegion && Application.isFocused;
         public const float playerDefaultGravity = 6f;
         public const float defaultInteractiveRadius = 2.8f;
-        public const float DEATH_WAIT_TIME = 20;
+        public const float REBORN_WAIT_TIME = 20;
 
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);
         public static float deathLowestColorFloat = 0.45f;
@@ -604,7 +604,7 @@ namespace GameCore
 
 #if DEBUG
             if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
-                deathTimer = 0;
+                rebornTimer = 0;
 #endif
         }
 
@@ -932,7 +932,7 @@ namespace GameCore
 
         public override void OnDeathClient()
         {
-            deathTimer = Tools.time + DEATH_WAIT_TIME;
+            rebornTimer = Tools.time + REBORN_WAIT_TIME;
 
             //设置颜色
             foreach (var sr in spriteRenderers)

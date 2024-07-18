@@ -1310,10 +1310,10 @@ namespace GameCore.UI
                 {
 #if UNITY_EDITOR
                     if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
-                        player.deathTimer = 0;
+                        player.rebornTimer = 0;
 #endif
 
-                    if (Tools.time >= player.deathTimer)
+                    if (Tools.time >= player.rebornTimer)
                     {
                         rebornButton.button.interactable = true;
                         rebornTimerText.gameObject.SetActive(false);
@@ -1322,7 +1322,7 @@ namespace GameCore.UI
                     {
                         rebornButton.button.interactable = false;
                         rebornTimerText.gameObject.SetActive(true);
-                        rebornTimerText.text.text = ((int)(player.deathTimer - Tools.time)).ToString();
+                        rebornTimerText.text.text = ((int)(player.rebornTimer - Tools.time)).ToString();
                     }
                 };
             }
