@@ -356,6 +356,7 @@ namespace GameCore
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.hasGeneratedFirstRegion && Application.isFocused;
         public const float playerDefaultGravity = 6f;
         public const float defaultInteractiveRadius = 2.8f;
+        public const float DEATH_WAIT_TIME = 20;
 
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);
         public static float deathLowestColorFloat = 0.45f;
@@ -928,10 +929,10 @@ namespace GameCore
 
             Debug.Log("没别人了");
         }
-        
+
         public override void OnDeathClient()
         {
-            deathTimer = Tools.time + 25;
+            deathTimer = Tools.time + DEATH_WAIT_TIME;
 
             //设置颜色
             foreach (var sr in spriteRenderers)
