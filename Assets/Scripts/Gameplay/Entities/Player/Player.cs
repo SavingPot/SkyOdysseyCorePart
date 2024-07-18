@@ -917,7 +917,18 @@ namespace GameCore
         #region Base 覆写
 
 
-        public override void OnDeathServer() { }
+        public override void OnDeathServer()
+        {
+            //如果有其他玩家存活
+            if (Server.playerCount > 1 && !PlayerCenter.all.Any(p => !p.isDead))
+            {
+                Debug.Log("有别人");
+                return;
+            }
+
+            Debug.Log("没别人了");
+        }
+        
         public override void OnDeathClient()
         {
             deathTimer = Tools.time + 25;

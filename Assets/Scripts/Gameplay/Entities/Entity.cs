@@ -771,6 +771,7 @@ namespace GameCore
         [ClientRpc]
         void ClientTakeDamage(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
         {
+            //排除服务器是因为服务器已经日志过了
             if (!Server.isServer)
                 Debug.Log($"{transform.GetPath()} 收到伤害, 值为 {damage}");
 
@@ -801,6 +802,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public virtual async void OnDeathServer()
         {
+            //生成战利品
             SummonCoins();
             SummonDrops();
 
