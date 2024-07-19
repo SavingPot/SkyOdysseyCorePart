@@ -112,17 +112,11 @@ namespace GameCore
         {
             if (isHurting)
             {
-                foreach (var sr in spriteRenderers)
-                {
-                    sr.color = new(sr.color.r, 0.5f, 0.5f);
-                }
+                SetColorOfSpriteRenderers(1, 0.5f, 0.5f);
             }
             else
             {
-                foreach (var sr in spriteRenderers)
-                {
-                    sr.color = Color.white;
-                }
+                SetColorOfSpriteRenderers(Color.white);
             }
         }
         #endregion
@@ -664,6 +658,16 @@ namespace GameCore
         public void AddRenderer(Renderer renderer)
         {
             renderers.Add(renderer);
+        }
+
+        public void SetColorOfSpriteRenderers(float r, float g, float b) => SetColorOfSpriteRenderers(new(r, g, b));
+        public void SetColorOfSpriteRenderers(float r, float g, float b, float a) => SetColorOfSpriteRenderers(new(r, g, b, a));
+        public void SetColorOfSpriteRenderers(Color color)
+        {
+            foreach (var sr in spriteRenderers)
+            {
+                sr.color = color;
+            }
         }
 
 

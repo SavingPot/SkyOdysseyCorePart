@@ -112,7 +112,7 @@ namespace GameCore.Network
 
         #endregion
 
-        public static async void StartAutoSync()
+        static async void StartAutoSync()
         {
             //按 sendInterval 毫秒的间隔来同步
             await Task.Delay(sendInterval);
@@ -137,7 +137,7 @@ namespace GameCore.Network
         static Dictionary<string, Dictionary<uint, object>> instanceVarLastSyncValues = new();
 
         /// <summary>
-        /// 立即同步所有变量
+        /// 立即同步所有改变了的变量
         /// </summary>
         public static void Sync()
         {

@@ -12,7 +12,6 @@ using System.Text;
 using System;
 using TMPro;
 using UnityEngine;
-using GameCore.Converters;
 
 namespace GameCore.UI
 {

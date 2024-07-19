@@ -20,6 +20,7 @@ namespace GameCore
                 this.action = action;
             }
         }
+
         public static readonly List<Entity> all = new();
         public static readonly Dictionary<string, EntityGenerationBinding> entityGenerationBindings = new();
         public static Action<Entity> OnAddEntity = _ => { };
@@ -56,8 +57,8 @@ namespace GameCore
 
                 foreach (var entity in all)
                 {
+                    //把无敌时间减到 0
                     var invincibleTime = entity.invincibleTime;
-
                     if (invincibleTime > 0)
                         entity.invincibleTime = invincibleTime - Mathf.Min(frameTime, invincibleTime);
                 }

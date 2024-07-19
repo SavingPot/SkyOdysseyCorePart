@@ -14,7 +14,6 @@ using System;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine;
-using System.Threading;
 
 namespace GameCore.UI
 {

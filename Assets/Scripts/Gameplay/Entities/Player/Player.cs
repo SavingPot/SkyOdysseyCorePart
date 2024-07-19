@@ -1,36 +1,32 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using GameCore.High;
+using GameCore.Network;
 using GameCore.UI;
 using Mirror;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Sirenix.OdinInspector;
 using Sirenix.Utilities;
-using SP.Tools;
 using SP.Tools.Unity;
-using System;
-using System.Collections;
+using SP.Tools;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
-using System.Text;
-using UnityEngine;
-using UnityEngine.InputSystem;
+using System;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
-using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
+using UnityEngine;
 using static GameCore.UI.PlayerUI;
-using GameCore.Network;
 using ClientRpcAttribute = GameCore.Network.ClientRpcAttribute;
-using System.IO;
+using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
 
 namespace GameCore
 {
     /// <summary>
     /// 玩家的逻辑脚本
     /// </summary>
-    [ChineseName("玩家"), EntityBinding(EntityID.Player), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
-    public sealed class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IInventoryOwner
+    [EntityBinding(EntityID.Player), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
+    public sealed class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IInventoryOwner, IInteractableEntity
     {
         /* -------------------------------------------------------------------------- */
         /*                                     接口                                     */
@@ -122,7 +118,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         [LabelText("是否控制背景"), BoxGroup("状态")] public bool isControllingBackground;
         [BoxGroup("属性"), LabelText("重力")] public float gravity;
-        [BoxGroup("属性"), LabelText("重生计时器"), HideInInspector] public float rebornTimer;
         [BoxGroup("属性"), LabelText("方块摩擦力")] public float blockFriction = 0.96f;
         public bool isAttacking { get; private set; }
         public float playerCameraScale { get; private set; } = 1;
@@ -357,14 +352,23 @@ namespace GameCore
         public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.hasGeneratedFirstRegion && Application.isFocused;
         public const float playerDefaultGravity = 6f;
         public const float defaultInteractiveRadius = 2.8f;
-        public const float REBORN_WAIT_TIME = 35;
 
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    死亡与重生                                   */
+        /* -------------------------------------------------------------------------- */
+        [BoxGroup("属性"), LabelText("重生计时器"), HideInInspector] public float rebornTimer;
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);
         public static float deathLowestColorFloat = 0.45f;
-        public static float oneMinusDeathLowestColorFloat = 1 - deathLowestColorFloat;
         public static Color deathLowestColor = new(deathLowestColorFloat, deathLowestColorFloat, deathLowestColorFloat);
+        public const float DEATH_SAVE_TIME = 5;
+        public const float REBORN_WAIT_TIME = 35;
+        private Player playerSavingMe;
+        private float playerSavingStartTime;
 
-        public static float enoughSavingTime = 5.5f;
 
 
 
@@ -603,6 +607,19 @@ namespace GameCore
 
             EntityInventoryOwnerBehaviour.OnUpdate(this);
 
+
+            //设置死亡颜色
+            if (isDead)
+            {
+                var colorFloat = deathLowestColorFloat;
+                if (playerSavingMe)
+                {
+                    colorFloat += (Tools.time - playerSavingStartTime) / DEATH_SAVE_TIME;
+                }
+                SetColorOfSpriteRenderers(colorFloat, colorFloat, colorFloat);
+            }
+
+
 #if DEBUG
             if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
                 rebornTimer = 0;
@@ -832,6 +849,7 @@ namespace GameCore
             }
             else
             {
+                //旋转以倒在地面上
                 transform.localRotation = deathQuaternion;
             }
 
@@ -919,13 +937,18 @@ namespace GameCore
         #region Base 覆写
 
 
+        /* -------------------------------------------------------------------------- */
+        /*                                    死亡逻辑                                    */
+        /* -------------------------------------------------------------------------- */
         public override void OnDeathServer()
         {
+            //如果是短期模式
             if (GFiles.world.basicData.isShortTerm)
             {
                 //如果有其他玩家存活，那么等待救援
                 if (PlayerCenter.all.Any(p => !p.isDead))
                 {
+                    //TODO: 救援逻辑
                     Debug.Log("有别人");
                 }
                 //如果没有那么就删除存档
@@ -939,22 +962,16 @@ namespace GameCore
                     IOTools.DeleteDir(GFiles.world.basicData.worldPath);
                 }
             }
+            //长期模式等待复活 CD 即可
             else
             {
                 //通知客户端等待重生
                 ClientWaitForReborn();
-                Debug.Log("等待重生");
             }
         }
 
         public override void OnDeathClient()
         {
-            //设置颜色
-            foreach (var sr in spriteRenderers)
-            {
-                sr.color = deathLowestColor;
-            }
-
             //播放音效、显示重生界面
             if (isLocalPlayer)
             {
@@ -964,13 +981,7 @@ namespace GameCore
             animWeb.Stop();
         }
 
-        [ClientRpc]
-        public void ClientWaitForReborn(NetworkConnection caller = null)
-        {
-            rebornTimer = Tools.time + REBORN_WAIT_TIME;
 
-            MethodAgent.CallUntil(() => pui != null, () => pui.ShowRebornPanel());
-        }
 
 
 
@@ -980,6 +991,14 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     重生逻辑                                     */
         /* -------------------------------------------------------------------------- */
+        [ClientRpc]
+        public void ClientWaitForReborn(NetworkConnection caller = null)
+        {
+            rebornTimer = Tools.time + REBORN_WAIT_TIME;
+
+            MethodAgent.CallUntil(() => pui != null, () => pui.ShowRebornPanel());
+        }
+
         public void Reborn(int newHealth, Vector2? newPos)
         {
             ServerReborn(newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
@@ -1018,10 +1037,7 @@ namespace GameCore
         void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
             //设置颜色
-            foreach (var sr in spriteRenderers)
-            {
-                sr.color = Color.white;
-            }
+            SetColorOfSpriteRenderers(Color.white);
 
             if (isLocalPlayer)
             {
@@ -1030,6 +1046,28 @@ namespace GameCore
 
                 //关闭 UI
                 MethodAgent.CallUntil(() => pui != null, () => pui.rebornPanel.gameObject.SetActive(false));
+            }
+        }
+
+        [ServerRpc]
+        void ServerSavePlayer(Player playerRescued, NetworkConnection caller = null)
+        {
+            ClientSavePlayer(playerRescued, Tools.time, caller);
+        }
+
+        [ClientRpc]
+        void ClientSavePlayer(Player playerRescued, float startTime, NetworkConnection caller)
+        {
+            playerRescued.playerSavingMe = this;
+            playerRescued.playerSavingStartTime = startTime;
+        }
+
+        public void PlayerInteraction(Player player)
+        {
+            //如果死了就让玩家救自己
+            if (isDead)
+            {
+                player.ServerSavePlayer(this);
             }
         }
 
@@ -1874,6 +1912,8 @@ namespace GameCore
         }
 
         public static Player local => ManagerNetwork.instance.localPlayer;
+
+        public Vector2 interactionSize => throw new NotImplementedException();
 
         public static bool TryGetLocal(out Player p)
         {
