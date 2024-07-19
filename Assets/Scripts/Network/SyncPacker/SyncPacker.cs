@@ -76,7 +76,7 @@ namespace GameCore.Network
                 return;
             }
 
-            NMRegisterSyncVar var = new(varId, instance, defaultValue);
+            NMRegisterSyncVar var = new(varId, instance, defaultValue, Tools.time);
 
             //保证服务器立马注册
 #if DEBUG
@@ -164,7 +164,8 @@ namespace GameCore.Network
 
 
                 //* 如果值没有变化就跳过
-                if (!staticVarLastSyncValues.TryGetValue(variant.varId, out var lastSyncValue) || Equals(currentValue, lastSyncValue))
+                if (!staticVarLastSyncValues.TryGetValue(variant.varId, out var lastSyncValue) ||
+                    Equals(currentValue, lastSyncValue))
                     continue;
 
 
@@ -174,7 +175,7 @@ namespace GameCore.Network
                 OnValueChange(variant.varId, null, Rpc.ObjectToBytes(variant.valueLastSync), currentValueBytes);
 
                 //更改列表中的值
-                var newVar = new NMSyncVar(variant.varId, uint.MaxValue, currentValueBytes, currentValueBytes);
+                var newVar = new NMSyncVar(variant.varId, uint.MaxValue, currentValueBytes, currentValueBytes, Tools.time);
                 staticVars[i] = newVar;
 
                 //将新值发送给所有客户端
@@ -201,7 +202,9 @@ namespace GameCore.Network
 
 
                 //* 如果值没有变化就跳过
-                if (!instanceVarLastSyncValues.TryGetValue(variant.varId, out var lastSyncDict) || !lastSyncDict.TryGetValue(variant.instance, out var lastSyncValue) || Equals(lastSyncValue, currentValue))
+                if (!instanceVarLastSyncValues.TryGetValue(variant.varId, out var lastSyncDict) ||
+                    !lastSyncDict.TryGetValue(variant.instance, out var lastSyncValue) ||
+                    Equals(lastSyncValue, currentValue))
                     continue;
 
 
@@ -212,7 +215,7 @@ namespace GameCore.Network
                 OnValueChange(variant.varId, entity, Rpc.ObjectToBytes(variant.valueLastSync), currentValueBytes);
 
                 //更改列表中的值
-                var newVar = new NMSyncVar(variant.varId, variant.instance, currentValueBytes, currentValueBytes);
+                var newVar = new NMSyncVar(variant.varId, variant.instance, currentValueBytes, currentValueBytes, Tools.time);
                 instanceVars[i] = newVar;
 
                 //将新值发送给所有客户端
@@ -582,7 +585,7 @@ namespace GameCore.Network
                 foreach (var variant in staticVars)
                 {
                     //让指定客户端重新注册同步变量
-                    conn.Send<NMRegisterSyncVar>(new(variant.varId, variant.instance, variant.value));
+                    conn.Send<NMRegisterSyncVar>(new(variant.varId, variant.instance, variant.value, Tools.time));
                 }
             };
 
@@ -630,15 +633,16 @@ namespace GameCore.Network
                     {
                         var variant = instanceVars[i];
 
-                        if (variant.varId == nm.varId && variant.instance == nm.instance)
+                        //找到对应的实例变量，要求保留时间最新的
+                        if (variant.varId == nm.varId && variant.instance == nm.instance && nm.serverSendTime > variant.serverSendTime)
                         {
                             //等待实体出现
                             //TODO 注: 这里可能会导致不同步问题，请使用队列Queue解决，将操作挂起
                             while (EntityCenter.GetEntityByNetIdWithInvalidCheck(variant.instance) == null)
                                 await UniTask.NextFrame();
 
-                            OnValueChange(variant.varId, EntityCenter.GetEntityByNetIdWithInvalidCheck(variant.instance), variant.value, variant.value);
-                            instanceVars[i] = new(nm.varId, nm.instance, nm.value);
+                            OnValueChange(variant.varId, EntityCenter.GetEntityByNetIdWithInvalidCheck(variant.instance), variant.value, nm.value);
+                            instanceVars[i] = new(nm.varId, nm.instance, nm.value, nm.serverSendTime);
 
                             ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
                             return;
@@ -652,10 +656,11 @@ namespace GameCore.Network
                     {
                         var variant = staticVars[i];
 
-                        if (variant.varId == nm.varId)
+                        //找到对应的静态变量，要求保留时间最新的
+                        if (variant.varId == nm.varId && nm.serverSendTime > variant.serverSendTime)
                         {
-                            OnValueChange(variant.varId, null, variant.value, variant.value);
-                            staticVars[i] = new(nm.varId, nm.instance, nm.value);
+                            OnValueChange(variant.varId, null, variant.value, nm.value);
+                            staticVars[i] = new(nm.varId, nm.instance, nm.value, nm.serverSendTime);
 
                             ////Debug.Log($"同步了变量 {var.varId} 为 {var.varValue}");
                             return;
@@ -673,7 +678,7 @@ namespace GameCore.Network
                 foreach (var variant in instanceVars)
                 {
                     //让指定客户端重新注册同步变量
-                    conn.Send<NMRegisterSyncVar>(new(variant.varId, variant.instance, variant.value));
+                    conn.Send<NMRegisterSyncVar>(new(variant.varId, variant.instance, variant.value, Tools.time));
                 }
             }
 
@@ -772,7 +777,7 @@ namespace GameCore.Network
         {
             //Debug.Log($"注册了{var.varId}");
 
-            NMSyncVar variant = new(var.varId, var.instance, var.defaultValue);
+            NMSyncVar variant = new(var.varId, var.instance, var.defaultValue, var.serverSendTime);
 
             //实例变量
             if (var.instance != uint.MaxValue)

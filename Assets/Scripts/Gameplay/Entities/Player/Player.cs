@@ -639,9 +639,6 @@ namespace GameCore
 
             if (PlayerCanControl(this))
             {
-                Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
-
-
                 /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
                 if (isOnGround && playerController.Jump())
                     rb.SetVelocityY(GetJumpVelocity(30));
@@ -852,6 +849,9 @@ namespace GameCore
                 //旋转以倒在地面上
                 transform.localRotation = deathQuaternion;
             }
+
+            //设置相机抖动
+            Tools.instance.mainCameraController.shakeLevel = isHurting ? 6 : 0;
 
             //刷新状态栏
             pui?.Update();

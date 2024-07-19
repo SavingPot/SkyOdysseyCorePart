@@ -127,7 +127,7 @@ namespace GameCore.Network
 
     public struct NMRequestInstanceVars : NetworkMessage
     {
-        
+
     }
 
     public struct NMRegisterSyncVar : NetworkMessage
@@ -135,12 +135,14 @@ namespace GameCore.Network
         public string varId;
         public uint instance;
         public byte[] defaultValue;
+        public float serverSendTime;
 
-        public NMRegisterSyncVar(string varId, uint instance, byte[] defaultValue)
+        public NMRegisterSyncVar(string varId, uint instance, byte[] defaultValue, float serverSendTime)
         {
             this.varId = varId;
             this.instance = instance;
             this.defaultValue = defaultValue;
+            this.serverSendTime = serverSendTime;
         }
     }
 
@@ -163,20 +165,40 @@ namespace GameCore.Network
         public byte[] value;
         [NonSerialized] public object valueLastSync;
 
-        public NMSyncVar(string varId, uint instance, byte[] value)
+        /// <summary>
+        /// 这个字段用来记录上一次从服务器同步该变量时服务器的时间。
+        /// Kcp 协议中数据包不保证顺序，因此需要知道哪一个才是最新的数据。
+        /// serverSendTime 记录了服务器发送该变量的时间，值越大说明数据越新。
+        /// </summary>
+        public float serverSendTime;
+
+
+
+
+        public override string ToString()
+        {
+            return $"NMSyncVar: {varId} of {instance}, value is {Rpc.BytesToObject(value)}, sent at {serverSendTime}";
+        }
+
+
+
+
+        public NMSyncVar(string varId, uint instance, byte[] value, float serverSendTime)
         {
             this.varId = varId;
             this.instance = instance;
             this.value = value;
             this.valueLastSync = null;
+            this.serverSendTime = serverSendTime;
         }
 
-        public NMSyncVar(string varId, uint instance, byte[] value, object valueLastSync)
+        public NMSyncVar(string varId, uint instance, byte[] value, object valueLastSync, float serverSendTime)
         {
             this.varId = varId;
             this.instance = instance;
             this.value = value;
             this.valueLastSync = valueLastSync;
+            this.serverSendTime = serverSendTime;
         }
     }
 

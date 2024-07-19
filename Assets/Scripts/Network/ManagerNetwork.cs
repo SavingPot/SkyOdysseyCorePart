@@ -167,6 +167,7 @@ namespace GameCore.Network
                         return;
                     }
 
+                    //TODO: 告诉客户端为什么被踢了, 并等待客户端的回复, 客户端自行断开连接, 如果客户端长时间不回复就直接断连
                     /* --------------------------------- 检查玩家名称 --------------------------------- */
                     if (nm.playerName.IsNullOrWhiteSpace())
                     {
@@ -214,6 +215,7 @@ namespace GameCore.Network
                     thisModIsOkay: { }
                     }
 
+                    //TODO: 告诉客户端为什么被踢了, 并等待客户端的回复, 客户端自行断开连接, 如果客户端长时间不回复就直接断连
                     if (unexpectedMods.Count != 0)
                     {
                         string errorMessage = $"客户端 {conn.address} (id={conn.connectionId}) 的模组列表与服务器不一致!";
@@ -221,9 +223,12 @@ namespace GameCore.Network
                         {
                             errorMessage += $"{item}\n";
                         }
+                        Debug.LogWarning(errorMessage);
+                        conn.Disconnect();
                         return;
                     }
 
+                    //TODO: 告诉客户端为什么被踢了, 并等待客户端的回复, 客户端自行断开连接, 如果客户端长时间不回复就直接断连
                     /* --------------------------------- 检查玩家皮肤 --------------------------------- */
                     if (nm.skinHead == null || nm.skinBody == null || nm.skinLeftArm == null || nm.skinRightArm == null || nm.skinLeftLeg == null || nm.skinRightLeg == null || nm.skinLeftFoot == null || nm.skinRightFoot == null)
                     {
@@ -231,6 +236,10 @@ namespace GameCore.Network
                         conn.Disconnect();
                         return;
                     }
+
+
+
+
 
                     /* ------------------------------- 检查完毕, 创建玩家 ------------------------------- */
                     GameObject player = Instantiate(playerPrefab);
