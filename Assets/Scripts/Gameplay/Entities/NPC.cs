@@ -35,9 +35,9 @@ namespace GameCore
             NPCCenter.RemoveNPC(this);
         }
 
-        public virtual void PlayerInteraction(Player caller)
+        public virtual bool PlayerInteraction(Player caller)
         {
-
+            return false;
         }
 
         public override JObject ModifyCustomData(JObject data)

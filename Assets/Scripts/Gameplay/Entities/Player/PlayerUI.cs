@@ -111,27 +111,27 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         /*                                     重生                                     */
         /* -------------------------------------------------------------------------- */
-        public PanelIdentity rebornPanel;
-        public TextIdentity rebornPanelText;
-        public TextIdentity rebornTimerText;
-        public ButtonIdentity rebornButton;
+        public PanelIdentity respawnPanel;
+        public TextIdentity respawnPanelText;
+        public TextIdentity respawnTimerText;
+        public ButtonIdentity respawnButton;
 
 
 
-        public async void ShowRebornPanel()
+        public async void ShowRespawnPanel()
         {
             await 3;
 
-            rebornPanel.panelImage.color = new(0, 0, 0, 0);
-            rebornButton.buttonText.text.color = new(1, 1, 1, 0);
-            rebornButton.button.image.color = new(1, 1, 1, 0);
-            rebornButton.button.interactable = false;
-            GameUI.FadeIn(rebornPanel.panelImage);
+            respawnPanel.panelImage.color = new(0, 0, 0, 0);
+            respawnButton.buttonText.text.color = new(1, 1, 1, 0);
+            respawnButton.button.image.color = new(1, 1, 1, 0);
+            respawnButton.button.interactable = false;
+            GameUI.FadeIn(respawnPanel.panelImage);
 
             await 3;
-            rebornButton.button.interactable = true;
-            GameUI.FadeIn(rebornButton.image);
-            GameUI.FadeIn(rebornButton.buttonText.text);
+            respawnButton.button.interactable = true;
+            GameUI.FadeIn(respawnButton.image);
+            GameUI.FadeIn(respawnButton.buttonText.text);
         }
 
 
@@ -1281,47 +1281,47 @@ namespace GameCore.UI
 
             #region 重生
             {
-                rebornPanel = GameUI.AddPanel("ori:panel.reborn", GameUI.canvas.transform, true);
-                rebornButton = GameUI.AddButton(UIA.Middle, "ori:button.reborn", rebornPanel);
-                rebornPanelText = GameUI.AddText(UIA.Middle, "ori:text.reborn_info", rebornPanel);
-                rebornTimerText = GameUI.AddText(UIA.Middle, "ori:text.reborn_timer", rebornPanel);
+                respawnPanel = GameUI.AddPanel("ori:panel.respawn", GameUI.canvas.transform, true);
+                respawnButton = GameUI.AddButton(UIA.Middle, "ori:button.respawn", respawnPanel);
+                respawnPanelText = GameUI.AddText(UIA.Middle, "ori:text.respawn_info", respawnPanel);
+                respawnTimerText = GameUI.AddText(UIA.Middle, "ori:text.respawn_timer", respawnPanel);
 
-                rebornPanelText.SetAPosY(100);
-                rebornPanelText.SetSizeDelta(500, 120);
-                rebornPanelText.text.SetFontSize(24);
-                rebornPanelText.RefreshUI();
-                rebornPanelText.doRefresh = false;
+                respawnPanelText.SetAPosY(100);
+                respawnPanelText.SetSizeDelta(500, 120);
+                respawnPanelText.text.SetFontSize(24);
+                respawnPanelText.RefreshUI();
+                respawnPanelText.doRefresh = false;
 
-                rebornButton.SetAPosY(-20);
-                rebornButton.buttonText.RefreshUI();
-                rebornButton.buttonText.doRefresh = false;
-                rebornButton.OnClickBind(() =>
+                respawnButton.SetAPosY(-20);
+                respawnButton.buttonText.RefreshUI();
+                respawnButton.buttonText.doRefresh = false;
+                respawnButton.OnClickBind(() =>
                 {
-                    rebornButton.button.interactable = false;
-                    GameUI.FadeOut(rebornPanel.panelImage);
-                    GameUI.FadeIn(rebornButton.image);
-                    GameUI.FadeIn(rebornButton.buttonText.text);
+                    respawnButton.button.interactable = false;
+                    GameUI.FadeOut(respawnPanel.panelImage);
+                    GameUI.FadeIn(respawnButton.image);
+                    GameUI.FadeIn(respawnButton.buttonText.text);
 
-                    player.Reborn(player.maxHealth, null);
+                    player.Respawn(player.maxHealth, null);
                 });
 
-                rebornPanel.OnUpdate += i =>
+                respawnPanel.OnUpdate += i =>
                 {
 #if UNITY_EDITOR
                     if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
-                        player.rebornTimer = 0;
+                        player.respawnTimer = 0;
 #endif
 
-                    if (Tools.time >= player.rebornTimer)
+                    if (Tools.time >= player.respawnTimer)
                     {
-                        rebornButton.button.interactable = true;
-                        rebornTimerText.gameObject.SetActive(false);
+                        respawnButton.button.interactable = true;
+                        respawnTimerText.gameObject.SetActive(false);
                     }
                     else
                     {
-                        rebornButton.button.interactable = false;
-                        rebornTimerText.gameObject.SetActive(true);
-                        rebornTimerText.text.text = ((int)(player.rebornTimer - Tools.time)).ToString();
+                        respawnButton.button.interactable = false;
+                        respawnTimerText.gameObject.SetActive(true);
+                        respawnTimerText.text.text = ((int)(player.respawnTimer - Tools.time)).ToString();
                     }
                 };
             }

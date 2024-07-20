@@ -713,6 +713,7 @@ namespace GameCore
 
 
 
+        [Button]
         public virtual void TakeDamage(int damage) => TakeDamage(damage, 0.1f, transform.position, Vector2.zero);
 
         public void TakeDamage(int damage, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
@@ -824,6 +825,7 @@ namespace GameCore
 
 
 
+        [Button]
         public void Death()
         {
             //? 防止反复死亡

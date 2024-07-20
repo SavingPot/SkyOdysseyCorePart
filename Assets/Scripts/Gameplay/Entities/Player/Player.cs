@@ -26,7 +26,7 @@ namespace GameCore
     /// 玩家的逻辑脚本
     /// </summary>
     [EntityBinding(EntityID.Player), NotSummonable, RequireComponent(typeof(Rigidbody2D))]
-    public sealed class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IInventoryOwner, IInteractableEntity
+    public sealed class Player : Creature, IHumanBodyParts<CreatureBodyPart>, IInventoryOwner
     {
         /* -------------------------------------------------------------------------- */
         /*                                     接口                                     */
@@ -102,6 +102,11 @@ namespace GameCore
                 }
             }
         }
+
+
+
+
+
 
 
 
@@ -360,14 +365,11 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    死亡与重生                                   */
         /* -------------------------------------------------------------------------- */
-        [BoxGroup("属性"), LabelText("重生计时器"), HideInInspector] public float rebornTimer;
+        [BoxGroup("属性"), LabelText("重生计时器"), HideInInspector] public float respawnTimer;
         public static Quaternion deathQuaternion = Quaternion.Euler(0, 0, 90);
         public static float deathLowestColorFloat = 0.45f;
         public static Color deathLowestColor = new(deathLowestColorFloat, deathLowestColorFloat, deathLowestColorFloat);
-        public const float DEATH_SAVE_TIME = 5;
-        public const float REBORN_WAIT_TIME = 35;
-        private Player playerSavingMe;
-        private float playerSavingStartTime;
+        public const float RESPAWN_WAIT_TIME = 35;
 
 
 
@@ -611,18 +613,13 @@ namespace GameCore
             //设置死亡颜色
             if (isDead)
             {
-                var colorFloat = deathLowestColorFloat;
-                if (playerSavingMe)
-                {
-                    colorFloat += (Tools.time - playerSavingStartTime) / DEATH_SAVE_TIME;
-                }
-                SetColorOfSpriteRenderers(colorFloat, colorFloat, colorFloat);
+                SetColorOfSpriteRenderers(deathLowestColor);
             }
 
 
 #if DEBUG
             if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
-                rebornTimer = 0;
+                respawnTimer = 0;
 #endif
         }
 
@@ -948,8 +945,8 @@ namespace GameCore
                 //如果有其他玩家存活，那么等待救援
                 if (PlayerCenter.all.Any(p => !p.isDead))
                 {
-                    //TODO: 救援逻辑
-                    Debug.Log("有别人");
+                    //TODO: 显示界面让玩家等待救援
+                    Debug.Log("有别人，等待救援");
                 }
                 //如果没有那么就删除存档
                 else
@@ -966,7 +963,7 @@ namespace GameCore
             else
             {
                 //通知客户端等待重生
-                ClientWaitForReborn();
+                ClientWaitForRespawn();
             }
         }
 
@@ -992,49 +989,49 @@ namespace GameCore
         /*                                     重生逻辑                                     */
         /* -------------------------------------------------------------------------- */
         [ClientRpc]
-        public void ClientWaitForReborn(NetworkConnection caller = null)
+        public void ClientWaitForRespawn(NetworkConnection caller = null)
         {
-            rebornTimer = Tools.time + REBORN_WAIT_TIME;
+            respawnTimer = Tools.time + RESPAWN_WAIT_TIME;
 
-            MethodAgent.CallUntil(() => pui != null, () => pui.ShowRebornPanel());
+            MethodAgent.CallUntil(() => pui != null, () => pui.ShowRespawnPanel());
         }
 
-        public void Reborn(int newHealth, Vector2? newPos)
+        public void Respawn(int newHealth, Vector2? newPos)
         {
-            ServerReborn(newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
+            ServerRespawn(newHealth, newPos ?? new(float.PositiveInfinity, float.NegativeInfinity), null);
         }
 
         [ServerRpc]
-        void ServerReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
+        void ServerRespawn(int newHealth, Vector2 newPos, NetworkConnection caller)
         {
             //刷新属性
             health = newHealth;
             isDead = false;
 
-            OnRebornServer(newHealth, newPos, caller);
+            OnRespawnServer(newHealth, newPos, caller);
 
             //如果数值无效, 则使用默认的重生点
             if (float.IsInfinity(newPos.x) || float.IsInfinity(newPos.y))
                 newPos = GFiles.world.GetRegion(regionIndex)?.spawnPoint ?? Vector2Int.zero;
 
-            ClientReborn(newHealth, newPos, caller);
+            ClientRespawn(newHealth, newPos, caller);
         }
 
         [ClientRpc]
-        void ClientReborn(int newHealth, Vector2 newPos, NetworkConnection caller)
+        void ClientRespawn(int newHealth, Vector2 newPos, NetworkConnection caller)
         {
-            OnRebornClient(newHealth, newPos, caller);
+            OnRespawnClient(newHealth, newPos, caller);
 
             //玩家重生时, 由对应客户端设置位置
             transform.position = newPos;
         }
 
-        void OnRebornServer(float newHealth, Vector2 newPos, NetworkConnection caller)
+        void OnRespawnServer(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
             hungerValue = 30;
         }
 
-        void OnRebornClient(float newHealth, Vector2 newPos, NetworkConnection caller)
+        void OnRespawnClient(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
             //设置颜色
             SetColorOfSpriteRenderers(Color.white);
@@ -1045,29 +1042,7 @@ namespace GameCore
                 fallenY = newPos.y;
 
                 //关闭 UI
-                MethodAgent.CallUntil(() => pui != null, () => pui.rebornPanel.gameObject.SetActive(false));
-            }
-        }
-
-        [ServerRpc]
-        void ServerSavePlayer(Player playerRescued, NetworkConnection caller = null)
-        {
-            ClientSavePlayer(playerRescued, Tools.time, caller);
-        }
-
-        [ClientRpc]
-        void ClientSavePlayer(Player playerRescued, float startTime, NetworkConnection caller)
-        {
-            playerRescued.playerSavingMe = this;
-            playerRescued.playerSavingStartTime = startTime;
-        }
-
-        public void PlayerInteraction(Player player)
-        {
-            //如果死了就让玩家救自己
-            if (isDead)
-            {
-                player.ServerSavePlayer(this);
+                MethodAgent.CallUntil(() => pui != null, () => pui.respawnPanel.gameObject.SetActive(false));
             }
         }
 
@@ -1637,7 +1612,7 @@ namespace GameCore
             foreach (var entity in EntityCenter.all)
             {
                 //筛选出可以交互的实体
-                if (entity is not IInteractableEntity interactable)
+                if (entity is not IInteractableEntity interactable || entity == this)
                     continue;
 
                 //检测是否在互动范围内
@@ -1645,8 +1620,9 @@ namespace GameCore
                     (entity.transform.position.y - transform.position.y).Abs() <= interactable.interactionSize.y &&
                     entity.mainCollider.IsInCollider(point))
                 {
-                    interactable.PlayerInteraction(this);
-                    return;
+                    //如果交互成功就返回
+                    if (interactable.PlayerInteraction(this))
+                        return;
                 }
             }
 
@@ -1912,8 +1888,6 @@ namespace GameCore
         }
 
         public static Player local => ManagerNetwork.instance.localPlayer;
-
-        public Vector2 interactionSize => throw new NotImplementedException();
 
         public static bool TryGetLocal(out Player p)
         {

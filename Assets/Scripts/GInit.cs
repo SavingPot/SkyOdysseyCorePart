@@ -202,7 +202,7 @@ namespace GameCore
 
 
             /* --------------------------------- 加载默认资源 --------------------------------- */
-            textureUnknown = new("ori:unknown", GInit.instance.spriteUnknown);
+            textureUnknown = new("ori:unknown", instance.spriteUnknown);
             blockUnknown = new("ori:unknown_block", BlockData.defaultHardness, textureUnknown.id, true);
 
 
