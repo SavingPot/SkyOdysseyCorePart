@@ -284,7 +284,7 @@ namespace GameCore.UI
                             sb.Append(GameUI.CompareText("ori:engine_version")).AppendLine(GInit.unityVersion);
                             sb.Append(GameUI.CompareText("ori:mod_count")).AppendLine(ModFactory.mods.Length.ToString());
 
-                            t.text.text = sb.ToString();
+                            t.SetText(sb.ToString());
                             Tools.stringBuilderPool.Recover(sb);
                         };
                         #endregion
