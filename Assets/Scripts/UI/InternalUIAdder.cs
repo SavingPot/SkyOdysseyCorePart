@@ -59,8 +59,7 @@ namespace GameCore.UI
 
         public void SetStatusText(string text)
         {
-            statusText.AfterRefreshing += t => t.text.text = text;
-            statusText.RefreshUI();
+            statusText.SetText(text);
 
             //杀死淡出动画
             Tools.KillTweensOf(statusText.text);
@@ -147,6 +146,7 @@ namespace GameCore.UI
                 statusText.SetAPosY(80);
                 statusText.SetSizeDeltaY(40);
                 statusText.text.SetFontSize(18);
+                statusText.autoCompareText = false;
                 statusText.text.raycastTarget = false;
                 statusText.gameObject.SetActive(false);
                 statusText.OnUpdate += t => GameUI.SetUILayerToFirst(t);
@@ -275,7 +275,7 @@ namespace GameCore.UI
                         gameInfoText.SetSizeDelta(350, 200);
                         gameInfoText.SetAPos(-gameInfoText.sd.x / 2, gameInfoText.sd.y / 2);
                         gameInfoText.text.SetFontSize(16);
-                        gameInfoText.text.alignment = TMPro.TextAlignmentOptions.BottomRight;
+                        gameInfoText.text.alignment = TextAlignmentOptions.BottomRight;
                         gameInfoText.AfterRefreshing += t =>
                         {
                             var sb = Tools.stringBuilderPool.Get();
@@ -354,7 +354,7 @@ namespace GameCore.UI
                                 //初始化按钮
                                 var lanServerButton = GameUI.AddButton(UIA.Middle, $"ori:button.LANServers_show.{sr.serverId}");
                                 lanServerButton.OnClickBind(() => joinIPField.field.text = targetIP);
-                                lanServerButton.buttonText.AfterRefreshing += t => t.text.text = text;
+                                lanServerButton.buttonText.DisableAutoCompare().SetText(text);
                                 lanServerButton.buttonText.text.SetFontSize(16);
 
                                 //添加到显示列表
@@ -882,8 +882,8 @@ namespace GameCore.UI
                 lb.buttonTextUp.text.SetFontSize(15);
                 lb.buttonTextDown.text.SetFontSize(9);
 
-                lb.buttonTextUp.AfterRefreshing += o => o.text.text = $"{newName} ({newID})";
-                lb.buttonTextDown.AfterRefreshing += o => o.text.text = newDescription;
+                lb.buttonTextUp.DisableAutoCompare().SetText($"{newName} ({newID})");
+                lb.buttonTextDown.DisableAutoCompare().SetText(newDescription);
 
                 lb.image.image.sprite = dir.info.icon;
 
@@ -891,8 +891,8 @@ namespace GameCore.UI
                 lb.ResetStatusInScrollView(modScrollView);
 
 
-                TextIdentity tRT = lb.CreateText("TextTopRight", TMPro.TextAlignmentOptions.TopRight);
-                tRT.AfterRefreshing += o => o.text.text = newVersion;
+                TextIdentity tRT = lb.CreateText("TextTopRight", TextAlignmentOptions.TopRight);
+                tRT.DisableAutoCompare().SetText(newVersion);
             }
 
             AfterRefreshModView();
