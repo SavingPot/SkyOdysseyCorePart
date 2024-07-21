@@ -259,6 +259,46 @@ namespace GameCore
         {
             entities.Add(entity);
         }
+
+        public void RemoveBarriersBetweenNeighbors()
+        {
+            //删除上面的屏障方块
+            if (GFiles.world.TryGetRegion(index  + Vector2Int.up, out var neighborRegion))
+            {
+                for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
+                {
+                    RemovePos(x, maxPoint.y, false);
+                    neighborRegion.RemovePos(x, minPoint.y, false);
+                }
+            }
+            //删除下面的屏障方块
+            if (GFiles.world.TryGetRegion(index + Vector2Int.down, out neighborRegion))
+            {
+                for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
+                {
+                    RemovePos(x, minPoint.y, false);
+                    neighborRegion.RemovePos(x, maxPoint.y, false);
+                }
+            }
+            //删除左边的屏障方块
+            if (GFiles.world.TryGetRegion(index + Vector2Int.left, out neighborRegion))
+            {
+                for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
+                {
+                    RemovePos(minPoint.x, y, false);
+                    neighborRegion.RemovePos(maxPoint.x, y, false);
+                }
+            }
+            //删除右边的屏障方块
+            if (GFiles.world.TryGetRegion(index + Vector2Int.right, out neighborRegion))
+            {
+                for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
+                {
+                    RemovePos(maxPoint.x, y, false);
+                    neighborRegion.RemovePos(minPoint.x, y, false);
+                }
+            }
+        }
     }
 
     [Serializable]

@@ -460,15 +460,11 @@ namespace GameCore
             base.Initialize();
 
             //加载服务器存档中的位置
-            if (isServer)
+            if (isServer && Init.save.pos != Vector2.zero)
             {
-                if (Init.save.pos != Vector2.zero)
-                {
-                    transform.position = Init.save.pos;
-                    fallenY = Init.save.pos.y;
-                    hasSetPosBySave = true;
-                    regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos); //这里必须立刻设置 regionIndex，否则会导致 OnRegionIndexChanged 被调用
-                }
+                ClientSetPosition(transform.position = Init.save.pos);
+                regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos); //这里必须立刻设置 regionIndex，否则会导致 OnRegionIndexChanged 被调用
+                hasSetPosBySave = true;
             }
 
 
@@ -580,7 +576,7 @@ namespace GameCore
             PlayerCenter.AddPlayer(this);
 
             //生成地图
-            GenerateRegion(regionIndex, true);
+            GenerateRegion(regionIndex);
         }
 
         protected override void OnDestroy()
@@ -717,7 +713,7 @@ namespace GameCore
                         }
 
                         coin -= cost;
-                        GenerateRegion(targetIndex, false);
+                        GenerateRegion(targetIndex);
                         RefreshRegionUnlockingRenderers();
                         ServerDestroyRegionBarriers(targetIndex);
                     }
@@ -1176,7 +1172,7 @@ namespace GameCore
         /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         /// </summary>
         [Button]
-        public void GenerateRegion(Vector2Int index, bool isFirstGeneration, string specificBiome = null)
+        public void GenerateRegion(Vector2Int index, string specificBiome = null)
         {
             //检查是否正在生成
             if (regionGeneration_blockSaves != null || regionGeneration_region != null)
@@ -1190,7 +1186,7 @@ namespace GameCore
             regionGeneration_blockSaves = new();
 
             //向服务器发送请求
-            ServerGenerateRegion(index, isFirstGeneration, specificBiome);
+            ServerGenerateRegion(index, !hasGeneratedFirstRegion, specificBiome);
 
             //等待服务器发回所有资源切片
             coroutineWaitingForRegionSegments = StartCoroutine(IEWaitForRegionSegments());
@@ -1220,11 +1216,6 @@ namespace GameCore
             {
                 if (regionGeneration_isFirstGeneration)
                 {
-                    //如果先前没获取过位置, 则将玩家的位置设置到该区域出生点
-                    if (regionGeneration_region.spawnPoint != Vector2Int.zero)
-                        transform.position = regionGeneration_region.spawnPoint.To2();
-
-                    fallenY = transform.position.y;
                     hasGeneratedFirstRegion = true;
                 }
 
@@ -1301,6 +1292,10 @@ namespace GameCore
                 //这些代码必须在主线程里执行
                 MethodAgent.RunOnMainThread(() =>
                 {
+                    //如果存档中没有玩家位置, 则将玩家的位置设置到该区域出生点
+                    if (!hasSetPosBySave)
+                        ClientSetPosition(regionToGenerate.spawnPoint.To2());
+
                     //* 如果是服务器发送的申请: 服务器生成
                     if (isLocalPlayer)
                     {
@@ -1323,15 +1318,15 @@ namespace GameCore
         //? 因为直接发送一个 region 实在太大了，所以我们不得不将他们分成一个个的 BlockSave
         void ConnectionGenerateDataSend(Region regionToGenerate, bool isFirstGeneration, NetworkConnection caller)
         {
-            //? 浅拷贝区域
+            //将区域浅拷贝
             var copy = regionToGenerate.ShallowCopy();
-            copy.blocks = null;
-            copy.entities = new();
-            if (hasSetPosBySave)
-                copy.spawnPoint = Vector2Int.zero;
+            copy.blocks = null; //删除方块数据以防止报文过大
+            copy.entities = new(); //清空实体数据，因为客户端不需要
 
+            //把大体的数据发送给客户端
             ConnectionGenerateRegionTotal(copy, regionToGenerate.blocks.Count, isFirstGeneration, caller);
 
+            //把方块切片发送给客户端
             foreach (var segment in regionToGenerate.blocks)
             {
                 ConnectionGenerateRegionSegment(segment, caller);
@@ -1375,42 +1370,8 @@ namespace GameCore
             //获取原区域
             var targetRegion = GFiles.world.GetRegion(targetRegionIndex);
 
-            //删除上面的屏障方块
-            if (GFiles.world.TryGetRegion(targetRegionIndex + Vector2Int.up, out var neighborRegion))
-            {
-                for (int x = targetRegion.minPoint.x + 1; x <= targetRegion.maxPoint.x - 1; x++)
-                {
-                    targetRegion.RemovePos(x, targetRegion.maxPoint.y, false);
-                    neighborRegion.RemovePos(x, targetRegion.minPoint.y, false);
-                }
-            }
-            //删除下面的屏障方块
-            if (GFiles.world.TryGetRegion(targetRegionIndex + Vector2Int.down, out neighborRegion))
-            {
-                for (int x = targetRegion.minPoint.x + 1; x <= targetRegion.maxPoint.x - 1; x++)
-                {
-                    targetRegion.RemovePos(x, targetRegion.minPoint.y, false);
-                    neighborRegion.RemovePos(x, targetRegion.maxPoint.y, false);
-                }
-            }
-            //删除左边的屏障方块
-            if (GFiles.world.TryGetRegion(targetRegionIndex + Vector2Int.left, out neighborRegion))
-            {
-                for (int y = targetRegion.minPoint.y + 1; y <= targetRegion.maxPoint.y - 1; y++)
-                {
-                    targetRegion.RemovePos(targetRegion.minPoint.x, y, false);
-                    neighborRegion.RemovePos(targetRegion.maxPoint.x, y, false);
-                }
-            }
-            //删除右边的屏障方块
-            if (GFiles.world.TryGetRegion(targetRegionIndex + Vector2Int.right, out neighborRegion))
-            {
-                for (int y = targetRegion.minPoint.y + 1; y <= targetRegion.maxPoint.y - 1; y++)
-                {
-                    targetRegion.RemovePos(targetRegion.maxPoint.x, y, false);
-                    neighborRegion.RemovePos(targetRegion.minPoint.x, y, false);
-                }
-            }
+            //删除的屏障方块
+            targetRegion.RemoveBarriersBetweenNeighbors();
 
             //让客户端删除屏障方块
             var minPoint = targetRegion.RegionToMapPos(targetRegion.minPoint);
@@ -1475,6 +1436,17 @@ namespace GameCore
                     Map.instance.RemoveBlock(new(rightX, y), false, false, true);
                 }
             }
+        }
+
+
+
+        [ClientRpc, Button]
+        public void ClientSetPosition(Vector2 newPos, NetworkConnection caller = null)
+        {
+            transform.position = newPos;
+
+            //防止摔死
+            fallenY = newPos.y;
         }
 
 
