@@ -11,7 +11,6 @@ namespace GameCore
         public static Action<Player> OnAddPlayer = _ => { };
         public static Action<Player> OnRemovePlayer = _ => { };
         public static float playerHealthUpTimer;
-        public static float playerHungerHurtTimer;
 
         public static void AddPlayer(Player player)
         {
@@ -37,12 +36,7 @@ namespace GameCore
                         continue;
 
                     bool isMoving = player.isMoving;
-                    float hungerValue = player.hungerValue;
                     int health = player.health;
-
-                    float hungerValueDelta = frameTime * 0.01f;
-                    if (isMoving) hungerValueDelta += frameTime * 0.02f;
-                    player.hungerValue = hungerValue - hungerValueDelta;
 
                     //一秒回一次血
                     if (Tools.time >= playerHealthUpTimer)
@@ -53,15 +47,6 @@ namespace GameCore
                             playerHealthUpTimer = Tools.time + 1f;
                             player.health = health + 1;
                         }
-                    }
-
-                    //每三秒扣一次血
-                    if (Tools.time >= playerHungerHurtTimer)
-                    {
-                        playerHungerHurtTimer = Tools.time + 5;
-
-                        if (hungerValue <= 0)
-                            player.TakeDamage(5);
                     }
                 }
             }

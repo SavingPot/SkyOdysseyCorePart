@@ -142,12 +142,14 @@ namespace GameCore.UI
                 sb.AppendLine(GameUI.CompareText("ori:item.excavation_strength").Replace("{value}", item.excavationStrength.ToString()));
             if (item.useCD != ItemData.defaultUseCD)
                 sb.AppendLine(GameUI.CompareText("ori:item.use_cd").Replace("{value}", item.useCD.ToString()));
-            sb.AppendLine(string.Empty);
 
             //如果成功匹配到了描述文本
             if (GameUI.TryCompareTextNullable(item.description, out var description))
+            {
+                sb.AppendLine(string.Empty);
                 sb.Append(description);
-
+                sb.AppendLine(string.Empty);
+            }
             return sb;
         }
     }

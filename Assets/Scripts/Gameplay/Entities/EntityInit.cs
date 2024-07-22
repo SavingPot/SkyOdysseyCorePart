@@ -49,7 +49,6 @@ namespace GameCore
         public static readonly string customDataVarId = $"{typeof(Entity).FullName}.{nameof(Entity.customData)}";
 
         public static readonly string manaVarId = $"{typeof(Player).FullName}.{nameof(Player.mana)}";
-        public static readonly string hungerValueVarId = $"{typeof(Player).FullName}.{nameof(Player.hungerValue)}";
         public static readonly string coinVarId = $"{typeof(Player).FullName}.{nameof(Player.coin)}";
         public static readonly string inventoryVarId = $"{typeof(Player).FullName}.{nameof(Player.inventory)}";
         public static readonly string completedTasksVarId = $"{typeof(Player).FullName}.{nameof(Player.completedTasks)}";
@@ -179,10 +178,6 @@ namespace GameCore
                     else if (id == manaVarId)
                     {
                         SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.mana));
-                    }
-                    else if (id == hungerValueVarId)
-                    {
-                        SyncPacker.RegisterVar(id, netId, Rpc.ObjectToBytes(saveAsPlayer.hungerValue));
                     }
                     else if (id == coinVarId)
                     {

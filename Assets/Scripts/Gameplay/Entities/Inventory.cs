@@ -669,6 +669,9 @@ namespace GameCore
         [LabelText("自定义数据")] public JObject customData;
         public ItemData data;
         //TODO: behaviour include in this
+        public static readonly Dictionary<string, ModifyInfoDelegate> infoModifiersForId = new();
+        public static readonly Dictionary<string, ModifyInfoDelegate> infoModifiersForTag = new();
+        public delegate string ModifyInfoDelegate(Item item);
 
 
         public Item SetCount(ushort count)

@@ -16,6 +16,7 @@ namespace GameCore
         public override float Move() => pui?.touchScreenMoveJoystick != null ? pui.touchScreenMoveJoystick.Horizontal : 0;
         public override bool ClickingAttack() => pui?.touchScreenAttackButton != null && pui.touchScreenAttackButton.button.wasPressedThisFrame;
         public override bool HoldingAttack() => pui?.touchScreenAttackButton != null && pui.touchScreenAttackButton.button.isPressed;
+        public override bool Rush() => false; //TODO: Implement rushing
         public override bool IsControllingBackground() => false;
         public override bool SkipDialog() => pui != null && pui.dialogPanel.button.isPressed;
         public override Vector2Int DialogOptions() => throw new NotImplementedException();

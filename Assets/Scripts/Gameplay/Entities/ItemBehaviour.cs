@@ -60,7 +60,7 @@ namespace GameCore
                 //进食
                 else if (instance.data.Edible().hasTag)
                 {
-                    player.hungerValue = Mathf.Min(player.hungerValue + instance.data.Edible().tagValue, Player.maxHungerValue);
+                    player.health = Mathf.Min(player.health + instance.data.Edible().tagValue, player.maxHealth);
 
                     player.ServerReduceItemCount(inventoryIndex, 1);
 
@@ -121,11 +121,6 @@ namespace GameCore
         }
 
         public virtual void AsLegging()
-        {
-
-        }
-
-        public virtual void ModifyInfo(ItemInfoShower ui)
         {
 
         }

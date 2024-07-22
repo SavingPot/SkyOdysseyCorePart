@@ -19,6 +19,7 @@ using UnityEngine;
 using static GameCore.UI.PlayerUI;
 using ClientRpcAttribute = GameCore.Network.ClientRpcAttribute;
 using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
+using JetBrains.Annotations;
 
 namespace GameCore
 {
@@ -210,9 +211,6 @@ namespace GameCore
         [Sync] public Sprite skinRightLeg;
         [Sync] public Sprite skinLeftFoot;
         [Sync] public Sprite skinRightFoot;
-        [Sync] public float hungerValue;
-        public static float defaultHungerValue = 100;
-        public static float maxHungerValue = 100;
         [Sync] public float mana;
         public static float defaultMana = 50;
         public static float maxMana = 100;
@@ -341,6 +339,7 @@ namespace GameCore
         {
             playerController = ControlModeToController(this, newMode);
         }
+        float rushTimer;
 
 
 
@@ -641,6 +640,13 @@ namespace GameCore
                 if (playerController.HoldingAttack())  //检测物品的使用CD
                 {
                     OnHoldAttack();
+                }
+
+
+                /* ----------------------------------- 冲刺 ----------------------------------- */
+                if (playerController.Rush() && Tools.time > rushTimer)
+                {
+                    Rush(transform.localScale.x > 0);
                 }
 
 
@@ -1024,7 +1030,7 @@ namespace GameCore
 
         void OnRespawnServer(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
-            hungerValue = 30;
+            
         }
 
         void OnRespawnClient(float newHealth, Vector2 newPos, NetworkConnection caller)
@@ -1693,6 +1699,13 @@ namespace GameCore
                 case PlayerController.PlayerOrientation.Previous:
                     break;
             }
+        }
+
+        void Rush(bool isRight)
+        {
+            var rushSpeed = 20f;
+            rb.AddVelocityX(isRight ? rushSpeed : -rushSpeed);
+            rushTimer = Tools.time + 1;
         }
 
         #endregion

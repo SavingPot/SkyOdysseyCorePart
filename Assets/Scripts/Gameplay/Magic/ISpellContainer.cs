@@ -24,16 +24,20 @@ namespace GameCore
             }
         }
 
+        public static string GetSpellIdFromJObject(JObject jo)
+        {
+            return jo["ori:spell_container"]["spell"].ToString();
+        }
+
         public static void LoadFromJObject(ISpellContainer container, JObject jo)
         {
-            var jt = jo["ori:spell_container"];
-            var spellString = jt["spell"].ToString();
+            var spellId = GetSpellIdFromJObject(jo);
 
-            if (spellString == null)
+            if (spellId == null)
                 container.spell = null;
             else
             {
-                container.spell = ModFactory.CompareSpell(spellString);
+                container.spell = ModFactory.CompareSpell(spellId);
                 container.spellBehaviour = (SpellBehaviour)Activator.CreateInstance(container.spell.behaviourType, container, container.spell);
             }
         }

@@ -14,6 +14,7 @@ namespace GameCore
         public abstract float Move();
         public abstract bool ClickingAttack();
         public abstract bool HoldingAttack();
+        public abstract bool Rush();
         public abstract bool IsControllingBackground();
         public abstract bool SkipDialog();
         public abstract Vector2Int DialogOptions();

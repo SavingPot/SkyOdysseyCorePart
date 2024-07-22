@@ -44,7 +44,6 @@ namespace GameCore
     {
         public int coin;
         public float mana;
-        public float hungerValue;
         public Inventory inventory;// = new();
         public List<TaskStatusForSave> completedTasks = new();
         public List<SkillStatusForSave> unlockedSkills = new();
@@ -63,7 +62,6 @@ namespace GameCore
         {
             coin = player.coin;
             mana = player.mana;
-            hungerValue = player.hungerValue;
             inventory = player.inventory;
             completedTasks = player.completedTasks;
             unlockedSkills = player.unlockedSkills;
@@ -77,7 +75,6 @@ namespace GameCore
                 id = playerName,
                 coin = 30,
                 mana = Player.defaultMana,
-                hungerValue = Player.defaultHungerValue,
                 inventory = new(Player.inventorySlotCountConst, null),
                 completedTasks = new(),
                 unlockedSkills = new(),

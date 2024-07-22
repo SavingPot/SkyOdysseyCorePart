@@ -72,7 +72,7 @@ namespace GameCore
 
 
 
-        public static ValueTag<T> GetValueTag<T>(this ITags t, string id, Func<string, T> stringToTargetType, T defaultValue)
+        static bool _TryGetValueTagStringValue(this ITags t, string id, out string value)
         {
             for (int i = 0; i < t.tags.Count; i++)
             {
@@ -86,11 +86,25 @@ namespace GameCore
                 if (splitted.Length != 2 || splitted[0] != id)
                     continue;
 
-                return new(true, stringToTargetType(splitted[1]));
+                value = splitted[1];
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+
+        public static ValueTag<T> GetValueTag<T>(this ITags t, string id, Func<string, T> stringToTargetType, T defaultValue)
+        {
+            if (_TryGetValueTagStringValue(t, id, out string stringValue))
+            {
+                return new(true, stringToTargetType(stringValue));
             }
 
             return new(false, defaultValue);
         }
+
+        public static bool HasValueTag<T>(this ITags t, string id) => _TryGetValueTagStringValue(t, id, out _);
 
         public static bool TryGetValueTag<T>(this ITags t, string id, Func<string, T> stringToTargetType, out ValueTag<T> tag, T defaultValue)
         {

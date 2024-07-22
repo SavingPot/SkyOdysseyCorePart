@@ -99,9 +99,26 @@ namespace GameCore.UI
                 {
                     ItemInfoShower.instance.Show(item);
 
-                    if (container is Player player)
+                    //应用物品的信息修改器
+                    if (!Item.Null(item))
                     {
-                        player.inventory.GetItemBehaviourChecked(itemIndex)?.ModifyInfo(ItemInfoShower.instance);
+                        //先匹配 Id
+                        if (Item.infoModifiersForId.TryGetValue(item.data.id, out var modifier))
+                        {
+                            ItemInfoShower.instance.detailText.text.text += modifier(item) + "\n";
+                        }
+
+                        //再匹配 Tag
+                        foreach (var tag in item.data.tags)
+                        {
+                            //获取标签名称
+                            string tagName = tag.Contains('=') ? tag.Split('=')[0] : tag;
+
+                            if (Item.infoModifiersForTag.TryGetValue(tagName, out modifier))
+                            {
+                                ItemInfoShower.instance.detailText.text.text += modifier(item) + "\n";
+                            }
+                        }
                     }
                 };
                 button.button.OnPointerExitAction = _ => ItemInfoShower.instance.Hide();

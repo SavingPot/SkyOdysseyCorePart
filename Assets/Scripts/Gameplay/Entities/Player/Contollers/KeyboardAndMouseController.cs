@@ -11,6 +11,7 @@ namespace GameCore
         public override float Move() => GControls.GetAD();
         public override bool ClickingAttack() => Mouse.current?.leftButton?.wasPressedThisFrame ?? false;
         public override bool HoldingAttack() => Mouse.current?.leftButton?.isPressed ?? false;
+        public override bool Rush() => Mouse.current?.rightButton?.wasPressedThisFrame ?? false;
         public override bool IsControllingBackground() => Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
         public override bool SkipDialog() => Apply();
         public override Vector2Int DialogOptions() => GControls.GetWASDVec();
