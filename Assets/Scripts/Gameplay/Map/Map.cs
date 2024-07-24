@@ -4,6 +4,7 @@ using GameCore.High;
 using GameCore.Network;
 using Newtonsoft.Json;
 using Sirenix.OdinInspector;
+using SP.Tools;
 using SP.Tools.Unity;
 using System;
 using System.Collections.Generic;
@@ -262,7 +263,12 @@ namespace GameCore
             //放置方块
             foreach (var structBlock in structure.fixedBlocks)
             {
-                SetBlockNet(anchorPos + structBlock.offset, structBlock.isBackground, structBlock.blockId, null);
+                var blockPos = anchorPos + structBlock.offset;
+
+                if (structBlock.blockId.IsNullOrEmpty())
+                    GetBlock(blockPos, structBlock.isBackground)?.DestroySelf();
+                else
+                    SetBlockNet(blockPos, structBlock.isBackground, structBlock.blockId, null);
             }
         }
 

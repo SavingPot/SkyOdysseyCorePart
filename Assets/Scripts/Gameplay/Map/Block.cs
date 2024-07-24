@@ -59,7 +59,7 @@ namespace GameCore
             //(-∞,0]
             if (block.health <= 0)
             {
-                block.Destroy();
+                block.DestroySelf();
             }
             //(0,100)
             else if (block.health != 100)
@@ -191,12 +191,12 @@ namespace GameCore
         }
 
 
-        public void Destroy()
+        public void DestroySelf()
         {
             Client.Send<NMDestroyBlock>(new(chunk.regionIndex, pos, isBackground));
         }
 
-        public void RemoveFromMap()
+        public void RemoveSelf()
         {
             Client.Send<NMRemoveBlock>(new(pos, isBackground));
         }

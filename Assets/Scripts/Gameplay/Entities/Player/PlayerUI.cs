@@ -222,9 +222,11 @@ namespace GameCore.UI
         /*                                     属性                                     */
         /* -------------------------------------------------------------------------- */
         public ImageIdentity manaBarBg;
-        public ImageIdentity healthBarBg;
         public ImageIdentity manaBarFull;
+        public ImageIdentity manaBarEffect;
+        public ImageIdentity healthBarBg;
         public ImageIdentity healthBarFull;
+        public ImageIdentity healthBarEffect;
 
 
 
@@ -1220,28 +1222,42 @@ namespace GameCore.UI
 
                 manaBarBg = GameUI.AddImage(posC, "ori:image.mana_bar_bg", "ori:mana_bar");
                 manaBarFull = GameUI.AddImage(posC, "ori:image.mana_bar_full", "ori:mana_bar");
-                SetIt(manaBarBg, manaBarFull, xExtraOffset, yExtraOffset);
+                manaBarEffect = GameUI.AddImage(posC, "ori:image.mana_bar_effect", "ori:mana_bar");
+                SetIt(manaBarBg, manaBarFull, manaBarEffect, xExtraOffset, yExtraOffset, GetManaBarFullAmount);
 
                 healthBarBg = GameUI.AddImage(posC, "ori:image.health_bar_bg", "ori:health_bar");
                 healthBarFull = GameUI.AddImage(posC, "ori:image.health_bar_full", "ori:health_bar");
-                SetIt(healthBarBg, healthBarFull, xExtraOffset, 0);
+                healthBarEffect = GameUI.AddImage(posC, "ori:image.health_bar_effect", "ori:health_bar");
+                SetIt(healthBarBg, healthBarFull, healthBarEffect, xExtraOffset, 0, GetHealthBarFullAmount);
 
-                static void SetIt(ImageIdentity bg, ImageIdentity full, float xOffset, float yOffset)
+                static void SetIt(ImageIdentity bg, ImageIdentity full, ImageIdentity effect, float xOffset, float yOffset, Func<float> getValue)
                 {
                     Vector2 size = new(160, 40);
                     Image.Type imageType = Image.Type.Filled;
                     Image.FillMethod fillMethod = Image.FillMethod.Horizontal;
-                    float bgColor = 0.5f;
+                    float bgBrightness = 0.5f;
                     float defaultX = -bg.sd.x / 2;
                     int defaultY = -30;
 
                     bg.rt.sizeDelta = size;
-                    full.rt.sizeDelta = size;
-                    full.rt.SetParentForUI(bg.image.rectTransform);
                     bg.rt.AddLocalPos(new(defaultX + xOffset, defaultY + yOffset));
-                    bg.image.SetColorBrightness(bgColor);
+                    bg.image.SetColorBrightness(bgBrightness);
+
+                    effect.rt.sizeDelta = size;
+                    effect.rt.SetParentForUI(bg.image.rectTransform);
+                    effect.image.type = imageType;
+                    effect.image.fillMethod = fillMethod;
+                    effect.SetColor(new(1, 1, 1, 0.5f));
+
+                    full.rt.sizeDelta = size;
+                    full.rt.SetParentForUI(effect.image.rectTransform);
                     full.image.type = imageType;
                     full.image.fillMethod = fillMethod;
+
+                    //初始化时就直接设置填充率，否则会触发 effect 读条
+                    var value = getValue();
+                    effect.image.fillAmount = value;
+                    full.image.fillAmount = value;
                 }
             }
             #endregion
@@ -1791,9 +1807,23 @@ namespace GameCore.UI
 
         public void RefreshPropertiesBar()
         {
-            manaBarFull.image.fillAmount = player.mana / Player.maxMana;
-            healthBarFull.image.fillAmount = (float)player.health / player.maxHealth;
+            manaBarFull.image.fillAmount = GetManaBarFullAmount();
+            healthBarFull.image.fillAmount = GetHealthBarFullAmount();
+
+            RefreshEffect(manaBarEffect, manaBarFull);
+            RefreshEffect(healthBarEffect, healthBarFull);
+
+            static void RefreshEffect(ImageIdentity effect, ImageIdentity full)
+            {
+                if (effect.image.fillAmount > full.image.fillAmount)
+                    effect.image.fillAmount -= Tools.deltaTime * 0.15f;
+                else if (effect.image.fillAmount < full.image.fillAmount)
+                    effect.image.fillAmount = full.image.fillAmount;
+            }
         }
+
+        float GetManaBarFullAmount() => player.mana / Player.maxMana;
+        float GetHealthBarFullAmount() => (float)player.health / player.maxHealth;
 
 
 

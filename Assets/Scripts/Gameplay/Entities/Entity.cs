@@ -461,6 +461,9 @@ namespace GameCore
             isLocalPlayer = Client.localPlayer == this;
         }
 
+        /// <summary>
+        /// 注意：服务器调用该方法时客户端可能还未初始化完毕
+        /// </summary>
         public virtual void Initialize()
         {
             customData = ModifyCustomData(customData);
@@ -472,6 +475,9 @@ namespace GameCore
             SetAutoDestroyTime();
         }
 
+        /// <summary>
+        /// 注意：服务器调用该方法时客户端可能还未初始化完毕
+        /// </summary>
         public virtual void AfterInitialization()
         {
             LoadFromCustomData();
@@ -746,7 +752,7 @@ namespace GameCore
             if (isNotPlayer)
             {
                 //应用击退效果
-                if (rb) rb.velocity = impactForce;
+                if (rb) rb.AddVelocity(impactForce);
 
                 //如果实体受到伤害, 就延迟自动销毁的时间
                 SetAutoDestroyTime();

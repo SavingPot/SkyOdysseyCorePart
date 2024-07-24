@@ -315,8 +315,8 @@ namespace GameCore
 
         public void ModifyUsingItemRendererTransform(Vector2 localPosition, Vector2 localScale, int localRotation)
         {
-            localScale *= 0.5f;
-            localPosition += new Vector2(0.1f, -0.5f);
+            localScale *= 0.5f; //物品拿在手上时缩小一半
+            localPosition += new Vector2(0.1f, -0.5f); //使物品在手掌上
 
             usingItemRenderer.transform.SetLocalPositionAndRotation(localPosition, Quaternion.Euler(0, 0, localRotation));
             usingItemRenderer.transform.SetScale(localScale);
@@ -458,13 +458,9 @@ namespace GameCore
         {
             base.Initialize();
 
-            //加载服务器存档中的位置
-            if (isServer && Init.save.pos != Vector2.zero)
-            {
-                ClientSetPosition(transform.position = Init.save.pos);
-                regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos); //这里必须立刻设置 regionIndex，否则会导致 OnRegionIndexChanged 被调用
-                hasSetPosBySave = true;
-            }
+            //让拥有者请求加载服务器存档中的位置
+            if (isOwned)
+                RestorePlayerPositionToSave();
 
 
 
@@ -566,6 +562,17 @@ namespace GameCore
 
             //防止玩家在生成区域前就掉落到很低的地方
             GravitySet(this);
+        }
+
+        [ServerRpc]
+        void RestorePlayerPositionToSave(NetworkConnection caller = null)
+        {
+            if (Init.save.pos != Vector2.zero)
+            {
+                ClientSetPosition(Init.save.pos);
+                regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos); //这里必须立刻设置 regionIndex，否则会导致 OnRegionIndexChanged 被调用
+                hasSetPosBySave = true;
+            }
         }
 
         public override void AfterInitialization()
@@ -1030,7 +1037,7 @@ namespace GameCore
 
         void OnRespawnServer(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
-            
+
         }
 
         void OnRespawnClient(float newHealth, Vector2 newPos, NetworkConnection caller)
@@ -1299,7 +1306,7 @@ namespace GameCore
                 MethodAgent.RunOnMainThread(() =>
                 {
                     //如果存档中没有玩家位置, 则将玩家的位置设置到该区域出生点
-                    if (!hasSetPosBySave)
+                    if (isFirstGeneration && !hasSetPosBySave)
                         ClientSetPosition(regionToGenerate.spawnPoint.To2());
 
                     //* 如果是服务器发送的申请: 服务器生成
@@ -1703,7 +1710,7 @@ namespace GameCore
 
         void Rush(bool isRight)
         {
-            var rushSpeed = 20f;
+            var rushSpeed = 18f;
             rb.AddVelocityX(isRight ? rushSpeed : -rushSpeed);
             rushTimer = Tools.time + 1;
         }
@@ -1715,6 +1722,7 @@ namespace GameCore
 
 
         #region 攻击
+
         public Vector2 cursorWorldPos
         {
             get
@@ -1780,6 +1788,7 @@ namespace GameCore
         [ClientRpc]
         public void ClientStartAttack(bool leftArm, bool rightArm, NetworkConnection caller = null)
         {
+            //播放攻击动画
             if (leftArm)
                 animWeb.SwitchPlayingTo("attack_leftarm", 0);
             if (rightArm)

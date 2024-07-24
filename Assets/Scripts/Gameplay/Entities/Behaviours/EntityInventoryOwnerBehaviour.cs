@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using GameCore.High;
 using UnityEngine;
 
@@ -146,12 +147,43 @@ namespace GameCore
     public class InventoryItemRendererCollision : MonoBehaviour
     {
         public IInventoryOwner owner;
+        readonly List<Entity> entitiesInside = new();
+
+        private void Update()
+        {
+            //? 这里为什么要遍历 entitiesInside 而不是直接在碰撞体进入时攻击呢?
+            //? 因为如果在碰撞体进入时攻击会导致玩家开始攻击前进入武器范围的实体不会被攻击。
+            if (owner.isAttacking)
+            {
+                for (int i = entitiesInside.Count - 1; i >= 0; i--)
+                {
+                    owner.AttackEntity(entitiesInside[i]);
+
+                    //攻击完后移除实体避免二次攻击
+                    entitiesInside.RemoveAt(i);
+                }
+            }
+        }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (owner.isAttacking && other.transform != owner.transform && other.gameObject.TryGetComponent(out Entity entity))
+            if (other.transform == owner.transform)
+                return;
+
+            if (other.gameObject.TryGetComponent(out Entity entity))
             {
-                owner.AttackEntity(entity);
+                entitiesInside.Add(entity);
+            }
+        }
+
+        private void OnTriggerExit2D(Collider2D other)
+        {
+            if (other.transform == owner.transform)
+                return;
+
+            if (other.gameObject.TryGetComponent(out Entity entity))
+            {
+                entitiesInside.Remove(entity);
             }
         }
     }

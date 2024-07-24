@@ -97,6 +97,9 @@ namespace GameCore
 
 
 
+
+
+
         public static int GetRegionUnlockingCost(Vector2Int index)
         {
             return Math.Abs(index.x) * 250 + Math.Abs(index.y) * 150;
@@ -132,10 +135,10 @@ namespace GameCore
 
             if (Client.isClient)
             {
-                /* -------------------------------- 设置全局光照亮度 -------------------------------- */
+                //设置全局光照亮度
                 globalLight.intensity = Mathf.Clamp(GTime.time * 2 / GTime.timeOneDay, 0.1f, 0.85f);
 
-                /* --------------------------------- 设置天空颜色 --------------------------------- */
+                //设置天空颜色
                 byte delta = (byte)Mathf.Min(GTime.darknessLevel * 12, 180);   //* xx 是为了扩大时间的影响, 要限制在 <= 180, 否则天会变绿
                 Tools.instance.mainCamera.backgroundColor = new Color32(0, (byte)(180 - delta), (byte)(byte.MaxValue - delta), byte.MaxValue);  //设置摄像机背景颜色
             }

@@ -371,6 +371,9 @@ namespace GameCore
             CallGenerationBindings();
         }
 
+        /// <summary>
+        /// 注意：服务器调用该方法时客户端可能还未初始化完毕
+        /// </summary>
         void CallGenerationBindings()
         {
             if (EntityCenter.entityGenerationBindings.TryGetValue(saveId, out var binding))
