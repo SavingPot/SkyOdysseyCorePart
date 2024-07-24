@@ -77,7 +77,7 @@ namespace GameCore
                 FindTarget();
         }
 
-        public void AttackEntity(Entity entity)
+        public virtual void AttackEntity(Entity entity)
         {
             entity.TakeDamage(
                 Mathf.CeilToInt(data.normalAttackDamage * (1 + GTime.difficultyFactor)),
