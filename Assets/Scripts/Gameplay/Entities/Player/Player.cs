@@ -659,13 +659,6 @@ namespace GameCore
                 }
 
 
-                /* ----------------------------------- 冲刺 ----------------------------------- */
-                if (playerController.Rush() && Tools.time > rushTimer)
-                {
-                    Rush(transform.localScale.x > 0);
-                }
-
-
                 /* ---------------------------------- 抛弃物品 ---------------------------------- */
                 if (playerController.ThrowItem())
                     ServerThrowItem(usingItemIndex.ToString(), 1);
@@ -1633,7 +1626,12 @@ namespace GameCore
             {
                 ItemBehaviour usingItemBehaviour = GetUsingItemBehaviourChecked();
 
-                if (usingItemBehaviour != null) usingItemBehaviour.Use(point);
+                //使用物品
+                if ((usingItemBehaviour == null || !usingItemBehaviour.Use(point)) && Tools.time > rushTimer)
+                {
+                    //如果使用物品失败且冲刺CD过了就冲刺
+                    Rush(transform.localScale.x > 0);
+                }
             }
         }
 

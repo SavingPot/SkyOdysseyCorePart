@@ -11,7 +11,6 @@ namespace GameCore
         public override float Move() => GControls.leftStickVec.x;
         public override bool ClickingAttack() => Gamepad.current?.rightTrigger?.wasPressedThisFrame ?? false;
         public override bool HoldingAttack() => Gamepad.current?.rightTrigger?.isPressed ?? false;
-        public override bool Rush() => Gamepad.current?.leftStickButton?.wasPressedThisFrame ?? false;
         public override bool IsControllingBackground() => Gamepad.current != null && Gamepad.current.rightStickButton.isPressed;
         public override bool SkipDialog() => Apply();
         public override Vector2Int DialogOptions() => GControls.GetLeftStickVecInt();

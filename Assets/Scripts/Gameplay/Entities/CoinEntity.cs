@@ -24,6 +24,7 @@ namespace GameCore
             isHurtable = false;
 
             spriteRenderer.sprite = ModFactory.CompareTexture("ori:coin").sprite;
+            spriteRenderer.sortingOrder = 2;
 
             renderers.Add(spriteRenderer);
             spriteRenderers.Add(spriteRenderer);
