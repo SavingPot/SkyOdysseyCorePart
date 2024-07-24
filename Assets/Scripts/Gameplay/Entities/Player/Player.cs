@@ -228,7 +228,7 @@ namespace GameCore
 
         #region 技能树
         [Sync] public List<SkillStatusForSave> unlockedSkills;
-        [Sync] public uint skillPoints;
+        [Sync] public int skillPoints;
 
         public void AddUnlockedSkills(SkillStatusForSave task)
         {
@@ -236,6 +236,15 @@ namespace GameCore
             skillsTemp.Add(task);
             unlockedSkills = skillsTemp;
         }
+
+        [ServerRpc, Button]
+        public void ServerAddSkillPoint(int count)
+        {
+            skillPoints += count;
+
+            Debug.Log("ADD COIN " + count);
+        }
+
         #endregion
 
         #region 玩家名
@@ -1112,6 +1121,7 @@ namespace GameCore
 
             Debug.Log("ADD COIN " + count);
         }
+
 
         /// <returns>一个点是否在交互范围内</returns>
         public bool IsPointInteractable(Vector2 vec) => IsPointInteractable(transform.position, vec);

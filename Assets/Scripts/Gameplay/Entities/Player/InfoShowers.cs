@@ -328,7 +328,7 @@ namespace GameCore.UI
     {
         public void Show(SkillNode node)
         {
-            Show(node.button.buttonText.text.text, GameUI.CompareText(node.data.description));
+            Show(node.button.buttonText.text.text, $"花费: {node.data.cost}\n{GameUI.CompareText(node.data.description)}");
 
             backgroundImage.transform.SetParent(node.button.transform);
             backgroundImage.transform.localPosition = new(backgroundImage.sd.x, -backgroundImage.sd.y);

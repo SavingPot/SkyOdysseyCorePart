@@ -286,12 +286,12 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         public List<SkillData> skills = new()
         {
-            new("ori:skill", "ori:skill.skill", null, "ori:skill_description.skill", 5),
-            new("ori:agriculture", "ori:skill.agriculture", "ori:skill", "ori:skill_description.agriculture", 5),
-            new("ori:agriculture.quick", "ori:skill.agriculture.quick", "ori:agriculture", "ori:skill_description.agriculture.quick", 10),
-            new("ori:agriculture.coin", "ori:skill.agriculture.coin", "ori:agriculture", "ori:skill_description.agriculture.coin", 10),
-            new("ori:agriculture.harvest", "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 10),
-            new("ori:agriculture.fishing", "ori:skill.agriculture.fishing", "ori:agriculture", "ori:skill_description.agriculture.fishing", 10),
+            new("ori:skill", "ori:skill.skill", null, "ori:skill_description.skill", 1),
+            new("ori:agriculture", "ori:skill.agriculture", "ori:skill", "ori:skill_description.agriculture", 1),
+            new("ori:agriculture.quick", "ori:skill.agriculture.quick", "ori:agriculture", "ori:skill_description.agriculture.quick", 2),
+            new("ori:agriculture.coin", "ori:skill.agriculture.coin", "ori:agriculture", "ori:skill_description.agriculture.coin", 2),
+            new("ori:agriculture.harvest", "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 2),
+            new("ori:agriculture.fishing", "ori:skill.agriculture.fishing", "ori:agriculture", "ori:skill_description.agriculture.fishing", 2),
         };
         public BackpackPanel skillPanel;
         public NodeTree<SkillNode, SkillData> skillNodeTree;
@@ -1174,11 +1174,11 @@ namespace GameCore.UI
                     _ => SkillInfoShower.instance.Hide(),
                     node =>
                     {
-                        if (node.status.unlocked || !node.IsParentLineUnlocked() || player.coin < node.data.cost)
+                        if (node.status.unlocked || !node.IsParentLineUnlocked() || player.skillPoints < node.data.cost)
                             return;
 
                         //刷新玩家属性
-                        player.ServerAddCoin(-node.data.cost);
+                        player.ServerAddSkillPoint(-node.data.cost);
                         if (!player.unlockedSkills.Any(p => p.id == node.data.id))
                         {
                             player.AddUnlockedSkills(new() { id = node.data.id, unlocked = true });
