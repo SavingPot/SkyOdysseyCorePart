@@ -957,13 +957,12 @@ namespace GameCore
                 {
                     string[] entityPaths = IOTools.GetFilesInFolderIncludingChildren(entitiesPath, true, "json").ToArray();
 
-                    Array.ForEach(entityPaths, p => MethodAgent.DebugRun(() =>
+                    Array.ForEach(entityPaths, path => MethodAgent.DebugRun(() =>
                     {
-                        //加载文本数据
-                        JObject jo = JsonUtils.LoadJObjectByPath(p);
-                        EntityData newEntity = ModLoading.LoadEntity(jo, p);
+                        EntityData newEntity = ModLoading.LoadEntity(path);
 
-                        newMod.entities.Add(newEntity);
+                        if (newEntity != null)
+                            newMod.entities.Add(newEntity);
                     }));
                 }
                 #endregion

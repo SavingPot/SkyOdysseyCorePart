@@ -118,7 +118,7 @@ namespace GameCore
     public interface IInventoryOwner : IItemContainer
     {
         Transform transform { get; }
-        void AttackEntity(Entity entity);
+        bool AttackEntity(Entity entity);
         bool isAttacking { get; }
 
 

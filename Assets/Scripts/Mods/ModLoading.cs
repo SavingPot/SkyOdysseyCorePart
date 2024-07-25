@@ -247,46 +247,41 @@ namespace GameCore
             return ts.ToArray();
         }
 
-        public static EntityData LoadEntity(JObject jo, string entityPath)
+        public static EntityData LoadEntity(string path)
         {
-            if (jo == null)
+            if (LoadModClass(path, "ori:entity", out EntityData entity, out var entrance))
             {
-                Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {nameof(jo)} 不能为空");
-                return null;
-            }
+                //if (GameTools.CompareVersions(format, "0.5.1", Operators.lessOrEqual))
+                if (true)
+                {
+                    entity.jsonFormatWhenLoad = "0.7.0";
 
-            var format = GetCorrectJsonFormatByJObject(jo);
+                    entity.drops = LoadDrops(entrance["drops"], "0.7.1");
+                    entity.speed = entrance["speed"]?.ToFloat() ?? 3;
+                    entity.coinCount = entrance["coin_count"]?.ToInt() ?? 1;
+                    entity.colliderSize = entrance["physics"]?["collider"]?["size"]?.ToVector2() ?? Vector2.one;
+                    entity.colliderOffset = entrance["physics"]?["collider"]?["offset"]?.ToVector2() ?? Vector2.zero;
+                    entity.gravity = entrance["physics"]?["gravity"]?.ToFloat() ?? 7;
+                    entity.maxHealth = entrance["max_health"]?.ToInt() ?? Entity.DEFAULT_HEALTH;
+                    entity.lifetime = entrance["lifetime"]?.ToFloat() ?? EntityData.defaultLifetime;
 
-            EntityData entity = new()
-            {
-                jo = jo,
-                jsonFormat = format
-            };
-            if (GameTools.CompareVersions(format, "0.5.1", Operators.lessOrEqual))
-            {
-                entity.jsonFormatWhenLoad = "0.5.1";
+                    entity.searchRadius = entrance["search_radius"]?.ToObject<ushort>() ?? 25;
+                    entity.searchRadiusSqr = entity.searchRadius * entity.searchRadius;
+                    if (entrance.TryGetJToken("normal_attack", out var normalAttack))
+                    {
+                        entity.normalAttack = new()
+                        {
+                            radius = normalAttack["radius"]?.ToFloat() ?? 2,
+                            damage = normalAttack["damage"]?.ToInt() ?? 15,
+                            cd = normalAttack["cd"]?.ToFloat() ?? 2
+                        };
+                    }
 
-                entity.id = jo["ori:entity"]?["id"]?.ToString();
-                entity.drops = LoadDrops(jo["ori:entity"]?["drops"], "0.7.1");
-                entity.path = entityPath;
-                entity.speed = jo["ori:entity"]?["speed"]?.ToFloat() ?? 3;
-                entity.coinCount = jo["ori:entity"]?["coin_count"]?.ToInt() ?? 1;
-                entity.colliderSize = jo["ori:entity"]?["physics"]?["collider"]?["size"]?.ToVector2() ?? Vector2.one;
-                entity.colliderOffset = jo["ori:entity"]?["physics"]?["collider"]?["offset"]?.ToVector2() ?? Vector2.zero;
-                entity.gravity = jo["ori:entity"]?["physics"]?["gravity"]?.ToFloat() ?? 7;
-                entity.maxHealth = jo["ori:entity"]?["max_health"]?.ToInt() ?? Entity.DEFAULT_HEALTH;
-                entity.lifetime = jo["ori:entity"]?["lifetime"]?.ToFloat() ?? EntityData.defaultLifetime;
-
-                entity.searchRadius = jo["ori:entity"]?["search_radius"]?.ToObject<ushort>() ?? 25;
-                entity.searchRadiusSqr = entity.searchRadius * entity.searchRadius;
-                entity.normalAttackRadius = jo["ori:entity"]?["normal_attack_radius"]?.ToFloat() ?? 2;
-                entity.normalAttackDamage = jo["ori:entity"]?["normal_attack_damage"]?.ToInt() ?? 15;
-                entity.normalAttackCD = jo["ori:entity"]?["normal_attack_cd"]?.ToFloat() ?? 2;
-
-                entity.summon.biome = jo["ori:entity"]?["summon"]?["biome"]?.ToString();
-                entity.summon.defaultProbability = jo["ori:entity"]?["summon"]?["default_probability"]?.ToString().ToFloat() ?? 100;
-                entity.summon.timeEarliest = jo["ori:entity"]?["summon"]?["time_earliest"]?.ToString().ToFloat() ?? 0;
-                entity.summon.timeLatest = jo["ori:entity"]?["summon"]?["time_latest"]?.ToString().ToFloat() ?? 0;
+                    entity.summon.biome = entrance["summon"]?["biome"]?.ToString();
+                    entity.summon.defaultProbability = entrance["summon"]?["default_probability"]?.ToString().ToFloat() ?? 100;
+                    entity.summon.timeEarliest = entrance["summon"]?["time_earliest"]?.ToString().ToFloat() ?? 0;
+                    entity.summon.timeLatest = entrance["summon"]?["time_latest"]?.ToString().ToFloat() ?? 0;
+                }
             }
 
             return entity;

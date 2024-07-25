@@ -45,16 +45,16 @@ namespace GameCore
             {
                 #region 普通攻击
 
-                if (!isDead)
+                if (!isDead && data.normalAttack != null)
                 {
                     //为了性能使用 (x - x), (y - y) 而不是 Vector2.Distance()
                     float disX = Mathf.Abs(transform.position.x - targetEntity.transform.position.x);
                     float disY = Mathf.Abs(transform.position.y - targetEntity.transform.position.y);
 
                     //在攻击范围内, 并且 CD 已过
-                    if (disX <= data.normalAttackRadius && disY <= data.normalAttackRadius && Tools.time >= attackTimer)
+                    if (disX <= data.normalAttack.radius && disY <= data.normalAttack.radius && Tools.time >= attackTimer)
                     {
-                        attackTimer = Tools.time + data.normalAttackCD;
+                        attackTimer = Tools.time + data.normalAttack.cd;
 
                         //设置动画
                         if (animWeb != null)
@@ -77,10 +77,14 @@ namespace GameCore
                 FindTarget();
         }
 
-        public virtual void AttackEntity(Entity entity)
+        /// <returns>是否向服务器发送了伤害请求</returns>
+        public virtual bool AttackEntity(Entity entity)
         {
-            entity.TakeDamage(
-                Mathf.CeilToInt(data.normalAttackDamage * (1 + GTime.difficultyFactor)),
+            if (data.normalAttack == null)
+                return false;
+
+            return entity.TakeDamage(
+                Mathf.CeilToInt(data.normalAttack.damage * (1 + GTime.difficultyFactor)),
                 0.3f,
                 transform.position,
                 transform.position.x < targetEntity.transform.position.x ? Vector2.right * 12 : Vector2.left * 12

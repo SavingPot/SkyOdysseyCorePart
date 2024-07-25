@@ -66,6 +66,8 @@ namespace SP.Tools.Unity
 
         public static Vector2 To2(this Vector2Int vec) => VectorConverter.To2(vec);
         public static Vector2 To2(this Vector3Int vec) => VectorConverter.To2(vec);
+        public static Vector3 To3(this Vector2 vec) => VectorConverter.To3(vec);
+        public static Vector3 To3(this Vector2 vec, float z) => VectorConverter.To3(vec, z);
         public static Vector3 To3(this Vector2Int vec) => VectorConverter.To3(vec);
         public static Vector3 To3(this Vector2Int vec, float z) => VectorConverter.To3(vec, z);
         public static Vector3 To3(this Vector3Int vec) => VectorConverter.To3(vec);

@@ -362,7 +362,7 @@ namespace GameCore
         public static float itemPickUpRadius = 1.8f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
-        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.hasGeneratedFirstRegion && Application.isFocused && player.GetTemperatureEffectState() != TemperatureEffectState.Frozen;
+        public static Func<Player, bool> PlayerCanControl = player => (GameUI.page == null || !GameUI.page.ui) && player.hasGeneratedFirstRegion && Application.isFocused && player.GetTemperatureEffectState() != TemperatureEffectState.Frozen && !player.isDead;
         public const float playerDefaultGravity = 6f;
         public const float defaultInteractiveRadius = 2.8f;
 
@@ -619,13 +619,6 @@ namespace GameCore
                 LocalUpdate();
 
             EntityInventoryOwnerBehaviour.OnUpdate(this);
-
-
-            //设置死亡颜色
-            if (isDead)
-            {
-                SetColorOfSpriteRenderers(deathLowestColor);
-            }
 
 
 #if DEBUG
@@ -945,6 +938,15 @@ namespace GameCore
         #region Base 覆写
 
 
+        public override Color DecideColorOfSpriteRenderers()
+        {
+            //死亡颜色
+            if (isDead)
+                return deathLowestColor;
+
+            return base.DecideColorOfSpriteRenderers();
+        }
+
         /* -------------------------------------------------------------------------- */
         /*                                    死亡逻辑                                    */
         /* -------------------------------------------------------------------------- */
@@ -1044,9 +1046,6 @@ namespace GameCore
 
         void OnRespawnClient(float newHealth, Vector2 newPos, NetworkConnection caller)
         {
-            //设置颜色
-            SetColorOfSpriteRenderers(Color.white);
-
             if (isLocalPlayer)
             {
                 //防止玩家重生时摔死
@@ -1803,14 +1802,14 @@ namespace GameCore
                 animWeb.SwitchPlayingTo("attack_rightarm", 0);
         }
 
-        public void AttackEntity(Entity entity)
+        public bool AttackEntity(Entity entity)
         {
-            int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
-            entity.TakeDamage(damage, 0.3f, transform.position, transform.localScale.x.Sign() * Vector2.right * 12);
-
             //如果使用手柄就震动一下
             if (GControls.mode == ControlMode.Gamepad)
                 GControls.GamepadVibrationMedium();
+
+            int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
+            return entity.TakeDamage(damage, 0.3f, transform.position, transform.localScale.x.Sign() * Vector2.right * 12);
         }
 
         #endregion

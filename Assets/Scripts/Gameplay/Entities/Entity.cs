@@ -130,18 +130,7 @@ namespace GameCore
         static JObject NewJObject() => new();
 
         #region 无敌时间
-        [Sync(nameof(OnInvincibleTimeChange)), SyncDefaultValue(0f)] public float invincibleTime;
-        void OnInvincibleTimeChange(byte[] _)
-        {
-            if (isHurting)
-            {
-                SetColorOfSpriteRenderers(1, 0.5f, 0.5f);
-            }
-            else
-            {
-                SetColorOfSpriteRenderers(Color.white);
-            }
-        }
+        [Sync, SyncDefaultValue(0f)] public float invincibleTime;
         #endregion
 
         #region 血量
@@ -521,6 +510,8 @@ namespace GameCore
 
             if (isServer)
                 ServerUpdate();
+
+            SetColorOfSpriteRenderers(DecideColorOfSpriteRenderers());
         }
 
         protected virtual void FixedUpdate()
@@ -717,6 +708,17 @@ namespace GameCore
             }
         }
 
+        public virtual Color DecideColorOfSpriteRenderers()
+        {
+            if (isHurting)
+                return new(1, 0.5f, 0.5f);
+
+            if (GetTemperatureEffectState() == TemperatureEffectState.Frozen)
+                return Color.blue;
+
+            return Color.white;
+        }
+
 
 
 
@@ -759,16 +761,21 @@ namespace GameCore
         }
 
 
+        public bool CanTakeDamage() => !isDead && !isHurting && isHurtable && GetTemperatureEffectState() != TemperatureEffectState.Frozen;
 
+        /// <returns>是否向服务器发送了伤害请求</returns>
         [Button]
-        public virtual void TakeDamage(int damage) => TakeDamage(damage, 0.1f, transform.position, Vector2.zero);
+        public virtual bool TakeDamage(int damage) => TakeDamage(damage, 0.1f, transform.position, Vector2.zero);
 
-        public void TakeDamage(int damage, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
+        /// <returns>是否向服务器发送了伤害请求</returns>
+        public bool TakeDamage(int damage, float invincibleTime, Vector2 hurtPos, Vector2 impactForce)
         {
-            if (!isHurtable)
-                return;
+            //检查能否被伤害
+            if (!CanTakeDamage())
+                return false;
 
             ServerTakeDamage(damage, invincibleTime, hurtPos, impactForce, null);
+            return true;
         }
 
 
@@ -776,7 +783,8 @@ namespace GameCore
         [ServerRpc]
         void ServerTakeDamage(int damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
         {
-            if (isDead || isHurting)
+            //检查能否被伤害
+            if (!CanTakeDamage())
                 return;
 
 

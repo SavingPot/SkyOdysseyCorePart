@@ -15,6 +15,8 @@ namespace SP.Tools.Unity
 
 		public static Vector2 To2(Vector2Int vec) => new Vector2(vec.x, vec.y);
 		public static Vector2 To2(Vector3Int vec) => new Vector2(vec.x, vec.y);
+		public static Vector3 To3(Vector2 vec) => new Vector3(vec.x, vec.y);
+		public static Vector3 To3(Vector2 vec, float z) => new Vector3(vec.x, vec.y, z);
 		public static Vector3 To3(Vector2Int vec) => new Vector3(vec.x, vec.y);
 		public static Vector3 To3(Vector2Int vec, float z) => new Vector3(vec.x, vec.y, z);
 		public static Vector3 To3(Vector3Int vec) => new Vector3(vec.x, vec.y, vec.z);

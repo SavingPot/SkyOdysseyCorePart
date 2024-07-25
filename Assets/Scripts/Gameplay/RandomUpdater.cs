@@ -61,7 +61,7 @@ namespace GameCore
         private static void BindMethods()
         {
             #region 生成实体
-            Bind("ori:summon_entities", 5, () =>
+            Bind("ori:summon_entities", 8, () =>
             {
                 if (EntityCenter.all.Count >= 100 || !Map.HasInstance() || Map.instance.chunks.Count == 0)
                     return;

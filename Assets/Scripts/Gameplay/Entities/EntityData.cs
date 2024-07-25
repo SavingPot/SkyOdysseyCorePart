@@ -8,7 +8,6 @@ namespace GameCore
     [Serializable]
     public sealed class EntityData : ModClass
     {
-        [LabelText("路径")] public string path;
         [LabelText("生成")] public EntityData_Summon summon = new();
         [LabelText("速度")] public float speed;
         [LabelText("重力")] public float gravity;
@@ -18,9 +17,7 @@ namespace GameCore
         [LabelText("自动清除周期")] public float lifetime = defaultLifetime;
         [LabelText("搜索半径")] public ushort searchRadius;
         [LabelText("搜索半径平方")] public int searchRadiusSqr;
-        [LabelText("普通攻击半径")] public float normalAttackRadius;
-        [LabelText("普通攻击伤害")] public int normalAttackDamage;
-        [LabelText("普通攻击CD")] public float normalAttackCD;
+        [LabelText("普通攻击半径")] public NormalAttackData normalAttack;
         [LabelText("受伤音效")] public string hurtAudioId = AudioID.GetHurt;
         public static float defaultLifetime = 60 * 3;
         public Type behaviourType;
@@ -29,6 +26,16 @@ namespace GameCore
 
 
         public bool IsPlayer => id == EntityID.Player;
+
+
+
+        [Serializable]
+        public sealed class NormalAttackData
+        {
+            [LabelText("半径")] public float radius;
+            [LabelText("伤害")] public int damage;
+            [LabelText("CD")] public float cd;
+        }
     }
 
     [Serializable]
