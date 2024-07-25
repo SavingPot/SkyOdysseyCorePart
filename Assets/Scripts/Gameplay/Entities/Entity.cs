@@ -91,6 +91,29 @@ namespace GameCore
         public bool isHurting => invincibleTime > 0.05f;
         public bool isHurtable = true;
         public float previousHurtTime;
+        public float temperatureEffectEndTime;
+        public TemperatureEffectType temperatureEffectType;
+        public enum TemperatureEffectType : byte
+        {
+            OnFire,
+            Frozen,
+        }
+        public enum TemperatureEffectState : byte
+        {
+            None,
+            OnFire,
+            Frozen,
+        }
+        public TemperatureEffectState GetTemperatureEffectState()
+        {
+            if (Tools.time > temperatureEffectEndTime)
+                return TemperatureEffectState.None;
+
+            if (temperatureEffectType == TemperatureEffectType.OnFire)
+                return TemperatureEffectState.OnFire;
+
+            return TemperatureEffectState.Frozen;
+        }
 
 
         public const int height = 2;
@@ -549,7 +572,11 @@ namespace GameCore
                 regionIndex = newRegionIndex;
             }
 
-
+            //烧伤
+            if (GetTemperatureEffectState() == TemperatureEffectState.OnFire)
+            {
+                TakeDamage(2, 0.3f, transform.position, Vector2.zero);
+            }
 
             //自动销毁
             if (ShouldBeAutoDestroyed())
@@ -636,6 +663,20 @@ namespace GameCore
 
 
 
+
+
+        [ServerRpc]
+        public void ServerSetTemperatureEffect(TemperatureEffectType value, NetworkConnection caller = null)
+        {
+            ClientSetTemperatureEffect(value);
+        }
+
+        [ClientRpc]
+        void ClientSetTemperatureEffect(TemperatureEffectType value, NetworkConnection caller = null)
+        {
+            temperatureEffectType = value;
+            temperatureEffectEndTime = Tools.time + 3; //持续三秒
+        }
 
 
 

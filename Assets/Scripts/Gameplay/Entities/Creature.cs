@@ -243,7 +243,14 @@ namespace GameCore
         {
             base.Awake();
 
-            velocityFactor = () => moveSpeed;
+            velocityFactor = () =>
+            {
+                //被冰冻了无法移动
+                if (GetTemperatureEffectState() == TemperatureEffectState.Frozen)
+                    return 0;
+
+                return moveSpeed;
+            };
         }
 
         public override void Initialize()

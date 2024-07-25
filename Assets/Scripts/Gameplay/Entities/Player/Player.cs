@@ -238,7 +238,7 @@ namespace GameCore
         }
 
         [ServerRpc, Button]
-        public void ServerAddSkillPoint(int count)
+        public void ServerAddSkillPoint(int count, NetworkConnection caller = null)
         {
             skillPoints += count;
 
@@ -362,7 +362,7 @@ namespace GameCore
         public static float itemPickUpRadius = 1.8f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
-        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.hasGeneratedFirstRegion && Application.isFocused;
+        public static Func<Player, bool> PlayerCanControl = player => GameUI.page == null || !GameUI.page.ui && player.hasGeneratedFirstRegion && Application.isFocused && player.GetTemperatureEffectState() != TemperatureEffectState.Frozen;
         public const float playerDefaultGravity = 6f;
         public const float defaultInteractiveRadius = 2.8f;
 

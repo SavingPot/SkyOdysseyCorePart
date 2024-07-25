@@ -19,6 +19,7 @@ namespace GameCore
         public const string ExtremeWeatherGuard = "ori:extreme_weather_guard";
         public const string ExtremeWeatherGuardSand = "ori:extreme_weather_guard_sand";
         public const string ExtremeWeatherGuardSnowball = "ori:extreme_weather_guard_snowball";
+        public const string FireSlime = "ori:fire_slime";
         public const string FishingFloat = "ori:fishing_float";
         public const string FlintArrow = "ori:flint_arrow";
         public const string Fly = "ori:fly";
