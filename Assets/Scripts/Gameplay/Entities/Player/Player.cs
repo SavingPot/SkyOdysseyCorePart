@@ -320,9 +320,15 @@ namespace GameCore
 
 
 
+        [HideInInspector] public SpriteRenderer usingShieldRenderer { get; set; }
         [HideInInspector] public SpriteRenderer usingItemRenderer { get; set; }
         [HideInInspector] public BoxCollider2D usingItemCollider { get; set; }
         [HideInInspector] public InventoryItemRendererCollision usingItemCollisionComponent { get; set; }
+
+        public void ModifyUsingShieldRendererTransform()
+        {
+            usingShieldRenderer.transform.localPosition = new(0.04f, -0.7f);
+        }
 
         public void ModifyUsingItemRendererTransform(Vector2 localPosition, Vector2 localScale, int localRotation)
         {
@@ -488,7 +494,7 @@ namespace GameCore
             leftFoot = AddBodyPart("leftFoot", skinLeftFoot, Vector2.zero, 1, leftLeg, BodyPartType.LeftFoot);
 
             //添加手持物品的渲染器
-            EntityInventoryOwnerBehaviour.CreateUsingItemRenderer(this, rightArm.transform, 9);
+            EntityInventoryOwnerBehaviour.CreateItemRenderers(this, leftArm.transform, rightArm.transform, 9, 9);
 
             #endregion
 
@@ -676,11 +682,7 @@ namespace GameCore
 
                 if (Keyboard.current.rKey.wasPressedThisFrame && !Item.Null(inventory.shield) && inventory.shield.data.Shield != null && Tools.time > parryCDEndTime)
                 {
-                    parryEndTime = Tools.time + inventory.shield.data.Shield.parryTime;
-                    parryCDEndTime = parryEndTime + inventory.shield.data.Shield.parryCD;
-
-                    //播放盾反动画
-                    animWeb.SwitchPlayingTo("slight_leftarm_lift");
+                    ServerParry();
                 }
 
                 /* ---------------------------------- 检查房屋 ---------------------------------- */
@@ -1587,7 +1589,7 @@ namespace GameCore
             usingItemIndex = index;
 
             //刷新物品栏
-            EntityInventoryOwnerBehaviour.RefreshUsingItemRenderer(this);
+            EntityInventoryOwnerBehaviour.RefreshItemRenderers(this);
 
             //播放切换音效
             GAudio.Play(AudioID.SwitchQuickInventorySlot);
@@ -1643,6 +1645,33 @@ namespace GameCore
                     Rush(transform.localScale.x > 0);
                 }
             }
+        }
+
+
+
+
+
+
+        [ServerRpc]
+        void ServerParry(NetworkConnection caller = null)
+        {
+            SetParryTimeVars();
+            ClientParry();
+        }
+
+        [ClientRpc]
+        void ClientParry(NetworkConnection caller = null)
+        {
+            SetParryTimeVars();
+
+            //播放盾反动画
+            animWeb.SwitchPlayingTo("slight_leftarm_lift");
+        }
+
+        void SetParryTimeVars()
+        {
+            parryEndTime = Tools.time + inventory.shield.data.Shield.parryTime;
+            parryCDEndTime = parryEndTime + inventory.shield.data.Shield.parryCD;
         }
 
 

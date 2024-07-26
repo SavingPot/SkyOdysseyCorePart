@@ -839,6 +839,15 @@ namespace GameCore
                     if (!string.IsNullOrWhiteSpace(leftFootId)) newItem.Boots.leftFoot = new(leftFootId);
                     if (!string.IsNullOrWhiteSpace(rightFootId)) newItem.Boots.rightFoot = new(rightFootId);
                 }
+
+                if (jt.TryGetJToken("shield", out var shield))
+                {
+                    newItem.Shield = new()
+                    {
+                        parryTime = shield["parry_time"]?.ToFloat() ?? 0.2f,
+                        parryCD = shield["parry_cd"]?.ToFloat() ?? 0.8f,
+                    };
+                }
             }
 
             return newItem;

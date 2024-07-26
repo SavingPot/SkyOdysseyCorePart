@@ -21,7 +21,7 @@ namespace GameCore
             }
         }
 
-        public static void RefreshUsingItemRenderer<T>(T entity) where T : Entity, IInventoryOwner
+        public static void RefreshItemRenderers<T>(T entity) where T : Entity, IInventoryOwner
         {
             //缓存物品栏以保证性能
             var inventoryTemp = entity.GetInventory();
@@ -32,6 +32,15 @@ namespace GameCore
             }
 
 
+            /* ---------------------------------- 渲染盾牌 ---------------------------------- */
+            if (!Item.Null(inventoryTemp.shield) && inventoryTemp.shield.data.Shield != null)
+            {
+                entity.usingShieldRenderer.sprite = inventoryTemp.shield.data.texture.sprite;
+            }
+            else
+            {
+                entity.usingShieldRenderer.sprite = null;
+            }
 
             /* --------------------------------- 渲染手部物品 --------------------------------- */
             if (inventoryTemp.TryGetItemBehaviour(entity.usingItemIndex, out var usingBehaviour))
@@ -57,16 +66,21 @@ namespace GameCore
 
 
             //渲染手部物品
-            RefreshUsingItemRenderer(entity);
+            RefreshItemRenderers(entity);
 
             //刷新盔甲的贴图
             CreatureHumanBodyPartsBehaviour.RefreshArmors(entity, inventoryTemp.helmet?.data, inventoryTemp.breastplate?.data, inventoryTemp.legging?.data, inventoryTemp.boots?.data);
         }
 
-        public static void CreateUsingItemRenderer<T>(T entity, Transform parent, int sortingOrder) where T : Entity, IInventoryOwner
+        public static void CreateItemRenderers<T>(T entity, Transform shieldParent, Transform itemParent, int usingShieldSortingOrder, int usingItemSortingOrder) where T : Entity, IInventoryOwner
         {
-            entity.usingItemRenderer = ObjectTools.CreateSpriteObject(parent, "UsingItem");
-            entity.usingItemRenderer.sortingOrder = sortingOrder;
+            entity.usingShieldRenderer = ObjectTools.CreateSpriteObject(shieldParent, "UsingShield");
+            entity.usingShieldRenderer.sortingOrder = usingShieldSortingOrder;
+            entity.renderers.Add(entity.usingShieldRenderer);
+            entity.spriteRenderers.Add(entity.usingShieldRenderer);
+
+            entity.usingItemRenderer = ObjectTools.CreateSpriteObject(itemParent, "UsingItem");
+            entity.usingItemRenderer.sortingOrder = usingItemSortingOrder;
             entity.renderers.Add(entity.usingItemRenderer);
             entity.spriteRenderers.Add(entity.usingItemRenderer);
 
@@ -76,6 +90,7 @@ namespace GameCore
             entity.usingItemCollisionComponent = entity.usingItemRenderer.gameObject.AddComponent<InventoryItemRendererCollision>();
             entity.usingItemCollisionComponent.owner = entity;
 
+            entity.ModifyUsingShieldRendererTransform();
             entity.ModifyUsingItemRendererTransform(Vector2.zero, Vector2.one, 0);
         }
 
@@ -132,9 +147,11 @@ namespace GameCore
 
 
         int usingItemIndex { get; }
+        SpriteRenderer usingShieldRenderer { get; set; }
         SpriteRenderer usingItemRenderer { get; set; }
         BoxCollider2D usingItemCollider { get; set; }
         InventoryItemRendererCollision usingItemCollisionComponent { get; set; }
+        void ModifyUsingShieldRendererTransform();
         void ModifyUsingItemRendererTransform(Vector2 localPosition, Vector2 localScale, int localRotation);
 
 
