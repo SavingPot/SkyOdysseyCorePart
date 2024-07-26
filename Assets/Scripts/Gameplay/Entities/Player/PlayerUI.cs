@@ -508,6 +508,36 @@ namespace GameCore.UI
 
 
 
+        /* -------------------------------------------------------------------------- */
+        /*                                    实体锁定                                    */
+        /* -------------------------------------------------------------------------- */
+        public ImageIdentity enemyLockOnMark;
+
+        public void LockOnEnemy(Entity enemy)
+        {
+            if (enemy == null)
+            {
+                enemyLockOnMark.transform.SetParent(null);
+                return;
+            }
+
+            var startY = 35;
+            var shakeY = 8;
+            enemyLockOnMark.rt.SetParentForUI(enemy.usingCanvas.transform);
+            enemyLockOnMark.SetAPosY(startY);
+            enemyLockOnMark.SetSizeDelta(2, 2);
+
+            //让指针上下移动
+            DOTween.Sequence().Append(enemyLockOnMark.rt.DOLocalMoveY(startY + shakeY, 0.5f))
+                              .Append(enemyLockOnMark.rt.DOLocalMoveY(startY - shakeY, 0.5f))
+                              .Append(enemyLockOnMark.rt.DOLocalMoveY(startY + shakeY, 0.5f))
+                              .Append(enemyLockOnMark.rt.DOLocalMoveY(startY, 0.5f))
+                              .SetLoops(-1)
+                              .Play();
+        }
+
+
+
 
 
 
@@ -711,6 +741,14 @@ namespace GameCore.UI
             }
 
             #endregion
+
+
+            /* -------------------------------------------------------------------------- */
+            /*                                    锁定敌人                                    */
+            /* -------------------------------------------------------------------------- */
+            enemyLockOnMark = GameUI.AddImage(UIA.Middle, "ori:image.player_lock_on_enemy_mark", "ori:enemy_lock_on_mark");
+            enemyLockOnMark.transform.SetParent(null);
+
 
             /* -------------------------------------------------------------------------- */
             /*                                    对话                                    */

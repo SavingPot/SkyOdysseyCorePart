@@ -705,6 +705,7 @@ namespace GameCore
                             if (collider.TryGetComponent<Enemy>(out var enemy))
                             {
                                 lockOnTarget = enemy;
+                                pui.LockOnEnemy(enemy);
                                 Tools.instance.mainCameraController.secondLookAt = lockOnTarget.transform;
                                 Tools.instance.mainCameraController.EnableGlobalVolumeVignette();
                                 Tools.instance.mainCameraController.SetGlobalVolumeVignette(0.35f);
@@ -726,6 +727,7 @@ namespace GameCore
                     lockOnTarget = null;
                     Tools.instance.mainCameraController.secondLookAt = null;
                     Tools.instance.mainCameraController.DisableGlobalVolumeVignette();
+                    pui.LockOnEnemy(null);
                 }
 
                 //格挡

@@ -35,6 +35,7 @@ namespace GameCore
         public ParticleSystem weatherParticle { get; protected set; }
         public ParticleSystem.MainModule weatherParticleMain;
         public ParticleSystem.EmissionModule weatherParticleEmission;
+        public ParticleSystem parrySuccessParticle { get; protected set; }
         public Light2D globalLight { get; protected set; }
         public static Action AfterPreparation = () => { };
         public static Action OnUpdate = () => { };
@@ -151,15 +152,16 @@ namespace GameCore
             /*                                     初始化组件                                    */
             /* -------------------------------------------------------------------------- */
             GameObject glGo = GameObject.Find("GlobalLight");
-            GameObject glP = GameObject.Find("Weather Particle System");
+            GameObject wpsGo = GameObject.Find("Weather Particle System");
+            GameObject psGo = GameObject.Find("Parry Success Particle System");
 
             if (glGo)
             {
                 globalLight = glGo.GetComponent<Light2D>();
             }
-            if (glP)
+            if (wpsGo)
             {
-                weatherParticle = glP.GetComponent<ParticleSystem>();
+                weatherParticle = wpsGo.GetComponent<ParticleSystem>();
                 weatherParticleMain = weatherParticle.main;
                 weatherParticleEmission = weatherParticle.emission;
 
@@ -171,6 +173,10 @@ namespace GameCore
                 weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_3").sprite);
                 weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_4").sprite);
                 weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_5").sprite);
+            }
+            if (psGo)
+            {
+                parrySuccessParticle = psGo.GetComponent<ParticleSystem>();
             }
         }
 

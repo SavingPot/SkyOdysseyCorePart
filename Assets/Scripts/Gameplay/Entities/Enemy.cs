@@ -130,14 +130,23 @@ namespace GameCore
                 exclamationMarkImage.image.color = Color.blue;
 
                 //如果在攻击范围内且面对着目标
-                if (targetEntity is Player player && Tools.time < player.parryEndTime && IsEntityInNormalAttackRange(targetEntity))
+                if (targetEntity is Player player && Tools.time < player.parryEndTime && player.lockOnTarget == this && IsEntityInNormalAttackRange(targetEntity))
                 {
                     var targetOrientation = targetEntity.GetOrientation();
                     if (targetOrientation != GetOrientation())
                     {
+                        //攻击无效
                         currentNormalAttack = null;
+
+                        //敌人被击退
                         rb.velocity += new Vector2(7 * (targetOrientation ? 1 : -1), 0);
+
+                        //播放音效
                         GAudio.Play(AudioID.ParrySucceed);
+
+                        //播放盾反粒子
+                        GM.instance.parrySuccessParticle.transform.position = 0.5f*(transform.position+targetEntity.transform.position);
+                        GM.instance.parrySuccessParticle.Play();
                     }
                 }
             }
