@@ -328,6 +328,7 @@ namespace GameCore
         public void ModifyUsingShieldRendererTransform()
         {
             usingShieldRenderer.transform.localPosition = new(0.04f, -0.7f);
+            usingShieldRenderer.transform.localScale = new(0.5f, 0.5f);
         }
 
         public void ModifyUsingItemRendererTransform(Vector2 localPosition, Vector2 localScale, int localRotation)
@@ -494,7 +495,7 @@ namespace GameCore
             leftFoot = AddBodyPart("leftFoot", skinLeftFoot, Vector2.zero, 1, leftLeg, BodyPartType.LeftFoot);
 
             //添加手持物品的渲染器
-            EntityInventoryOwnerBehaviour.CreateItemRenderers(this, leftArm.transform, rightArm.transform, 9, 9);
+            EntityInventoryOwnerBehaviour.CreateItemRenderers(this, leftArm.transform, rightArm.transform, 2, 9);
 
             #endregion
 
