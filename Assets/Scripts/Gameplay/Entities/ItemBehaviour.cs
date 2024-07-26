@@ -125,6 +125,16 @@ namespace GameCore
 
         }
 
+        public virtual void AsBoots()
+        {
+
+        }
+
+        public virtual void AsShield()
+        {
+
+        }
+
         public virtual void Rendering(SpriteRenderer sr)
         {
             sr.sprite = instance.data.texture.sprite;

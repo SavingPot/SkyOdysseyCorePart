@@ -1047,5 +1047,72 @@ namespace GameCore
                 transform.SetScaleXNegativeAbs();
             }
         }
+
+        /// <returns>true 代表右，false 代表左</returns>
+        public bool GetOrientation() => transform.localScale.x > 0;
+
+
+
+
+
+
+        #region 实体画布
+
+        public Canvas usingCanvas { get; private set; }
+
+        public void GainNewEntityCanvas()
+        {
+            usingCanvas = EntityCanvasPool.Get();
+            usingCanvas.transform.SetParent(transform, false);
+            usingCanvas.transform.localPosition = Vector3.zero;
+            usingCanvas.transform.localScale = new Vector2(0.075f, 0.075f);
+            usingCanvas.enabled = true;
+        }
+
+        public Canvas GetOrAddEntityCanvas()
+        {
+            if (!usingCanvas)
+                GainNewEntityCanvas();
+
+            return usingCanvas;
+        }
+
+        public bool TryGetEntityCanvas(out Canvas canvas)
+        {
+            canvas = usingCanvas;
+            return canvas != null;
+        }
+
+        public static class EntityCanvasPool
+        {
+            public static Stack<Canvas> stack = new();
+
+            public static Canvas Get()
+            {
+                var canvas = (stack.Count == 0) ? Generation() : stack.Pop();
+
+                return canvas;
+            }
+
+            public static void Recover(Canvas canvas)
+            {
+                canvas.enabled = false;
+                canvas.transform.SetParent(null);
+                canvas.transform.DestroyChildren();
+                stack.Push(canvas);
+            }
+
+            public static Canvas Generation()
+            {
+                GameObject go = new("EntityCanvas");
+                Canvas canvas = go.AddComponent<Canvas>();
+
+                canvas.renderMode = RenderMode.WorldSpace;
+                canvas.sortingOrder = 20;
+
+                return canvas;
+            }
+        }
+        #endregion
     }
 }

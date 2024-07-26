@@ -116,7 +116,7 @@ namespace GameCore
 
             sb.AppendLine("   实体:");
             lock (entities)
-                entities.For(p => sb.AppendLine($"      {p.id} ({p.path}) [Behaviour: {p.behaviourType?.Name}]"));
+                entities.For(p => sb.AppendLine($"      {p.id} [Behaviour: {p.behaviourType?.Name}]"));
             sb.Append("\n");
 
             sb.AppendLine("\n}\n");

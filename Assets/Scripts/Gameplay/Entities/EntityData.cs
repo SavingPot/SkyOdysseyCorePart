@@ -34,7 +34,10 @@ namespace GameCore
         {
             [LabelText("半径")] public float radius;
             [LabelText("伤害")] public int damage;
-            [LabelText("CD")] public float cd;
+            [LabelText("警告时间")] public float warningTime;
+            [LabelText("躲避时间")] public float dodgeTime;
+            [LabelText("命中判断时间")] public float hitJudgementTime;
+            [LabelText("后摇时间")] public float recoveryTime;
         }
     }
 

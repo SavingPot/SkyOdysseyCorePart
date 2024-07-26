@@ -30,6 +30,12 @@ namespace GameCore
             SpriteRendererPool.stack.Clear();
             LitSpriteRendererPool.stack.Clear();
 
+            //清除游戏场景的资源
+            if (scene.name != SceneNames.GameScene)
+            {
+                Entity.EntityCanvasPool.stack.Clear();
+            }
+
             if (Client.isClient)
             {
                 Client.WhenIsConnected(() =>

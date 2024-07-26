@@ -13,11 +13,12 @@ namespace GameCore
     [Serializable]
     public class Inventory
     {
-        /* ------------------------ 使用 DatumItem 是因为需要储存当前耐久等数据 ------------------------ */
+        //! ------------------------ 添加新的变量后记得添加对应的回调、流恢复和检测 ------------------------ !//
         [LabelText("头盔")] public Item helmet = null;
         [LabelText("身体")] public Item breastplate = null;
         [LabelText("护腿")] public Item legging = null;
         [LabelText("靴子")] public Item boots = null;
+        [LabelText("盾牌")] public Item shield = null;
         [LabelText("栏位")] public Item[] slots;
 
         [NonSerialized] public IInventoryOwner owner;
@@ -30,6 +31,7 @@ namespace GameCore
         [NonSerialized] public ItemBehaviour breastplateBehaviour;
         [NonSerialized] public ItemBehaviour leggingBehaviour;
         [NonSerialized] public ItemBehaviour bootsBehaviour;
+        [NonSerialized] public ItemBehaviour shieldBehaviour;
         [NonSerialized] public ItemBehaviour[] slotsBehaviours;
 
 
@@ -39,6 +41,7 @@ namespace GameCore
         public const string breastplateVar = nameof(breastplate);
         public const string leggingVar = nameof(legging);
         public const string bootsVar = nameof(boots);
+        public const string shieldVar = nameof(shield);
 
 
         public void DoBehaviours()
@@ -54,6 +57,14 @@ namespace GameCore
             if (!Item.Null(legging))
             {
                 leggingBehaviour?.AsLegging();
+            }
+            if (!Item.Null(boots))
+            {
+                bootsBehaviour?.AsBoots();
+            }
+            if (!Item.Null(shield))
+            {
+                shieldBehaviour?.AsShield();
             }
         }
 
@@ -86,6 +97,7 @@ namespace GameCore
                 breastplate = inventory.breastplate,
                 legging = inventory.legging,
                 boots = inventory.boots,
+                shield = inventory.shield,
                 slots = inventory.slots,
                 owner = owner,
                 slotsBehaviours = new ItemBehaviour[inventory.slots.Length]
@@ -113,6 +125,12 @@ namespace GameCore
             {
                 Item.ResumeFromStreamTransport(ref result.boots);
                 result.CreateBehaviour(result.boots, bootsVar, out result.bootsBehaviour);
+            }
+
+            if (!Item.Null(result.shield))
+            {
+                Item.ResumeFromStreamTransport(ref result.shield);
+                result.CreateBehaviour(result.shield, shieldVar, out result.shieldBehaviour);
             }
 
             for (int i = 0; i < result.slots.Length; i++)
@@ -195,6 +213,7 @@ namespace GameCore
             breastplateVar => breastplate,
             leggingVar => legging,
             bootsVar => boots,
+            shieldVar => shield,
             _ => slots[Convert.ToInt32(index)]
         };
 
@@ -244,6 +263,12 @@ namespace GameCore
                     boots = value;
                     bootsBehaviour?.OnExit();
                     CreateBehaviour(boots, index, out bootsBehaviour);
+                    break;
+
+                case shieldVar:
+                    shield = value;
+                    shieldBehaviour?.OnExit();
+                    CreateBehaviour(shield, index, out shieldBehaviour);
                     break;
 
                 default:
@@ -354,6 +379,7 @@ namespace GameCore
                 breastplateVar => breastplate,
                 leggingVar => legging,
                 bootsVar => boots,
+                shieldVar => shield,
                 _ => GetItemChecked(Convert.ToInt32(index))
             };
         }
@@ -374,6 +400,7 @@ namespace GameCore
                 breastplateVar => breastplateBehaviour,
                 leggingVar => leggingBehaviour,
                 bootsVar => bootsBehaviour,
+                shieldVar => shieldBehaviour,
                 _ => GetItemBehaviourChecked(Convert.ToInt32(index))
             };
         }
@@ -770,42 +797,6 @@ namespace GameCore
     }
 
     [Serializable]
-    public class ItemData_Economy
-    {
-        public int worth;
-    }
-
-    [Serializable]
-    public class ItemData_Armor
-    {
-        public int defense;
-    }
-    [Serializable]
-    public class ItemData_Helmet : ItemData_Armor
-    {
-        public TextureData head = null;
-    }
-    [Serializable]
-    public class ItemData_BodyArmor : ItemData_Armor
-    {
-        public TextureData body = null;
-        public TextureData leftArm = null;
-        public TextureData rightArm = null;
-    }
-    [Serializable]
-    public class ItemData_Legging : ItemData_Armor
-    {
-        public TextureData leftLeg = null;
-        public TextureData rightLeg = null;
-    }
-    [Serializable]
-    public class ItemData_Boots : ItemData_Armor
-    {
-        public TextureData leftFoot = null;
-        public TextureData rightFoot = null;
-    }
-
-    [Serializable]
     public class ItemData : ModClass, ITags
     {
         public const int defaultDamage = 5;
@@ -843,9 +834,10 @@ namespace GameCore
 
 
         [NonSerialized] public ItemData_Helmet Helmet;
-        [NonSerialized] public ItemData_BodyArmor Breastplate;
+        [NonSerialized] public ItemData_Breastplate Breastplate;
         [NonSerialized] public ItemData_Legging Legging;
         [NonSerialized] public ItemData_Boots Boots;
+        [NonSerialized] public ItemData_Shield Shield;
 
 
 
@@ -944,6 +936,53 @@ namespace GameCore
             count = 1,
             data = this
         };
+
+
+
+
+
+
+        [Serializable]
+        public class ItemData_Economy
+        {
+            public int worth;
+        }
+
+        [Serializable]
+        public class ItemData_Armor
+        {
+            public int defense;
+        }
+        [Serializable]
+        public class ItemData_Helmet : ItemData_Armor
+        {
+            public TextureData head = null;
+        }
+        [Serializable]
+        public class ItemData_Breastplate : ItemData_Armor
+        {
+            public TextureData body = null;
+            public TextureData leftArm = null;
+            public TextureData rightArm = null;
+        }
+        [Serializable]
+        public class ItemData_Legging : ItemData_Armor
+        {
+            public TextureData leftLeg = null;
+            public TextureData rightLeg = null;
+        }
+        [Serializable]
+        public class ItemData_Boots : ItemData_Armor
+        {
+            public TextureData leftFoot = null;
+            public TextureData rightFoot = null;
+        }
+        [Serializable]
+        public class ItemData_Shield
+        {
+            public float parryTime;
+            public float parryCD;
+        }
     }
 
     [Serializable]
@@ -999,6 +1038,8 @@ namespace GameCore
             { "ori:flint_hoe", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
             { "ori:iron_hoe", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
             { "ori:fishing_rod", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Fishing) },
+            { "ori:mana_altar", player => player.unlockedSkills.Any(p => p.id == SkillID.Magic) },
+            { "ori:biome_crystal", player => player.unlockedSkills.Any(p => p.id == SkillID.Magic) },
         };
         public bool IsEligibleFor(Player player) => !conditions.ContainsKey(id) || conditions[id](player);
     }

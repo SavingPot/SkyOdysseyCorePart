@@ -273,7 +273,10 @@ namespace GameCore
                         {
                             radius = normalAttack["radius"]?.ToFloat() ?? 2,
                             damage = normalAttack["damage"]?.ToInt() ?? 15,
-                            cd = normalAttack["cd"]?.ToFloat() ?? 2
+                            warningTime = normalAttack["warning_time"]?.ToFloat() ?? 0.8f,
+                            dodgeTime = normalAttack["dodge_time"]?.ToFloat() ?? 0.3f,
+                            hitJudgementTime = normalAttack["hit_judgement_time"]?.ToFloat() ?? 0.2f,
+                            recoveryTime = normalAttack["recovery_time"]?.ToFloat() ?? 1f,
                         };
                     }
 

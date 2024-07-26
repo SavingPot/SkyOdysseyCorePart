@@ -5,6 +5,7 @@ using UnityEngine;
 using Sirenix.OdinInspector;
 using SP.Tools.Unity;
 using GameCore.Network;
+using GameCore.UI;
 
 namespace GameCore
 {
@@ -12,18 +13,59 @@ namespace GameCore
     {
         [Sync] public Entity targetEntity;
         public float searchTime = float.NegativeInfinity;
-        public float attackTimer;
         public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: 包含 动画的layer 信息
+        ImageIdentity exclamationMarkImage;
+        NormalAttackTemp currentNormalAttack;
+        class NormalAttackTemp
+        {
+            public float startTime;
+            public float warningEndTime;
+            public float dodgeEndTime;
+            public float hitJudgementEndTime;
+            public float recoveryEndTime;
+            public bool hasSucceed;
+
+            public NormalAttackTemp(EntityData.NormalAttackData data)
+            {
+                startTime = Tools.time;
+                warningEndTime = startTime + data.warningTime;
+                dodgeEndTime = warningEndTime + data.dodgeTime;
+                hitJudgementEndTime = dodgeEndTime + data.hitJudgementTime;
+                recoveryEndTime = hitJudgementEndTime + data.recoveryTime;
+            }
+        }
 
 
 
 
 
+        public override void Initialize()
+        {
+            base.Initialize();
 
+            var oldVelocityFactor = velocityFactor;
+            velocityFactor = () =>
+            {
+                //后摇期间不能移动
+                var result = oldVelocityFactor();
+                if (currentNormalAttack != null && Tools.time > currentNormalAttack.hitJudgementEndTime)
+                {
+                    result = 0;
+                }
+                return result;
+            };
+        }
 
         public override void AfterInitialization()
         {
             base.AfterInitialization();
+
+            //初始化感叹号
+            GetOrAddEntityCanvas();
+            exclamationMarkImage = GameUI.AddImage(UIA.Middle, $"ori:image.exclamation_mark_{netId}", "ori:enemy_exclamation_mark", usingCanvas.transform);
+            exclamationMarkImage.AddAPosY(7);
+            exclamationMarkImage.SetSizeDelta(13, 13);
+            exclamationMarkImage.image.enabled = false;
 
             EnemyCenter.AddEnemy(this);
         }
@@ -43,38 +85,94 @@ namespace GameCore
             //检查目标
             if (targetEntity)
             {
-                #region 普通攻击
-
+                //发动普通攻击
                 if (!isDead && data.normalAttack != null)
-                {
-                    //为了性能使用 (x - x), (y - y) 而不是 Vector2.Distance()
-                    float disX = Mathf.Abs(transform.position.x - targetEntity.transform.position.x);
-                    float disY = Mathf.Abs(transform.position.y - targetEntity.transform.position.y);
-
-                    //在攻击范围内, 并且 CD 已过
-                    if (disX <= data.normalAttack.radius && disY <= data.normalAttack.radius && Tools.time >= attackTimer)
-                    {
-                        attackTimer = Tools.time + data.normalAttack.cd;
-
-                        //设置动画
-                        if (animWeb != null)
-                        {
-                            foreach (var animId in attackAnimations)
-                            {
-                                animWeb.SwitchPlayingTo(animId, 0);
-                            }
-                        }
-
-                        AttackEntity(targetEntity);
-                    }
-                }
-
-                #endregion
+                    NormalAttackLoop();
 
                 CheckTargetStatus();
             }
             else
                 FindTarget();
+        }
+
+        void NormalAttackLoop()
+        {
+            if (currentNormalAttack == null)
+            {
+                //如果目标在攻击范围内
+                if (IsEntityInNormalAttackRange(targetEntity))
+                    currentNormalAttack = new(data.normalAttack);
+
+                return;
+            }
+
+            //正在警告中
+            if (Tools.time < currentNormalAttack.warningEndTime)
+            {
+                //显示红色感叹号
+                exclamationMarkImage.image.enabled = true;
+                exclamationMarkImage.image.color = Color.red;
+            }
+            //正在躲避空档中
+            else if (Tools.time < currentNormalAttack.dodgeEndTime)
+            {
+                //显示蓝色感叹号
+                exclamationMarkImage.image.enabled = true;
+                exclamationMarkImage.image.color = Color.blue;
+
+                //如果在攻击范围内且面对着目标
+                if (targetEntity is Player player && Tools.time < player.parryEndTime && IsEntityInNormalAttackRange(targetEntity) && targetEntity.GetOrientation() != GetOrientation())
+                {
+                    Debug.Log("盾反成功");
+                    currentNormalAttack = null;
+                }
+            }
+            //攻击还未结束
+            else if (Tools.time < currentNormalAttack.recoveryEndTime)
+            {
+                //隐藏感叹号
+                exclamationMarkImage.image.enabled = false;
+
+                //如果正在攻击判定时间中且还没有攻击到目标
+                if (Tools.time < currentNormalAttack.hitJudgementEndTime && !currentNormalAttack.hasSucceed && IsEntityInNormalAttackRange(targetEntity))
+                {
+                    currentNormalAttack.hasSucceed = true;
+                    NormallyAttackEntity(targetEntity);
+                }
+            }
+            //攻击结束
+            else
+            {
+                currentNormalAttack = null;
+            }
+        }
+
+        public virtual void NormallyAttackEntity(Entity entity)
+        {
+            //设置动画
+            if (animWeb != null)
+            {
+                foreach (var animId in attackAnimations)
+                {
+                    animWeb.SwitchPlayingTo(animId, 0);
+                }
+            }
+
+            AttackEntity(targetEntity);
+        }
+
+        public bool IsEntityInNormalAttackRange(Entity entity)
+        {
+            //为了性能使用 (x - x), (y - y) 而不是 Vector2.Distance()
+            float disX = Mathf.Abs(transform.position.x - entity.transform.position.x);
+            float disY = Mathf.Abs(transform.position.y - entity.transform.position.y);
+
+            return disX <= data.normalAttack.radius && disY <= data.normalAttack.radius;
+        }
+
+        public bool IsEntityInSearchRange(Entity entity)
+        {
+            return (entity.transform.position - transform.position).sqrMagnitude <= data.searchRadiusSqr;
         }
 
         /// <returns>是否向服务器发送了伤害请求</returns>
@@ -109,7 +207,7 @@ namespace GameCore
 
             foreach (var player in PlayerCenter.all)
             {
-                if ((player.transform.position - transform.position).sqrMagnitude <= data.searchRadiusSqr && !player.isDead)
+                if (IsEntityInSearchRange(player) && !player.isDead)
                 {
                     targetEntity = player;
                 }
@@ -118,10 +216,17 @@ namespace GameCore
 
         public void CheckTargetStatus()
         {
-            if (targetEntity.isDead || (targetEntity.transform.position - transform.position).sqrMagnitude > data.searchRadiusSqr)
+            if (targetEntity.isDead || !IsEntityInSearchRange(targetEntity))
                 targetEntity = null;
         }
     }
+
+
+
+
+
+
+
 
     public static class EnemyCenter
     {

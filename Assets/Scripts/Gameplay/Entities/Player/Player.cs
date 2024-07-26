@@ -313,6 +313,8 @@ namespace GameCore
         public float itemUseTime;
         public float previousAttackTime;
         public float interactiveRadius => defaultInteractiveRadius + (TryGetUsingItem(out var item) ? item.data.extraDistance : 0);
+        public float parryEndTime { get; private set; }
+        public float parryCDEndTime { get; private set; }
 
 
 
@@ -671,6 +673,15 @@ namespace GameCore
                     playerCameraScale *= 2;
                 }
 #endif
+
+                if (Keyboard.current.rKey.wasPressedThisFrame && !Item.Null(inventory.shield) && inventory.shield.data.Shield != null && Tools.time > parryCDEndTime)
+                {
+                    parryEndTime = Tools.time + inventory.shield.data.Shield.parryTime;
+                    parryCDEndTime = parryEndTime + inventory.shield.data.Shield.parryCD;
+
+                    //播放盾反动画
+                    animWeb.SwitchPlayingTo("slight_leftarm_lift");
+                }
 
                 /* ---------------------------------- 检查房屋 ---------------------------------- */
                 if (Keyboard.current.gKey.wasPressedThisFrame)

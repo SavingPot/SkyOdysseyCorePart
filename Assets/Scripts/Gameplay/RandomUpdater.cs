@@ -63,6 +63,11 @@ namespace GameCore
             #region 生成实体
             Bind("ori:summon_entities", 8, () =>
             {
+                //白天概率为晚上的 2/3
+                if (GTime.IsInTime(GTime.time24Format, 6, 18) && UnityEngine.Random.Range(0, 3) == 2)
+                    return;
+
+                //防止意外和卡顿
                 if (EntityCenter.all.Count >= 100 || !Map.HasInstance() || Map.instance.chunks.Count == 0)
                     return;
 

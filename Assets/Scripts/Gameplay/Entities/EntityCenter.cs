@@ -24,7 +24,12 @@ namespace GameCore
         public static readonly List<Entity> all = new();
         public static readonly Dictionary<string, EntityGenerationBinding> entityGenerationBindings = new();
         public static Action<Entity> OnAddEntity = _ => { };
-        public static Action<Entity> OnRemoveEntity = _ => { };
+        public static Action<Entity> OnRemoveEntity = entity =>
+        {
+            //回收 Canvas
+            if (entity.usingCanvas)
+                Entity.EntityCanvasPool.Recover(entity.usingCanvas);
+        };
 
         public static void BindGenerationEvent(string saveId, Action<Entity> action)
         {

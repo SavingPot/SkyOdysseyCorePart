@@ -156,6 +156,7 @@ namespace GameCore.UI
         public InventorySlotUI inventoryBreastplateUI;
         public InventorySlotUI inventoryLeggingUI;
         public InventorySlotUI inventoryBootsUI;
+        public InventorySlotUI inventoryShieldUI;
         public readonly InventorySlotUI[] quickInventorySlots;
         public BackpackPanel inventoryItemPanel;
         public ScrollViewIdentity inventoryItemView;
@@ -292,6 +293,7 @@ namespace GameCore.UI
             new("ori:agriculture.coin", "ori:skill.agriculture.coin", "ori:agriculture", "ori:skill_description.agriculture.coin", 2),
             new("ori:agriculture.harvest", "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 2),
             new("ori:agriculture.fishing", "ori:skill.agriculture.fishing", "ori:agriculture", "ori:skill_description.agriculture.fishing", 2),
+            new("ori:magic", "ori:skill.magic", "ori:skill", "ori:skill_description.magic", 1),
         };
         public BackpackPanel skillPanel;
         public NodeTree<SkillNode, SkillData> skillNodeTree;
@@ -838,6 +840,7 @@ namespace GameCore.UI
                         inventoryBreastplateUI.Refresh(player, Inventory.breastplateVar, item => Item.Null(item) || item.data.Breastplate != null);
                         inventoryLeggingUI.Refresh(player, Inventory.leggingVar, item => Item.Null(item) || item.data.Legging != null);
                         inventoryBootsUI.Refresh(player, Inventory.bootsVar, item => Item.Null(item) || item.data.Boots != null);
+                        inventoryShieldUI.Refresh(player, Inventory.shieldVar, item => Item.Null(item) || item.data.Shield != null);
                     });
 
                 for (int i = 0; i < inventorySlotsUIs.Length; i++)
@@ -853,21 +856,25 @@ namespace GameCore.UI
                 inventoryBreastplateUI = new($"ori:button.backpack_inventory_item_{Inventory.breastplateVar}", $"ori:image.backpack_inventory_item_{Inventory.breastplateVar}", inventoryItemView.gridLayoutGroup.cellSize);
                 inventoryLeggingUI = new($"ori:button.backpack_inventory_item_{Inventory.leggingVar}", $"ori:image.backpack_inventory_item_{Inventory.leggingVar}", inventoryItemView.gridLayoutGroup.cellSize);
                 inventoryBootsUI = new($"ori:button.backpack_inventory_item_{Inventory.bootsVar}", $"ori:image.backpack_inventory_item_{Inventory.bootsVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryShieldUI = new($"ori:button.backpack_inventory_item_{Inventory.shieldVar}", $"ori:image.backpack_inventory_item_{Inventory.shieldVar}", inventoryItemView.gridLayoutGroup.cellSize);
 
                 inventoryHelmetUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
                 inventoryBreastplateUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
                 inventoryLeggingUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
                 inventoryBootsUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
+                inventoryShieldUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
 
                 inventoryHelmetUI.button.SetAnchorMinMax(UIA.LowerLeft);
                 inventoryBreastplateUI.button.SetAnchorMinMax(UIA.LowerLeft);
                 inventoryLeggingUI.button.SetAnchorMinMax(UIA.LowerLeft);
                 inventoryBootsUI.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryShieldUI.button.SetAnchorMinMax(UIA.LowerLeft);
 
                 inventoryHelmetUI.button.ap = inventoryHelmetUI.button.sd / 2;
                 inventoryBreastplateUI.button.SetAPosOnBySizeRight(inventoryHelmetUI.button, 0);
                 inventoryLeggingUI.button.SetAPosOnBySizeRight(inventoryBreastplateUI.button, 0);
                 inventoryBootsUI.button.SetAPosOnBySizeRight(inventoryLeggingUI.button, 0);
+                inventoryShieldUI.button.SetAPosOnBySizeRight(inventoryBootsUI.button, 10);
 
                 //设置背包面板为物品栏
                 SetBackpackPanel("ori:inventory");
