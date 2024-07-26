@@ -6,11 +6,18 @@ using Sirenix.OdinInspector;
 using SP.Tools.Unity;
 using GameCore.Network;
 using GameCore.UI;
+using System.Numerics;
+using Vector2 = UnityEngine.Vector2;
 
 namespace GameCore
 {
     public abstract class Enemy : Creature, IHumanBodyParts<CreatureBodyPart>
     {
+        public static int enemyLayer { get; internal set; }
+        public static int enemyLayerMask { get; internal set; }
+
+
+
         [Sync] public Entity targetEntity;
         public float searchTime = float.NegativeInfinity;
         public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: 包含 动画的layer 信息
@@ -88,6 +95,8 @@ namespace GameCore
                 //发动普通攻击
                 if (!isDead && data.normalAttack != null)
                     NormalAttackLoop();
+                else
+                    exclamationMarkImage.image.enabled = false;
 
                 CheckTargetStatus();
             }
@@ -121,10 +130,15 @@ namespace GameCore
                 exclamationMarkImage.image.color = Color.blue;
 
                 //如果在攻击范围内且面对着目标
-                if (targetEntity is Player player && Tools.time < player.parryEndTime && IsEntityInNormalAttackRange(targetEntity) && targetEntity.GetOrientation() != GetOrientation())
+                if (targetEntity is Player player && Tools.time < player.parryEndTime && IsEntityInNormalAttackRange(targetEntity))
                 {
-                    Debug.Log("盾反成功");
-                    currentNormalAttack = null;
+                    var targetOrientation = targetEntity.GetOrientation();
+                    if (targetOrientation != GetOrientation())
+                    {
+                        currentNormalAttack = null;
+                        rb.velocity += new Vector2(7 * (targetOrientation ? 1 : -1), 0);
+                        GAudio.Play(AudioID.ParrySucceed);
+                    }
                 }
             }
             //攻击还未结束
@@ -234,6 +248,8 @@ namespace GameCore
         public static Action<Enemy> OnAddEnemy = _ => { };
         public static Action<Enemy> OnRemoveEnemy = _ => { };
 
+
+
         public static void AddEnemy(Enemy enemy)
         {
             all.Add(enemy);
@@ -244,6 +260,15 @@ namespace GameCore
         {
             all.Remove(enemy);
             OnRemoveEnemy(enemy);
+        }
+
+
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void BindMethods()
+        {
+            Enemy.enemyLayer = LayerMask.NameToLayer("Enemy");
+            Enemy.enemyLayerMask = Enemy.enemyLayer.LayerMaskOnly();
         }
     }
 }

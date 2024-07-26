@@ -42,9 +42,9 @@ MonoBehaviour:
   - {fileID: 4052740890462624851}
   - {fileID: 1510377349725416288}
   - {fileID: 8978512426854247356}
-  - {fileID: 4159281204867548562}
   - {fileID: 8234356011998603692}
   - {fileID: -4964365258304051418}
+  - {fileID: 8835010857799991814}
 --- !u!114 &260604232750568882
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -145,46 +145,6 @@ MonoBehaviour:
   dirtIntensity:
     m_OverrideState: 0
     m_Value: 0
---- !u!114 &4159281204867548562
-MonoBehaviour:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cdfbdbb87d3286943a057f7791b43141, type: 3}
-  m_Name: ChannelMixer
-  m_EditorClassIdentifier: 
-  active: 0
-  redOutRedIn:
-    m_OverrideState: 1
-    m_Value: 200
-  redOutGreenIn:
-    m_OverrideState: 1
-    m_Value: -200
-  redOutBlueIn:
-    m_OverrideState: 1
-    m_Value: -200
-  greenOutRedIn:
-    m_OverrideState: 0
-    m_Value: 0
-  greenOutGreenIn:
-    m_OverrideState: 0
-    m_Value: 100
-  greenOutBlueIn:
-    m_OverrideState: 0
-    m_Value: 0
-  blueOutRedIn:
-    m_OverrideState: 0
-    m_Value: 0
-  blueOutGreenIn:
-    m_OverrideState: 0
-    m_Value: 0
-  blueOutBlueIn:
-    m_OverrideState: 0
-    m_Value: 100
 --- !u!114 &8234356011998603692
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -201,6 +161,34 @@ MonoBehaviour:
   intensity:
     m_OverrideState: 1
     m_Value: 1
+--- !u!114 &8835010857799991814
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 899c54efeace73346a0a16faa3afe726, type: 3}
+  m_Name: Vignette
+  m_EditorClassIdentifier: 
+  active: 1
+  color:
+    m_OverrideState: 0
+    m_Value: {r: 0, g: 0, b: 0, a: 1}
+  center:
+    m_OverrideState: 0
+    m_Value: {x: 0.5, y: 0.5}
+  intensity:
+    m_OverrideState: 0
+    m_Value: 0
+  smoothness:
+    m_OverrideState: 0
+    m_Value: 0.2
+  rounded:
+    m_OverrideState: 0
+    m_Value: 0
 --- !u!114 &8978512426854247356
 MonoBehaviour:
   m_ObjectHideFlags: 3

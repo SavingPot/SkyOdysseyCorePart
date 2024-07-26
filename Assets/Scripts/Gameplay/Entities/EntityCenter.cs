@@ -167,6 +167,9 @@ namespace GameCore
         private static void BindMethods()
         {
             GM.OnUpdate += Update;
+
+            Entity.entityLayer = LayerMask.NameToLayer("entity");
+            Entity.entityLayerMask = Entity.entityLayer.LayerMaskOnly();
         }
     }
 }

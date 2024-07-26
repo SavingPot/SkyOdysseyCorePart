@@ -28,6 +28,7 @@ namespace GameCore
             if (isDead)
                 return;
 
+            Array.Clear(besideObjectsDetected, 0, besideObjectsDetected.Length);
             Physics2D.OverlapCircleNonAlloc(transform.position, 0.3f, besideObjectsDetected);
             foreach (var obj in besideObjectsDetected)
             {

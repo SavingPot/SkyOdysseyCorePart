@@ -358,6 +358,8 @@ namespace GameCore
             playerController = ControlModeToController(this, newMode);
         }
         float rushTimer;
+        public Enemy lockOnTarget { get; private set; }
+        readonly Collider2D[] lockOnOverlapTemp = new Collider2D[10];
 
 
 
@@ -681,6 +683,52 @@ namespace GameCore
                 }
 #endif
 
+                //检查锁定目标是否死亡
+                if (lockOnTarget && lockOnTarget.isDead)
+                {
+                    CancelLockOnTarget();
+                }
+
+                //锁定敌人
+                if (Keyboard.current.leftShiftKey.isPressed)
+                {
+                    if (lockOnTarget == null)
+                    {
+                        Array.Clear(lockOnOverlapTemp, 0, lockOnOverlapTemp.Length);
+                        RayTools.OverlapCircleNonAlloc(transform.position, 10, lockOnOverlapTemp, Enemy.enemyLayerMask);
+
+                        foreach (var collider in lockOnOverlapTemp)
+                        {
+                            if (collider == null)
+                                return;
+
+                            if (collider.TryGetComponent<Enemy>(out var enemy))
+                            {
+                                lockOnTarget = enemy;
+                                Tools.instance.mainCameraController.secondLookAt = lockOnTarget.transform;
+                                Tools.instance.mainCameraController.EnableGlobalVolumeVignette();
+                                Tools.instance.mainCameraController.SetGlobalVolumeVignette(0.35f);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (lockOnTarget)
+                    {
+                        CancelLockOnTarget();
+                    }
+                }
+
+                void CancelLockOnTarget()
+                {
+                    lockOnTarget = null;
+                    Tools.instance.mainCameraController.secondLookAt = null;
+                    Tools.instance.mainCameraController.DisableGlobalVolumeVignette();
+                }
+
+                //格挡
                 if (Keyboard.current.rKey.wasPressedThisFrame && !Item.Null(inventory.shield) && inventory.shield.data.Shield != null && Tools.time > parryCDEndTime)
                 {
                     ServerParry();
@@ -888,6 +936,7 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    拾取物品                                    */
             /* -------------------------------------------------------------------------- */
+            Array.Clear(itemPickUpObjectsDetectedTemp, 0, itemPickUpObjectsDetectedTemp.Length);
             Physics2D.OverlapCircleNonAlloc(transform.position, itemPickUpRadius, itemPickUpObjectsDetectedTemp);
 
             foreach (var other in itemPickUpObjectsDetectedTemp)
@@ -1665,7 +1714,8 @@ namespace GameCore
         {
             SetParryTimeVars();
 
-            //播放盾反动画
+            //播放盾反音效和动画
+            GAudio.Play(AudioID.Parry);
             animWeb.SwitchPlayingTo("slight_leftarm_lift");
         }
 

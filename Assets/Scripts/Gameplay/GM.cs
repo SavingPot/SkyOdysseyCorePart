@@ -35,7 +35,6 @@ namespace GameCore
         public ParticleSystem weatherParticle { get; protected set; }
         public ParticleSystem.MainModule weatherParticleMain;
         public ParticleSystem.EmissionModule weatherParticleEmission;
-        public Volume globalVolume { get; protected set; }
         public Light2D globalLight { get; protected set; }
         public static Action AfterPreparation = () => { };
         public static Action OnUpdate = () => { };
@@ -152,16 +151,11 @@ namespace GameCore
             /*                                     初始化组件                                    */
             /* -------------------------------------------------------------------------- */
             GameObject glGo = GameObject.Find("GlobalLight");
-            GameObject gv = GameObject.Find("Global Volume");
             GameObject glP = GameObject.Find("Weather Particle System");
 
             if (glGo)
             {
                 globalLight = glGo.GetComponent<Light2D>();
-            }
-            if (gv)
-            {
-                globalVolume = gv.GetComponent<Volume>();
             }
             if (glP)
             {
@@ -178,11 +172,21 @@ namespace GameCore
                 weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_4").sprite);
                 weatherParticle.textureSheetAnimation.AddSprite(ModFactory.CompareTexture("ori:rain_particle_5").sprite);
             }
+        }
 
-            /* -------------------------------------------------------------------------- */
-            /*                                    调用委托                                    */
-            /* -------------------------------------------------------------------------- */
-            AfterPreparation();
+        protected override void Start()
+        {
+            if (Server.isServer)
+            {
+                GTime.isMorning = GFiles.world.basicData.isAM;
+                GTime.time = GFiles.world.basicData.time;
+                GTime.totalTime = GFiles.world.basicData.totalTime;
+            }
+
+            if (Server.isServer)
+                InitializeWorld(GFiles.world);
+
+
 
             /* -------------------------------------------------------------------------- */
             /*                                    设置天气                                    */
@@ -247,35 +251,26 @@ namespace GameCore
             });
 
             SetWeather("ori:sunny");
+
+            base.Start();
+
+            /* -------------------------------------------------------------------------- */
+            /*                                    调用委托                                    */
+            /* -------------------------------------------------------------------------- */
+            AfterPreparation();
         }
 
 
 
-        public void SetGlobalVolumeBloomToSunny() => SetGlobalVolumeBloom(0.95f, 0.5f);
-        public void SetGlobalVolumeBloomToRain() => SetGlobalVolumeBloom(0.8f, 2.5f);
-        public void SetGlobalVolumeBloom(float threshold, float intensity)
-        {
-            if (globalVolume.profile.TryGet(out Bloom bloom))
-            {
-                bloom.active = true;
-                bloom.threshold.Override(threshold);
-                bloom.intensity.Override(intensity);
-            }
-        }
+
+        public void SetGlobalVolumeBloomToSunny() => Tools.instance.mainCameraController.SetGlobalVolumeBloom(0.95f, 0.5f);
+        public void SetGlobalVolumeBloomToRain() => Tools.instance.mainCameraController.SetGlobalVolumeBloom(0.8f, 2.5f);
 
 
 
-        public void SetGlobalVolumeColorAdjustmentsToSunny() => SetGlobalVolumeColorAdjustments(new(0.75f, 0.66f, 0.66f), 1.52f, 8.5f);
-        public void SetGlobalVolumeColorAdjustmentsToAcidRain() => SetGlobalVolumeColorAdjustments(new(0.8f, 1f, 0.92f), 1.05f, 6);
-        public void SetGlobalVolumeColorAdjustmentsToRain() => SetGlobalVolumeColorAdjustments(new(0.75f, 0.66f, 0.66f), 1.45f, 5);
-        public void SetGlobalVolumeColorAdjustments(Color colorFilter, float colorFilterIntensity, float saturation)
-        {
-            if (globalVolume.profile.TryGet(out ColorAdjustments colorAdjustments))
-            {
-                colorAdjustments.colorFilter.Override(colorFilter * colorFilterIntensity);
-                colorAdjustments.saturation.Override(saturation);
-            }
-        }
+        public void SetGlobalVolumeColorAdjustmentsToSunny() => Tools.instance.mainCameraController.SetGlobalVolumeColorAdjustments(new(0.75f, 0.66f, 0.66f), 1.52f, 8.5f);
+        public void SetGlobalVolumeColorAdjustmentsToAcidRain() => Tools.instance.mainCameraController.SetGlobalVolumeColorAdjustments(new(0.8f, 1f, 0.92f), 1.05f, 6);
+        public void SetGlobalVolumeColorAdjustmentsToRain() => Tools.instance.mainCameraController.SetGlobalVolumeColorAdjustments(new(0.75f, 0.66f, 0.66f), 1.45f, 5);
 
 
 
@@ -543,21 +538,6 @@ namespace GameCore
                     }
                 }
             }
-        }
-
-        protected override void Start()
-        {
-            if (Server.isServer)
-            {
-                GTime.isMorning = GFiles.world.basicData.isAM;
-                GTime.time = GFiles.world.basicData.time;
-                GTime.totalTime = GFiles.world.basicData.totalTime;
-            }
-
-            if (Server.isServer)
-                InitializeWorld(GFiles.world);
-
-            base.Start();
         }
 
         #region 绑定

@@ -63,6 +63,8 @@ namespace GameCore
         [LabelText("身体部位"), ReadOnly, BoxGroup("组件")]
         public List<CreatureBodyPart> bodyParts = new();
         public static float attackAnimTime = 0.3f;
+        public static int creatureLayer { get; internal set; }
+        public static int creatureLayerMask { get; internal set; }
 
 
 
@@ -260,6 +262,13 @@ namespace GameCore
             base.Initialize();
         }
 
+        public override void AfterInitialization()
+        {
+            base.AfterInitialization();
+
+            CreatureCenter.AddCreature(this);
+        }
+
         protected override void Update()
         {
             base.Update();
@@ -348,6 +357,8 @@ namespace GameCore
 
             //Kill 所有的动画防止警告
             animWeb?.Stop();
+
+            CreatureCenter.RemoveCreature(this);
         }
 
         public float GetJumpVelocity(float jumpVelocity)
@@ -448,6 +459,36 @@ namespace GameCore
             AddSpriteRenderer(part.armorSr);
             AddSpriteRenderer(part.sr);
             return part;
+        }
+    }
+
+    public static class CreatureCenter
+    {
+        public static List<Creature> all = new();
+        public static Action<Creature> OnAddCreature = _ => { };
+        public static Action<Creature> OnRemoveCreature = _ => { };
+
+
+
+        public static void AddCreature(Creature creature)
+        {
+            all.Add(creature);
+            OnAddCreature(creature);
+        }
+
+        public static void RemoveCreature(Creature creature)
+        {
+            all.Remove(creature);
+            OnRemoveCreature(creature);
+        }
+
+
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void BindMethods()
+        {
+            Creature.creatureLayer = LayerMask.NameToLayer("Creature");
+            Creature.creatureLayerMask = Creature.creatureLayer.LayerMaskOnly();
         }
     }
 }

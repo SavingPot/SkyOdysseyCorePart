@@ -31,6 +31,8 @@ namespace GameCore
         /*                               Static & Const                               */
         /* -------------------------------------------------------------------------- */
         public const string entityVarPrefix = nameof(GameCore) + "." + nameof(Entity) + ".";
+        public static int entityLayer { get; internal set; }
+        public static int entityLayerMask { get; internal set; }
 
 
 
@@ -667,6 +669,18 @@ namespace GameCore
         {
             temperatureEffectType = value;
             temperatureEffectEndTime = Tools.time + 3; //持续三秒
+        }
+
+        [ServerRpc]
+        public void ServerClearTemperatureEffect(NetworkConnection caller = null)
+        {
+            ClientClearTemperatureEffect();
+        }
+
+        [ClientRpc]
+        void ClientClearTemperatureEffect(NetworkConnection caller = null)
+        {
+            temperatureEffectEndTime = 0;
         }
 
 
