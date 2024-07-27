@@ -70,7 +70,7 @@ namespace GameCore
 
 
             /* --------------------------------- 开关区块的显示 -------------------------------- */
-            if (!Tools.instance.mainCamera)
+            if (!Tools.instance.mainCamera || !GFiles.settings.autoHideChunks)
                 return;
 
             foreach (var chunk in chunks)

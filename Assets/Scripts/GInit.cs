@@ -231,10 +231,12 @@ namespace GameCore
 
             IOTools.CreateDirectoryIfNone(directoryLogsPath); //创建日志目录
 
+            //创建日志文件
             if (File.Exists(currentLogsFilePath))
                 File.Delete(currentLogsFilePath); //删除原有日志
             File.Create(currentLogsFilePath);
 
+            //托管日志输出
             Application.logMessageReceivedThreaded += OnHandleLog; //包括主线程与所有子进程
 
 
@@ -347,7 +349,6 @@ namespace GameCore
 
 
 
-        [ChineseName("当收到日志时")]
         internal void OnHandleLog(string logString, string _, LogType type)
         {
             if (!writeLogsToFile)
@@ -356,7 +357,7 @@ namespace GameCore
             switch (type)
             {
                 case LogType.Warning:
-                    LogWarningToFile(logString + "\n" + Tools.HighlightedStackTraceForMarkdown());
+                    LogWarningToFile(logString);
                     break;
 
                 case LogType.Error:

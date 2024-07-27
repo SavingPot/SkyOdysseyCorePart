@@ -284,6 +284,7 @@ namespace GameCore
         [LabelText("玩家光标速度")] public float playerCursorSpeed = 10f;
         [LabelText("屏幕光标速度")] public int screenCursorSpeed = 500;
         [LabelText("性能等级")] public byte performanceLevel = (byte)(Application.isMobilePlatform ? 65 : 130);   // 0 <-> 255
+        [LabelText("自动隐藏区块")] public bool autoHideChunks = true;   // 0 <-> 255
         [LabelText("UI速度")] public float uiSpeed = 80;   // 0 <-> 255
         [LabelText("皮肤名")] public string playerSkinName = null;
 

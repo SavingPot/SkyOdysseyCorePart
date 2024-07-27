@@ -51,11 +51,11 @@ namespace GameCore.UI
 
         public void ResetStatusInScrollView(ScrollViewIdentity scrollView)
         {
-            SetScale(new(scrollView.gridLayoutGroup.cellSize.x, scrollView.gridLayoutGroup.cellSize.y));
+            SetToggleSize(new(scrollView.gridLayoutGroup.cellSize.x, scrollView.gridLayoutGroup.cellSize.y));
         }
 
         [Sirenix.OdinInspector.Button("设置尺寸")]
-        public void SetScale(Vector2 vec)
+        public void SetToggleSize(Vector2 vec)
         {
             //获取最小值并设置自身
             float min = Mathf.Min(vec.x, vec.y);

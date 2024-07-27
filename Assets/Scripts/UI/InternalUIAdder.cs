@@ -631,12 +631,25 @@ namespace GameCore.UI
 
                         /* ---------------------------------- 性能设置 ---------------------------------- */
                         //TODO: Performance Level
+                        var performancePanel = GameUI.AddPanel("ori:panel.settings.performance", GameUI.canvas.transform, true);
+                        var performanceSetButton = GameUI.AddButton(UIA.Middle, "ori:button.settings.performance", settingsPanel).OnClickBind(() => GameUI.SetPage(performancePanel));
+                        GameUI.AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.performance.back", performancePanel).OnClickBind(() => GameUI.SetPage(settingsPanel));
+                        performanceSetButton.SetAPosOnBySizeDown(controlsSetButton, 20);
+
+                        var autoHideChunksToggle = GameUI.AddToggle(UIA.Middle, "ori:toggle.settings.performance.autoHideChunks", performancePanel);
+                        autoHideChunksToggle.SetToggleSize(new(200, 40));
+                        autoHideChunksToggle.toggle.isOn = GFiles.settings.autoHideChunks;
+                        autoHideChunksToggle.toggle.onValueChanged.AddListener(v =>
+                        {
+                            GFiles.settings.autoHideChunks = v;
+                            GFiles.SaveAllDataToFiles();
+                        });
 
                         /* ----------------------------------- 音量 ----------------------------------- */
                         var soundPanel = GameUI.AddPanel("ori:panel.settings.sound", GameUI.canvas.transform, true);
                         var volumeSetButton = GameUI.AddButton(UIA.Middle, "ori:button.settings.sound", settingsPanel).OnClickBind(() => GameUI.SetPage(soundPanel));
                         GameUI.AddButton(new(0.5f, 0.135f, 0.5f, 0.135f), "ori:button.settings.sound.back", soundPanel).OnClickBind(() => GameUI.SetPage(settingsPanel));
-                        volumeSetButton.SetAPosOnBySizeDown(controlsSetButton, 20);
+                        volumeSetButton.SetAPosOnBySizeDown(performanceSetButton, 20);
 
                         List<ImageIdentity> sliderBgs = new();
 

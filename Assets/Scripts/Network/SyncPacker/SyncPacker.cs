@@ -190,7 +190,8 @@ namespace GameCore.Network
             for (int i = 0; i < instanceVars.Count; i++)
             {
                 var variant = instanceVars[i];
-                var entity = EntitiesIDTable[variant.instance];
+                if (!EntitiesIDTable.TryGetValue(variant.instance, out var entity))
+                    continue;
                 var currentValue = GetInstanceFieldValue(variant.varId, entity);
 
                 //记录下最新值供下次比较
