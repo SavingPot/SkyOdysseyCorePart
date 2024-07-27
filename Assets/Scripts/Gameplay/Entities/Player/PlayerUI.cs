@@ -524,8 +524,9 @@ namespace GameCore.UI
             var startY = 35;
             var shakeY = 8;
             enemyLockOnMark.rt.SetParentForUI(enemy.usingCanvas.transform);
+            enemyLockOnMark.transform.localScale = Vector3.one;
             enemyLockOnMark.SetAPosY(startY);
-            enemyLockOnMark.SetSizeDelta(2, 2);
+            enemyLockOnMark.SetSizeDelta(30, 30);
 
             //让指针上下移动
             DOTween.Sequence().Append(enemyLockOnMark.rt.DOLocalMoveY(startY + shakeY, 0.5f))
@@ -757,7 +758,7 @@ namespace GameCore.UI
                 dialogPanel = GameUI.AddButton(new(0, 0, 1, 0.4f), "ori:panel.dialog");
                 dialogPanel.gameObject.SetActive(false);
                 dialogPanel.image.sprite = null;
-                dialogPanel.image.SetColor(0.15f, 0.15f, 0.15f, 0.6f);
+                dialogPanel.image.SetColor(0.1f, 0.1f, 0.1f, 0.6f);
                 dialogPanel.button.HideClickAction();
                 dialogPanel.button.onClick.RemoveAllListeners();
                 dialogPanel.sd = Vector2.zero;
@@ -1387,7 +1388,7 @@ namespace GameCore.UI
             gainRareItemButtonPanel = GameUI.AddButton(UIA.Middle, "ori:button.get_item", GameUI.canvas.transform, null);
             gainRareItemButtonPanel.SetSizeDelta(600, 250);
             gainRareItemButtonPanel.SetSprite(null);
-            gainRareItemButtonPanel.SetColor(new(0.15f, 0.15f, 0.15f, 0.75f));
+            gainRareItemButtonPanel.SetColor(new(0.1f, 0.1f, 0.1f, 0.75f));
             gainRareItemButtonPanel.button.ClearColorEffects();
             gainRareItemButtonPanel.OnUpdate += _ =>
             {

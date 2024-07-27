@@ -56,14 +56,21 @@ namespace GameCore
                     var positionDelta = (Vector2)secondLookAt.position - (Vector2)lookAt.position;
                     delta += 0.5f * positionDelta;
                     finalCameraSize += positionDelta.magnitude / 2 - 4.5f;
-                }
 
-                //设置相机位置
-                cam.transform.position = new(lookAt.position.x + delta.x, lookAt.position.y + delta.y, -10);
+                    //设置相机位置（有平滑效果）
+                    cam.transform.position = Vector3.Lerp(cam.transform.position,
+                                                           new(lookAt.position.x + delta.x, lookAt.position.y + delta.y, -10),
+                                                           Tools.deltaTime * 5);
+                }
+                else
+                {
+                    //设置相机位置（无平滑效果）
+                    cam.transform.position = new(lookAt.position.x + delta.x, lookAt.position.y + delta.y, -10);
+                }
             }
 
-            //设置摄像机大小
-            cam.orthographicSize = finalCameraSize;
+            //设置摄像机大小（有平滑效果）
+            cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, finalCameraSize, Tools.deltaTime * 5);
         }
 
         public void SetGlobalVolumeBloom(float threshold, float intensity)

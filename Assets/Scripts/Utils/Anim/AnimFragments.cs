@@ -25,7 +25,7 @@ namespace GameCore
 
         public override bool SetValue(float progress)
         {
-            Sprite current = sprites[Mathf.FloorToInt(progress * sprites.Length)];
+            Sprite current = sprites[Mathf.FloorToInt(progress * (sprites.Length - 1))];
 
             return setSprite(current);
         }
@@ -46,7 +46,7 @@ namespace GameCore
             return anim;
         }
 
-        public SpriteAnimFragment(Func<Sprite, bool> setSprite, Sprite[] sprites, float duration, Ease ease) : base(duration, ease)
+        public SpriteAnimFragment(Func<Sprite, bool> setSprite, Sprite[] sprites, float duration, Ease ease = Ease.Linear) : base(duration, ease)
         {
             this.setSprite = setSprite;
             this.sprites = sprites;
@@ -73,7 +73,7 @@ namespace GameCore
             return transform.DORotate(endValue, duration);
         }
 
-        public RotationAnimFragment(Transform transform, Vector2 endValue, float duration, Ease ease) : base(duration, ease)
+        public RotationAnimFragment(Transform transform, Vector2 endValue, float duration, Ease ease = Ease.InOutSine) : base(duration, ease)
         {
             this.transform = transform;
             this.endValue = endValue;
@@ -100,7 +100,7 @@ namespace GameCore
             return transform.DOLocalRotate(endValue, duration);
         }
 
-        public LocalRotationAnimFragment(Transform transform, Vector2 endValue, float duration, Ease ease) : base(duration, ease)
+        public LocalRotationAnimFragment(Transform transform, Vector2 endValue, float duration, Ease ease = Ease.InOutSine) : base(duration, ease)
         {
             this.transform = transform;
             this.endValue = endValue;
@@ -128,7 +128,7 @@ namespace GameCore
             return transform.DOLocalRotateZ(endValue, duration, mode);
         }
 
-        public LocalRotationZAnimFragment(Transform transform, float endValue, float duration, Ease ease, RotateMode mode = RotateMode.Fast) : base(duration, ease)
+        public LocalRotationZAnimFragment(Transform transform, float endValue, float duration, Ease ease = Ease.InOutSine, RotateMode mode = RotateMode.Fast) : base(duration, ease)
         {
             this.transform = transform;
             this.endValue = endValue;

@@ -139,7 +139,7 @@ namespace GameCore
                         currentNormalAttack = null;
 
                         //敌人被击退
-                        rb.velocity += new Vector2(7 * (targetOrientation ? 1 : -1), 0);
+                        rb.velocity += new Vector2(8 * (targetOrientation ? 1 : -1), 0);
 
                         //播放音效
                         GAudio.Play(AudioID.ParrySucceed);

@@ -20,6 +20,7 @@ using static GameCore.UI.PlayerUI;
 using ClientRpcAttribute = GameCore.Network.ClientRpcAttribute;
 using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
 using JetBrains.Annotations;
+using Random = UnityEngine.Random;
 
 namespace GameCore
 {
@@ -694,14 +695,25 @@ namespace GameCore
                 {
                     if (lockOnTarget == null)
                     {
+                        //做一次范围检测
                         Array.Clear(lockOnOverlapTemp, 0, lockOnOverlapTemp.Length);
                         RayTools.OverlapCircleNonAlloc(transform.position, 10, lockOnOverlapTemp, Enemy.enemyLayerMask);
 
-                        foreach (var collider in lockOnOverlapTemp)
+                        //找到数组的有效长度
+                        int validLength = lockOnOverlapTemp.Length;
+                        for (int i = 0; i < lockOnOverlapTemp.Length; i++)
                         {
-                            if (collider == null)
-                                return;
+                            if (lockOnOverlapTemp[i] == null)
+                            {
+                                validLength = i;
+                                break;
+                            }
+                        }
 
+                        // 0 表示没有找到敌人
+                        if (validLength != 0)
+                        {
+                            var collider = lockOnOverlapTemp[Random.Range(0, validLength)];
                             if (collider.TryGetComponent<Enemy>(out var enemy))
                             {
                                 lockOnTarget = enemy;
@@ -709,7 +721,6 @@ namespace GameCore
                                 Tools.instance.mainCameraController.secondLookAt = lockOnTarget.transform;
                                 Tools.instance.mainCameraController.EnableGlobalVolumeVignette();
                                 Tools.instance.mainCameraController.SetGlobalVolumeVignette(0.35f);
-                                break;
                             }
                         }
                     }
@@ -728,12 +739,6 @@ namespace GameCore
                     Tools.instance.mainCameraController.secondLookAt = null;
                     Tools.instance.mainCameraController.DisableGlobalVolumeVignette();
                     pui.LockOnEnemy(null);
-                }
-
-                //格挡
-                if (Keyboard.current.rKey.wasPressedThisFrame && !Item.Null(inventory.shield) && inventory.shield.data.Shield != null && Tools.time > parryCDEndTime)
-                {
-                    ServerParry();
                 }
 
                 /* ---------------------------------- 检查房屋 ---------------------------------- */
@@ -1660,6 +1665,15 @@ namespace GameCore
 
         public void Interact(Vector2 point)
         {
+            //格挡
+            if (lockOnTarget && !Item.Null(inventory.shield) && inventory.shield.data.Shield != null)
+            {
+                if (Tools.time > parryCDEndTime)
+                    ServerParry();
+
+                return;
+            }
+
             //实体交互
             foreach (var entity in EntityCenter.all)
             {
