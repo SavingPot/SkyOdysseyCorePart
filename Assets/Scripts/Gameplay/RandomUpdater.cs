@@ -155,29 +155,28 @@ namespace GameCore
         public static System.Random RandomUpdateRandom = new();
         public static bool EntitySummonPos(EntityData e, out Vector2 pos)
         {
-            //TODO: 优化性能
             //最多尝试 24 个区块
-            for (byte cTime = 0; cTime < 24; cTime++)
+            for (byte chunkTime = 0; chunkTime < 24; chunkTime++)
             {
                 //抽取一个区块
                 Chunk chunk = Map.instance.chunks.Extract(RandomUpdateRandom);
 
+                //检查实体的群系要求
                 if (!string.IsNullOrEmpty(e.summon.biome) && GFiles.world.TryGetRegion(chunk.regionIndex, out Region region) && e.summon.biome != region.biomeId)
                 {
                     continue;
                 }
 
-                //寻找合适的方块 (一个区块内最多尝试 32 个方块)
-                for (byte bTime = 0; bTime < 32; bTime++)
+                //寻找合适的方块 (一个区块内最多尝试 20 个方块)
+                for (byte blockTime = 0; blockTime < 20; blockTime++)
                 {
                     //抽取一个方块并检查
                     Block block = chunk.wallBlocks.Extract(RandomUpdateRandom);
 
                     if (block != null &&
                         !Map.instance.HasBlock(block.pos + Vector2Int.up, false) &&
-                        Math.Abs(chunk.MapToRegionPosX(block.pos.x)) < Region.chunkCount * Chunk.halfBlockCountPerAxis - 5 &&
-                        Math.Abs(chunk.MapToRegionPosY(block.pos.y)) < Region.chunkCount * Chunk.halfBlockCountPerAxis - 5 &&
-                        !Tools.instance.IsInView2DFaster(block.pos.To2()))
+                        chunk.IsInRegionBound(block.pos, 10) &&
+                        !Tools.instance.IsInView2DFaster(block.pos))
                     {
                         pos = block.pos + new Vector2Int(0, 2);
                         return true;

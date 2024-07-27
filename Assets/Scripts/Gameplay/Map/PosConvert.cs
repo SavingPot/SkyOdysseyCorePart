@@ -114,5 +114,17 @@ namespace GameCore
 
             return posY + yDelta;
         }
+
+        public static bool IsInRegionBound(Vector2Int mapPos, Vector2Int regionIndex, float innerDistance) =>
+            Math.Abs(MapToRegionPosX(mapPos.x, regionIndex)) < Region.chunkCount * Chunk.halfBlockCountPerAxis - innerDistance &&
+            Math.Abs(MapToRegionPosY(mapPos.y, regionIndex)) < Region.chunkCount * Chunk.halfBlockCountPerAxis - innerDistance;
+
+        public static bool IsInRegionBound(Vector2Int regionPos, float innerDistance) =>
+            Math.Abs(regionPos.x) < Region.chunkCount * Chunk.halfBlockCountPerAxis - innerDistance &&
+            Math.Abs(regionPos.y) < Region.chunkCount * Chunk.halfBlockCountPerAxis - innerDistance;
+
+        public static bool IsInRegionBound(this Chunk chunk, Vector2Int mapPos, float innerDistance) =>
+            Math.Abs(MapToRegionPosX(mapPos.x, chunk.regionIndex)) < Region.chunkCount * Chunk.halfBlockCountPerAxis - innerDistance &&
+            Math.Abs(MapToRegionPosY(mapPos.y, chunk.regionIndex)) < Region.chunkCount * Chunk.halfBlockCountPerAxis - innerDistance;
     }
 }
