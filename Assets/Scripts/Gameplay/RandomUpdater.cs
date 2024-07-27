@@ -97,15 +97,14 @@ namespace GameCore
                     {
                         //随机抽取一个实体并生成
                         EntityData entity = entities.Extract(RandomUpdateRandom);
-                        Vector2 pos = EntitySummonPos(entity);
 
-                        entities.Remove(entity);
-
-                        if (!float.IsInfinity(pos.x) && !float.IsInfinity(pos.y))
+                        if (EntitySummonPos(entity, out var summonPos))
                         {
                             //生成实体
-                            GM.instance.SummonEntity(pos, entity.id, Tools.randomGUID);
+                            GM.instance.SummonEntity(summonPos, entity.id, Tools.randomGUID);
                         }
+
+                        entities.Remove(entity);
                     }
                 }
             });
@@ -154,7 +153,7 @@ namespace GameCore
         }
 
         public static System.Random RandomUpdateRandom = new();
-        public static Func<EntityData, Vector2> EntitySummonPos = e =>
+        public static bool EntitySummonPos(EntityData e, out Vector2 pos)
         {
             //TODO: 优化性能
             //最多尝试 24 个区块
@@ -175,20 +174,20 @@ namespace GameCore
                     Block block = chunk.wallBlocks.Extract(RandomUpdateRandom);
 
                     if (block != null &&
-                        !block.isBackground &&
-                        block.data.id != BlockID.Barrel &&
                         !Map.instance.HasBlock(block.pos + Vector2Int.up, false) &&
                         Math.Abs(chunk.MapToRegionPosX(block.pos.x)) < Region.chunkCount * Chunk.halfBlockCountPerAxis - 5 &&
                         Math.Abs(chunk.MapToRegionPosY(block.pos.y)) < Region.chunkCount * Chunk.halfBlockCountPerAxis - 5 &&
-                        !Tools.instance.IsInView2D(block.pos.To2()))
+                        !Tools.instance.IsInView2DFaster(block.pos.To2()))
                     {
-                        return block.pos + new Vector2Int(0, 2);
+                        pos = block.pos + new Vector2Int(0, 2);
+                        return true;
                     }
                 }
             }
 
-            return new(float.PositiveInfinity, float.PositiveInfinity);
-        };
+            pos = Vector2.zero;
+            return false;
+        }
 
 
 
