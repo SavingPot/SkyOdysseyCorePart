@@ -214,6 +214,7 @@ namespace GameCore
             leggingVar => legging,
             bootsVar => boots,
             shieldVar => shield,
+            null => null,
             _ => slots[Convert.ToInt32(index)]
         };
 
@@ -270,6 +271,9 @@ namespace GameCore
                     shieldBehaviour?.OnExit();
                     CreateBehaviour(shield, index, out shieldBehaviour);
                     break;
+
+                case null:
+                    throw new ArgumentNullException(nameof(index));
 
                 default:
                     int i = Convert.ToInt32(index);
@@ -359,6 +363,7 @@ namespace GameCore
                 {
                     slot = item.data.DataToItem();
                     slot.count = count;
+                    slot.customData = item.customData;
                     CreateBehaviour(slot, i.ToString(), out slotsBehaviours[i]);
                 }
                 else
@@ -401,6 +406,7 @@ namespace GameCore
                 leggingVar => leggingBehaviour,
                 bootsVar => bootsBehaviour,
                 shieldVar => shieldBehaviour,
+                null => null,
                 _ => GetItemBehaviourChecked(Convert.ToInt32(index))
             };
         }
@@ -729,29 +735,28 @@ namespace GameCore
             return new(item.data.id, item.count, item.data.tags);
         }
 
-        public static void ResumeFromStreamTransport(ref Item data)
+        public static void ResumeFromStreamTransport(ref Item item)
         {
-            if (!Null(data))
+            if (!Null(item))
             {
-                ItemData trueData = ModFactory.CompareItem(data.data.id);
+                ItemData itemData = ModFactory.CompareItem(item.data.id);
 
-                if (trueData == null)
+                if (itemData == null)
                 {
-                    Debug.LogWarning($"存档中的物品数据不存在，已自动删除 (id={data.data.id})");
-                    data = null;
+                    Debug.LogWarning($"物品数据不存在，已自动删除 (id={item.data.id})");
+                    item = null;
                     return;
                 }
 
-                Item trueItem = trueData.DataToItem();
+                Item newItem = itemData.DataToItem();
+                newItem.count = item.count;
+                newItem.customData = item.customData;
 
-                trueItem.count = data.count;
-                trueItem.customData = data.customData;
-
-                data = trueItem;
+                item = newItem;
             }
             else
             {
-                data = null;
+                item = null;
             }
         }
 
@@ -1037,6 +1042,8 @@ namespace GameCore
         {
             { "ori:flint_hoe", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
             { "ori:iron_hoe", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
+            { "ori:soup_pot", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Cooking) },
+            { "ori:wok", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Cooking) },
             { "ori:fishing_rod", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Fishing) },
             { "ori:mana_altar", player => player.unlockedSkills.Any(p => p.id == SkillID.Magic) },
             { "ori:biome_crystal", player => player.unlockedSkills.Any(p => p.id == SkillID.Magic) },

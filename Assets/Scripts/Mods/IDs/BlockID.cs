@@ -10,7 +10,6 @@ namespace GameCore
         public const string Barrel = "ori:barrel";
         public const string BerryBush = "ori:berry_bush";
         public const string Boundary = "ori:boundary";
-        public const string BoundaryGate = "ori:boundary_gate";
         public const string BrickClayFurnace = "ori:brick_clay_furnace";
         public const string Bush = "ori:bush";
         public const string Cactus = "ori:cactus";

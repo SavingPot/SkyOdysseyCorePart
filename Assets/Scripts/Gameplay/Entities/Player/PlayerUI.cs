@@ -239,45 +239,7 @@ namespace GameCore.UI
         public ImageIdentity taskCompleteBackground;
         public ImageIdentity taskCompleteIcon;
         public TextIdentity taskCompleteText;
-        public static List<TaskData> tasks = new()
-        {
-            new("ori:get_dirt", "ori:task.get_dirt", null, new[] { $"{BlockID.Dirt}/=/25/=/null" }),
-
-            new("ori:craft", "ori:task.craft", "ori:get_dirt", null),
-
-            new("ori:get_log", "ori:task.get_log", "ori:get_dirt", new[] { $"{BlockID.OakLog}/=/10/=/null" }),
-
-            new("ori:get_meat", "ori:task.get_meat", "ori:get_dirt", null),
-            new("ori:get_egg", "ori:task.get_egg", "ori:get_meat", null),
-            new("ori:get_potato", "ori:task.get_potato", "ori:get_meat", null),
-            new("ori:get_onion", "ori:task.get_onion", "ori:get_meat", null),
-            new("ori:get_watermelon", "ori:task.get_watermelon", "ori:get_meat", null),
-
-            new("ori:get_feather", "ori:task.get_feather", "ori:get_dirt", new[] { $"{ItemID.ChickenFeather}/=/5/=/null" }),
-            new("ori:get_feather_wing", "ori:task.get_feather_wing", "ori:get_feather", null),
-
-            new("ori:get_grass", "ori:task.get_grass", "ori:get_dirt", null),
-            new("ori:get_straw_rope", "ori:task.get_straw_rope", "ori:get_grass", new[] { $"{ItemID.StrawRope}/=/3/=/null" }),
-            new("ori:get_plant_fiber", "ori:task.get_plant_fiber", "ori:get_straw_rope", null),
-
-            new("ori:get_gravel", "ori:task.get_gravel", "ori:get_dirt", new[] { $"{BlockID.Gravel}/=/3/=/null" }),
-            new("ori:get_flint", "ori:task.get_flint", "ori:get_gravel", new[] { $"{ItemID.Flint}/=/2/=/null" }),
-            new("ori:get_stone", "ori:task.get_stone", "ori:get_flint", new[] { $"{BlockID.Stone}/=/10/=/null" }),
-
-            new("ori:get_planks", "ori:task.get_planks", "ori:get_log", new[] { $"{BlockID.OakPlanks}/=/10/=/null" }),
-            new("ori:get_stick", "ori:task.get_stick", "ori:get_planks", new[] { $"{ItemID.Stick}/=/10/=/null" }),
-            new("ori:get_campfire", "ori:task.get_campfire", "ori:get_stick", null),
-
-            new("ori:get_flint_knife", "ori:task.get_flint_knife", "ori:get_stick", null),
-            new("ori:get_flint_hoe", "ori:task.get_flint_hoe", "ori:get_stick", null),
-            new("ori:get_flint_sword", "ori:task.get_flint_sword", "ori:get_stick", null),
-            new("ori:get_iron_knife", "ori:task.get_iron_knife", "ori:get_flint_knife", null),
-            new("ori:get_iron_hoe", "ori:task.get_iron_hoe", "ori:get_flint_hoe", null),
-            new("ori:get_iron_sword", "ori:task.get_iron_sword", "ori:get_flint_sword", null),
-
-            new("ori:get_bark", "ori:task.get_bark", "ori:get_log", new[] { $"{ItemID.Bark}/=/1/=/null" }),
-            new("ori:get_bark_vest", "ori:task.get_bark_vest", "ori:get_bark", null),
-        };
+        public static List<TaskData> tasks { get; internal set; }
 
 
 
@@ -285,16 +247,7 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         /*                                    技能系统                                    */
         /* -------------------------------------------------------------------------- */
-        public List<SkillData> skills = new()
-        {
-            new("ori:skill", "ori:skill.skill", null, "ori:skill_description.skill", 1),
-            new("ori:agriculture", "ori:skill.agriculture", "ori:skill", "ori:skill_description.agriculture", 1),
-            new("ori:agriculture.quick", "ori:skill.agriculture.quick", "ori:agriculture", "ori:skill_description.agriculture.quick", 2),
-            new("ori:agriculture.coin", "ori:skill.agriculture.coin", "ori:agriculture", "ori:skill_description.agriculture.coin", 2),
-            new("ori:agriculture.harvest", "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 2),
-            new("ori:agriculture.fishing", "ori:skill.agriculture.fishing", "ori:agriculture", "ori:skill_description.agriculture.fishing", 2),
-            new("ori:magic", "ori:skill.magic", "ori:skill", "ori:skill_description.magic", 1),
-        };
+        public static List<SkillData> skills { get; internal set; }
         public BackpackPanel skillPanel;
         public NodeTree<SkillNode, SkillData> skillNodeTree;
         public Action<SkillData> OnUnlockSkill = _ => { };
@@ -737,7 +690,7 @@ namespace GameCore.UI
                 touchScreenShowTaskButton.OnClickBind(() =>
                 {
                     if (backpackMask && GameUI.page?.ui != dialogPanel)
-                        ShowOrHideBackpackAndSetPanelToTask();
+                        ShowOrHideBackpackAndSetPanelToTasks();
                 });
             }
 
@@ -1020,10 +973,8 @@ namespace GameCore.UI
                                     //给予玩家物品
                                     player.ServerAddItem(resultItem);
 
-                                    //达成效果
-                                    CompleteTask("ori:craft");
+                                    //音效
                                     GAudio.Play(AudioID.Crafting);
-
 
                                     //制作后刷新合成界面, 原料表与标题
                                     player.OnInventoryItemChange(player.inventory, null);
@@ -1148,24 +1099,38 @@ namespace GameCore.UI
                         if (!node.status.completed || node.status.hasGotRewards)
                             return;
 
-                        foreach (var reward in node.data.rewards)
+                        //给予技能点
+                        if (node.data.skillPointReward != 0)
                         {
-                            /* ---------------------------------- 切割字符串 --------------------------------- */
-                            if (Drop.ConvertStringItem(reward, out string id, out ushort count, out _, out string error))
-                            {
-                                /* ---------------------------------- 给予物品 ---------------------------------- */
-                                ItemData item = ModFactory.CompareItem(id);
+                            player.ServerAddSkillPoint(node.data.skillPointReward);
+                        }
 
-                                if (item == null)
-                                    continue;
-
-                                var extended = item.DataToItem();
-                                extended.count = count;
-                                player.ServerAddItem(extended);
-                            }
-                            else
+                        //给予物品奖励
+                        if (node.data.itemRewards != null)
+                        {
+                            foreach (var reward in node.data.itemRewards)
                             {
-                                Debug.LogError(error);
+                                /* ---------------------------------- 切割字符串 --------------------------------- */
+                                if (Drop.ConvertStringItem(reward, out string id, out ushort count, out string customData, out string error))
+                                {
+                                    /* ---------------------------------- 给予物品 ---------------------------------- */
+                                    ItemData item = ModFactory.CompareItem(id);
+
+                                    if (item == null)
+                                    {
+                                        Debug.LogError(error);
+                                        continue;
+                                    }
+                                    
+                                    var extended = item.DataToItem();
+                                    extended.count = count;
+                                    if (!customData.IsNullOrWhiteSpace()) extended.customData = JsonUtils.LoadJObjectByString(customData);
+                                    player.ServerAddItem(extended);
+                                }
+                                else
+                                {
+                                    Debug.LogError(error);
+                                }
                             }
                         }
 
@@ -1186,14 +1151,18 @@ namespace GameCore.UI
                     }
                 );
 
+
+
                 /* --------------------------------- 加载已有任务 --------------------------------- */
-                foreach (var task in player.completedTasks)
+                for (int i = player.completedTasks.Count - 1; i >= 0; i--)
                 {
+                    var task = player.completedTasks[i];
                     var node = taskNodeTree.FindTreeNode(task.id);
 
                     if (node == null)
                     {
-                        Debug.LogError($"任务 {task.id} 未找到对应的节点");
+                        player.completedTasks.RemoveAt(i);
+                        Debug.LogError($"任务 {task.id} 未找到对应的节点，已删除");
                         continue;
                     }
 
@@ -1220,22 +1189,10 @@ namespace GameCore.UI
                     _ => SkillInfoShower.instance.Hide(),
                     node =>
                     {
-                        if (node.status.unlocked || !node.IsParentLineUnlocked() || player.skillPoints < node.data.cost)
+                        if (player.skillPoints < node.data.cost)
                             return;
 
-                        //刷新玩家属性
-                        player.ServerAddSkillPoint(-node.data.cost);
-                        if (!player.unlockedSkills.Any(p => p.id == node.data.id))
-                        {
-                            player.AddUnlockedSkills(new() { id = node.data.id, unlocked = true });
-                        };
-
-                        //刷新节点显示
-                        node.status.unlocked = true;
-                        skillNodeTree.RefreshNodes(false);
-
-                        //调用委托
-                        OnUnlockSkill(node.data);
+                        UnlockSkill(node);
                     }
                 );
 
@@ -1421,6 +1378,29 @@ namespace GameCore.UI
 
 
             #endregion
+        }
+
+        /// <summary>
+        /// 注意：该方法不会检查技能点是否足够，请在调用前自行检查
+        /// </summary>
+        public void UnlockSkill(SkillNode node)
+        {
+            if (node.status.unlocked || !node.IsParentLineUnlocked())
+                return;
+
+            //刷新玩家属性
+            player.ServerAddSkillPoint(-node.data.cost);
+            if (!player.unlockedSkills.Any(p => p.id == node.data.id))
+            {
+                player.AddUnlockedSkills(new() { id = node.data.id, unlocked = true });
+            };
+
+            //刷新节点显示
+            node.status.unlocked = true;
+            skillNodeTree.RefreshNodes(false);
+
+            //调用委托
+            OnUnlockSkill(node.data);
         }
 
 
@@ -1628,9 +1608,14 @@ namespace GameCore.UI
             ShowOrHideBackpackAndSetPanelTo("ori:crafting");
         }
 
-        public void ShowOrHideBackpackAndSetPanelToTask()
+        public void ShowOrHideBackpackAndSetPanelToTasks()
         {
             ShowOrHideBackpackAndSetPanelTo("ori:tasks");
+        }
+
+        public void ShowOrHideBackpackAndSetPanelToSkills()
+        {
+            ShowOrHideBackpackAndSetPanelTo("ori:skills");
         }
 
         public void PauseGame()
@@ -1762,7 +1747,10 @@ namespace GameCore.UI
                                 Chat();
 
                             if (Keyboard.current.tKey.wasReleasedThisFrame)
-                                ShowOrHideBackpackAndSetPanelToTask();
+                                ShowOrHideBackpackAndSetPanelToTasks();
+
+                            if (Keyboard.current.kKey.wasReleasedThisFrame)
+                                ShowOrHideBackpackAndSetPanelToSkills();
                         }
 
                         break;
@@ -1780,7 +1768,10 @@ namespace GameCore.UI
                                 Chat();
 
                             if (Gamepad.current.dpad.up.wasReleasedThisFrame)
-                                ShowOrHideBackpackAndSetPanelToTask();
+                                ShowOrHideBackpackAndSetPanelToTasks();
+
+                            if (Gamepad.current.dpad.right.wasReleasedThisFrame)
+                                ShowOrHideBackpackAndSetPanelToSkills();
                         }
 
                         break;
@@ -1893,6 +1884,11 @@ namespace GameCore.UI
         public void CompleteTask(string id, bool feedback = true)
         {
             var node = taskNodeTree.FindTreeNode(id);
+            if (node == null)
+            {
+                Debug.LogError($"未找到任务 {id}, 完成失败");
+                return;
+            }
 
             if (!node.status.completed)
             {
@@ -1945,11 +1941,13 @@ namespace GameCore.UI
 
         public class TaskData : TreeNodeData
         {
-            public string[] rewards;
+            public int skillPointReward;
+            public string[] itemRewards;
 
-            public TaskData(string id, string icon, string parent, string[] rewards) : base(id, icon, parent)
+            public TaskData(string id, string icon, string parent, int skillPointRewards, string[] itemRewards) : base(id, icon, parent)
             {
-                this.rewards = rewards;
+                this.skillPointReward = skillPointRewards;
+                this.itemRewards = itemRewards;
             }
         }
 
@@ -1959,7 +1957,8 @@ namespace GameCore.UI
 
             public TaskNode(TaskData data) : base(data)
             {
-                if (data.rewards == null || data.rewards.Length == 0)
+                //如果没有技能点奖励和物品奖励，则不需要领取
+                if (data.skillPointReward == 0 && (data.itemRewards == null || data.itemRewards.Length == 0))
                     status.hasGotRewards = true;
             }
         }

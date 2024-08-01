@@ -68,6 +68,7 @@
      <Compile Include="Assets\Scripts\Utils\ToolsExtensions.cs" />
      <Compile Include="Assets\Scripts\Mods\StructureData.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ButtonIdentity.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\SkillManuscriptBehaviour.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ImageIdentity.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Msg.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\NotSummonableAttribute.cs" />

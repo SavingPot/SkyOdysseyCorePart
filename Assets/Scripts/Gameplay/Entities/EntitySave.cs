@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using Newtonsoft.Json;
 using UnityEngine;
 using static GameCore.UI.PlayerUI;
+using Vector2 = UnityEngine.Vector2;
 
 namespace GameCore
 {
@@ -48,6 +50,7 @@ namespace GameCore
         public List<TaskStatusForSave> completedTasks = new();
         public List<SkillStatusForSave> unlockedSkills = new();
         public int skillPoints;
+        public Vector2 respawnPoint;
 
         [NonSerialized] public byte[] skinHead;
         [NonSerialized] public byte[] skinBody;

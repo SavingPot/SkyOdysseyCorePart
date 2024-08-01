@@ -396,36 +396,21 @@ namespace GameCore
 
         public static readonly Dictionary<string, string> TaskNameTable = new()
         {
-            { BlockID.Dirt, "ori:get_dirt" },
             { ItemID.FeatherWing, "ori:get_feather_wing" },
-            { BlockID.Grass, "ori:get_grass" },
             { ItemID.StrawRope, "ori:get_straw_rope" },
-            { ItemID.PlantFiber, "ori:get_plant_fiber" },
-            { BlockID.Gravel, "ori:get_gravel" },
-            { ItemID.Flint, "ori:get_flint" },
-            { BlockID.Stone, "ori:get_stone" },
             { BlockID.Campfire, "ori:get_campfire" },
             { ItemID.FlintKnife, "ori:get_flint_knife" },
             { ItemID.FlintHoe, "ori:get_flint_hoe" },
             { ItemID.FlintSword, "ori:get_flint_sword" },
-            { ItemID.IronKnife, "ori:get_iron_knife" },
-            { ItemID.IronHoe, "ori:get_iron_hoe" },
-            { ItemID.IronSword, "ori:get_iron_sword" },
             { ItemID.Bark, "ori:get_bark" },
-            { ItemID.BarkVest, "ori:get_bark_vest" },
-            { ItemID.Stick, "ori:get_stick" },
-            { ItemID.Potato, "ori:get_potato" },
-            { ItemID.Onion, "ori:get_onion" },
-            { ItemID.Watermelon, "ori:get_watermelon" },
         };
 
         public static readonly Dictionary<string, string> TaskTagTable = new()
         {
             { "ori:log", "ori:get_log" },
             { "ori:meat", "ori:get_meat" },
-            { "ori:egg", "ori:get_egg" },
-            { "ori:feather", "ori:get_feather" },
             { "ori:planks", "ori:get_planks" },
+            { "ori:ore", "ori:get_ore" },
         };
 
 
@@ -1017,6 +1002,18 @@ namespace GameCore
             return base.DecideColorOfSpriteRenderers();
         }
 
+
+        protected override void OnBlockEnter(Block block)
+        {
+            base.OnBlockEnter(block);
+
+            if (block.data.id == BlockID.Boundary)
+            {
+                TakeDamage(2, 0.5f, transform.position, Vector2.zero);
+            }
+        }
+
+
         /* -------------------------------------------------------------------------- */
         /*                                    死亡逻辑                                    */
         /* -------------------------------------------------------------------------- */
@@ -1095,7 +1092,7 @@ namespace GameCore
 
             //如果数值无效, 则使用默认的重生点
             if (float.IsInfinity(newPos.x) || float.IsInfinity(newPos.y))
-                newPos = GFiles.world.GetRegion(regionIndex)?.spawnPoint ?? Vector2Int.zero;
+                newPos = ((PlayerSave)Init.save).respawnPoint;
 
             ClientRespawn(newHealth, newPos, caller);
         }
@@ -1142,7 +1139,19 @@ namespace GameCore
 
 
 
+        public override EntitySave GetEntitySaveObjectFromWorld()
+        {
+            //将玩家数据写入
+            foreach (PlayerSave save in GFiles.world.playerSaves)
+            {
+                if (save.id == playerName)
+                {
+                    return save;
+                }
+            }
 
+            return null;
+        }
 
         public override void WriteToEntitySave(EntitySave save)
         {
@@ -1379,7 +1388,11 @@ namespace GameCore
                 {
                     //如果存档中没有玩家位置, 则将玩家的位置设置到该区域出生点
                     if (isFirstGeneration && !hasSetPosBySave)
-                        ClientSetPosition(regionToGenerate.spawnPoint.To2());
+                    {
+                        var respawnPoint = regionToGenerate.spawnPoint.To2();
+                        ClientSetPosition(respawnPoint);
+                        ((PlayerSave)Init.save).respawnPoint = respawnPoint;
+                    }
 
                     //* 如果是服务器发送的申请: 服务器生成
                     if (isLocalPlayer)

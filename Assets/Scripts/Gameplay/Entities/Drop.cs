@@ -108,7 +108,7 @@ namespace GameCore
                 id = null;
                 count = 0;
                 customData = null;
-                error = $@"{nameof(str)} 的元素应被 /=/ 切割, 例如 ori:dirt/=/2, ori:dirt 为物品id, 2为物品数量";
+                error = $@"{nameof(str)} 的元素应被 /=/ 切割, 例如 ori:dirt/=/2/=/null, ori:dirt 为物品id, 2为物品数量, null为物品自定义数据";
                 return false;
             }
 

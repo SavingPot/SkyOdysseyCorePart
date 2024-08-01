@@ -972,6 +972,24 @@ namespace GameCore
             save.WriteFromEntity(this);
         }
 
+        public virtual EntitySave GetEntitySaveObjectFromWorld()
+        {
+            //将实体数据写入
+            foreach (Region region in GFiles.world.regionData)
+            {
+                foreach (EntitySave save in region.entities)
+                {
+                    //如果匹配到自己
+                    if (save.saveId == Init.save.saveId)
+                    {
+                        return save;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         public void WriteDataToWorldSave()
         {
             if (GFiles.world == null)
@@ -980,43 +998,16 @@ namespace GameCore
                 return;
             }
 
-
-            if (isPlayer)
+            var save = GetEntitySaveObjectFromWorld();
+            if (save == null)
             {
-                Player player = (Player)this;
-
-                //将玩家数据写入
-                foreach (PlayerSave save in GFiles.world.playerSaves)
-                {
-                    if (save.id == player.playerName)
-                    {
-                        WriteToEntitySave(save);
-
-                        return;
-                    }
-                }
+                Debug.LogWarning($"未在存档中找到实体 {Init.save.saveId}, 保存失败");
+                return;
             }
             else
             {
-                //将实体数据写入
-                foreach (Region region in GFiles.world.regionData)
-                {
-                    foreach (EntitySave save in region.entities)
-                    {
-                        //如果匹配到自己
-                        if (save.saveId == Init.save.saveId)
-                        {
-                            //写入数据
-                            WriteToEntitySave(save);
-
-                            return;
-                        }
-                    }
-                }
+                WriteToEntitySave(save);
             }
-
-
-            Debug.LogWarning($"未在存档中找到实体 {Init.save.saveId}, 保存失败");
         }
 
         public void ClearSaveDatum()
@@ -1024,6 +1015,12 @@ namespace GameCore
             if (GFiles.world == null)
             {
                 Debug.LogError("世界为空, 无法清除实体数据");
+                return;
+            }
+
+            if (isPlayer)
+            {
+                Debug.LogWarning("玩家实体不能清除保存数据");
                 return;
             }
 

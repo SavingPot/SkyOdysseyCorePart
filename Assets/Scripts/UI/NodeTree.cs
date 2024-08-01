@@ -168,6 +168,8 @@ namespace GameCore.UI
             }
         }
 
+        public string GetNodeButtonId(string nodeId) => $"ori:{nodeTreeViewName}.node.{nodeId}";
+
         /// <summary>
         /// 初始化节点的按钮和图标
         /// </summary>
@@ -176,11 +178,14 @@ namespace GameCore.UI
         private void InitNodeButton(TTreeNode node, TTreeNode parentNode)
         {
             /* ---------------------------------- 初始化按钮 --------------------------------- */
+            int buttonSize = 40;
             int space = 40;
-            node.button = GameUI.AddButton(UIA.Middle, $"ori:button.{nodeTreeViewName}.node.{node.data.id}", GameUI.canvas.transform, "ori:square_button");
+            node.button = GameUI.AddButton(UIA.Middle, GetNodeButtonId(node.data.id), GameUI.canvas.transform, "ori:square_button");
             node.parent = parentNode;
-            node.button.SetSizeDelta(space, space);   //设置按钮大小
+            node.button.SetSizeDelta(buttonSize, buttonSize);   //设置按钮大小
             node.button.buttonText.RefreshUI();
+            node.button.buttonText.SetSizeDeltaX(70f);
+            node.button.buttonText.AddAPosY(-buttonSize / 2 - node.button.buttonText.sd.y / 2 - 5);
 
             /* ---------------------------------- 绑定按钮 ---------------------------------- */
             node.button.button.OnPointerStayAction = () => OnPointerStayAction(node);
@@ -194,21 +199,18 @@ namespace GameCore.UI
                 node.button.SetParentForUI(parentNode.button);
 
             /* -------------------------------- 根据父节点更改位置 ------------------------------- */
-            Vector2 tempVec = Vector2.zero;
-            if (parentNode != null) { tempVec.y -= node.button.sd.y + space; }
-
-            //统计子节点数量
-            int childrenCountOfCurrentNode = GetChildrenOfNode(node.data).Count;
+            Vector2 finalPosition = Vector2.zero;
+            if (parentNode != null) { finalPosition.y -= buttonSize + space; }
 
             /* ------------------------------- 根据同级节点更改位置 ------------------------------- */
             var level = GetChildrenOfNode(node.data.parent);
             var indexInNodeLevel = GetIndexInNodeLevel(node.data);
-            float countOfChildrenNodesThatCauseCoincidence = 0;
+            float countOfNodesThatCauseCoincidence = 0;
             bool isLeftNode = indexInNodeLevel < level.Count / 2;
 
             if (level.Count == 1)
             {
-                
+
             }
             else
             {
@@ -218,16 +220,16 @@ namespace GameCore.UI
                     Debug.Log($"{node.data.id} 是中间节点！");
                 }
                 //左侧的节点
-                if (isLeftNode)
+                else if (isLeftNode)
                 {
                     //注：这会遍历到自己
                     for (int i = indexInNodeLevel; i < (level.Count + 1) / 2; i++)
                     {
-                        countOfChildrenNodesThatCauseCoincidence += GetMaxNodeCountLayerOfNodeLine(level[i]);
+                        countOfNodesThatCauseCoincidence += GetMaxNodeCountLayerOfNodeLine(level[i]);
                     }
 
-                    float deltaPos = space * 1.5f * countOfChildrenNodesThatCauseCoincidence;
-                    tempVec.x -= deltaPos;
+                    float deltaPos = space * 1.5f * countOfNodesThatCauseCoincidence;
+                    finalPosition.x -= deltaPos;
                 }
                 //右侧的节点
                 else
@@ -235,25 +237,22 @@ namespace GameCore.UI
                     //注：这会遍历到自己
                     for (int i = level.Count / 2; i < indexInNodeLevel + 1; i++)
                     {
-                        countOfChildrenNodesThatCauseCoincidence += GetMaxNodeCountLayerOfNodeLine(level[i]);
+                        countOfNodesThatCauseCoincidence += GetMaxNodeCountLayerOfNodeLine(level[i]);
                     }
 
-                    float deltaPos = space * 1.5f * countOfChildrenNodesThatCauseCoincidence;
-                    tempVec.x += deltaPos;
+                    float deltaPos = space * 1.5f * countOfNodesThatCauseCoincidence;
+                    finalPosition.x += deltaPos;
                 }
             }
 
 
 
-            /* -------------------------------- 设置按钮和文本位置 ------------------------------- */
-            node.button.ap = tempVec;
-            node.button.buttonText.AddAPosY(-node.button.sd.y / 2 - node.button.buttonText.sd.y / 2 - 5);
-
-            /* ---------------------------------- 设置图标 ---------------------------------- */
+            //设置按钮位置和图标
+            node.button.ap = finalPosition;
             node.icon = GameUI.AddImage(UIA.Middle, $"ori:image.{nodeTreeViewName}.node.{node.data.id}", null, node.button);
             node.icon.sd = node.button.sd;
 
-            /* --------------------------------- 初始化连接线 --------------------------------- */
+            //初始化连接线 
             ConnectNodeLine(node);
         }
 
@@ -307,7 +306,7 @@ namespace GameCore.UI
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private int GetMaxNodeCountLayerOfNodeLine(TTreeNodeData data)
+        public int GetMaxNodeCountLayerOfNodeLine(TTreeNodeData data)
         {
             int result = GetChildrenOfNode(data).Count;
 
@@ -323,7 +322,7 @@ namespace GameCore.UI
             return Mathf.Max(1, result); //最低也是一个节点，因为 data 参数自己也算一个节点
         }
 
-        private int GetTotalChildrenCountOfNodeLine(TTreeNodeData data)
+        public int GetTotalChildrenCountOfNodeLine(TTreeNodeData data)
         {
             int result = 0;
 
@@ -339,7 +338,7 @@ namespace GameCore.UI
             return result;
         }
 
-        private int GetIndexInNodeLevel(TTreeNodeData data)
+        public int GetIndexInNodeLevel(TTreeNodeData data)
         {
             List<string> list = new();
 
@@ -350,7 +349,7 @@ namespace GameCore.UI
             return list.IndexOf(data.id);
         }
 
-        private List<TTreeNodeData> GetSiblingsOfNode(TTreeNodeData data)
+        public List<TTreeNodeData> GetSiblingsOfNode(TTreeNodeData data)
         {
             List<TTreeNodeData> result = new();
 
@@ -361,8 +360,8 @@ namespace GameCore.UI
             return result;
         }
 
-        private List<TTreeNodeData> GetChildrenOfNode(TTreeNodeData data) => GetChildrenOfNode(data.id);
-        private List<TTreeNodeData> GetChildrenOfNode(string nodeId)
+        public List<TTreeNodeData> GetChildrenOfNode(TTreeNodeData data) => GetChildrenOfNode(data.id);
+        public List<TTreeNodeData> GetChildrenOfNode(string nodeId)
         {
             List<TTreeNodeData> result = new();
 

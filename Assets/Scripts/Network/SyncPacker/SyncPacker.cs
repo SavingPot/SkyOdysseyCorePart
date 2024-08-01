@@ -14,9 +14,6 @@ using System.Threading;
 
 namespace GameCore.Network
 {
-    /// <summary>
-    /// Sync Var Packer
-    /// </summary>
     //!     这个类的性能对游戏性能影响巨大!!!!!!!!!!!!!!!!! 一定要好好优化
     //TODO: 这个类的性能对游戏性能影响巨大!!!!!!!!!!!!!!!!! 一定要好好优化
     public static class SyncPacker
@@ -132,6 +129,10 @@ namespace GameCore.Network
 
             StartAutoSync();
         }
+
+
+
+        
 
         static Dictionary<string, object> staticVarLastSyncValues = new();
         static Dictionary<string, Dictionary<uint, object>> instanceVarLastSyncValues = new();

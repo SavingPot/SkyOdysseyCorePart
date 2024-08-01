@@ -285,23 +285,34 @@ namespace GameCore.UI
             Show(node.button.buttonText.text.text, GetText(node).ToString());
 
             backgroundImage.transform.SetParent(node.button.transform);
-            backgroundImage.transform.localPosition = new(backgroundImage.sd.x, -backgroundImage.sd.y);
+            backgroundImage.transform.localPosition = new(backgroundImage.sd.x * 0.6f, -backgroundImage.sd.y * 0.6f);
         }
 
         public static StringBuilder GetText(TaskNode task)
         {
             StringBuilder sb = new();
 
-            if (task.data.rewards != null)
+            //前缀
+            if (task.data.skillPointReward != 0 || task.data.itemRewards != null)
+                sb.AppendLine(GameUI.CompareText("ori:task.rewards"));
+
+            //技能点奖励
+            if (task.data.skillPointReward != 0)
             {
-                foreach (var reward in task.data.rewards)
+                sb.AppendLine(GameUI.CompareText("ori:task.skill_point_reward").Replace("{value}", task.data.skillPointReward.ToString()));
+            }
+
+            //物品奖励
+            if (task.data.itemRewards != null)
+            {
+                foreach (var reward in task.data.itemRewards)
                 {
                     if (string.IsNullOrWhiteSpace(reward))
                         continue;
 
                     if (Drop.ConvertStringItem(reward, out string id, out ushort count, out _, out _))
                     {
-                        sb.AppendLine(GameUI.CompareText("ori:task.rewards").Replace("{id}", GameUI.CompareText(id)).Replace("{count}", count.ToString()));
+                        sb.AppendLine(GameUI.CompareText("ori:task.item_reward").Replace("{id}", GameUI.CompareText(id)).Replace("{count}", count.ToString()));
                     }
                 }
             }
@@ -331,7 +342,7 @@ namespace GameCore.UI
             Show(node.button.buttonText.text.text, $"花费: {node.data.cost}\n{GameUI.CompareText(node.data.description)}");
 
             backgroundImage.transform.SetParent(node.button.transform);
-            backgroundImage.transform.localPosition = new(backgroundImage.sd.x, -backgroundImage.sd.y);
+            backgroundImage.transform.localPosition = new(backgroundImage.sd.x * 0.6f, -backgroundImage.sd.y * 0.6f);
         }
     }
 }

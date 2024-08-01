@@ -39,6 +39,7 @@ namespace GameCore
         public const string Salad = "ori:salad";
         public const string Scallion = "ori:scallion";
         public const string ShelledDogTailGrass = "ori:shelled_dog_tail_grass";
+        public const string SkillManuscript = "ori:skill_manuscript";
         public const string Sneakers = "ori:sneakers";
         public const string SpellManuscript = "ori:spell_manuscript";
         public const string SportsShorts = "ori:sports_shorts";
