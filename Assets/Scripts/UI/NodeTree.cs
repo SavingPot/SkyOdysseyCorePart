@@ -371,6 +371,15 @@ namespace GameCore.UI
 
             return result;
         }
+
+        public TTreeNodeData GetParentData(TTreeNodeData childData)
+        {
+            foreach (var current in nodeDataList)
+                if (current.id == childData.parent)
+                    return current;
+
+            return null;
+        }
     }
 
     public class TreeNodeData

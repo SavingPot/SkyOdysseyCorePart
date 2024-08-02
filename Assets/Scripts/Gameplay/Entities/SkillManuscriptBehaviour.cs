@@ -15,7 +15,7 @@ namespace GameCore
                 Debug.LogError("只有玩家可以使用技能稿纸");
                 return false;
             }
-            
+
             var skill = GetSkillId(instance.customData);
             if (skill.IsNullOrWhiteSpace())
             {
@@ -39,7 +39,8 @@ namespace GameCore
 
             if (!node.IsParentLineUnlocked())
             {
-                InternalUIAdder.instance.SetStatusText($"请先解锁 {GameUI.CompareText($"{player.pui.skillNodeTree.GetNodeButtonId(skill)}.text")} 的父节点");
+                var parent = player.pui.skillNodeTree.GetNodeButtonId(node.parent.data.id);
+                InternalUIAdder.instance.SetStatusText($"请先解锁 {GameUI.CompareText($"{parent}.text")}");
                 return true;
             }
 

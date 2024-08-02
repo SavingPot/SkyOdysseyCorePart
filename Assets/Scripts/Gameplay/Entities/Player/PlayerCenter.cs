@@ -63,11 +63,10 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             PlayerUI.tasks = new()
             {
-                new("ori:get_log", "ori:task.get_log", null, 0, new[] { $"{BlockID.OakLog}/=/10/=/null" }),
+                new("ori:get_log", "ori:task.get_log", null, 1, null),
                 new("ori:get_feather_wing", "ori:task.get_feather_wing", "ori:get_log", 0, null),
                 new("ori:get_straw_rope", "ori:task.get_straw_rope", "ori:get_log", 0, new[] { $"{ItemID.StrawRope}/=/3/=/null" }),
                 new("ori:get_planks", "ori:task.get_planks", "ori:get_log", 0, new[] { $"{BlockID.OakPlanks}/=/10/=/null" }),
-                new("ori:get_campfire", "ori:task.get_campfire", "ori:get_planks", 0, null),
                 new("ori:get_flint_knife", "ori:task.get_flint_knife", "ori:get_planks", 0, null),
                 new("ori:get_flint_hoe", "ori:task.get_flint_hoe", "ori:get_planks", 0, null),
                 new("ori:get_flint_sword", "ori:task.get_flint_sword", "ori:get_planks", 0, null),
@@ -78,6 +77,11 @@ namespace GameCore
                 JObject jo = new();
                 SkillManuscriptBehaviour.WriteSkillId(ref jo, SkillID.Agriculture_Cooking);
                 PlayerUI.tasks.Add(new("ori:get_meat", "ori:task.get_meat", "ori:get_log", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
+            }
+            {
+                JObject jo = new();
+                SkillManuscriptBehaviour.WriteSkillId(ref jo, SkillID.Economy_Building);
+                PlayerUI.tasks.Add(new("ori:get_campfire", "ori:task.get_campfire", "ori:get_planks", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
             }
 
 
@@ -97,6 +101,8 @@ namespace GameCore
                 new(SkillID.Agriculture_Harvest, "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 2),
                 new(SkillID.Agriculture_Fishing, "ori:skill.agriculture.fishing", "ori:agriculture", "ori:skill_description.agriculture.fishing", 2),
                 new(SkillID.Magic, "ori:skill.magic", "ori:skill", "ori:skill_description.magic", 1),
+                new(SkillID.Economy, "ori:skill.economy", "ori:skill", "ori:skill_description.economy", 1),
+                new(SkillID.Economy_Building, "ori:skill.economy.building", "ori:economy", "ori:skill_description.economy.building", 1),
             };
         }
     }

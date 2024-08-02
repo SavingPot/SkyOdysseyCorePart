@@ -1040,13 +1040,15 @@ namespace GameCore
     {
         public static Dictionary<string, Func<Player, bool>> conditions = new()
         {
-            { "ori:flint_hoe", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
-            { "ori:iron_hoe", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
-            { "ori:soup_pot", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Cooking) },
-            { "ori:wok", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Cooking) },
-            { "ori:fishing_rod", player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Fishing) },
+            { ItemID.FlintHoe, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
+            { ItemID.IronHoe, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
+            { BlockID.SoupPot, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Cooking) },
+            { BlockID.Wok, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Cooking) },
+            { ItemID.FishingRod, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Fishing) },
             { "ori:mana_altar", player => player.unlockedSkills.Any(p => p.id == SkillID.Magic) },
             { "ori:biome_crystal", player => player.unlockedSkills.Any(p => p.id == SkillID.Magic) },
+            { BlockID.RemoteMarket, player => player.unlockedSkills.Any(p => p.id == SkillID.Economy) },
+            { BlockID.BuildingCenter, player => player.unlockedSkills.Any(p => p.id == SkillID.Economy_Building) },
         };
         public bool IsEligibleFor(Player player) => !conditions.ContainsKey(id) || conditions[id](player);
     }

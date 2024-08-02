@@ -1941,10 +1941,10 @@ namespace GameCore.UI
 
         public class TaskData : TreeNodeData
         {
-            public int skillPointReward;
+            public float skillPointReward;
             public string[] itemRewards;
 
-            public TaskData(string id, string icon, string parent, int skillPointRewards, string[] itemRewards) : base(id, icon, parent)
+            public TaskData(string id, string icon, string parent, float skillPointRewards, string[] itemRewards) : base(id, icon, parent)
             {
                 this.skillPointReward = skillPointRewards;
                 this.itemRewards = itemRewards;

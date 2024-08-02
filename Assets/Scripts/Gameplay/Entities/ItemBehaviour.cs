@@ -24,11 +24,11 @@ namespace GameCore
             if (owner is Player player)
             {
                 //检测是否有方块
-                if (player.map.HasBlock(pos, isBackground))
+                if (Map.instance.HasBlock(pos, isBackground))
                     return;
 
                 //放置方块
-                player.map.SetBlockNet(pos, isBackground, instance.data.id, instance.customData?.ToString());
+                Map.instance.SetBlockNet(pos, isBackground, instance.data.id, instance.customData?.ToString());
 
                 //手柄震动
                 if (GControls.mode == ControlMode.Gamepad)
@@ -51,7 +51,7 @@ namespace GameCore
             if (owner is Player player)
             {
                 //放置方块
-                if (instance.data.isBlock && player.IsPointInteractable(point) && !player.map.HasBlock(PosConvert.WorldToMapPos(point), player.isControllingBackground))
+                if (instance.data.isBlock && player.IsPointInteractable(point) && !Map.instance.HasBlock(PosConvert.WorldToMapPos(point), player.isControllingBackground))
                 {
                     UseAsBlock(PosConvert.WorldToMapPos(point), player.isControllingBackground);
 

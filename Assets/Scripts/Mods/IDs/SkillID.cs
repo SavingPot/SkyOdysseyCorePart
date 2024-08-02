@@ -10,5 +10,7 @@ namespace GameCore
         public const string Agriculture_Harvest = "ori:agriculture.harvest";
         public const string Agriculture_Fishing = "ori:agriculture.fishing";
         public const string Magic = "ori:magic";
+        public const string Economy = "ori:economy";
+        public const string Economy_Building = "ori:economy.building";
     }
 }

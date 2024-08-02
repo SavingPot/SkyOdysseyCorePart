@@ -55,7 +55,7 @@ namespace GameCore
             {
                 //后摇期间不能移动
                 var result = oldVelocityFactor();
-                if (currentNormalAttack != null && Tools.time > currentNormalAttack.hitJudgementEndTime)
+                if (currentNormalAttack != null && Tools.time > currentNormalAttack.dodgeEndTime)
                 {
                     result = 0;
                 }

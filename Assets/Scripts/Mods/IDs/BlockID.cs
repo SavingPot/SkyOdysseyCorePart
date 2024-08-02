@@ -11,6 +11,7 @@ namespace GameCore
         public const string BerryBush = "ori:berry_bush";
         public const string Boundary = "ori:boundary";
         public const string BrickClayFurnace = "ori:brick_clay_furnace";
+        public const string BuildingCenter = "ori:building_center";
         public const string Bush = "ori:bush";
         public const string Cactus = "ori:cactus";
         public const string Campfire = "ori:campfire";
@@ -54,6 +55,7 @@ namespace GameCore
         public const string Torch = "ori:torch";
         public const string Water = "ori:water";
         public const string WatermelonCrop = "ori:watermelon_crop";
+        public const string Wok = "ori:wok";
         public const string WoodenChest = "ori:wooden_chest";
         public const string YellowStone = "ori:yellow_stone";
     }

@@ -495,13 +495,8 @@ namespace GameCore
                 /* ----------------------------------- 中心空岛特别战利品 ----------------------------------- */
                 if (islandGeneration.regionGeneration.index == Vector2Int.zero)
                 {
-                    //远程市场
-                    if (lootBlockPos.x == -6)
-                    {
-                        islandGeneration.AddBlock(BlockID.RemoteMarket, lootBlockPos.x, lootBlockPos.y, false, null);
-                    }
                     //木桶
-                    else if (lootBlockPos.x == 15)
+                    if (lootBlockPos.x == 15)
                     {
                         JToken[] group = new JToken[28];
 

@@ -49,7 +49,7 @@ namespace GameCore
         public Inventory inventory;// = new();
         public List<TaskStatusForSave> completedTasks = new();
         public List<SkillStatusForSave> unlockedSkills = new();
-        public int skillPoints;
+        public float skillPoints;
         public Vector2 respawnPoint;
 
         [NonSerialized] public byte[] skinHead;

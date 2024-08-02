@@ -229,7 +229,7 @@ namespace GameCore
 
         #region 技能树
         [Sync] public List<SkillStatusForSave> unlockedSkills;
-        [Sync] public int skillPoints;
+        [Sync] public float skillPoints;
 
         public void AddUnlockedSkills(SkillStatusForSave task)
         {
@@ -239,11 +239,11 @@ namespace GameCore
         }
 
         [ServerRpc, Button]
-        public void ServerAddSkillPoint(int count, NetworkConnection caller = null)
+        public void ServerAddSkillPoint(float count, NetworkConnection caller = null)
         {
             skillPoints += count;
 
-            Debug.Log("ADD COIN " + count);
+            Debug.Log("ADD Skill Point " + count);
         }
 
         #endregion
@@ -548,8 +548,8 @@ namespace GameCore
 
                 Debug.Log("本地客户端玩家是: " + gameObject.name, gameObject);
 
-                managerGame.weatherParticle.transform.SetParent(transform);
-                managerGame.weatherParticle.transform.localPosition = new(0, 40);
+                GM.instance.weatherParticle.transform.SetParent(transform);
+                GM.instance.weatherParticle.transform.localPosition = new(0, 40);
 
 
 
@@ -1707,7 +1707,7 @@ namespace GameCore
 
             //与方块交互
             if (IsPointInteractable(point) &&
-                map.TryGetBlock(PosConvert.WorldToMapPos(point), isControllingBackground, out Block block) &&
+                Map.instance.TryGetBlock(PosConvert.WorldToMapPos(point), isControllingBackground, out Block block) &&
                 block.PlayerInteraction(this))
             {
 
@@ -1877,7 +1877,7 @@ namespace GameCore
 
             //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的 && 方块不是液体
             if (IsPointInteractable(cursorWorldPos) &&
-                map.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
+                Map.instance.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
                 block.gameObject.activeInHierarchy &&
                 !block.data.HasTag("ori:liquid"))
             {

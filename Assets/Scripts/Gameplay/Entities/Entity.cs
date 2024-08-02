@@ -36,12 +36,6 @@ namespace GameCore
 
 
 
-        /* -------------------------------------------------------------------------- */
-        /*                                     引用                                     */
-        /* -------------------------------------------------------------------------- */
-        public GM managerGame => GM.instance;
-        public Map map => Map.instance;
-
 
 
         /* -------------------------------------------------------------------------- */
@@ -127,13 +121,9 @@ namespace GameCore
 
 
         #region 同步变量
+        [Sync, SyncDefaultValue(0f)] public float invincibleTime;
         [Sync, SyncDefaultValue(false)] public bool isDead;
         [Sync] public JObject customData;
-        static JObject NewJObject() => new();
-
-        #region 无敌时间
-        [Sync, SyncDefaultValue(0f)] public float invincibleTime;
-        #endregion
 
         #region 血量
 #if UNITY_EDITOR
@@ -141,10 +131,16 @@ namespace GameCore
 #endif
         [Sync(nameof(OnHealthChangeMethod)), SyncDefaultValue(DEFAULT_HEALTH)] public int health;
         public const int DEFAULT_HEALTH = 100;
-        public Action OnHealthChange = () => { };
+        public Action<Entity> OnHealthChange = entity =>
+        {
+            if (entity.isServer && entity.health <= 0)
+            {
+                entity.Death();
+            }
+        };
         private void OnHealthChangeMethod(byte[] _)
         {
-            OnHealthChange();
+            OnHealthChange(this);
         }
         #endregion
 
@@ -232,10 +228,7 @@ namespace GameCore
 
         /* -------------------------------------------------------------------------- */
         /*                                 Entity 远程指令                                */
-        /* 作用：让任意脚本都可以以实体为载体，远程调用任意命令，并允许传参。 */
-        /* 原理：在实体上注册命令，然后在客户端/服务器上注册远程调用的函数，并将命令ID和参数一起发送给服务器。 */
-        /*      服务器收到命令后，会根据命令ID找到对应的函数，并调用它，同时将返回值发送给客户端。 */
-        /*      客户端收到返回值后，会根据返回值进行相应的处理。 */
+        /* 作用：让任意脚本都可以轻易地以实体为载体，远程调用任意命令，并允许传参。 */
         /* 优点：非常灵活，可以实现各种各样的远程调用，并且可以传参，可以实现服务器和客户端的同步。 */
         /* 缺点：是实现起来比较复杂，需要编写大量的代码，并且需要在客户端和服务器上都注册命令。 */
         /* -------------------------------------------------------------------------- */
@@ -605,15 +598,8 @@ namespace GameCore
             }
         }
 
-        protected virtual void OnEnable()
-        {
-            OnHealthChange += CheckHealthOnHealthChange;
-        }
-
-        protected virtual void OnDisable()
-        {
-            OnHealthChange -= CheckHealthOnHealthChange;
-        }
+        protected virtual void OnEnable() { }
+        protected virtual void OnDisable() { }
 
 
 #if UNITY_EDITOR
@@ -624,11 +610,13 @@ namespace GameCore
 #endif
         #endregion
 
-        protected virtual void OnBlockEnter(Block block) { }
-        protected virtual void OnBlockStay(Block block) { }
-        protected virtual void OnBlockExit(Block block) { }
 
 
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    自动销毁                                    */
+        /* -------------------------------------------------------------------------- */
         public bool ShouldBeAutoDestroyed()
         {
             if (isPlayer || isNPC || Tools.time < timeToAutoDestroy)
@@ -657,7 +645,32 @@ namespace GameCore
 
 
 
+        /* -------------------------------------------------------------------------- */
+        /*                                     方块                                     */
+        /* -------------------------------------------------------------------------- */
+        protected virtual void OnBlockEnter(Block block) { }
+        protected virtual void OnBlockStay(Block block) { }
+        protected virtual void OnBlockExit(Block block) { }
 
+
+
+
+
+
+        [ServerRpc]
+        public void ServerSetVelocity(Vector2 velocity, NetworkConnection caller = null)
+        {
+            rb.velocity = velocity;
+        }
+
+
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    温度效果                                    */
+        /* -------------------------------------------------------------------------- */
         [ServerRpc]
         public void ServerSetTemperatureEffect(TemperatureEffectType value, NetworkConnection caller = null)
         {
@@ -685,6 +698,10 @@ namespace GameCore
 
 
 
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     渲染器                                    */
+        /* -------------------------------------------------------------------------- */
         public SpriteRenderer AddSpriteRenderer(string textureId) => AddSpriteRenderer(ModFactory.CompareTexture(textureId).sprite);
         public SpriteRenderer AddSpriteRenderer(Sprite sprite)
         {
@@ -737,24 +754,6 @@ namespace GameCore
 
 
 
-
-        [ServerRpc]
-        public void ServerSetVelocity(Vector2 velocity, NetworkConnection caller = null)
-        {
-            rb.velocity = velocity;
-        }
-
-
-
-
-
-
-
-
-
-
-
-
         /* -------------------------------------------------------------------------- */
         /*                                    受伤逻辑                                    */
         /* -------------------------------------------------------------------------- */
@@ -763,19 +762,24 @@ namespace GameCore
 
 
 
-        public void CheckHealthOnHealthChange()
+
+
+        public bool CanTakeDamage() => !isDead && !isHurting && isHurtable && GetTemperatureEffectState() != TemperatureEffectState.Frozen;
+        public void CalculateActualDamage(ref int damage)
         {
-            if (isServer)
+            //计算防御值
+            if (this is IInventoryOwner owner)
             {
-                if (health <= 0)
+                var inventory = owner.GetInventory();
+                if (inventory != null)
                 {
-                    Death();
+                    damage = Mathf.Max(damage - owner.TotalDefense, 1);
                 }
             }
         }
 
 
-        public bool CanTakeDamage() => !isDead && !isHurting && isHurtable && GetTemperatureEffectState() != TemperatureEffectState.Frozen;
+
 
         /// <returns>是否向服务器发送了伤害请求</returns>
         [Button]
@@ -791,6 +795,7 @@ namespace GameCore
             ServerTakeDamage(damage, invincibleTime, hurtPos, impactForce, null);
             return true;
         }
+
 
 
 
@@ -827,19 +832,6 @@ namespace GameCore
 
             OnGetHurtServer(damage, invincibleTime, damageOriginPos, impactForce, caller);
             ClientTakeDamage(damage, invincibleTime, damageOriginPos, impactForce, caller);
-        }
-
-        public void CalculateActualDamage(ref int damage)
-        {
-            //计算防御值
-            if (this is IInventoryOwner owner)
-            {
-                var inventory = owner.GetInventory();
-                if (inventory != null)
-                {
-                    damage = Mathf.Max(damage - owner.TotalDefense, 1);
-                }
-            }
         }
 
         [ClientRpc]
@@ -946,16 +938,25 @@ namespace GameCore
         private void SummonCoins()
         {
             if (data.coinCount > 0)
-                managerGame.SummonCoinEntity(transform.position, data.coinCount);
+                GM.instance.SummonCoinEntity(transform.position, data.coinCount);
         }
 
-        private void SummonDrops()
+        protected virtual void SummonDrops()
         {
             foreach (DropData drop in data.drops)
             {
-                managerGame.SummonDrop(transform.position, drop.id, drop.count);
+                GM.instance.SummonDrop(transform.position, drop.id, drop.count);
             }
         }
+
+
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     存档                                     */
+        /* -------------------------------------------------------------------------- */
 
         public virtual JObject ModifyCustomData(JObject data)
         {
@@ -1038,6 +1039,16 @@ namespace GameCore
 
             Debug.LogWarning($"未在存档中找到实体 {Init.save.saveId}, 清除失败");
         }
+
+
+
+
+
+
+
+
+
+
 
         public void DestroyEntityOnServer()
         {
