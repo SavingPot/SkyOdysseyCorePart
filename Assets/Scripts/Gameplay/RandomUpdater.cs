@@ -29,8 +29,8 @@ namespace GameCore
     {
         //随机更新只在服务器进行, 无需同步至客户端
         [LabelText("随机更新几率")] public static byte randomUpdateProbability = 2;
-
         public static List<RandomUpdateClass> updates = new();
+        static EntityData[] entitiesSummonable;
 
 
 
@@ -38,6 +38,15 @@ namespace GameCore
 
         public static void Bind(string id, float probability, Action action)
         {
+            foreach (var update in updates)
+            {
+                if (update.id == id)
+                {
+                    Debug.LogError($"随机更新更新 {id} 已存在");
+                    return;
+                }
+            }
+
             updates.Add(new(id, probability, action));
         }
 
@@ -55,12 +64,33 @@ namespace GameCore
             Debug.LogWarning($"未找到指定更新 {id}");
         }
 
-        static readonly Type NotSummonableAttributeType = typeof(NotSummonableAttribute);
-
-        [RuntimeInitializeOnLoadMethod]
-        private static void BindMethods()
+        internal static void Init()
         {
             #region 生成实体
+
+            List<EntityData> entitiesSummonableTemp = new();
+
+            //将符合条件的实体添加到预选列表
+            Array.ForEach(ModFactory.mods, m => m.entities.ForEach(e =>
+            {
+                if (e.behaviourType == null)
+                {
+                    Debug.LogWarning($"{MethodGetter.GetLastAndCurrentMethodPath()}: 实体 {e.id} 的 {nameof(EntityData.behaviourType)} 未正确设置");
+                    return;
+                }
+
+                //如果没有NotSummonableAttribute特性那么通过
+                if (!AttributeGetter.MatchAttribute(e.behaviourType, NotSummonableAttributeType))
+                {
+                    entitiesSummonableTemp.Add(e);
+                }
+            }));
+
+            entitiesSummonable = entitiesSummonableTemp.ToArray();
+
+
+
+
             Bind("ori:summon_entities", 8, () =>
             {
                 //白天概率为晚上的 2/3
@@ -71,25 +101,21 @@ namespace GameCore
                 if (EntityCenter.all.Count >= 100 || !Map.HasInstance() || Map.instance.chunks.Count == 0)
                     return;
 
-                List<EntityData> entities = new();
+
 
                 //将符合条件的实体添加到预选列表
-                Array.ForEach(ModFactory.mods, m => m.entities.ForEach(e =>
+                List<EntityData> entities = new();
+                foreach (var entity in entitiesSummonable)
                 {
-                    if (e.behaviourType == null)
-                    {
-                        Debug.LogWarning($"{MethodGetter.GetLastAndCurrentMethodPath()}: 实体 {e.id} 的 {nameof(EntityData.behaviourType)} 未正确设置");
-                        return;
-                    }
-
                     //如果 符合几率 没有NotSummonableAttribute特性 时间符合 就添加至预选列表
-                    else if (Tools.Prob100(e.summon.defaultProbability) &&
-                            !AttributeGetter.MatchAttribute(e.behaviourType, NotSummonableAttributeType) &&
-                            GTime.IsInTime(GTime.time24Format, e.summon.timeEarliest, e.summon.timeLatest))
+                    if (Tools.Prob100(entity.summon.defaultProbability) &&
+                            GTime.IsInTime(GTime.time24Format, entity.summon.timeEarliest, entity.summon.timeLatest))
                     {
-                        entities.Add(e);
+                        entities.Add(entity);
                     }
-                }));
+                }
+
+
 
                 if (entities.Count > 0)
                 {
@@ -136,6 +162,8 @@ namespace GameCore
             #endregion
         }
 
+        static readonly Type NotSummonableAttributeType = typeof(NotSummonableAttribute);
+
         /// <summary>
         /// 当随机更新时
         /// </summary>
@@ -173,6 +201,8 @@ namespace GameCore
                     //抽取一个方块并检查
                     Block block = chunk.wallBlocks.Extract(RandomUpdateRandom);
 
+                    //TODO: 在视野范围内也允许生成，但是 Entity.AfterInitialization 中会检测是否在视野范围内，如果是那么生成一个粒子系统
+                    //TODO: Particle System 在 GameScene 中已存在
                     if (block != null &&
                         !Map.instance.HasBlock(block.pos + Vector2Int.up, false) &&
                         chunk.IsInRegionBound(block.pos, 10) &&

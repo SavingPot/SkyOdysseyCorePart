@@ -774,7 +774,7 @@ namespace GameCore
 
                         ServerAddCoin(-cost);
                         ServerAddSkillPoint(1);
-                        
+
                         GenerateRegion(targetIndex);
                         RefreshRegionUnlockingRenderers();
                         ServerDestroyRegionBarriers(targetIndex);
@@ -1185,7 +1185,14 @@ namespace GameCore
                 return;
             }
 
-            caller.gravity = playerDefaultGravity;
+            var result = playerDefaultGravity;
+            var region = caller.region;
+
+            //潮湿带重力减小
+            if (region != null && region.index.y == -1)
+                result *= 0.4f;
+                
+            caller.gravity = result;
         };
 
         [ServerRpc, Button]

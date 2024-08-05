@@ -262,6 +262,10 @@ namespace GameCore
 
 
 
+            //绑定随机更新
+            RandomUpdater.Init();
+
+
 
 
 
