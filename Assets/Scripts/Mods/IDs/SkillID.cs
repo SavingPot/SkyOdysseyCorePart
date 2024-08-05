@@ -12,5 +12,6 @@ namespace GameCore
         public const string Magic = "ori:magic";
         public const string Economy = "ori:economy";
         public const string Economy_Building = "ori:economy.building";
+        public const string Industry = "ori:industry";
     }
 }

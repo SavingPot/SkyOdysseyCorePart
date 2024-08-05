@@ -103,6 +103,7 @@ namespace GameCore
                 new(SkillID.Magic, "ori:skill.magic", "ori:skill", "ori:skill_description.magic", 1),
                 new(SkillID.Economy, "ori:skill.economy", "ori:skill", "ori:skill_description.economy", 1),
                 new(SkillID.Economy_Building, "ori:skill.economy.building", "ori:economy", "ori:skill_description.economy.building", 1),
+                new(SkillID.Industry, "ori:skill.industry", "ori:skill", "ori:skill_description.industry", 1),
             };
         }
     }

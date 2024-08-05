@@ -242,6 +242,7 @@ namespace GameCore
         public void ServerAddSkillPoint(float count, NetworkConnection caller = null)
         {
             skillPoints += count;
+            pui.skillPointText.RefreshUI();
 
             Debug.Log("ADD Skill Point " + count);
         }
@@ -354,10 +355,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         private readonly Collider2D[] itemPickUpObjectsDetectedTemp = new Collider2D[40];
         public PlayerController playerController;
-        private void UpdateController(ControlMode newMode)
-        {
-            playerController = ControlModeToController(this, newMode);
-        }
+        private void UpdateController(ControlMode newMode) => playerController = ControlModeToController(this, newMode);
         float rushTimer;
         public Enemy lockOnTarget { get; private set; }
         readonly Collider2D[] lockOnOverlapTemp = new Collider2D[10];
@@ -774,7 +772,9 @@ namespace GameCore
                             return;
                         }
 
-                        coin -= cost;
+                        ServerAddCoin(-cost);
+                        ServerAddSkillPoint(1);
+                        
                         GenerateRegion(targetIndex);
                         RefreshRegionUnlockingRenderers();
                         ServerDestroyRegionBarriers(targetIndex);
@@ -1013,6 +1013,52 @@ namespace GameCore
             }
         }
 
+        public override EntitySave GetEntitySaveObjectFromWorld()
+        {
+            //将玩家数据写入
+            foreach (PlayerSave save in GFiles.world.playerSaves)
+            {
+                if (save.id == playerName)
+                {
+                    return save;
+                }
+            }
+
+            return null;
+        }
+
+        public override void WriteToEntitySave(EntitySave save)
+        {
+            base.WriteToEntitySave(save);
+
+            if (save is PlayerSave trueSave)
+            {
+                trueSave.WriteFromPlayer(this);
+            }
+            else
+            {
+                throw new();
+            }
+        }
+
+        #endregion
+
+
+
+
+        #region 受伤、死亡、复活
+
+        /* -------------------------------------------------------------------------- */
+        /*                                     受伤                                     */
+        /* -------------------------------------------------------------------------- */
+        public override void OnGetHurtServer(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
+
+        public override void OnGetHurtClient(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
+        {
+            if (GControls.mode == ControlMode.Gamepad)
+                GControls.GamepadVibrationMediumStrong();
+        }
+
 
         /* -------------------------------------------------------------------------- */
         /*                                    死亡逻辑                                    */
@@ -1068,6 +1114,8 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                     重生逻辑                                     */
         /* -------------------------------------------------------------------------- */
+
+
         [ClientRpc]
         public void ClientWaitForRespawn(NetworkConnection caller = null)
         {
@@ -1123,52 +1171,7 @@ namespace GameCore
             }
         }
 
-
-
-
-
-
-        public override void OnGetHurtServer(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller) { }
-
-        public override void OnGetHurtClient(float damage, float invincibleTime, Vector2 damageOriginPos, Vector2 impactForce, NetworkConnection caller)
-        {
-            if (GControls.mode == ControlMode.Gamepad)
-                GControls.GamepadVibrationMediumStrong();
-        }
-
-
-
-
-        public override EntitySave GetEntitySaveObjectFromWorld()
-        {
-            //将玩家数据写入
-            foreach (PlayerSave save in GFiles.world.playerSaves)
-            {
-                if (save.id == playerName)
-                {
-                    return save;
-                }
-            }
-
-            return null;
-        }
-
-        public override void WriteToEntitySave(EntitySave save)
-        {
-            base.WriteToEntitySave(save);
-
-            if (save is PlayerSave trueSave)
-            {
-                trueSave.WriteFromPlayer(this);
-            }
-            else
-            {
-                throw new();
-            }
-        }
-
         #endregion
-
 
 
 
@@ -1289,11 +1292,12 @@ namespace GameCore
 
         IEnumerator IEWaitForRegionSegments()
         {
+            //等待服务器发送所有数据
             yield return new WaitUntil(() => regionGeneration_region != null);
             yield return new WaitUntil(() => regionGeneration_blockSaves.Count == regionGeneration_blocksCount);
 
 
-            //恢复方块数据 (浅拷贝时方块数据被清除了)
+            //恢复方块数据 (因为服务器浅拷贝时方块数据被清除了)
             regionGeneration_region.blocks = regionGeneration_blockSaves;
 
 
@@ -1468,7 +1472,7 @@ namespace GameCore
             //获取原区域
             var targetRegion = GFiles.world.GetRegion(targetRegionIndex);
 
-            //删除的屏障方块
+            //从存档中删除屏障方块
             targetRegion.RemoveBarriersBetweenNeighbors();
 
             //让客户端删除屏障方块
@@ -1477,61 +1481,57 @@ namespace GameCore
             ClientDestroyRegionBarriers(targetRegionIndex, minPoint, maxPoint);
         }
         /// <summary>
-        /// 这个方法在客户端调用，作用是在地图中删除，而不是在存档中删除！
+        /// 这个方法在客户端调用，作用是在地图中删除方块，而不是在存档中删除！
         /// </summary>
-        /// <param name="targetRegionIndex"></param>
-        /// <param name="minPoint"></param>
-        /// <param name="maxPoint"></param>
-        /// <param name="caller"></param>
         [ClientRpc]
         void ClientDestroyRegionBarriers(Vector2Int targetRegionIndex, Vector2Int minPoint, Vector2Int maxPoint, NetworkConnection caller = null)
         {
             //删除上面的屏障方块
             if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.up))
             {
-                int bottomY = maxPoint.y;
-                int topY = maxPoint.y + 1;
+                int selfY = maxPoint.y;
+                int otherY = maxPoint.y + 1;
 
                 for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
                 {
-                    Map.instance.RemoveBlock(new(x, bottomY), false, false, true);
-                    Map.instance.RemoveBlock(new(x, topY), false, false, true);
+                    Map.instance.RemoveBlock(new(x, selfY), false, false, true);
+                    Map.instance.RemoveBlock(new(x, otherY), false, false, true);
                 }
             }
             //删除下面的屏障方块
             if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.down))
             {
-                int bottomY = minPoint.y - 1;
-                int topY = minPoint.y;
+                int selfY = minPoint.y;
+                int otherY = minPoint.y - 1;
 
                 for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
                 {
-                    Map.instance.RemoveBlock(new(x, bottomY), false, false, true);
-                    Map.instance.RemoveBlock(new(x, topY), false, false, true);
+                    Map.instance.RemoveBlock(new(x, otherY), false, false, true);
+                    Map.instance.RemoveBlock(new(x, selfY), false, false, true);
                 }
             }
             //删除左边的屏障方块
             if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.left))
             {
-                int leftX = minPoint.x - 1;
-                int rightX = minPoint.x;
+                int selfX = minPoint.x;
+                int otherX = minPoint.x - 1;
 
                 for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
                 {
-                    Map.instance.RemoveBlock(new(leftX, y), false, false, true);
-                    Map.instance.RemoveBlock(new(rightX, y), false, false, true);
+                    Map.instance.RemoveBlock(new(otherX, y), false, false, true);
+                    Map.instance.RemoveBlock(new(selfX, y), false, false, true);
                 }
             }
             //删除右边的屏障方块
             if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.right))
             {
-                int leftX = maxPoint.x;
-                int rightX = maxPoint.x + 1;
+                int selfX = maxPoint.x;
+                int otherX = maxPoint.x + 1;
 
                 for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
                 {
-                    Map.instance.RemoveBlock(new(leftX, y), false, false, true);
-                    Map.instance.RemoveBlock(new(rightX, y), false, false, true);
+                    Map.instance.RemoveBlock(new(selfX, y), false, false, true);
+                    Map.instance.RemoveBlock(new(otherX, y), false, false, true);
                 }
             }
         }

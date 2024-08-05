@@ -995,6 +995,7 @@ namespace GameCore
     {
         [LabelText("原料")] public T[] ingredients;
         [LabelText("结果")] public T result;
+        [LabelText("设施")] public string facility;
 
 
         public bool WhetherCanBeCrafted(Item[] items, out List<Dictionary<int, ushort>> ingredientTables)
@@ -1050,7 +1051,8 @@ namespace GameCore
             { BlockID.RemoteMarket, player => player.unlockedSkills.Any(p => p.id == SkillID.Economy) },
             { BlockID.BuildingCenter, player => player.unlockedSkills.Any(p => p.id == SkillID.Economy_Building) },
         };
-        public bool IsEligibleFor(Player player) => !conditions.ContainsKey(id) || conditions[id](player);
+
+        public bool IsEligibleFor(Player player) => (!conditions.ContainsKey(id) || conditions[id](player)) && facility == player.pui.craftingFacility;
     }
 
     [Serializable]
@@ -1063,10 +1065,7 @@ namespace GameCore
     }
 
     [Serializable]
-    public class CookingRecipe : Recipe<CookingRecipe_Item>
-    {
-        [LabelText("类型")] public string type;
-    }
+    public class CookingRecipe : Recipe<CookingRecipe_Item> { }
 
     [Serializable]
     public class CookingRecipe_Item : RecipeItem<CookingRecipe_Item>

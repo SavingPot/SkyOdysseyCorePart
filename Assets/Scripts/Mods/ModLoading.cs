@@ -298,6 +298,7 @@ namespace GameCore
                 {
                     newRecipe.jsonFormatWhenLoad = "0.6.0";
 
+                    newRecipe.facility = cr["facility"]?.ToString();
                     newRecipe.result = new(cr["result"]["id"].ToString(), (cr["result"]["count"]?.ToInt() ?? 1).ToUShort(), new());
 
                     List<CraftingRecipe_Item> ingredients = new();
@@ -324,7 +325,7 @@ namespace GameCore
                 {
                     newRecipe.jsonFormatWhenLoad = "0.6.0";
 
-                    newRecipe.type = cr["type"]?.ToString() ?? "ori:poach";
+                    newRecipe.facility = cr["facility"]?.ToString() ?? BlockID.SoupPot;
                     newRecipe.result = new(cr["result"]["id"].ToString(), (cr["result"]["count"]?.ToInt() ?? 1).ToUShort(), new());
 
                     List<CookingRecipe_Item> ingredients = new();

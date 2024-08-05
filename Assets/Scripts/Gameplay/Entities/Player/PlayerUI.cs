@@ -169,6 +169,12 @@ namespace GameCore.UI
         public BackpackPanel craftingPanel;
         public ScrollViewIdentity craftingView;
         public List<CraftingViewButton> craftingViewButtonPool = new();
+        public string craftingFacility { get; private set; }
+
+        public void SetCraftingFacility(string value)
+        {
+            craftingFacility = value;
+        }
 
         public CraftingViewButton GenerateCraftingViewButton()
         {
@@ -249,6 +255,7 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         public static List<SkillData> skills { get; internal set; }
         public BackpackPanel skillPanel;
+        public TextIdentity skillPointText;
         public NodeTree<SkillNode, SkillData> skillNodeTree;
         public Action<SkillData> OnUnlockSkill = _ => { };
 
@@ -1121,7 +1128,7 @@ namespace GameCore.UI
                                         Debug.LogError(error);
                                         continue;
                                     }
-                                    
+
                                     var extended = item.DataToItem();
                                     extended.count = count;
                                     if (!customData.IsNullOrWhiteSpace()) extended.customData = JsonUtils.LoadJObjectByString(customData);
@@ -1195,6 +1202,17 @@ namespace GameCore.UI
                         UnlockSkill(node);
                     }
                 );
+                skillPointText = GameUI.AddText(UIA.UpperRight, "ori:text.skill_points", skillPanel.panel);
+                skillPointText.text.SetFontSize(15);
+                skillPointText.SetAPos(-skillPointText.sd.x / 2 - 5, -skillPointText.sd.y / 2 - 5);
+                skillPointText.text.alignment = TMPro.TextAlignmentOptions.TopRight;
+                skillPointText.text.raycastTarget = false;
+                skillPointText.autoCompareText = false;
+                skillPointText.AfterRefreshing += _ =>
+                {
+                    skillPointText.SetText($"技能点数: {player.skillPoints}");
+                };
+                skillPointText.RefreshUI();
 
                 //加载已解锁的技能
                 foreach (var skill in player.unlockedSkills)
@@ -1581,6 +1599,9 @@ namespace GameCore.UI
                 TaskInfoShower.instance.Hide();
                 ItemDragger.CancelDragging();
 
+                //清除合成设施
+                SetCraftingFacility(null);
+
                 GameUI.SetPage(null);
                 GAudio.Play(AudioID.CloseBackpack);
             }
@@ -1620,9 +1641,12 @@ namespace GameCore.UI
 
         public void PauseGame()
         {
-            //如果 没有界面&不在暂停页面
-            if ((GameUI.page == null || !GameUI.page.ui) && GameUI.page.ui != pausePanel.panel)
+            //如果没有界面
+            if (GameUI.page == null || !GameUI.page.ui)
                 ShowOrHideBackpackAndSetPanelTo("ori:pause");
+            //如果处于背包界面
+            else if (backpackMask.gameObject.activeSelf)
+                ShowOrHideBackpack();
             else
                 GameUI.SetPage(null);
         }
