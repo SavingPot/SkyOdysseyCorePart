@@ -93,17 +93,17 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             PlayerUI.skills = new()
             {
-                new(SkillID.Skill, "ori:skill.skill", null, "ori:skill_description.skill", 1),
-                new(SkillID.Agriculture, "ori:skill.agriculture", "ori:skill", "ori:skill_description.agriculture", 1),
+                new(SkillID.Root, "ori:skill.root", null, "ori:skill_description.root", 99999),
+                new(SkillID.Agriculture, "ori:skill.agriculture", "ori:root", "ori:skill_description.agriculture", 1),
                 new(SkillID.Agriculture_Cooking, "ori:skill.agriculture.cooking", "ori:agriculture", "ori:skill_description.agriculture.cooking", 1),
                 new(SkillID.Agriculture_Quick, "ori:skill.agriculture.quick", "ori:agriculture", "ori:skill_description.agriculture.quick", 2),
                 new(SkillID.Agriculture_Coin, "ori:skill.agriculture.coin", "ori:agriculture", "ori:skill_description.agriculture.coin", 2),
                 new(SkillID.Agriculture_Harvest, "ori:skill.agriculture.harvest", "ori:agriculture", "ori:skill_description.agriculture.harvest", 2),
                 new(SkillID.Agriculture_Fishing, "ori:skill.agriculture.fishing", "ori:agriculture", "ori:skill_description.agriculture.fishing", 2),
-                new(SkillID.Magic, "ori:skill.magic", "ori:skill", "ori:skill_description.magic", 1),
-                new(SkillID.Economy, "ori:skill.economy", "ori:skill", "ori:skill_description.economy", 1),
+                new(SkillID.Magic, "ori:skill.magic", "ori:root", "ori:skill_description.magic", 1),
+                new(SkillID.Economy, "ori:skill.economy", "ori:root", "ori:skill_description.economy", 1),
                 new(SkillID.Economy_Building, "ori:skill.economy.building", "ori:economy", "ori:skill_description.economy.building", 1),
-                new(SkillID.Industry, "ori:skill.industry", "ori:skill", "ori:skill_description.industry", 1),
+                new(SkillID.Industry, "ori:skill.industry", "ori:root", "ori:skill_description.industry", 1),
             };
         }
     }

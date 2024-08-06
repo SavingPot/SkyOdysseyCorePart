@@ -94,10 +94,9 @@ namespace GameCore.UI
 
 
         /* -------------------------------------------------------------------------- */
-        /*                                     昼夜条                                    */
+        /*                                     时间                                    */
         /* -------------------------------------------------------------------------- */
-        public ImageIdentity dayNightBar;
-        public ImageIdentity dayNightBarPointer;
+        public TextIdentity timeText;
 
 
 
@@ -1201,6 +1200,10 @@ namespace GameCore.UI
                         if (player.skillPoints < node.data.cost)
                             return;
 
+                        //扣除技能点
+                        player.ServerAddSkillPoint(-node.data.cost);
+
+                        //解锁技能
                         UnlockSkill(node);
                     }
                 );
@@ -1285,20 +1288,21 @@ namespace GameCore.UI
             }
             #endregion
 
-            #region 昼夜条
+            #region 时间
             {
-                dayNightBar = GameUI.AddImage(UIA.Up, "ori:image.day_night_bar", "ori:day_night_bar");
-                dayNightBar.SetSizeDelta(300, 50);
-                dayNightBar.SetAPosY(-dayNightBar.sd.y / 2 - 50);
+                timeText = GameUI.AddText(UIA.LowerRight, "ori:text.time");
+                timeText.DisableAutoCompare().OnUpdate += _ => RefreshTime();
+                timeText.text.alignment = TMPro.TextAlignmentOptions.BottomRight;
+                timeText.SetAPos(-timeText.sd.x / 2 - 5, timeText.sd.y / 2 + 5);
+                RefreshTime();
 
-                dayNightBarPointer = GameUI.AddImage(UIA.UpperLeft, "ori:image.day_night_bar_pointer", "ori:day_night_bar_pointer", dayNightBar);
-                dayNightBarPointer.SetSizeDelta(50, 50);
-                dayNightBarPointer.OnUpdate += i =>
+                void RefreshTime()
                 {
-                    float progress = GTime.time24Format / 24;
-
-                    i.SetAPosX(dayNightBar.rectTransform.sizeDelta.x * progress);
-                };
+                    var time = GTime.time24Format;
+                    var integerPart = (int)time;
+                    var decimalPart = (int)(time * 60) % 60;
+                    timeText.SetText($"{integerPart}:{(decimalPart - decimalPart % 10):00}");
+                }
             }
             #endregion
 
@@ -1409,7 +1413,6 @@ namespace GameCore.UI
                 return;
 
             //刷新玩家属性
-            player.ServerAddSkillPoint(-node.data.cost);
             if (!player.unlockedSkills.Any(p => p.id == node.data.id))
             {
                 player.AddUnlockedSkills(new() { id = node.data.id, unlocked = true });
