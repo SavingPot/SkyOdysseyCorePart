@@ -1097,8 +1097,9 @@ namespace GameCore.UI
                     {
                         (true, true) => Color.white,  //完成了且领取了奖励
                         (true, false) => Tools.HexToColor("#00FFD6"),  //完成了但没领取奖励
-                        (false, _) => new(0.5f, 0.5f, 0.5f, 0.75f)  //没完成
+                        (false, _) => new(0.5f, 0.5f, 0.5f, 0.5f)  //没完成
                     },
+                    node => node.status.completed ? Color.white : new(0.8f, 0.8f, 0.8f, 0.75f),
                     node => TaskInfoShower.instance.Show(node),
                     _ => TaskInfoShower.instance.Hide(),
                     node =>
@@ -1191,7 +1192,8 @@ namespace GameCore.UI
                     "skill_tree",
                     skills,
                     skillPanel.rectTransform,
-                    node => node.status.unlocked ? Color.white : new(0.5f, 0.5f, 0.5f, 0.75f),
+                    node => node.status.unlocked ? Color.white : new(0.5f, 0.5f, 0.5f, 0.5f),
+                    node => node.status.unlocked ? Color.white : new(0.8f, 0.8f, 0.8f, 0.75f),
                     node => SkillInfoShower.instance.Show(node),
                     _ => SkillInfoShower.instance.Hide(),
                     node =>

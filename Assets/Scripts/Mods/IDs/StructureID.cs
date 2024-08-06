@@ -8,6 +8,7 @@ namespace GameCore
     {
         public const string AcaciaTree = "ori:acacia_tree";
         public const string BanyanTree = "ori:banyan_tree";
+        public const string BowlStone = "ori:bowl_stone";
         public const string GhostShip = "ori:ghost_ship";
         public const string MangroveTree = "ori:mangrove_tree";
         public const string MapleTree = "ori:maple_tree";

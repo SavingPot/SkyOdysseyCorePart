@@ -294,7 +294,7 @@ namespace GameCore
                         //如果所有条件均满足，则正式开始生成结构
                         GenerateStructure(x, y, structure);
                     }
-                };
+                }
             }
         }
 

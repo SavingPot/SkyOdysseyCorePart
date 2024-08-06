@@ -16,7 +16,8 @@ namespace GameCore.UI
 
         public string nodeTreeViewName;
         public List<TTreeNodeData> nodeDataList = new();
-        public Func<TTreeNode, Color> GetNodeColor;
+        public Func<TTreeNode, Color> GetNodeButtonColor;
+        public Func<TTreeNode, Color> GetNodeIconColor;
         public Action<TTreeNode> OnPointerStayAction;
         public Action<PointerEventData> OnPointerExitAction;
         public Action<TTreeNode> OnClick;
@@ -51,14 +52,16 @@ namespace GameCore.UI
             string nodeTreeViewName,
             List<TTreeNodeData> nodeDataList,
             Transform nodeTreeViewParent,
-            Func<TTreeNode, Color> GetNodeColor,
+            Func<TTreeNode, Color> GetNodeButtonColor,
+            Func<TTreeNode, Color> GetNodeIconColor,
             Action<TTreeNode> OnPointerStayAction,
             Action<PointerEventData> OnPointerExitAction,
             Action<TTreeNode> OnClick)
         {
             this.nodeTreeViewName = nodeTreeViewName;
             this.nodeDataList = nodeDataList;
-            this.GetNodeColor = GetNodeColor;
+            this.GetNodeButtonColor = GetNodeButtonColor;
+            this.GetNodeIconColor = GetNodeIconColor;
             this.OnPointerStayAction = OnPointerStayAction;
             this.OnPointerExitAction = OnPointerExitAction;
             this.OnClick = OnClick;
@@ -154,7 +157,8 @@ namespace GameCore.UI
 
 
             //设置按钮和图标的颜色
-            current.icon.image.color = current.button.image.color = GetNodeColor?.Invoke(current) ?? Color.white;
+            current.button.image.color = GetNodeButtonColor?.Invoke(current) ?? Color.white;
+            current.icon.image.color = GetNodeIconColor?.Invoke(current) ?? Color.white;
 
 
             //如果有连线还要设置线的颜色
