@@ -25,7 +25,7 @@ namespace GameCore.UI
             button = GameUI.AddButton(UIA.Middle, buttonId);
             content = GameUI.AddImage(UIA.Middle, imageId, null, button);
 
-            button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
+            button.image.sprite = ModFactory.CompareTexture("ori:item_slot").sprite;
             content.image.sprite = null;
 
             button.sd = sizeDelta;

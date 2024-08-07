@@ -200,7 +200,7 @@ namespace GameCore.UI
                     Item itemGot = player.inventory.GetItem(ingredient.Key);
 
                     //图标
-                    var ingredientsBackground = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.ingredients_background_{recipe.id}", "ori:item_tab");
+                    var ingredientsBackground = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.ingredients_background_{recipe.id}", "ori:item_slot");
                     var ingredientsIcon = GameUI.AddImage(UIA.Middle, $"ori:button.crafting_info_shower.ingredients_{ingredient.Key}", null, ingredientsBackground);
                     var ingredientsText = GameUI.AddText(UIA.Middle, $"ori:text.crafting_info_shower.ingredients_{recipe.id}", ingredientsBackground);
 
@@ -222,8 +222,8 @@ namespace GameCore.UI
             //显示结果
             resultsView.Clear();
 
-            var iconBackground = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.result_background_{recipe.id}", "ori:item_tab");
-            var icon = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.result_{recipe.id}", "ori:item_tab", iconBackground);
+            var iconBackground = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.result_background_{recipe.id}", "ori:item_slot");
+            var icon = GameUI.AddImage(UIA.Middle, $"ori:image.crafting_info_shower.result_{recipe.id}", "ori:item_slot", iconBackground);
             var iconText = GameUI.AddText(UIA.Middle, $"ori:text.crafting_info_shower.result_{recipe.id}", iconBackground);
 
             icon.SetSizeDelta(resultsView.gridLayoutGroup.cellSize);

@@ -202,7 +202,7 @@ namespace GameCore
         {
             if (entity is Player player && player.isLocalPlayer && entity.TryGetRegion(out var region))
             {
-                InternalUIAdder.instance.SetTitleText($"{GameUI.CompareText(region.biomeId)}\n{GameUI.CompareText($"ori:region_index_y.{region.index.y}")}");
+                InternalUIAdder.instance.SetTitleText($"{GameUI.CompareText(region.biomeId)}\n<size=55%>{GameUI.CompareText($"ori:region_index_y.{region.index.y}")}</size>");
             }
         };
 

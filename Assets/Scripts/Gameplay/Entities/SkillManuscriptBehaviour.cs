@@ -46,7 +46,7 @@ namespace GameCore
 
             player.pui.UnlockSkill(node);
             player.ServerReduceUsingItemCount(1);
-            InternalUIAdder.instance.SetStatusText($"解锁技能: {GameUI.CompareText($"{player.pui.skillNodeTree.GetNodeButtonId(node.data.id)}.text")}");
+            InternalUIAdder.instance.SetTitleText($"解锁技能: {GameUI.CompareText($"{player.pui.skillNodeTree.GetNodeButtonId(node.data.id)}.text")}");
             return true;
         }
 

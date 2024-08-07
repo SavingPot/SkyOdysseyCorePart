@@ -148,9 +148,9 @@ namespace GameCore.UI
 
             #region 标题文本
             {
-                titleText = GameUI.AddText(new(0.5f, 0.75f, 0.5f, 0.75f), "ori:text.title");
+                titleText = GameUI.AddText(new(0.5f, 0.82f, 0.5f, 0.82f), "ori:text.title");
                 titleText.SetSizeDeltaX(600);
-                titleText.text.SetFontSize(34);
+                titleText.text.SetFontSize(50);
                 titleText.autoCompareText = false;
                 titleText.text.raycastTarget = false;
                 titleText.gameObject.SetActive(false);

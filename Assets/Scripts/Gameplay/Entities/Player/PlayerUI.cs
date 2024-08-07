@@ -151,11 +151,11 @@ namespace GameCore.UI
         /*                                     物品栏                                    */
         /* -------------------------------------------------------------------------- */
         public InventorySlotUI[] inventorySlotsUIs = new InventorySlotUI[Player.inventorySlotCountConst];
-        public InventorySlotUI inventoryHelmetUI;
-        public InventorySlotUI inventoryBreastplateUI;
-        public InventorySlotUI inventoryLeggingUI;
-        public InventorySlotUI inventoryBootsUI;
-        public InventorySlotUI inventoryShieldUI;
+        public InventorySlotUI inventoryHelmetSlot;
+        public InventorySlotUI inventoryBreastplateSlot;
+        public InventorySlotUI inventoryLeggingSlot;
+        public InventorySlotUI inventoryBootsSlot;
+        public InventorySlotUI inventoryShieldSlot;
         public readonly InventorySlotUI[] quickInventorySlots;
         public BackpackPanel inventoryItemPanel;
         public ScrollViewIdentity inventoryItemView;
@@ -179,11 +179,11 @@ namespace GameCore.UI
         {
             //添加按钮
             var button = GameUI.AddButton(UIA.Up, $"ori:button.player_crafting_recipe_{Tools.randomGUID}");
-            button.image.sprite = ModFactory.CompareTexture("ori:item_tab").sprite;
+            button.image.sprite = ModFactory.CompareTexture("ori:item_slot").sprite;
             craftingView.AddChild(button);
 
             //物品图标
-            var image = GameUI.AddImage(UIA.Middle, $"ori:image.player_crafting_recipe_{Tools.randomGUID}", "ori:item_tab", button);
+            var image = GameUI.AddImage(UIA.Middle, $"ori:image.player_crafting_recipe_{Tools.randomGUID}", "ori:item_slot", button);
             image.sd = craftingView.gridLayoutGroup.cellSize * 0.75f;
 
             //文本
@@ -764,8 +764,8 @@ namespace GameCore.UI
                 {
                     int i = index;
                     int indexAs0 = index + quickInventorySlotCount / 2;
-                    var button = GameUI.AddButton(UIA.Down, "ori:button.item_tab_" + indexAs0, GameUI.canvas.transform, "ori:item_tab");
-                    var item = GameUI.AddImage(UIA.Down, "ori:image.item_tab_item_" + indexAs0, "ori:item_tab", button);
+                    var button = GameUI.AddButton(UIA.Down, "ori:button.item_slot_" + indexAs0, GameUI.canvas.transform, "ori:item_slot");
+                    var item = GameUI.AddImage(UIA.Down, "ori:image.item_slot_item_" + indexAs0, "ori:item_slot", button);
 
                     item.rectTransform.SetParentForUI(button.rectTransform);
                     button.rectTransform.sizeDelta = vecButtonSize;
@@ -834,11 +834,11 @@ namespace GameCore.UI
                             inventorySlot.Refresh(player, index.ToString());
                         }
 
-                        inventoryHelmetUI.Refresh(player, Inventory.helmetVar, item => Item.Null(item) || item.data.Helmet != null);
-                        inventoryBreastplateUI.Refresh(player, Inventory.breastplateVar, item => Item.Null(item) || item.data.Breastplate != null);
-                        inventoryLeggingUI.Refresh(player, Inventory.leggingVar, item => Item.Null(item) || item.data.Legging != null);
-                        inventoryBootsUI.Refresh(player, Inventory.bootsVar, item => Item.Null(item) || item.data.Boots != null);
-                        inventoryShieldUI.Refresh(player, Inventory.shieldVar, item => Item.Null(item) || item.data.Shield != null);
+                        inventoryHelmetSlot.Refresh(player, Inventory.helmetVar, item => Item.Null(item) || item.data.Helmet != null);
+                        inventoryBreastplateSlot.Refresh(player, Inventory.breastplateVar, item => Item.Null(item) || item.data.Breastplate != null);
+                        inventoryLeggingSlot.Refresh(player, Inventory.leggingVar, item => Item.Null(item) || item.data.Legging != null);
+                        inventoryBootsSlot.Refresh(player, Inventory.bootsVar, item => Item.Null(item) || item.data.Boots != null);
+                        inventoryShieldSlot.Refresh(player, Inventory.shieldVar, item => Item.Null(item) || item.data.Shield != null);
                     });
 
                 for (int i = 0; i < inventorySlotsUIs.Length; i++)
@@ -850,29 +850,29 @@ namespace GameCore.UI
                     inventoryItemView.AddChild(ui.button);
                 }
 
-                inventoryHelmetUI = new($"ori:button.backpack_inventory_item_{Inventory.helmetVar}", $"ori:image.backpack_inventory_item_{Inventory.helmetVar}", inventoryItemView.gridLayoutGroup.cellSize);
-                inventoryBreastplateUI = new($"ori:button.backpack_inventory_item_{Inventory.breastplateVar}", $"ori:image.backpack_inventory_item_{Inventory.breastplateVar}", inventoryItemView.gridLayoutGroup.cellSize);
-                inventoryLeggingUI = new($"ori:button.backpack_inventory_item_{Inventory.leggingVar}", $"ori:image.backpack_inventory_item_{Inventory.leggingVar}", inventoryItemView.gridLayoutGroup.cellSize);
-                inventoryBootsUI = new($"ori:button.backpack_inventory_item_{Inventory.bootsVar}", $"ori:image.backpack_inventory_item_{Inventory.bootsVar}", inventoryItemView.gridLayoutGroup.cellSize);
-                inventoryShieldUI = new($"ori:button.backpack_inventory_item_{Inventory.shieldVar}", $"ori:image.backpack_inventory_item_{Inventory.shieldVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryHelmetSlot = new($"ori:button.backpack_inventory_item_{Inventory.helmetVar}", $"ori:image.backpack_inventory_item_{Inventory.helmetVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryBreastplateSlot = new($"ori:button.backpack_inventory_item_{Inventory.breastplateVar}", $"ori:image.backpack_inventory_item_{Inventory.breastplateVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryLeggingSlot = new($"ori:button.backpack_inventory_item_{Inventory.leggingVar}", $"ori:image.backpack_inventory_item_{Inventory.leggingVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryBootsSlot = new($"ori:button.backpack_inventory_item_{Inventory.bootsVar}", $"ori:image.backpack_inventory_item_{Inventory.bootsVar}", inventoryItemView.gridLayoutGroup.cellSize);
+                inventoryShieldSlot = new($"ori:button.backpack_inventory_item_{Inventory.shieldVar}", $"ori:image.backpack_inventory_item_{Inventory.shieldVar}", inventoryItemView.gridLayoutGroup.cellSize);
 
-                inventoryHelmetUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
-                inventoryBreastplateUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
-                inventoryLeggingUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
-                inventoryBootsUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
-                inventoryShieldUI.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
+                inventoryHelmetSlot.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
+                inventoryBreastplateSlot.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
+                inventoryLeggingSlot.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
+                inventoryBootsSlot.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
+                inventoryShieldSlot.button.transform.SetParent(inventoryItemView.gridLayoutGroup.transform.parent);
 
-                inventoryHelmetUI.button.SetAnchorMinMax(UIA.LowerLeft);
-                inventoryBreastplateUI.button.SetAnchorMinMax(UIA.LowerLeft);
-                inventoryLeggingUI.button.SetAnchorMinMax(UIA.LowerLeft);
-                inventoryBootsUI.button.SetAnchorMinMax(UIA.LowerLeft);
-                inventoryShieldUI.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryHelmetSlot.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryBreastplateSlot.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryLeggingSlot.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryBootsSlot.button.SetAnchorMinMax(UIA.LowerLeft);
+                inventoryShieldSlot.button.SetAnchorMinMax(UIA.LowerLeft);
 
-                inventoryHelmetUI.button.ap = inventoryHelmetUI.button.sd / 2;
-                inventoryBreastplateUI.button.SetAPosOnBySizeRight(inventoryHelmetUI.button, 0);
-                inventoryLeggingUI.button.SetAPosOnBySizeRight(inventoryBreastplateUI.button, 0);
-                inventoryBootsUI.button.SetAPosOnBySizeRight(inventoryLeggingUI.button, 0);
-                inventoryShieldUI.button.SetAPosOnBySizeRight(inventoryBootsUI.button, 10);
+                inventoryHelmetSlot.button.ap = new(inventoryHelmetSlot.button.sd.x / 2 + 20, inventoryHelmetSlot.button.sd.y / 2 + 10);
+                inventoryBreastplateSlot.button.SetAPosOnBySizeRight(inventoryHelmetSlot.button, 0);
+                inventoryLeggingSlot.button.SetAPosOnBySizeRight(inventoryBreastplateSlot.button, 0);
+                inventoryBootsSlot.button.SetAPosOnBySizeRight(inventoryLeggingSlot.button, 0);
+                inventoryShieldSlot.button.SetAPosOnBySizeRight(inventoryBootsSlot.button, 10);
 
                 //设置背包面板为物品栏
                 SetBackpackPanel("ori:inventory");
@@ -1752,10 +1752,17 @@ namespace GameCore.UI
 
                 //设置栏位图标
                 if (player.usingItemIndex == i)
-                    slot.button.image.sprite = ModFactory.CompareTexture("ori:using_item_tab")?.sprite;
+                    slot.button.image.sprite = ModFactory.CompareTexture("ori:item_slot_using")?.sprite;
                 else
-                    slot.button.image.sprite = ModFactory.CompareTexture("ori:item_tab")?.sprite;
+                    slot.button.image.sprite = ModFactory.CompareTexture("ori:item_slot")?.sprite;
             }
+
+            //刷新装备栏
+            inventoryHelmetSlot.button.image.sprite = Item.Null(player.inventory.helmet) ? ModFactory.CompareTexture("ori:item_slot_helmet").sprite : ModFactory.CompareTexture("ori:item_slot").sprite;
+            inventoryBreastplateSlot.button.image.sprite = Item.Null(player.inventory.breastplate) ? ModFactory.CompareTexture("ori:item_slot_breastplate").sprite : ModFactory.CompareTexture("ori:item_slot").sprite;
+            inventoryLeggingSlot.button.image.sprite = Item.Null(player.inventory.legging) ? ModFactory.CompareTexture("ori:item_slot_legging").sprite : ModFactory.CompareTexture("ori:item_slot").sprite;
+            inventoryBootsSlot.button.image.sprite = Item.Null(player.inventory.boots) ? ModFactory.CompareTexture("ori:item_slot_boots").sprite : ModFactory.CompareTexture("ori:item_slot").sprite;
+            inventoryShieldSlot.button.image.sprite = Item.Null(player.inventory.shield) ? ModFactory.CompareTexture("ori:item_slot_shield").sprite : ModFactory.CompareTexture("ori:item_slot").sprite;
 
             /* ----------------------------------- 检测按键 ----------------------------------- */
             //TODO: PlayerControls ify
