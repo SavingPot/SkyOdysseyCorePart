@@ -878,6 +878,60 @@ namespace GameCore.UI
             AfterFadeOut(target);
             fadeAction?.afterAnimation?.Invoke();
         }
+
+
+        static readonly List<FadeInThenOutArgs> fadeInThenOutList = new();
+        public static async void FadeInThenOut(FadeInThenOutArgs args)
+        {
+            bool hasInstance = false;
+            foreach (var item in fadeInThenOutList)
+            {
+                if (item.target.GetInstanceID() == args.target.GetInstanceID())
+                {
+                    item.fadeOutWaitedTime = 0;
+                    args.preparingToFadeOut = item.preparingToFadeOut;
+
+                    hasInstance = true;
+                }
+            }
+
+            //停止淡出动画
+            Tools.KillTweensOf(args.target);
+
+            if (!hasInstance)
+                fadeInThenOutList.Add(args);
+
+            //播放淡入动画
+            if (args.target.color.a == 1) args.target.SetAlpha(0);
+            FadeIn(args.target, fadeAction: args.fadeInAction);
+
+            //这层检查是为了可以打断准备播放的淡出动画，因为 while 不会停止
+            if (!args.preparingToFadeOut)
+            {
+                args.preparingToFadeOut = true;
+
+                //等待淡出间隔
+                while (args.fadeOutWaitedTime < args.duration)
+                {
+                    args.fadeOutWaitedTime += Tools.deltaTime;
+
+                    await UniTask.NextFrame();
+                }
+
+                //杀死淡入动画
+                Tools.KillTweensOf(args.target);
+
+                //淡出动画
+                args.target.SetAlpha(1);
+                FadeOut(args.target, true, 1, args.fadeOutAction);
+
+                //还原参数
+                args.fadeOutWaitedTime = 0;
+                args.preparingToFadeOut = false;
+                fadeInThenOutList.Remove(args); //在 if 之内而不是之外删除，是为了把删除权利交给最先发起动画的方法调用
+            }
+        }
+
         #endregion
 
         #region 位置出入
@@ -1070,5 +1124,23 @@ namespace GameCore.UI
 
         public UnityAction afterAnimation;
         public UnityAction beforeAnimation;
+    }
+
+    public class FadeInThenOutArgs
+    {
+        public Graphic target;
+        public float duration;
+        public UIAnimationAction? fadeInAction;
+        public UIAnimationAction? fadeOutAction;
+        internal float fadeOutWaitedTime;
+        internal bool preparingToFadeOut;
+
+        public FadeInThenOutArgs(Graphic target, float duration, UIAnimationAction? fadeInAction = null, UIAnimationAction? fadeOutAction = null)
+        {
+            this.target = target;
+            this.duration = duration;
+            this.fadeInAction = fadeInAction;
+            this.fadeOutAction = fadeOutAction;
+        }
     }
 }

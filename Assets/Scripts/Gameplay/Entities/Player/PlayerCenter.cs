@@ -70,9 +70,13 @@ namespace GameCore
                 new("ori:get_flint_knife", "ori:task.get_flint_knife", "ori:get_planks", 0, null),
                 new("ori:get_flint_hoe", "ori:task.get_flint_hoe", "ori:get_planks", 0, null),
                 new("ori:get_flint_sword", "ori:task.get_flint_sword", "ori:get_planks", 0, null),
-                new("ori:get_ore", "ori:task.get_ore", "ori:get_log", 0, null),
                 new("ori:get_bark", "ori:task.get_bark", "ori:get_log", 0, new[] { $"{ItemID.Bark}/=/1/=/null" }),
             };
+            {
+                JObject jo = new();
+                SkillManuscriptBehaviour.WriteSkillId(ref jo, SkillID.Industry);
+                PlayerUI.tasks.Add(new("ori:get_ore", "ori:task.get_ore", "ori:get_log", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
+            }
             {
                 JObject jo = new();
                 SkillManuscriptBehaviour.WriteSkillId(ref jo, SkillID.Agriculture_Cooking);

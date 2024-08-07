@@ -95,9 +95,10 @@ namespace GameCore
                         //如果没有符合的 ID，就通过标签查询任务
                         item.data.tags.ForEach(tag =>
                         {
-                            if (TaskTagTable.ContainsKey(tag))
+                            var tagName = tag.GetTagName();
+                            if (TaskTagTable.ContainsKey(tagName))
                             {
-                                pui.CompleteTask(TaskTagTable[tag]);
+                                pui.CompleteTask(TaskTagTable[tagName]);
                             }
                         });
                     }
@@ -244,6 +245,7 @@ namespace GameCore
             skillPoints += count;
             pui.skillPointText.RefreshUI();
 
+            InternalUIAdder.instance.SetTitleText($"获取 {count} 个技能点");
             Debug.Log("ADD Skill Point " + count);
         }
 
@@ -1191,7 +1193,7 @@ namespace GameCore
             //潮湿带重力减小
             if (region != null && region.index.y == -1)
                 result *= 0.4f;
-                
+
             caller.gravity = result;
         };
 
@@ -1403,6 +1405,7 @@ namespace GameCore
                         var respawnPoint = regionToGenerate.spawnPoint.To2();
                         ClientSetPosition(respawnPoint);
                         ((PlayerSave)Init.save).respawnPoint = respawnPoint;
+                        WriteDataToWorldSave();
                     }
 
                     //* 如果是服务器发送的申请: 服务器生成

@@ -49,53 +49,32 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         /*                                     状态文本                                     */
         /* -------------------------------------------------------------------------- */
-        public static float statusTextFadeOutTime = 5;
-        public float statusTextFadeOutWaitedTime;
-        public bool preparingToFadeOutStatusText;
         public TextIdentity statusText;
-
-
-
+        FadeInThenOutArgs statusTextFadeArgs;
 
         public void SetStatusText(string text)
         {
             statusText.SetText(text);
 
-            //杀死淡出动画
-            Tools.KillTweensOf(statusText.text);
-
-            //播放淡入动画
-            if (statusText.text.color.a == 1)
-                statusText.text.SetAlpha(0);
-            GameUI.FadeIn(statusText.text);
-
-            //准备播放淡出动画
-            statusTextFadeOutWaitedTime = 0;
-
-            if (!preparingToFadeOutStatusText)
-            {
-                StartCoroutine(PrepareToFadeOutStatusText());
-            }
+            GameUI.FadeInThenOut(statusTextFadeArgs);
         }
 
-        IEnumerator PrepareToFadeOutStatusText()
+
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    标题文本                                    */
+        /* -------------------------------------------------------------------------- */
+        public TextIdentity titleText;
+        FadeInThenOutArgs titleTextFadeArgs;
+
+        public void SetTitleText(string text)
         {
-            preparingToFadeOutStatusText = true;
+            titleText.SetText(text);
 
-            //等待淡出间隔
-            while (statusTextFadeOutWaitedTime < statusTextFadeOutTime)
-            {
-                statusTextFadeOutWaitedTime += Performance.frameTime;
-
-                yield return null;
-            }
-
-            //杀死淡入动画
-            Tools.KillTweensOf(statusText.text);
-
-            statusText.text.SetAlpha(1);
-            GameUI.FadeOut(statusText.text);
-            preparingToFadeOutStatusText = false;
+            GameUI.FadeInThenOut(titleTextFadeArgs);
         }
 
 
@@ -155,7 +134,7 @@ namespace GameCore.UI
 
             #region 状态文本
             {
-                statusText = GameUI.AddText(UIA.Down, "ori:text.player_status");
+                statusText = GameUI.AddText(UIA.Down, "ori:text.status");
                 statusText.SetAPosY(80);
                 statusText.SetSizeDeltaY(40);
                 statusText.text.SetFontSize(18);
@@ -163,9 +142,22 @@ namespace GameCore.UI
                 statusText.text.raycastTarget = false;
                 statusText.gameObject.SetActive(false);
                 statusText.OnUpdate += t => GameUI.SetUILayerToFirst(t);
+                statusTextFadeArgs = new(statusText.text, 5);
             }
             #endregion
 
+            #region 标题文本
+            {
+                titleText = GameUI.AddText(new(0.5f, 0.75f, 0.5f, 0.75f), "ori:text.title");
+                titleText.SetSizeDeltaX(600);
+                titleText.text.SetFontSize(34);
+                titleText.autoCompareText = false;
+                titleText.text.raycastTarget = false;
+                titleText.gameObject.SetActive(false);
+                titleText.OnUpdate += t => GameUI.SetUILayerToFirst(t);
+                titleTextFadeArgs = new(titleText.text, 5);
+            }
+            #endregion
 
 
             switch (GScene.name)

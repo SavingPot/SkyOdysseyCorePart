@@ -625,9 +625,9 @@ namespace GameCore
 
 
         public static bool GetIndexesToPutItemIntoItems(Item[] slots, Item item, out Dictionary<int, ushort> result)
-            => GetIndexesToPutItemIntoItems(slots, item.data.id, item.count, item.data.maxCount, out result);
+            => GetIndexesToPutItemIntoItems(slots, item.data.id, item.count, item.data.maxCount, item.customData?.ToString(Formatting.None), out result);
 
-        public static bool GetIndexesToPutItemIntoItems(Item[] slots, string neededId, uint neededCount, ushort perSlotMaxCount, out Dictionary<int, ushort> result)
+        public static bool GetIndexesToPutItemIntoItems(Item[] slots, string neededId, uint neededCount, ushort perSlotMaxCount, string customData, out Dictionary<int, ushort> result)
         {
             Dictionary<int, ushort> resultTemp = new();
             ushort comparedCount = 0;
@@ -659,7 +659,7 @@ namespace GameCore
 
 
                 //如果 ID 一致则通过
-                if (!Item.Null(current) && current.data.id == neededId && current.count < perSlotMaxCount)
+                if (!Item.Null(current) && current.data.id == neededId && current.customData?.ToString(Formatting.None) == customData && current.count < perSlotMaxCount)
                 {
                     AddItemToList(i, perSlotMaxCount - current.count);
                     continue;

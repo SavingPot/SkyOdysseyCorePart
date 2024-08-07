@@ -116,6 +116,9 @@ namespace GameCore
             count = ushort.TryParse(sSplitted[1], out ushort result) ? result : (ushort)1;
             customData = sSplitted[2];
 
+            if (customData == "null")
+                customData = null;
+
             if (id.IsNullOrWhiteSpace())
             {
                 error = $@"{nameof(str)} 的一个元素为空";

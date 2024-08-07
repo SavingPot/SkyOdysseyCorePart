@@ -111,5 +111,10 @@ namespace GameCore
             tag = GetValueTag(t, id, stringToTargetType, defaultValue);
             return tag.hasTag;
         }
+
+
+
+
+        public static string GetTagName(this string tag) => tag.Contains('=') ? tag.Split('=')[0] : tag;
     }
 }
