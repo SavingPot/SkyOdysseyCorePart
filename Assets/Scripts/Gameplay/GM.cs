@@ -422,8 +422,12 @@ namespace GameCore
                 Debug.LogWarning("世界与游戏版本不对齐, 正在尝试转换");
 
                 //TODO: 世界版本转换
-                switch (GFiles.world.basicData.gameVersion)
+                switch (GInit.gameVersion, GFiles.world.basicData.gameVersion)
                 {
+                    case ("0.7.9", "0.7.8"):
+                        //TODO: 改变存档里的版本号
+                        break;
+
                     default:
                         InternalUIAdder.instance.SetStatusText("世界版本转换失败, 拒绝进入");
                         Debug.LogError("世界版本转换失败, 拒绝进入");

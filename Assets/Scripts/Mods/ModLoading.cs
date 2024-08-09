@@ -344,6 +344,22 @@ namespace GameCore
             return newRecipe;
         }
 
+        public static FishingResult LoadFishingResult(string path)
+        {
+            if (LoadModClass(path, "ori:fishing_result", out FishingResult result, out var entrance))
+            {
+                result.jsonFormatWhenLoad = "0.7.9";
+
+                result.result = entrance["result"]?.ToString();
+                result.biome = entrance["biome"]?.ToString();
+
+                if (result.result.IsNullOrWhiteSpace())
+                    Debug.Log($"钓鱼结果错误, 需指定 result 项, 请检查 {path}");
+            }
+
+            return result;
+        }
+
         public static List<TextureData> LoadFromTextureSettings(JObject jo, string modPath)
         {
             if (jo == null)

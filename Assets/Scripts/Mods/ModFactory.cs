@@ -394,6 +394,12 @@ namespace GameCore
 
         [ChineseName("在指定的模组中匹配实体")] public static EntityData CompareEntity(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.entities);
 
+        public static FishingResult CompareFishingResult(string id) => CompareFishingResult(id, mods);
+
+        public static FishingResult CompareFishingResult(string id, Mod targetMod) => CompareFishingResult(id, new[] { targetMod });
+
+        public static FishingResult CompareFishingResult(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.fishingResults);
+
 
         [ChineseName("在已加载的全局模组中匹配合成配方")] public static CraftingRecipe CompareCraftingRecipe(string id) => CompareCraftingRecipe(id, mods);
 
@@ -519,6 +525,7 @@ namespace GameCore
         public static string GetRecipesPath(string modPath) => Path.Combine(modPath, "recipes");
         public static string GetCraftingRecipesPath(string modPath) => Path.Combine(GetRecipesPath(modPath), "crafting");
         public static string GetCookingRecipesPath(string modPath) => Path.Combine(GetRecipesPath(modPath), "cooking");
+        public static string GetFishingResultsPath(string modPath) => Path.Combine(modPath, "fishing_results");
 
         /// <summary>
         /// 不会添加 Icon
@@ -722,6 +729,8 @@ namespace GameCore
             string craftingRecipesPath = GetCraftingRecipesPath(modPath);
             string cookingRecipesPath = GetCookingRecipesPath(modPath);
 
+            string fishingResultsPath = GetFishingResultsPath(modPath);
+
             string structurePath = GetStructurePath(modPath);
             string blocksPath = GetBlocksPath(modPath);
             //string terrainBlocksPath = GetTerrainBlocksPath(modPath);
@@ -876,12 +885,12 @@ namespace GameCore
                 #region 加载文本
                 if (Directory.Exists(langsPath))
                 {
-                    string[] textPaths = IOTools.GetFilesInFolder(langsPath, true, "json");
+                    string[] langPaths = IOTools.GetFilesInFolder(langsPath, true, "json");
 
-                    for (int b = 0; b < textPaths.Length; b++) MethodAgent.DebugRun(() =>
+                    for (int b = 0; b < langPaths.Length; b++) MethodAgent.DebugRun(() =>
                     {
                         //加载文本数据
-                        JObject jo = JsonUtils.LoadJObjectByPath(textPaths[b]);
+                        JObject jo = JsonUtils.LoadJObjectByPath(langPaths[b]);
 
                         GameLang newText = ModLoading.LoadText(jo);
                         AddToFinalText(newText);
@@ -911,6 +920,9 @@ namespace GameCore
 
                 //加载菜谱
                 LoadModSubitem(cookingRecipesPath, newMod.cookingRecipes, path => ModLoading.LoadCookingRecipe(path));
+
+                //加载钓鱼结果
+                LoadModSubitem(fishingResultsPath, newMod.fishingResults, path => ModLoading.LoadFishingResult(path));
 
                 #region 加载脚本 (Dll)
                 List<Type> importTypesTemp = new();
@@ -952,20 +964,9 @@ namespace GameCore
                 newMod.importedTypes = importTypesTemp.ToArray();
                 #endregion
 
-                #region 加载实体
-                if (Directory.Exists(entitiesPath))
-                {
-                    string[] entityPaths = IOTools.GetFilesInFolderIncludingChildren(entitiesPath, true, "json").ToArray();
 
-                    Array.ForEach(entityPaths, path => MethodAgent.DebugRun(() =>
-                    {
-                        EntityData newEntity = ModLoading.LoadEntity(path);
-
-                        if (newEntity != null)
-                            newMod.entities.Add(newEntity);
-                    }));
-                }
-                #endregion
+                //加载实体
+                LoadModSubitem(entitiesPath, newMod.entities, path => ModLoading.LoadEntity(path));
 
 
                 newMod.FixWrongPart();
@@ -1493,5 +1494,12 @@ namespace GameCore
     public class GameLang_Text : IdClassBase
     {
         [JsonProperty(propertyName: "text"), LabelText("文本内容")] public string text;
+    }
+
+    [Serializable]
+    public class FishingResult : ModClass
+    {
+        [LabelText("结果")] public string result;
+        [LabelText("群系")] public string biome;
     }
 }
