@@ -332,91 +332,126 @@ namespace GameCore
             return null;
         }
 
-        [ChineseName("在已加载的全局模组中匹配方块数据")] public static BlockData CompareBlockData(string id) => CompareBlockData(id, mods);
-
-        [ChineseName("在指定的模组中匹配方块数据")] public static BlockData CompareBlockData(string id, Mod targetMod) => CompareBlockData(id, new[] { targetMod });
-
-        [ChineseName("在指定的模组中匹配方块数据")] public static BlockData CompareBlockData(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.blocks, new(id));
 
 
-        [ChineseName("在已加载的全局模组中匹配群系")] public static BiomeData CompareBiome(string id) => CompareBiome(id, mods);
+        public static BlockData CompareBlockData(string id) => CompareModElement(id, globalBlocks, new(id));
 
-        [ChineseName("在指定的模组中匹配群系")] public static BiomeData CompareBiome(string id, Mod targetMod) => CompareBiome(id, new[] { targetMod });
+        public static BlockData CompareBlockData(string id, Mod targetMod) => CompareBlockData(id, new[] { targetMod });
 
-        [ChineseName("在指定的模组中匹配群系")] public static BiomeData CompareBiome(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.biomes, new() { id = id });
-
-
-        [ChineseName("在已加载的全局模组中匹配结构")] public static StructureData CompareStructure(string id) => CompareStructure(id, mods);
-
-        [ChineseName("在指定的模组中匹配结构")] public static StructureData CompareStructure(string id, Mod targetMod) => CompareStructure(id, new[] { targetMod });
-
-        [ChineseName("在指定的模组中匹配结构")] public static StructureData CompareStructure(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.structures, new() { id = id });
+        public static BlockData CompareBlockData(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.blocks, new(id));
 
 
-        [ChineseName("在已加载的全局模组中匹配群系方块预置")] public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id) => CompareBiomeBlockPrefab(id, mods);
 
-        [ChineseName("在指定的模组中匹配群系方块预置")] public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id, Mod targetMod) => CompareBiomeBlockPrefab(id, new[] { targetMod });
+        public static BiomeData CompareBiome(string id) => CompareModElement(id, globalBiomes, new() { id = id });
 
-        [ChineseName("在指定的模组中匹配群系方块预置")] public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.biomeBlockPrefabs, null);
+        public static BiomeData CompareBiome(string id, Mod targetMod) => CompareBiome(id, new[] { targetMod });
 
-
-        [ChineseName("在已加载的全局模组中匹配贴图")] public static TextureData CompareTexture(string id) => CompareTexture(id, mods);
-
-        [ChineseName("在指定的模组中匹配贴图")] public static TextureData CompareTexture(string id, Mod targetMod) => CompareTexture(id, new[] { targetMod });
-
-        [ChineseName("在指定的模组中匹配贴图")] public static TextureData CompareTexture(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.textures, new(id));
+        public static BiomeData CompareBiome(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.biomes, new() { id = id });
 
 
-        [ChineseName("在已加载的全局模组中匹配物品")] public static ItemData CompareItem(string id) => CompareItem(id, mods);
 
-        [ChineseName("在指定的模组中匹配物品")] public static ItemData CompareItem(string id, Mod targetMod) => CompareItem(id, new[] { targetMod });
+        public static StructureData CompareStructure(string id) => CompareModElement(id, globalStructures, new() { id = id });
 
-        [ChineseName("在指定的模组中匹配物品")] public static ItemData CompareItem(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.items);
+        public static StructureData CompareStructure(string id, Mod targetMod) => CompareStructure(id, new[] { targetMod });
 
-
-        [ChineseName("在已加载的全局模组中匹配物品")] public static Spell CompareSpell(string id) => CompareSpell(id, mods);
-
-        [ChineseName("在指定的模组中匹配物品")] public static Spell CompareSpell(string id, Mod targetMod) => CompareSpell(id, new[] { targetMod });
-
-        [ChineseName("在指定的模组中匹配物品")] public static Spell CompareSpell(string id, IList<Mod> mods) => CompareModElement(id, ModFactory.mods, mod => mod.spells);
+        public static StructureData CompareStructure(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.structures, new() { id = id });
 
 
-        [ChineseName("在已加载的全局模组中匹配文本")] public static GameLang CompareLang(string id) => CompareLang(id, mods);
 
-        [ChineseName("在指定的模组中匹配文本")] public static GameLang CompareLang(string id, Mod targetMod) => CompareLang(id, new[] { targetMod });
+        public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id) => CompareModElement(id, globalBiomeBlockPrefabs, null);
 
-        [ChineseName("在指定的模组中匹配文本")] public static GameLang CompareLang(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.langs);
+        public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id, Mod targetMod) => CompareBiomeBlockPrefab(id, new[] { targetMod });
+
+        public static BiomeBlockPrefab CompareBiomeBlockPrefab(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.biomeBlockPrefabs, null);
 
 
-        [ChineseName("在已加载的全局模组中匹配实体")] public static EntityData CompareEntity(string id) => CompareEntity(id, mods);
 
-        [ChineseName("在指定的模组中匹配实体")] public static EntityData CompareEntity(string id, Mod targetMod) => CompareEntity(id, new[] { targetMod });
+        public static TextureData CompareTexture(string id) => CompareTexture(id, mods);
 
-        [ChineseName("在指定的模组中匹配实体")] public static EntityData CompareEntity(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.entities);
+        public static TextureData CompareTexture(string id, Mod targetMod) => CompareTexture(id, new[] { targetMod });
 
-        public static FishingResult CompareFishingResult(string id) => CompareFishingResult(id, mods);
+        public static TextureData CompareTexture(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.textures, new(id));
+
+
+
+        public static ItemData CompareItem(string id) => CompareModElement(id, globalItems);
+
+        public static ItemData CompareItem(string id, Mod targetMod) => CompareItem(id, new[] { targetMod });
+
+        public static ItemData CompareItem(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.items);
+
+
+
+        public static Spell CompareSpell(string id) => CompareModElement(id, globalSpells);
+
+        public static Spell CompareSpell(string id, Mod targetMod) => CompareSpell(id, new[] { targetMod });
+
+        public static Spell CompareSpell(string id, IList<Mod> mods) => CompareModElement(id, ModFactory.mods, mod => mod.spells);
+
+
+
+        public static GameLang CompareLang(string id) => CompareLang(id, mods);
+
+        public static GameLang CompareLang(string id, Mod targetMod) => CompareLang(id, new[] { targetMod });
+
+        public static GameLang CompareLang(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.langs);
+
+
+
+        public static EntityData CompareEntity(string id) => CompareModElement(id, globalEntities);
+
+        public static EntityData CompareEntity(string id, Mod targetMod) => CompareEntity(id, new[] { targetMod });
+
+        public static EntityData CompareEntity(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.entities);
+
+
+
+        public static FishingResult CompareFishingResult(string id) => CompareModElement(id, globalFishingResults);
 
         public static FishingResult CompareFishingResult(string id, Mod targetMod) => CompareFishingResult(id, new[] { targetMod });
 
         public static FishingResult CompareFishingResult(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.fishingResults);
 
 
-        [ChineseName("在已加载的全局模组中匹配合成配方")] public static CraftingRecipe CompareCraftingRecipe(string id) => CompareCraftingRecipe(id, mods);
 
-        [ChineseName("在指定的模组中匹配合成配方")] public static CraftingRecipe CompareCraftingRecipe(string id, Mod targetMod) => CompareCraftingRecipe(id, new[] { targetMod });
+        public static CraftingRecipe CompareCraftingRecipe(string id) => CompareModElement(id, globalCraftingRecipes);
 
-        [ChineseName("在指定的模组中匹配合成配方")] public static CraftingRecipe CompareCraftingRecipe(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.craftingRecipes);
+        public static CraftingRecipe CompareCraftingRecipe(string id, Mod targetMod) => CompareCraftingRecipe(id, new[] { targetMod });
 
-
-        [ChineseName("在已加载的全局模组中匹配烹饪配方")] public static CookingRecipe CompareCookingRecipe(string id) => CompareCookingRecipe(id, mods);
-
-        [ChineseName("在指定的模组中匹配烹饪配方")] public static CookingRecipe CompareCookingRecipe(string id, Mod targetMod) => CompareCookingRecipe(id, new[] { targetMod });
-
-        [ChineseName("在指定的模组中匹配烹饪配方")] public static CookingRecipe CompareCookingRecipe(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.cookingRecipes);
+        public static CraftingRecipe CompareCraftingRecipe(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.craftingRecipes);
 
 
 
-        [ChineseName("在模组中匹配项目")]
+        public static CookingRecipe CompareCookingRecipe(string id) => CompareModElement(id, globalCookingRecipes);
+
+        public static CookingRecipe CompareCookingRecipe(string id, Mod targetMod) => CompareCookingRecipe(id, new[] { targetMod });
+
+        public static CookingRecipe CompareCookingRecipe(string id, IList<Mod> mods) => CompareModElement(id, mods, mod => mod.cookingRecipes);
+
+
+
+
+
+        public static T CompareModElement<T>(string id, IList<T> elements, T defaultValue = null) where T : class, IStringId
+        {
+            if (id.IsNullOrWhiteSpace())
+            {
+                Debug.LogWarning($"{MethodGetter.GetLastMethodName()}: {nameof(id)} 不应为空");
+                return defaultValue;
+            }
+
+            //模组查找时倒序的, 因此是优先遍历模组, 其次是原版
+            for (int i = elements.Count - 1; i >= 0; i--)
+            {
+                var element = elements[i];
+                if (element.id == id)
+                    return element;
+            }
+
+            Debug.LogWarning($"{MethodGetter.GetLastMethodName()}: 未找到项目 {id}");
+            return defaultValue;
+        }
+
         public static T CompareModElement<T>(string id, IList<Mod> mods, Func<Mod, IList<T>> elementsInMod, T defaultValue = null) where T : class, IStringId
         {
             if (id.IsNullOrWhiteSpace())
@@ -428,41 +463,21 @@ namespace GameCore
             //模组查找时倒序的, 因此是优先遍历模组, 其次是原版
             for (int i = mods.Count - 1; i >= 0; i--)
             {
-                IList<T> collection = elementsInMod(mods[i]);
+                var collection = elementsInMod(mods[i]);
 
                 foreach (var element in collection)
-                {
                     if (element.id == id)
-                    {
                         return element;
-                    }
-                }
             }
 
             Debug.LogWarning($"{MethodGetter.GetLastMethodName()}: 未找到项目 {id}");
             return defaultValue;
         }
 
-        public static List<string> GetIds(IStringId[] classes)
-        {
-            List<string> ids = new();
-
-            foreach (var item in classes)
-                ids.Add(item.id);
-
-            return ids;
-        }
 
 
 
 
-
-
-        public static Mod GetRandomModWithItems() => GetRandomModWithItems(Tools.staticRandom);
-        public static Mod GetRandomModWithItems(Random random) => GetRandomModWithCondition(random, mod => mod.items.Count > 0);
-
-        public static Mod GetRandomModWithSpells() => GetRandomModWithSpells(Tools.staticRandom);
-        public static Mod GetRandomModWithSpells(Random random) => GetRandomModWithCondition(random, mod => mod.spells.Count > 0);
 
         public static Mod GetRandomModWithCondition(Func<Mod, bool> condition) => GetRandomModWithCondition(Tools.staticRandom, condition);
         public static Mod GetRandomModWithCondition(Random random, Func<Mod, bool> condition)
@@ -480,18 +495,25 @@ namespace GameCore
         }
 
         public static ItemData GetRandomItem(Func<ItemData, bool> condition) => GetRandomItem(Tools.staticRandom, condition);
-        public static ItemData GetRandomItem(Random random, Func<ItemData, bool> condition)
-        {
-            var mod = GetRandomModWithItems();
-            return mod.GetRandomItem(random, condition);
-        }
+        public static ItemData GetRandomItem(Random random, Func<ItemData, bool> condition) => globalItems.Extract(random);
 
         public static Spell GetRandomSpell(Func<Spell, bool> condition) => GetRandomSpell(Tools.staticRandom, condition);
-        public static Spell GetRandomSpell(Random random, Func<Spell, bool> condition)
-        {
-            var mod = GetRandomModWithSpells();
-            return mod.GetRandomSpell(random, condition);
-        }
+        public static Spell GetRandomSpell(Random random, Func<Spell, bool> condition) => globalSpells.Extract(random);
+
+
+
+        //*! -------------------- 当添加时一定要记得在 ReloadMods 中添加相应的处理逻辑 ------------------- *//
+        public static List<StructureData> globalStructures = new();
+        public static List<BiomeBlockPrefab> globalBiomeBlockPrefabs = new();
+        public static List<BiomeData> globalBiomes = new();
+        public static List<BlockData> globalBlocks = new();
+        public static List<ItemData> globalItems = new();
+        public static List<Spell> globalSpells = new();
+        public static List<CraftingRecipe> globalCraftingRecipes = new();
+        public static List<CookingRecipe> globalCookingRecipes = new();
+        public static List<FishingResult> globalFishingResults = new();
+        public static List<EntityData> globalEntities = new();
+
 
 
 
@@ -567,7 +589,16 @@ namespace GameCore
             Debug.Log("开始重加载所有模组");
 
             //初始化资源
-            assemblies.Clear();
+            globalStructures.Clear();
+            globalBiomeBlockPrefabs.Clear();
+            globalBiomes.Clear();
+            globalBlocks.Clear();
+            globalItems.Clear();
+            globalSpells.Clear();
+            globalCraftingRecipes.Clear();
+            globalCookingRecipes.Clear();
+            globalFishingResults.Clear();
+            globalEntities.Clear();
 
             if (!Directory.Exists(GInit.modsPath))
             {
@@ -797,6 +828,9 @@ namespace GameCore
                         {
                             newMod.blocks.Add(blockPair.Key);
                             newMod.items.Add(blockPair.Value);
+
+                            globalBlocks.Add(blockPair.Key);
+                            globalItems.Add(blockPair.Value);
                         }
                     });
 
@@ -874,13 +908,13 @@ namespace GameCore
                 #endregion
 
                 //加载结构
-                LoadModSubitem(structurePath, newMod.structures, path => ModLoading.LoadStructure(path));
+                LoadModSubitem(structurePath, globalStructures, newMod.structures, path => ModLoading.LoadStructure(path));
 
                 //加载群系方块预制体
-                LoadModSubitem(biomeBlockPrefabPath, newMod.biomeBlockPrefabs, path => ModLoading.LoadBiomeBlockPrefab(path));
+                LoadModSubitem(biomeBlockPrefabPath, globalBiomeBlockPrefabs, newMod.biomeBlockPrefabs, path => ModLoading.LoadBiomeBlockPrefab(path));
 
                 //加载群系
-                LoadModSubitem(biomesPath, newMod.biomes, path => ModLoading.LoadBiome(path), false);
+                LoadModSubitem(biomesPath, globalBiomes, newMod.biomes, path => ModLoading.LoadBiome(path), false);
 
                 #region 加载文本
                 if (Directory.Exists(langsPath))
@@ -910,19 +944,19 @@ namespace GameCore
                 #endregion
 
                 //加载物品
-                LoadModSubitem(itemsPath, newMod.items, path => ModLoading.LoadItem(path));
+                LoadModSubitem(itemsPath, globalItems, newMod.items, path => ModLoading.LoadItem(path));
 
                 //加载魔咒
-                LoadModSubitem(spellsPath, newMod.spells, path => ModLoading.LoadSpell(path));
+                LoadModSubitem(spellsPath, globalSpells, newMod.spells, path => ModLoading.LoadSpell(path));
 
                 //加载合成表
-                LoadModSubitem(craftingRecipesPath, newMod.craftingRecipes, path => ModLoading.LoadCraftingRecipe(path));
+                LoadModSubitem(craftingRecipesPath, globalCraftingRecipes, newMod.craftingRecipes, path => ModLoading.LoadCraftingRecipe(path));
 
                 //加载菜谱
-                LoadModSubitem(cookingRecipesPath, newMod.cookingRecipes, path => ModLoading.LoadCookingRecipe(path));
+                LoadModSubitem(cookingRecipesPath, globalCookingRecipes, newMod.cookingRecipes, path => ModLoading.LoadCookingRecipe(path));
 
                 //加载钓鱼结果
-                LoadModSubitem(fishingResultsPath, newMod.fishingResults, path => ModLoading.LoadFishingResult(path));
+                LoadModSubitem(fishingResultsPath, globalFishingResults, newMod.fishingResults, path => ModLoading.LoadFishingResult(path));
 
                 #region 加载脚本 (Dll)
                 List<Type> importTypesTemp = new();
@@ -966,7 +1000,7 @@ namespace GameCore
 
 
                 //加载实体
-                LoadModSubitem(entitiesPath, newMod.entities, path => ModLoading.LoadEntity(path));
+                LoadModSubitem(entitiesPath, globalEntities, newMod.entities, path => ModLoading.LoadEntity(path));
 
 
                 newMod.FixWrongPart();
@@ -989,19 +1023,22 @@ namespace GameCore
             });
         }
 
-        private static void LoadModSubitem<T>(string directoryPath, List<T> subitemList, Func<string, T> LoadSubitem, bool includingChildren = true)
+        private static void LoadModSubitem<T>(string directoryPath, List<T> globalItemList, List<T> subitemList, Func<string, T> LoadSubitem, bool includingChildren = true)
         {
             if (Directory.Exists(directoryPath))
             {
                 string[] subitemPaths = includingChildren ? IOTools.GetFilesInFolderIncludingChildren(directoryPath, true, "json").ToArray() :
                                                             IOTools.GetFilesInFolder(directoryPath, true, "json");
 
-                for (int i = 0; i < subitemPaths.Length; i++) MethodAgent.DebugRun(() =>
+                foreach (var path in subitemPaths) MethodAgent.DebugRun(() =>
                 {
-                    var temp = LoadSubitem(subitemPaths[i]);
+                    var temp = LoadSubitem(path);
 
                     if (temp != null)
+                    {
+                        globalItemList.Add(temp);
                         subitemList.Add(temp);
+                    }
                 });
             }
         }

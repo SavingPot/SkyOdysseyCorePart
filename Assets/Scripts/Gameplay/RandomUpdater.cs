@@ -71,7 +71,7 @@ namespace GameCore
             List<EntityData> entitiesSummonableTemp = new();
 
             //将符合条件的实体添加到预选列表
-            Array.ForEach(ModFactory.mods, m => m.entities.ForEach(e =>
+            ModFactory.globalEntities.ForEach(e =>
             {
                 if (e.behaviourType == null)
                 {
@@ -84,7 +84,7 @@ namespace GameCore
                 {
                     entitiesSummonableTemp.Add(e);
                 }
-            }));
+            });
 
             entitiesSummonable = entitiesSummonableTemp.ToArray();
 

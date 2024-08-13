@@ -101,17 +101,10 @@ namespace GameCore
                 {
                     List<BiomeData> biomes = new();
 
-                    foreach (var mod in ModFactory.mods)
-                    {
-                        foreach (var currentBiome in mod.biomes)
-                        {
-                            //找到正负相符的群系
-                            if (Math.Sign(currentBiome.distribution) == Math.Sign(index.x))
-                            {
-                                biomes.Add(currentBiome);
-                            }
-                        }
-                    }
+                    //找到正负相符的群系
+                    foreach (var currentBiome in ModFactory.globalBiomes)
+                        if (Math.Sign(currentBiome.distribution) == Math.Sign(index.x))
+                            biomes.Add(currentBiome);
 
                     if (biomes.Count != 0)
                     {

@@ -163,16 +163,13 @@ namespace GameCore.Network
             }
 
             //寻找 Entity
-            foreach (var mod in ModFactory.mods)
+            foreach (var entityTemp in ModFactory.globalEntities)
             {
-                foreach (var entityTemp in mod.entities)
+                //找到合适的 type etc.
+                if (entityTemp.behaviourType != null && entityTemp.id == id)
                 {
-                    //找到合适的 type etc.
-                    if (entityTemp.behaviourType != null && entityTemp.id == id)
-                    {
-                        data = entityTemp;
-                        break;
-                    }
+                    data = entityTemp;
+                    break;
                 }
             }
 
