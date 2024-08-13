@@ -1501,5 +1501,6 @@ namespace GameCore
     {
         [LabelText("结果")] public string result;
         [LabelText("群系")] public string biome;
+        [LabelText("几率")] public float probability;
     }
 }

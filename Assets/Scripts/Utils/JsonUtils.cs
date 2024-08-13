@@ -445,6 +445,7 @@ namespace GameCore
 
         public static T LoadTypeFromJsonPath<T>(string jsonFilePath, bool decompress = false)
         {
+            //检查路径
             if (!File.Exists(jsonFilePath))
             {
                 Debug.LogError("LoadJson: <color=lightblue>路径错误: " + jsonFilePath + "</color>");
@@ -457,12 +458,11 @@ namespace GameCore
                 return default;
             }
 
+            //读取文本
             string textsInFile = decompress ? Compressor.DecompressString(File.ReadAllText(jsonFilePath)) : File.ReadAllText(jsonFilePath);
-
-            if (textsInFile.IsNullOrWhiteSpace() || textsInFile.IsNullOrEmpty())
+            if (textsInFile.IsNullOrWhiteSpace())
             {
                 Debug.LogError("LoadJson: <color=lightred>目标文本内容为空!</color>");
-
                 return default;
             }
 

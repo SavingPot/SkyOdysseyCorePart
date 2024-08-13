@@ -678,14 +678,14 @@ namespace GameCore
 
         public static string HighlightedStackTrace(string stackTrace)
         {
-            string replacement = @"at <color=#e5c072>$1</color>$2 <color=#4988ff>[$3]</color>";
+            string replacement = @"at <color=#e5c072>$1</color>$2 <color=#4988ff>[<link>$3</link>]</color>";
 
             return HighlightedStackTraceRegex.Replace(stackTrace, replacement);
         }
 
         public static string HighlightedStackTraceWithoutAt(string stackTrace)
         {
-            string replacement = @"<color=#e5c072>$1</color> <color=#4988ff>[$2]</color>";
+            string replacement = @"<color=#e5c072>$1</color> <color=#4988ff>[<link>$2</link>]</color>";
 
             return HighlightedStackTraceRegexWithoutAt.Replace(stackTrace, replacement);
         }

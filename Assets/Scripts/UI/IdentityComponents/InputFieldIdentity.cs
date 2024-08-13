@@ -27,12 +27,7 @@ namespace GameCore.UI
         public Image image { get { if (!_image) _image = GetComponent<Image>(); return _image; } }
 
         public LockType lockType;
-
-        public enum LockType
-        {
-            None,
-            IntNumber
-        }
+        public bool autoCompareText = true;
 
         protected override void Awake()
         {
@@ -58,10 +53,30 @@ namespace GameCore.UI
         {
             base.InternalRefreshUI();
 
-            if (GameUI.TryCompareTextNullable(id, out var result))
+            if (autoCompareText && GameUI.TryCompareTextNullable(id, out var result))
             {
                 placeholder.text = result;
             }
+        }
+
+        public InputFieldIdentity DisableAutoCompare()
+        {
+            autoCompareText = false;
+            return this;
+        }
+
+        public InputFieldIdentity SetAutoCompare(bool autoCompare)
+        {
+            autoCompareText = autoCompare;
+            return this;
+        }
+
+
+
+        public enum LockType
+        {
+            None,
+            IntNumber
         }
     }
 }

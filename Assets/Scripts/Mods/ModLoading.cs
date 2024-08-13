@@ -352,6 +352,7 @@ namespace GameCore
 
                 result.result = entrance["result"]?.ToString();
                 result.biome = entrance["biome"]?.ToString();
+                result.probability = entrance["probability"]?.ToFloat() ?? 100;
 
                 if (result.result.IsNullOrWhiteSpace())
                     Debug.Log($"钓鱼结果错误, 需指定 result 项, 请检查 {path}");
