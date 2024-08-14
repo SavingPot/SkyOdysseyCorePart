@@ -90,12 +90,8 @@ namespace GameCore
                 //将方块数据写入
                 SaveAllBlockDataToFiles();
 
-                //将实体数据写入
-                List<Entity> entities = EntityCenter.all;
-                foreach (Entity entity in entities)
-                {
-                    entity.WriteDataToWorldSave();
-                }
+                //应用实体数据
+                ApplyEntityDataToWorld();
 
                 //将世界数据写入文件
                 IOTools.CreateDirsIfNone(World.GetCachePath(world.worldPath), World.GetDisplayCachePath(world.worldPath));
@@ -108,6 +104,15 @@ namespace GameCore
             SaveFileJson(GInit.settingsPath, settings, false, true);
 
             OnSaveAllDataToFiles();
+        }
+
+        public static void ApplyEntityDataToWorld()
+        {
+            List<Entity> entities = EntityCenter.all;
+            foreach (Entity entity in entities)
+            {
+                entity.WriteDataToWorldSave();
+            }
         }
 
         public static void LoadGame()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SP.Tools;
 using UnityEngine;
 using Random = System.Random;
 
@@ -17,7 +18,11 @@ namespace GameCore
         public Vector2Int minPoint;
         public Region region;
 
-
+        public static readonly Dictionary<int, string> IslandGenerationTable = new()
+        {
+            { 0, typeof(SkyIslandGeneration).FullName },
+            { -1, typeof(MoistZoneGeneration).FullName },
+        };
 
         public IslandGeneration NewIsland(Vector2Int centerPoint)
         {
@@ -90,28 +95,10 @@ namespace GameCore
             random = new(actualSeed);
 
             /* --------------------------------- 群系 -------------------------------- */
-            BiomeData biome = null;
+            BiomeData biome;
             if (specificBiome == null)
             {
-                if (index.x == 0)
-                {
-                    biome = ModFactory.CompareBiome(BiomeID.Center);
-                }
-                else
-                {
-                    List<BiomeData> biomes = new();
-
-                    //找到正负相符的群系
-                    foreach (var currentBiome in ModFactory.globalBiomes)
-                        if (Math.Sign(currentBiome.distribution) == Math.Sign(index.x))
-                            biomes.Add(currentBiome);
-
-                    if (biomes.Count != 0)
-                    {
-                        biomes = biomes.OrderBy(b => Math.Abs(b.distribution)).ToList();
-                        biome = biomes[Math.Min(Math.Abs(index.x) - 1, biomes.Count - 1)];
-                    }
-                }
+                biome = index.x == 0 ? ModFactory.CompareBiome(BiomeID.Center) : ModFactory.globalBiomes.Extract(random);
             }
             else
             {

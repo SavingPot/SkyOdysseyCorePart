@@ -702,16 +702,6 @@ namespace GameCore
                     temp.minScale = entrance["size_scope"]?["min"]?.ToVector2() ?? new Vector2(0.4f, 0.35f);
                     temp.maxScale = entrance["size_scope"]?["max"]?.ToVector2() ?? new Vector2(0.55f, 0.4f);
 
-                    if (entrance.TryGetJToken("distribution", out var distribution))
-                    {
-                        temp.distribution = distribution.ToString().ToInt();
-                    }
-                    else
-                    {
-                        Debug.LogError($"{MethodGetter.GetCurrentMethodName()}: {temp.id} 没有 distribution 属性，群系必须指定分布");
-                        return null;
-                    }
-
                     List<BiomeData_Block> blocksTemp = new();
                     entrance["blocks"]?.For(blockJT =>
                     {

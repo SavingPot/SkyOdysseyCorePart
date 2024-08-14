@@ -141,6 +141,13 @@ namespace GameCore
         {
             sr.DOFade(0, 0.5f).OnComplete(() => sr.gameObject.SetActive(false));
         }
+        /// <returns> 对应区域是否未解锁且纵深层存在 </returns>
+        bool CanBeUnlocked(Vector2Int regionIndex)
+        {
+            return !GFiles.world.TryGetRegion(regionIndex, out _) &&
+                   !GM.instance.generatingNewRegions.Contains(regionIndex) &&
+                    RegionGeneration.IslandGenerationTable.ContainsKey(regionIndex.y);
+        }
         void RefreshRegionUnlockingRenderers()
         {
             //渲染器
@@ -155,17 +162,16 @@ namespace GameCore
                 var (sr, ti) = unlockedRegionColorRenderers[index];
 
                 //TODO: 客户端的世界为空，这里需要进行一些处理
-                //如果这个区域已经解锁了，就直接返回
-                if (GFiles.world.TryGetRegion(targetIndex, out _) || GM.instance.generatingNewRegions.Contains(targetIndex))
-                {
-                    FadeRegionUnlockingRenderer(sr);
-                }
-                else
+                if (CanBeUnlocked(targetIndex))
                 {
                     sr.color = new(1, 1, 1, 0.8f);
                     sr.gameObject.SetActive(true);
                     sr.transform.position = Region.GetMiddle(targetIndex);
                     ti.SetText(GM.GetRegionUnlockingCost(targetIndex));
+                }
+                else
+                {
+                    FadeRegionUnlockingRenderer(sr);
                 }
             }
         }
@@ -764,8 +770,11 @@ namespace GameCore
                 //TODO: 左下角显示技能点数
                 if (isUnlockingRegion)
                 {
-                    void UnlockRegion(Vector2Int targetIndex)
+                    void TryUnlockRegion(Vector2Int targetIndex)
                     {
+                        if (!CanBeUnlocked(targetIndex))
+                            return;
+
                         var cost = GM.GetRegionUnlockingCost(targetIndex);
 
                         if (coin < cost)
@@ -784,19 +793,19 @@ namespace GameCore
 
                     if (Keyboard.current.upArrowKey.wasPressedThisFrame)
                     {
-                        UnlockRegion(regionIndex + Vector2Int.up);
+                        TryUnlockRegion(regionIndex + Vector2Int.up);
                     }
                     if (Keyboard.current.downArrowKey.wasPressedThisFrame)
                     {
-                        UnlockRegion(regionIndex + Vector2Int.down);
+                        TryUnlockRegion(regionIndex + Vector2Int.down);
                     }
                     if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
                     {
-                        UnlockRegion(regionIndex + Vector2Int.left);
+                        TryUnlockRegion(regionIndex + Vector2Int.left);
                     }
                     if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
                     {
-                        UnlockRegion(regionIndex + Vector2Int.right);
+                        TryUnlockRegion(regionIndex + Vector2Int.right);
                     }
                 }
 
@@ -1404,8 +1413,8 @@ namespace GameCore
                     {
                         var respawnPoint = regionToGenerate.spawnPoint.To2();
                         ClientSetPosition(respawnPoint);
-                        ((PlayerSave)Init.save).respawnPoint = respawnPoint;
-                        WriteDataToWorldSave();
+                        ((PlayerSave)GetEntitySaveObjectFromWorld()).respawnPoint = respawnPoint;
+                        GFiles.SaveAllDataToFiles();
                     }
 
                     //* 如果是服务器发送的申请: 服务器生成
