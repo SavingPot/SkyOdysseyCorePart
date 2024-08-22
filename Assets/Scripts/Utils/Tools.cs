@@ -271,12 +271,12 @@ namespace GameCore
         public Vector2 WorldToUIPos(Vector3 wpos, Component uiParent, Camera camera)
         {
             //初始化一个屏幕坐标
-            Vector2 m_tempV2 = Vector2.zero;
+            Vector2 tempV2 = Vector2.zero;
             //使用场景相机将世界坐标转换为屏幕坐标
             Vector3 spos = camera.WorldToScreenPoint(wpos);
-            m_tempV2.Set(spos.x, spos.y);
+            tempV2.Set(spos.x, spos.y);
             RectTransformUtility.ScreenPointToLocalPointInRectangle(uiParent.GetComponent<RectTransform>(),
-                m_tempV2, camera, out Vector2 retPos);
+                tempV2, camera, out Vector2 retPos);
 
             return retPos;
         }
@@ -285,9 +285,14 @@ namespace GameCore
 
         public static string GetFileConvertedDate() => DateTime.Today.ToShortDateString().Replace('/', '_');
 
-        public static string TimeInDay()
+        public static string TimeInDayWithSquareBrackets()
         {
             return DateTime.Now.ToString("[HH:mm:ss]");
+        }
+
+        public static string TimeInDay()
+        {
+            return DateTime.Now.ToString("HH:mm:ss");
         }
 
 

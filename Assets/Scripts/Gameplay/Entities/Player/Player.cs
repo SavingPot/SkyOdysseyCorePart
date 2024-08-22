@@ -19,7 +19,6 @@ using UnityEngine;
 using static GameCore.UI.PlayerUI;
 using ClientRpcAttribute = GameCore.Network.ClientRpcAttribute;
 using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
-using JetBrains.Annotations;
 using Random = UnityEngine.Random;
 
 namespace GameCore

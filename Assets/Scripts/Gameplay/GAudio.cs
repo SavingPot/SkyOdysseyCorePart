@@ -40,7 +40,7 @@ namespace GameCore
 
         [ChineseName("设置混音器音量")] public static void SetMixerVolume(AudioMixerGroup audioMixerGroup, float value) => audioMixerGroup.audioMixer.SetFloat("MixerVolume", value);
 
-        public static void Play(string audioId, bool dontPlayWhenPlaying = false)
+        public static void Play(string audioId, bool dontRepeatIfHasBeenPlaying = false)
         {
             //如果audioId为空或者为空字符串，则报错
             if (audioId.IsNullOrWhiteSpace())
@@ -55,7 +55,7 @@ namespace GameCore
                 if (audio.id == audioId)
                 {
                     //如果正在播放而且要求播放时不能打断, 就不播放
-                    if (dontPlayWhenPlaying && audio.sources.Count != 0)
+                    if (dontRepeatIfHasBeenPlaying && audio.sources.Count != 0)
                         return;
 
                     //读取对象池池

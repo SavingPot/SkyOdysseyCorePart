@@ -391,11 +391,11 @@ namespace GameCore
             }
         }
 
-        public static void LogToFile(object obj) => LogTextToFile($"{Tools.TimeInDay()}: {obj}", LogType.Log);
+        public static void LogToFile(object obj) => LogTextToFile($"{Tools.TimeInDayWithSquareBrackets()}: {obj}", LogType.Log);
 
-        public static void LogWarningToFile(object obj) => LogTextToFile($"{Tools.TimeInDay()}: 警告: {obj}", LogType.Warning);
+        public static void LogWarningToFile(object obj) => LogTextToFile($"{Tools.TimeInDayWithSquareBrackets()}: 警告: {obj}", LogType.Warning);
 
-        public static void LogErrorToFile(object obj) => LogTextToFile($"{Tools.TimeInDay()}: 错误: {obj}", LogType.Error);
+        public static void LogErrorToFile(object obj) => LogTextToFile($"{Tools.TimeInDayWithSquareBrackets()}: 错误: {obj}", LogType.Error);
 
 
 

@@ -85,10 +85,16 @@ namespace SP.Tools.Unity
             SetAnchorMax(irt, x, y);
         }
 
-        public static void SetAnchorMinMax(this IRectTransform irt, float x, float y, float z, float w)
+        public static void SetAnchorMinMax(this IRectTransform irt, float minX, float minY, float maxX, float maxY)
         {
-            SetAnchorMin(irt, x, y);
-            SetAnchorMax(irt, z, w);
+            SetAnchorMin(irt, minX, minY);
+            SetAnchorMax(irt, maxX, maxY);
+        }
+
+        public static void SetAnchorMinMax(this IRectTransform irt, Vector2 min, Vector2 max)
+        {
+            irt.rectTransform.anchorMin = min;
+            irt.rectTransform.anchorMax = max;
         }
 
         public static void SetAnchorMinMax(this IRectTransform irt, Vector4 vec)
