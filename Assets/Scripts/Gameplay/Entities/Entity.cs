@@ -152,15 +152,7 @@ namespace GameCore
         {
             //玩家是固定的
             if (data.IsPlayer)
-            {
                 return DEFAULT_HEALTH;
-            }
-
-            //敌人会改变
-            if (data.behaviourType != null && data.behaviourType.IsSubclassOf(typeof(Enemy)))
-            {
-                return Mathf.CeilToInt(data.maxHealth * GTime.difficultyFactor);
-            }
 
             //其他一律按照 json 来
             return data.maxHealth;
@@ -1064,6 +1056,31 @@ namespace GameCore
 
         /// <returns>true 代表右，false 代表左</returns>
         public bool GetOrientation() => transform.localScale.x > 0;
+
+
+
+
+
+
+        static Collider2D[] tempGetEntitiesInRadius = new Collider2D[15];
+        public static List<Entity> GetEntitiesInRadius(Vector2 point, float radius)
+        {
+            List<Entity> entities = new();
+            RayTools.OverlapCircleNonAlloc(point, radius, tempGetEntitiesInRadius);
+
+            foreach (var item in tempGetEntitiesInRadius)
+            {
+                if (item == null)
+                    return entities;
+                    
+                if (item.TryGetComponent(out Entity entity))
+                {
+                    entities.Add(entity);
+                }
+            }
+
+            return entities;
+        }
 
 
 

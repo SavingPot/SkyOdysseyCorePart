@@ -23,12 +23,22 @@ namespace GameCore
 
         public static readonly List<Entity> all = new();
         public static readonly Dictionary<string, EntityGenerationBinding> entityGenerationBindings = new();
-        public static Action<Entity> OnAddEntity = _ => { };
+        public static Action<Entity> OnAddEntity = entity =>
+        {
+            //绑定天气粒子碰撞
+            GM.instance.weatherParticle.trigger.AddCollider(entity.mainCollider);
+        };
         public static Action<Entity> OnRemoveEntity = entity =>
         {
             //回收 Canvas
             if (entity.usingCanvas)
                 Entity.EntityCanvasPool.Recover(entity.usingCanvas);
+
+            //不再与天气粒子碰撞
+            if (GM.instance.weatherParticle != null)
+            {
+                GM.instance.weatherParticle.trigger.RemoveCollider(entity.mainCollider);
+            }
         };
 
         public static void BindGenerationEvent(string saveId, Action<Entity> action)

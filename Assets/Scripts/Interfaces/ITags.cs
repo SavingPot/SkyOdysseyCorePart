@@ -39,7 +39,7 @@ namespace GameCore
             {
                 string tag = t.tags[i];
 
-                if (tag == id)
+                if (GetTagName(tag) == id)
                     return new(true);
             }
 

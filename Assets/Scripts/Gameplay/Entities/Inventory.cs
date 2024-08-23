@@ -1041,15 +1041,15 @@ namespace GameCore
     {
         public static Dictionary<string, Func<Player, bool>> conditions = new()
         {
-            { ItemID.FlintHoe, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
-            { ItemID.IronHoe, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture) },
-            { BlockID.SoupPot, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Cooking) },
-            { BlockID.Wok, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Cooking) },
-            { ItemID.FishingRod, player => player.unlockedSkills.Any(p => p.id == SkillID.Agriculture_Fishing) },
-            { "ori:mana_altar", player => player.unlockedSkills.Any(p => p.id == SkillID.Magic) },
-            { "ori:biome_crystal", player => player.unlockedSkills.Any(p => p.id == SkillID.Magic) },
-            { BlockID.RemoteMarket, player => player.unlockedSkills.Any(p => p.id == SkillID.Economy) },
-            { BlockID.BuildingCenter, player => player.unlockedSkills.Any(p => p.id == SkillID.Economy_Building) },
+            { ItemID.FlintHoe, player => player.IsSkillUnlocked(SkillID.Agriculture) },
+            { ItemID.IronHoe, player => player.IsSkillUnlocked(SkillID.Agriculture) },
+            { BlockID.SoupPot, player => player.IsSkillUnlocked(SkillID.Agriculture_Cooking) },
+            { BlockID.Wok, player => player.IsSkillUnlocked(SkillID.Agriculture_Cooking) },
+            { ItemID.FishingRod, player => player.IsSkillUnlocked(SkillID.Agriculture_Fishing) },
+            { "ori:mana_altar", player => player.IsSkillUnlocked(SkillID.Profound_Magic) },
+            { "ori:biome_crystal", player => player.IsSkillUnlocked(SkillID.Profound_Magic) },
+            { BlockID.RemoteMarket, player => player.IsSkillUnlocked(SkillID.Economy) },
+            { BlockID.BuildingCenter, player => player.IsSkillUnlocked(SkillID.Economy_Building) },
         };
 
         public bool IsEligibleFor(Player player) => (!conditions.ContainsKey(id) || conditions[id](player)) && facility == player.pui.craftingFacility;

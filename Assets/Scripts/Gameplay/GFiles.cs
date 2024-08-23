@@ -20,10 +20,10 @@ namespace GameCore
 
 
 
-        public static void CreateWorld(int seed, string name, bool isShortTerm, float requiredTotalTime = GTime.timeOneDay * 3)
+        public static void CreateWorld(int seed, string name)
         {
             SaveAllDataToFiles();
-            world = new(seed, name, isShortTerm, requiredTotalTime);
+            world = new(seed, name);
             SaveAllDataToFiles();
         }
 
@@ -86,6 +86,7 @@ namespace GameCore
                 world.basicData.time = GTime.time;
                 world.basicData.isAM = GTime.isMorning;
                 world.basicData.totalTime = GTime.totalTime;
+                world.basicData.weather = GWeather.weatherId;
 
                 //将方块数据写入
                 SaveAllBlockDataToFiles();
@@ -177,13 +178,11 @@ namespace GameCore
 
 
 
-        public World(int seed, string worldName, bool isShortTerm, float requiredTotalTime = GTime.timeOneDay * 3)
+        public World(int seed, string worldName)
         {
             basicData.seed = seed;
             basicData.gameVersion = GInit.gameVersion;
             basicData.worldName = worldName;
-            basicData.isShortTerm = isShortTerm;
-            basicData.requiredTotalTime = requiredTotalTime;
         }
 
         public World(WorldBasicData basicData, List<Region> regionData, List<PlayerSave> playerData)
@@ -266,9 +265,8 @@ namespace GameCore
         public string gameVersion;
         public float time = 300;
         public float totalTime = 0;
-        public float requiredTotalTime;
         public bool isAM = true;
-        public bool isShortTerm;
+        public string weather = WeatherID.Sunny;
 
 
 

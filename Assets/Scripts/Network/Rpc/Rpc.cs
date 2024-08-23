@@ -27,7 +27,7 @@ namespace GameCore.Network
         public static Action<string, NetworkConnection, byte[], byte[], byte[], byte[], byte[], uint> LocalCall;
 
 
-        private static bool CanBeRpc(MethodInfo mtd, string mtdPath, Type voidType, Type connType, out RpcType type)
+        private static bool TryGetRpcInfo(MethodInfo mtd, string mtdPath, Type voidType, Type connType, out RpcType type)
         {
             RpcAttribute att = null;
             type = RpcType.ServerRpc;
@@ -103,7 +103,7 @@ namespace GameCore.Network
                     {
                         //如果是服务器就直接调用
                         if (Server.isServer)
-                            LocalCall(temp.methodPath, caller ?? Server.localConnection, temp.parameter0, temp.parameter1, temp.parameter2, temp.parameter3, temp.parameter4, temp.instance);
+                            LocalCall(temp.methodPath, Server.localConnection, temp.parameter0, temp.parameter1, temp.parameter2, temp.parameter3, temp.parameter4, temp.instance);
                         //如果是客户端就发给服务器
                         else
                             Client.Send(temp);
@@ -126,7 +126,7 @@ namespace GameCore.Network
                     {
                         if (caller == null)
                         {
-                            Debug.LogError("调用 ConnectionRpc 时 caller 不能为空, 必须提供参数!");
+                            Debug.LogError($"调用类型为 {nameof(ConnectionRpc)} 的方法 {temp.methodPath} 时 {nameof(caller)} 不能为空, 必须提供参数!");
                             break;
                         }
 
@@ -444,7 +444,7 @@ namespace GameCore.Network
                 string mtdPath = $"{type.FullName}.{mtd.Name}";
 
                 //获取呼叫类型
-                if (CanBeRpc(mtd, mtdPath, voidType, connType, out RpcType callType))
+                if (TryGetRpcInfo(mtd, mtdPath, voidType, connType, out RpcType callType))
                 {
                     /* ---------------------------------- 生成常量 ---------------------------------- */
                     var mtdPathConst = Expression.Constant(mtdPath);

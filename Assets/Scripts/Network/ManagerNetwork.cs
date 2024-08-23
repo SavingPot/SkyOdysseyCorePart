@@ -128,7 +128,7 @@ namespace GameCore.Network
                 NetworkCallbacks.CallOnClientChangeScene(conn, n);
             }
 
-            static void SrvGet_TypeWithNetCaller_Method(NetworkConnectionToClient conn, NMRpc m)
+            static void OnServerGetNMRpc(NetworkConnectionToClient conn, NMRpc m)
             {
                 switch (m.callType)
                 {
@@ -148,7 +148,7 @@ namespace GameCore.Network
                 }
             }
 
-            static void ClientGet_TypeWithNetCaller_Method(NMRpc m)
+            static void OnClientGetNMRpc(NMRpc m)
             {
                 //无论什么 CallType, 只要服务器发送了就执行
                 Rpc.LocalCall(m.methodPath, Client.connection, m.parameter0, m.parameter1, m.parameter2, m.parameter3, m.parameter4, m.instance);
@@ -281,11 +281,11 @@ namespace GameCore.Network
                 });
                 Server.Callback<NMSummon>(NetworkCallbacks.SummonEntity);
                 Server.Callback<NMClientChangeScene>(OnServerGetNMClientChangeScene);
-                Server.Callback<NMRpc>(SrvGet_TypeWithNetCaller_Method);
+                Server.Callback<NMRpc>(OnServerGetNMRpc);
             };
             NetworkCallbacks.OnTimeToClientCallback += () =>
             {
-                Client.Callback<NMRpc>(ClientGet_TypeWithNetCaller_Method);
+                Client.Callback<NMRpc>(OnClientGetNMRpc);
             };
 
             ready = true;

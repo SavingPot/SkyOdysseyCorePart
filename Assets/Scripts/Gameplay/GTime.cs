@@ -29,7 +29,6 @@ namespace GameCore
         [Sync, SyncDefaultValue(true)] public static bool isMorning;
         [Sync(nameof(TimeModify)), SyncDefaultValue(300f)] public static float time;
         [Sync, SyncDefaultValue(0f)] public static float totalTime;
-        [Sync] public static float difficultyFactor;
         public const float timeOneDay = 960; //一天有 960 秒, 即 16 分钟
 
         public static void TimeModify(byte[] _)
@@ -133,16 +132,6 @@ namespace GameCore
             SetTimeStandardBy12(isMorning ? time24 : (time24 - 12));
         }
 
-        /// <summary>
-        /// 获取当前的难度等级（只能被服务器调用）
-        /// </summary>
-        /// <param name="totalTime"></param>
-        /// <returns></returns>
-        public static float GetDifficultyLevel(float totalTime)
-        {
-            return 1 + totalTime / GFiles.world.basicData.requiredTotalTime;
-        }
-
         #endregion
 
         #region 运算
@@ -154,7 +143,6 @@ namespace GameCore
 
             temp += Performance.frameTime * (isMorning ? 1 : -1) * timeSpeed;
             totalTime += Performance.frameTime * timeSpeed;
-            difficultyFactor = GetDifficultyLevel(totalTime);
 
             //如果是上午并且时间超过了正午, 就把时间系统调到下午
             if (isMorning && temp >= timeOneDay / 2)

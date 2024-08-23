@@ -412,10 +412,6 @@ namespace GameCore.UI
                         worldSeedField.field.text = Tools.randomInt.ToString();
                         //TODO: World view fix
 
-                        var worldModeToggle = GameUI.AddToggle(UIA.Middle, "ori:toggle.create_new_world_world_mode", createWorldPanel);
-                        worldModeToggle.toggle.isOn = true;
-                        worldModeToggle.SetAPosOnBySizeDown(worldSeedField, 10);
-
                         ButtonIdentity create = GameUI.AddButton(UIA.Middle, "ori:button.create_new_world", createWorldPanel).OnClickBind(() =>
                         {
                             //检查是否为空
@@ -446,7 +442,7 @@ namespace GameCore.UI
                             }
 
                             //创建世界并刷新
-                            GFiles.CreateWorld(worldSeedField.field.text.ToInt(), worldName, worldModeToggle.toggle.isOn);
+                            GFiles.CreateWorld(worldSeedField.field.text.ToInt(), worldName);
                             RefreshWorldFiles();
                             RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
                             GameUI.SetPage(chooseWorldPanel);
@@ -854,7 +850,7 @@ namespace GameCore.UI
                         lb.image.image.sprite = GInit.instance.textureUnknown.sprite;
                 };
                 lb.buttonTextUp.DisableAutoCompare().SetText(worldName);
-                lb.buttonTextDown.DisableAutoCompare().SetText($"模式：{(file.isShortTerm ? "短期" : "长期")}   时间 {(file.totalTime / 60f):F1}{(file.isShortTerm ? $"/{(file.requiredTotalTime / 60f):F1}" : "")} 分钟\n版本：{file.gameVersion}\n种子：{file.seed}").text.SetFontSize(12);
+                lb.buttonTextDown.DisableAutoCompare().SetText($"版本：{file.gameVersion}\n种子：{file.seed}").text.SetFontSize(12);
 
                 var configButton = GameUI.AddButton(UIA.LowerRight, "ori:button.config_world_" + worldPath, lb, "ori:square_button");
                 configButton.rt.SetParent(lb.rt);

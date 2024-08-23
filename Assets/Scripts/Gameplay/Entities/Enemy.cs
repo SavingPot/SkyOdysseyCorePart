@@ -145,7 +145,7 @@ namespace GameCore
                         GAudio.Play(AudioID.ParrySucceed);
 
                         //播放盾反粒子
-                        GM.instance.parrySuccessParticle.transform.position = 0.5f*(transform.position+targetEntity.transform.position);
+                        GM.instance.parrySuccessParticle.transform.position = 0.5f * (transform.position + targetEntity.transform.position);
                         GM.instance.parrySuccessParticle.Play();
                     }
                 }
@@ -205,7 +205,7 @@ namespace GameCore
                 return false;
 
             return entity.TakeDamage(
-                Mathf.CeilToInt(data.normalAttack.damage * (1 + GTime.difficultyFactor)),
+                data.normalAttack.damage,
                 0.3f,
                 transform.position,
                 transform.position.x < targetEntity.transform.position.x ? Vector2.right * 12 : Vector2.left * 12

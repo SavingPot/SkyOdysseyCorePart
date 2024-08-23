@@ -222,26 +222,26 @@ namespace GameCore
 
         public static void ChangeWeatherRandomly()
         {
-            GM.WeatherData newWeather = null;
+            WeatherData newWeather = null;
 
             //最多抽取 10 次，以找到一个不同的天气
             for (int i = 0; i < 10; i++)
             {
-                newWeather = GM.instance.weathers.Extract(RandomUpdateRandom);
+                newWeather = GWeather.weathers.Extract(RandomUpdateRandom);
 
-                if (GM.instance.weather != newWeather)
+                if (GWeather.weatherId != newWeather.id)
                     break;
             }
 
             //检查天气
-            if (newWeather == null || newWeather.id == GM.instance.weather.id)
+            if (newWeather == null || newWeather.id == GWeather.weatherId)
             {
                 Debug.LogError("天气切换失败");
                 return;
             }
 
             //切换天气
-            GM.instance.SetWeather(newWeather.id);
+            GWeather.SetWeather(newWeather.id);
             Debug.Log("天气切换至 " + newWeather.id);
         }
     }

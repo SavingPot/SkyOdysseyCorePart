@@ -55,6 +55,7 @@
      <Compile Include="Assets\Scripts\Utils\MethodAgent.cs" />
      <Compile Include="Assets\Scripts\PreloadScene.cs" />
      <Compile Include="Assets\Scripts\Utils\Anim\Timeline.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\WeatherParticleSystem.cs" />
      <Compile Include="Assets\Scripts\Gameplay\IItemContainer.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\LootBagBehaviour.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Controls\GControls.cs" />
@@ -157,6 +158,7 @@
      <Compile Include="Assets\Scripts\Network\Client.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Rpc.cs" />
      <Compile Include="Assets\Scripts\Mods\ModEntry.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\GWeather.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\SyncPacker.cs" />
      <Compile Include="Assets\Scripts\Utils\Anim\AnimFragments.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\Block.cs" />

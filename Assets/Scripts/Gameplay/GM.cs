@@ -32,9 +32,11 @@ namespace GameCore
         public BloodParticlePool bloodParticlePool = new();
         public DamageTextPool damageTextPool = new();
 
+        public WeatherParticleSystem weatherParticleSystem { get; protected set; }
         public ParticleSystem weatherParticle { get; protected set; }
         public ParticleSystem.MainModule weatherParticleMain;
         public ParticleSystem.EmissionModule weatherParticleEmission;
+        public ParticleSystem.TriggerModule weatherParticleTrigger;
         public ParticleSystem parrySuccessParticle { get; protected set; }
         public Light2D globalLight { get; protected set; }
         public static Action AfterPreparation = () => { };
@@ -73,7 +75,8 @@ namespace GameCore
             Debug.Log(RandomUpdater.updates.Count);
             RandomUpdater.RandomUpdate();
         }
-        [Button("随机更改天气")] private void ChangeWeatherRandomly() => RandomUpdater.ChangeWeatherRandomly();
+        [Button("设置天气")] private void EditorSetWeather(string id) => GWeather.SetWeather(id);
+        [Button("随机更改天气")] private void EditorChangeWeatherRandomly() => RandomUpdater.ChangeWeatherRandomly();
 #endif
 
         //随机更新只在服务器进行, 无需同步至客户端
@@ -81,13 +84,6 @@ namespace GameCore
         #endregion
 
 
-
-        #region 天气系统
-
-        public List<WeatherData> weathers = new();
-        public WeatherData weather { get; internal set; }
-
-        #endregion
 
 
 
@@ -161,9 +157,11 @@ namespace GameCore
             }
             if (wpsGo)
             {
-                weatherParticle = wpsGo.GetComponent<ParticleSystem>();
+                weatherParticleSystem = wpsGo.GetComponent<WeatherParticleSystem>();
+                weatherParticle = weatherParticleSystem.system;
                 weatherParticleMain = weatherParticle.main;
                 weatherParticleEmission = weatherParticle.emission;
+                weatherParticleTrigger = weatherParticle.trigger;
 
                 //编辑粒子动画
                 weatherParticle.textureSheetAnimation.Clear();
@@ -182,98 +180,29 @@ namespace GameCore
 
         protected override void Start()
         {
+            //初始化天气系统
+            GWeather.InitWeatherSystem();
+
             if (Server.isServer)
             {
+                InitializeWorld(GFiles.world);
+
+                //加载世界的时间、天气数据
                 GTime.isMorning = GFiles.world.basicData.isAM;
                 GTime.time = GFiles.world.basicData.time;
                 GTime.totalTime = GFiles.world.basicData.totalTime;
+                GWeather.SetWeather(GFiles.world.basicData.weather);
             }
-
-            if (Server.isServer)
-                InitializeWorld(GFiles.world);
-
-
-
-            /* -------------------------------------------------------------------------- */
-            /*                                    设置天气                                    */
-            /* -------------------------------------------------------------------------- */
-            SetGlobalVolumeBloomToSunny();
-            SetGlobalVolumeColorAdjustmentsToSunny();
-
-
-            //晴朗
-            AddWeather("ori:sunny", null, null);
-
-            //酸雨
-            AddWeather("ori:acid_rain", () =>
+            else
             {
-                GAudio.Play(AudioID.Rain, true);
-
-                //开始发射
-                weatherParticleMain.startColor = Color.green;
-                weatherParticleEmission.enabled = true;
-
-                //设置模糊效果
-                SetGlobalVolumeBloomToRain();
-                SetGlobalVolumeColorAdjustmentsToAcidRain();
-            }, () =>
-            {
-                weatherParticleMain.startColor = Color.white;
-
-                //禁用发射
-                weatherParticleEmission.enabled = false;
-
-                //停止所有音效
-                GAudio.Stop(AudioID.Rain);
-
-                //设置模糊效果
-                SetGlobalVolumeBloomToSunny();
-                SetGlobalVolumeColorAdjustmentsToSunny();
-            });
-
-            //雨天
-            AddWeather("ori:rain", () =>
-            {
-                GAudio.Play(AudioID.Rain, true);
-
-                //开始发射
-                weatherParticleEmission.enabled = true;
-
-                //设置模糊效果
-                SetGlobalVolumeBloomToRain();
-                SetGlobalVolumeColorAdjustmentsToRain();
-            },
-            () =>
-            {
-                //禁用发射
-                weatherParticleEmission.enabled = false;
-
-                //停止所有音效
-                GAudio.Stop(AudioID.Rain);
-
-                //设置模糊效果
-                SetGlobalVolumeBloomToSunny();
-                SetGlobalVolumeColorAdjustmentsToSunny();
-            });
-
-            SetWeather("ori:sunny");
-
-
-
-
+                GWeather.TempWeather(null);
+            }
 
             //绑定随机更新
             RandomUpdater.Init();
 
 
-
-
-
             base.Start();
-
-            /* -------------------------------------------------------------------------- */
-            /*                                    调用委托                                    */
-            /* -------------------------------------------------------------------------- */
             AfterPreparation();
         }
 
@@ -291,43 +220,8 @@ namespace GameCore
 
 
 
-        public class WeatherData
-        {
-            public string id;
-            public Action OnEnter;
-            public Action OnExit;
 
-            public WeatherData(string id, Action OnEnter, Action OnExit)
-            {
-                this.id = id;
-                this.OnEnter = OnEnter;
-                this.OnExit = OnExit;
-            }
-        }
 
-        public void AddWeather(string weatherId, Action OnEnter, Action OnExit)
-        {
-            weathers.Add(new(weatherId, OnEnter, OnExit));
-        }
-
-        [Button]
-        public void SetWeather(string weatherId)
-        {
-            foreach (var value in weathers)
-            {
-                if (value.id == weatherId)
-                {
-                    weather?.OnExit?.Invoke();
-
-                    value.OnEnter?.Invoke();
-                    weather = value;
-
-                    return;
-                }
-            }
-
-            Debug.LogWarning($"天气 {weatherId} 不存在");
-        }
 
 
 

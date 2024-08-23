@@ -250,9 +250,14 @@ namespace GameCore
             skillPoints += count;
             pui.skillPointText.RefreshUI();
 
-            InternalUIAdder.instance.SetTitleText($"获取 {count} 个技能点");
+            //显示文本（扣除技能点时不显示）
+            if (count > 0)
+                InternalUIAdder.instance.SetTitleText($"获取 {count} 个技能点");
+
             Debug.Log("ADD Skill Point " + count);
         }
+
+        public bool IsSkillUnlocked(string id) => unlockedSkills.Any(p => p.id == id);
 
         #endregion
 
@@ -318,8 +323,8 @@ namespace GameCore
 
         public float excavationStrength => TryGetUsingItem(out var item) ? item.data.excavationStrength : ItemData.defaultExcavationStrength;
 
-        [BoxGroup("属性"), LabelText("使用时间")]
-        public float itemUseTime;
+        [BoxGroup("属性"), LabelText("物品使用时间")] public float itemUseTime;
+        [BoxGroup("属性"), LabelText("物品使用时间")] public float itemCDEndTime;
         public float previousAttackTime;
         public float interactiveRadius => defaultInteractiveRadius + (TryGetUsingItem(out var item) ? item.data.extraDistance : 0);
         public float parryEndTime { get; private set; }
@@ -455,7 +460,10 @@ namespace GameCore
 
             //计算移动速度因数
             Func<float> oldFactor = velocityFactor;
-            velocityFactor = () => oldFactor() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1);
+            velocityFactor = () =>
+            {
+                return oldFactor() * (transform.localScale.x.Sign() != rb.velocity.x.Sign() ? 0.75f : 1) * (IsSkillUnlocked(SkillID.Exploration_Run) ? 1.2f : 1);
+            };
 
             playerCanvas = transform.Find("Canvas");
 
@@ -471,7 +479,7 @@ namespace GameCore
 
             //让拥有者请求加载服务器存档中的位置
             if (isOwned)
-                RestorePlayerPositionToSave();
+                RestorePlayerPositionFromSave();
 
 
 
@@ -576,11 +584,11 @@ namespace GameCore
         }
 
         [ServerRpc]
-        void RestorePlayerPositionToSave(NetworkConnection caller = null)
+        void RestorePlayerPositionFromSave(NetworkConnection caller = null)
         {
             if (Init.save.pos != Vector2.zero)
             {
-                ClientSetPosition(Init.save.pos);
+                ConnectionSetPosition(Init.save.pos, caller);
                 regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos); //这里必须立刻设置 regionIndex，否则会导致 OnRegionIndexChanged 被调用
                 hasSetPosBySave = true;
             }
@@ -1075,32 +1083,8 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public override void OnDeathServer()
         {
-            //如果是短期模式
-            if (GFiles.world.basicData.isShortTerm)
-            {
-                //如果有其他玩家存活，那么等待救援
-                if (PlayerCenter.all.Any(p => !p.isDead))
-                {
-                    //TODO: 显示界面让玩家等待救援
-                    Debug.Log("有别人，等待救援");
-                }
-                //如果没有那么就删除存档
-                else
-                {
-                    //TODO: 展示一个蒙版告诉玩家他失败了
-                    Debug.Log("删除存档");
-
-                    //关闭并删除存档
-                    GM.instance.ShutDownHostWithMask();
-                    IOTools.DeleteDir(GFiles.world.basicData.worldPath);
-                }
-            }
-            //长期模式等待复活 CD 即可
-            else
-            {
-                //通知客户端等待重生
-                ClientWaitForRespawn();
-            }
+            //通知客户端等待重生
+            ClientWaitForRespawn();
         }
 
         public override void OnDeathClient()
@@ -1196,10 +1180,9 @@ namespace GameCore
             }
 
             var result = playerDefaultGravity;
-            var region = caller.region;
 
             //潮湿带重力减小
-            if (region != null && region.index.y == -1)
+            if (caller.regionIndex.y == -1)
                 result *= 0.4f;
 
             caller.gravity = result;
@@ -1221,37 +1204,6 @@ namespace GameCore
 
 
 
-
-
-        #region 挖掘方块
-
-        private void ExcavateBlock(Block block)
-        {
-            if (!isLocalPlayer || block == null)
-                return;
-
-            if (block != null)
-            {
-                //播放挖掘动画
-                if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)
-                    animWeb.SwitchPlayingTo("attack_rightarm", 0);
-
-                //让方块扣血
-                block.TakeDamage(excavationStrength);
-
-                //播放音效
-                GAudio.Play(AudioID.ExcavatingBlock);
-
-                //手柄震动
-                if (GControls.mode == ControlMode.Gamepad)
-                    GControls.GamepadVibrationSlighter(0.1f);
-            }
-
-            //设置时间
-            itemUseTime = Tools.time;
-        }
-
-        #endregion
 
 
 
@@ -1411,7 +1363,7 @@ namespace GameCore
                     if (isFirstGeneration && !hasSetPosBySave)
                     {
                         var respawnPoint = regionToGenerate.spawnPoint.To2();
-                        ClientSetPosition(respawnPoint);
+                        ConnectionSetPosition(respawnPoint, caller);
                         ((PlayerSave)GetEntitySaveObjectFromWorld()).respawnPoint = respawnPoint;
                         GFiles.SaveAllDataToFiles();
                     }
@@ -1556,13 +1508,26 @@ namespace GameCore
 
 
 
-        [ClientRpc, Button]
-        public void ClientSetPosition(Vector2 newPos, NetworkConnection caller = null)
+        void SetPosition(Vector2 newPos)
         {
             transform.position = newPos;
 
             //防止摔死
             fallenY = newPos.y;
+        }
+
+        [ClientRpc, Button]
+        public void ClientSetPosition(Vector2 newPos, NetworkConnection caller = null)
+        {
+            Debug.Log(newPos);
+            SetPosition(newPos);
+        }
+
+        [ConnectionRpc]
+        public void ConnectionSetPosition(Vector2 newPos, NetworkConnection caller)
+        {
+            Debug.Log(newPos);
+            SetPosition(newPos);
         }
 
 
@@ -1776,7 +1741,16 @@ namespace GameCore
 
 
 
-        public bool HasUseCDPast() => Tools.time >= itemUseTime + (TryGetUsingItem(out var item) ? item.data.useCD : ItemData.defaultUseCD);
+
+        public void ResetUseItemCD(float cd)
+        {
+            itemUseTime = Tools.time;
+            itemCDEndTime = itemUseTime + cd;
+        }
+
+        public float GetUsingItemCD() => TryGetUsingItem(out var item) ? item.data.useCD : ItemData.defaultUseCD;
+
+        public bool HasItemCDPast() => Tools.time >= itemCDEndTime;
 
         #endregion
 
@@ -1888,9 +1862,101 @@ namespace GameCore
             }
         }
 
+        public static Func<Player, Block, float> GetBlockExcavationCD = (player, block) =>
+        {
+            var result = player.GetUsingItemCD();
+
+            //采矿技能
+            if (player.IsSkillUnlocked(SkillID.Exploration_Mining))
+            {
+                result *= 0.92f;
+
+                //石头、矿物的额外加成
+                if (block.data.id == BlockID.Stone || block.data.HasTag("ori:ore"))
+                    result *= 0.85f;
+            }
+
+            return result;
+        };
+
+        private void ExcavateBlock(Block block)
+        {
+            if (!isLocalPlayer || block == null)
+                return;
+
+
+            //播放挖掘动画
+            if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)
+                animWeb.SwitchPlayingTo("attack_rightarm", 0);
+
+            //让目标方块 3x3 范围内扣血
+            if (block.data.IsValidForAreaMiningI() && IsSkillUnlocked(SkillID.Exploration_Mining_AreaMiningI))
+            {
+                for (int x = -1; x <= 1; x++)
+                {
+                    for (int y = -1; y <= 1; y++)
+                    {
+                        if (Map.instance.TryGetBlock(new(block.pos.x + x, block.pos.y + y), block.isBackground, out var currentBlock) &&
+                            currentBlock.data.IsValidForAreaMiningI())
+                        {
+                            currentBlock.TakeDamage(excavationStrength);
+                        }
+                    }
+                }
+            }
+            //连锁采矿
+            else if (block.data.HasTag("ori:ore") && IsSkillUnlocked(SkillID.Exploration_Mining_AreaMiningII))
+            {
+                List<Block> blocksFound = new();
+
+                void FindNeighbor(int x, int y)
+                {
+                    for (int currentX = x - 2; currentX <= x + 2; currentX++)
+                    {
+                        for (int currentY = y - 2; currentY <= y + 2; currentY++)
+                        {
+                            Vector2Int pos = new(currentX, currentY);
+                            if (Map.instance.TryGetBlock(pos, block.isBackground, out var currentBlock) &&
+                                currentBlock.data.id == block.data.id)
+                            {
+                                if (!blocksFound.Any(p => p.pos == pos))
+                                {
+                                    blocksFound.Add(currentBlock);
+                                    FindNeighbor(currentX, currentY);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //开始递归式搜索
+                FindNeighbor(block.pos.x, block.pos.y);
+
+                foreach (var currentBlock in blocksFound)
+                {
+                    currentBlock.TakeDamage(excavationStrength);
+                }
+            }
+            //让目标方块扣血
+            else
+            {
+                block.TakeDamage(excavationStrength);
+            }
+
+            //播放音效
+            GAudio.Play(AudioID.ExcavatingBlock);
+
+            //手柄震动
+            if (GControls.mode == ControlMode.Gamepad)
+                GControls.GamepadVibrationSlighter(0.1f);
+
+            //设置时间
+            ResetUseItemCD(GetBlockExcavationCD(this, block));
+        }
+
         public void OnHoldAttack()
         {
-            if (!HasUseCDPast())
+            if (!HasItemCDPast())
                 return;
 
             //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的 && 方块不是液体
@@ -1907,7 +1973,7 @@ namespace GameCore
                 OnStartAttack();
 
                 //设置时间
-                itemUseTime = Tools.time;
+                ResetUseItemCD(GetUsingItemCD());
                 previousAttackTime = Tools.time;
             }
         }

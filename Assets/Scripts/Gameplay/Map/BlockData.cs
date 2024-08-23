@@ -36,6 +36,7 @@ namespace GameCore
 
         public bool IsConstructionWall() => this.HasTag("ori:construction_wall");
         public bool IsFurniture() => this.HasTag("ori:furniture");
+        public bool IsValidForAreaMiningI() => id == BlockID.Stone || id == BlockID.Dirt || id == BlockID.GrassBlock || id == BlockID.Clay || id == BlockID.Sand;
 
         #endregion
 

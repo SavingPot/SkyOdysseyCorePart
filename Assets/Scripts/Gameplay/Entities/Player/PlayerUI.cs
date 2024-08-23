@@ -1197,7 +1197,8 @@ namespace GameCore.UI
                     _ => SkillInfoShower.instance.Hide(),
                     node =>
                     {
-                        if (player.skillPoints < node.data.cost)
+                        //检查条件
+                        if (player.skillPoints < node.data.cost || node.status.unlocked || !node.IsParentLineUnlocked())
                             return;
 
                         //扣除技能点

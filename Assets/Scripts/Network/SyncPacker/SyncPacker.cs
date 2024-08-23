@@ -402,7 +402,7 @@ namespace GameCore.Network
                                                         //* @field = Rpc.BytesToObject<T>(newValueBytes);;
                                                         Expression.Assign(Expression.Field(null, field), CallRpcBytesToObject(valueType, firstTempValue_newValueBytes))
                                                                 :
-                                                        //* @field = Rpc.BytesToObject<T>(newValueBytes);
+                                                        //* @this.field = Rpc.BytesToObject<T>(newValueBytes);
                                                         Expression.Assign(Expression.Field(Expression.Convert(firstTempValue_instance, field.DeclaringType), field), CallRpcBytesToObject(valueType, firstTempValue_newValueBytes))
                                                 }
                                         ),

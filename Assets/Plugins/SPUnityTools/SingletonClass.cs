@@ -42,7 +42,7 @@ namespace SP.Tools.Unity
 			if (!Application.isPlaying)
 				return;
 
-			GameObject go = new GameObject($"{typeof(T).Name} (SingletonClonedAfter)")
+			GameObject go = new($"{typeof(T).Name} (SingletonClonedAfter)")
 			{
 				isStatic = true
 			};

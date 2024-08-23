@@ -16,6 +16,7 @@ namespace GameCore
         public const string Cactus = "ori:cactus";
         public const string Campfire = "ori:campfire";
         public const string CarrotCrop = "ori:carrot_crop";
+        public const string Clay = "ori:clay";
         public const string ClayFurnace = "ori:clay_furnace";
         public const string DeadTree = "ori:dead_tree";
         public const string Dirt = "ori:dirt";
