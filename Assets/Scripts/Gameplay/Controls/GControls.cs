@@ -99,6 +99,21 @@ namespace GameCore
             return x;
         };
 
+        public static Func<int> GetInstantAD = () =>
+        {
+            int x = 0;
+
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.aKey.wasPressedThisFrame && !Keyboard.current.dKey.wasPressedThisFrame)
+                    x = -1;
+                if (Keyboard.current.dKey.wasPressedThisFrame && !Keyboard.current.aKey.wasPressedThisFrame)
+                    x = 1;
+            }
+
+            return x;
+        };
+
         public static Func<int> GetWS = () =>
         {
             int y = 0;
@@ -108,6 +123,21 @@ namespace GameCore
                 if (Keyboard.current.wKey.isPressed && !Keyboard.current.sKey.isPressed)
                     y = 1;
                 if (Keyboard.current.sKey.isPressed && !Keyboard.current.wKey.isPressed)
+                    y = -1;
+            }
+
+            return y;
+        };
+
+        public static Func<int> GetInstantWS = () =>
+        {
+            int y = 0;
+
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.wKey.wasPressedThisFrame && !Keyboard.current.sKey.wasPressedThisFrame)
+                    y = 1;
+                if (Keyboard.current.sKey.wasPressedThisFrame && !Keyboard.current.wKey.wasPressedThisFrame)
                     y = -1;
             }
 

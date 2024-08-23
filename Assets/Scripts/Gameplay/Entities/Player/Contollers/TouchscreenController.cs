@@ -13,6 +13,7 @@ namespace GameCore
         public override bool Apply() => pui != null && pui.gainRareItemButtonPanel.button.wasPressedThisFrame;
         public override bool Jump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.65f;
         public override bool HoldingJump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.65f;
+        public override bool Rush() => throw new NotImplementedException();
         public override float Move() => pui?.touchScreenMoveJoystick != null ? pui.touchScreenMoveJoystick.Horizontal : 0;
         public override bool ClickingAttack() => pui?.touchScreenAttackButton != null && pui.touchScreenAttackButton.button.wasPressedThisFrame;
         public override bool HoldingAttack() => pui?.touchScreenAttackButton != null && pui.touchScreenAttackButton.button.isPressed;

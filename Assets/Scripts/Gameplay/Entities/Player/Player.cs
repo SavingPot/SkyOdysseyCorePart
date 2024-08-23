@@ -649,253 +649,7 @@ namespace GameCore
             }
 
             if (PlayerCanControl(this))
-            {
-                /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
-                if (isOnGround && playerController.Jump())
-                    rb.SetVelocityY(GetJumpVelocity(30));
-
-
-                /* ----------------------------------- 挖掘与攻击 ----------------------------------- */
-                if (playerController.HoldingAttack())  //检测物品的使用CD
-                {
-                    OnHoldAttack();
-                }
-
-
-                /* ---------------------------------- 抛弃物品 ---------------------------------- */
-                if (playerController.ThrowItem())
-                    ServerThrowItem(usingItemIndex.ToString(), 1);
-
-#if DEBUG
-                /* --------------------------------- 摄像机调试器 --------------------------------- */
-                if (Keyboard.current.uKey.wasPressedThisFrame)
-                {
-                    playerCameraScale = 1;
-                }
-                if (Keyboard.current.iKey.wasPressedThisFrame)
-                {
-                    playerCameraScale *= 0.5f;
-                }
-                if (Keyboard.current.oKey.wasPressedThisFrame)
-                {
-                    playerCameraScale *= 2;
-                }
-#endif
-
-                //检查锁定目标是否死亡
-                if (lockOnTarget && lockOnTarget.isDead)
-                {
-                    CancelLockOnTarget();
-                }
-
-                //锁定敌人
-                if (Keyboard.current.leftShiftKey.isPressed)
-                {
-                    if (lockOnTarget == null)
-                    {
-                        //做一次范围检测
-                        Array.Clear(lockOnOverlapTemp, 0, lockOnOverlapTemp.Length);
-                        RayTools.OverlapCircleNonAlloc(transform.position, 10, lockOnOverlapTemp, Enemy.enemyLayerMask);
-
-                        //找到数组的有效长度
-                        int validLength = lockOnOverlapTemp.Length;
-                        for (int i = 0; i < lockOnOverlapTemp.Length; i++)
-                        {
-                            if (lockOnOverlapTemp[i] == null)
-                            {
-                                validLength = i;
-                                break;
-                            }
-                        }
-
-                        // 0 表示没有找到敌人
-                        if (validLength != 0)
-                        {
-                            var collider = lockOnOverlapTemp[Random.Range(0, validLength)];
-                            if (collider.TryGetComponent<Enemy>(out var enemy))
-                            {
-                                lockOnTarget = enemy;
-                                pui.LockOnEnemy(enemy);
-                                Tools.instance.mainCameraController.secondLookAt = lockOnTarget.transform;
-                                Tools.instance.mainCameraController.EnableGlobalVolumeVignette();
-                                Tools.instance.mainCameraController.SetGlobalVolumeVignette(0.35f);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if (lockOnTarget)
-                    {
-                        CancelLockOnTarget();
-                    }
-                }
-
-                void CancelLockOnTarget()
-                {
-                    lockOnTarget = null;
-                    Tools.instance.mainCameraController.secondLookAt = null;
-                    Tools.instance.mainCameraController.DisableGlobalVolumeVignette();
-                    pui.LockOnEnemy(null);
-                }
-
-                /* ---------------------------------- 检查房屋 ---------------------------------- */
-                if (Keyboard.current.gKey.wasPressedThisFrame)
-                {
-                    var pos = PosConvert.WorldToMapPos(cursorWorldPos);
-                    var roomCheck = new MapUtils.RoomCheck(pos);
-                    Debug.Log(roomCheck.IsValidConstruction() + "   Score: " + roomCheck.ScoreRoom());
-                }
-
-                /* ---------------------------------- 解锁区域 ---------------------------------- */
-                if (Keyboard.current.pKey.wasPressedThisFrame)
-                {
-                    if (!isUnlockingRegion)
-                    {
-                        isUnlockingRegion = true;
-
-                        //刷新解锁区域的渲染器
-                        RefreshUnlockingRegion();
-
-                        //相机缩放
-                        DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 0.06f, 0.7f).SetEase(Ease.InOutSine);
-                    }
-                    else
-                    {
-                        isUnlockingRegion = false;
-
-                        //渲染器
-                        foreach (var (sr, _) in unlockedRegionColorRenderers) FadeRegionUnlockingRenderer(sr);
-
-                        //相机跟随
-                        Tools.instance.mainCameraController.lookAt = transform;
-
-                        //相机缩放
-                        DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 1, 0.7f).SetEase(Ease.InOutSine);
-                    }
-                }
-                //TODO: 左下角显示技能点数
-                if (isUnlockingRegion)
-                {
-                    void TryUnlockRegion(Vector2Int targetIndex)
-                    {
-                        if (!CanBeUnlocked(targetIndex))
-                            return;
-
-                        var cost = GM.GetRegionUnlockingCost(targetIndex);
-
-                        if (coin < cost)
-                        {
-                            InternalUIAdder.instance.SetStatusText("金币不足!");
-                            return;
-                        }
-
-                        ServerAddCoin(-cost);
-                        ServerAddSkillPoint(1);
-
-                        GenerateRegion(targetIndex);
-                        RefreshRegionUnlockingRenderers();
-                        ServerDestroyRegionBarriers(targetIndex);
-                    }
-
-                    if (Keyboard.current.upArrowKey.wasPressedThisFrame)
-                    {
-                        TryUnlockRegion(regionIndex + Vector2Int.up);
-                    }
-                    if (Keyboard.current.downArrowKey.wasPressedThisFrame)
-                    {
-                        TryUnlockRegion(regionIndex + Vector2Int.down);
-                    }
-                    if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
-                    {
-                        TryUnlockRegion(regionIndex + Vector2Int.left);
-                    }
-                    if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
-                    {
-                        TryUnlockRegion(regionIndex + Vector2Int.right);
-                    }
-                }
-
-
-                /* ----------------------------------- 睡眠 ----------------------------------- */
-                if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
-                {
-                    //TODO: 睡眠
-                }
-
-                #region 切换物品
-
-                void FuncSwitchItem(Func<bool> funcCall, int ii)
-                {
-                    if (!funcCall())
-                        return;
-
-                    SwitchItem(ii - 1);
-                }
-
-                FuncSwitchItem(playerController.SwitchToItem1, 1);
-                FuncSwitchItem(playerController.SwitchToItem2, 2);
-                FuncSwitchItem(playerController.SwitchToItem3, 3);
-                FuncSwitchItem(playerController.SwitchToItem4, 4);
-                FuncSwitchItem(playerController.SwitchToItem5, 5);
-                FuncSwitchItem(playerController.SwitchToItem6, 6);
-                FuncSwitchItem(playerController.SwitchToItem7, 7);
-                FuncSwitchItem(playerController.SwitchToItem8, 8);
-
-                if (playerController.SwitchToPreviousItem())
-                {
-                    int value = usingItemIndex - 1;
-
-                    if (value < 0)
-                        value = quickInventorySlotCount - 1;
-
-                    SwitchItem(value);
-                }
-                else if (playerController.SwitchToNextItem())
-                {
-                    int value = usingItemIndex + 1;
-
-                    if (value > quickInventorySlotCount - 1)
-                        value = 0;
-
-                    SwitchItem(value);
-                }
-                #endregion
-
-                //通过触屏点击来使用物品
-                if (GControls.mode == ControlMode.Touchscreen && Touchscreen.current != null)
-                {
-                    TouchControl tc = Touchscreen.current.touches[0];
-
-                    if (tc.press.wasPressedThisFrame)
-                    {
-                        var touchWorldPos = Tools.instance.mainCamera.ScreenToWorldPoint(tc.position.ReadValue());
-
-                        Interact(touchWorldPos);
-                    }
-                }
-
-                //如果按右键
-                if (playerController.Interact())
-                {
-                    Interact(cursorWorldPos);
-                }
-
-                //在脚底下放方块
-                if (playerController.PlaceBlockUnderPlayer())
-                {
-                    var usingItem = GetUsingItemChecked();
-                    var behaviour = GetUsingItemBehaviourChecked();
-
-                    if (usingItem != null && behaviour != null && usingItem.data.isBlock)
-                    {
-                        var downPoint = mainCollider.DownPoint();
-                        behaviour.UseAsBlock(PosConvert.WorldToMapPos(new(downPoint.x, downPoint.y - 1)), false);
-                    }
-                }
-
-                isControllingBackground = playerController.IsControllingBackground();
-            }
+                ControlPlayer();
 
             //血量低于 15 就播放心跳声 (死了不播放声音)
             if (health <= 15)
@@ -1537,6 +1291,543 @@ namespace GameCore
 
 
 
+
+
+
+
+
+
+        #region 控制
+
+        public Vector2 cursorWorldPos
+        {
+            get
+            {
+                return GControls.mode switch
+                {
+                    //* 如果是触摸屏, 返回光标位置
+                    ControlMode.Touchscreen => pui.touchScreenCursorImage.rectTransform.position,
+
+                    //* 如果是键鼠, 返回鼠标位置
+                    ControlMode.KeyboardAndMouse => Tools.instance.GetMouseWorldPos(),
+
+                    //* 如果是手柄, 返回虚拟光标位置
+                    ControlMode.Gamepad => (Vector2)Tools.instance.mainCamera.ScreenToWorldPoint(VirtualCursor.instance.image.ap),
+
+                    _ => Vector2.zero,
+                };
+            }
+        }
+
+
+
+
+
+        private void ControlPlayer()
+        {
+            /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
+            if (isOnGround && playerController.Jump())
+                rb.SetVelocityY(GetJumpVelocity(30));
+
+
+            /* ----------------------------------- 冲刺 ----------------------------------- */
+            if (Tools.time > rushTimer && playerController.Rush() && IsSkillUnlocked(SkillID.Exploration))
+            {
+                //如果使用物品失败且冲刺CD过了就冲刺
+                Rush(transform.localScale.x > 0);
+            }
+
+
+            /* ----------------------------------- 挖掘与攻击 ----------------------------------- */
+            if (playerController.HoldingAttack())  //检测物品的使用CD
+            {
+                OnHoldAttack();
+            }
+
+
+            /* ---------------------------------- 抛弃物品 ---------------------------------- */
+            if (playerController.ThrowItem())
+                ServerThrowItem(usingItemIndex.ToString(), 1);
+
+#if DEBUG
+            /* --------------------------------- 摄像机调试器 --------------------------------- */
+            if (Keyboard.current.uKey.wasPressedThisFrame)
+            {
+                playerCameraScale = 1;
+            }
+            if (Keyboard.current.iKey.wasPressedThisFrame)
+            {
+                playerCameraScale *= 0.5f;
+            }
+            if (Keyboard.current.oKey.wasPressedThisFrame)
+            {
+                playerCameraScale *= 2;
+            }
+#endif
+
+            //检查锁定目标是否死亡
+            if (lockOnTarget && lockOnTarget.isDead)
+            {
+                CancelLockOnTarget();
+            }
+
+            //锁定敌人
+            if (Keyboard.current.leftShiftKey.isPressed)
+            {
+                if (lockOnTarget == null)
+                {
+                    //做一次范围检测
+                    Array.Clear(lockOnOverlapTemp, 0, lockOnOverlapTemp.Length);
+                    RayTools.OverlapCircleNonAlloc(transform.position, 10, lockOnOverlapTemp, Enemy.enemyLayerMask);
+
+                    //找到数组的有效长度
+                    int validLength = lockOnOverlapTemp.Length;
+                    for (int i = 0; i < lockOnOverlapTemp.Length; i++)
+                    {
+                        if (lockOnOverlapTemp[i] == null)
+                        {
+                            validLength = i;
+                            break;
+                        }
+                    }
+
+                    // 0 表示没有找到敌人
+                    if (validLength != 0)
+                    {
+                        var collider = lockOnOverlapTemp[Random.Range(0, validLength)];
+                        if (collider.TryGetComponent<Enemy>(out var enemy))
+                        {
+                            lockOnTarget = enemy;
+                            pui.LockOnEnemy(enemy);
+                            Tools.instance.mainCameraController.secondLookAt = lockOnTarget.transform;
+                            Tools.instance.mainCameraController.EnableGlobalVolumeVignette();
+                            Tools.instance.mainCameraController.SetGlobalVolumeVignette(0.35f);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (lockOnTarget)
+                {
+                    CancelLockOnTarget();
+                }
+            }
+
+            void CancelLockOnTarget()
+            {
+                lockOnTarget = null;
+                Tools.instance.mainCameraController.secondLookAt = null;
+                Tools.instance.mainCameraController.DisableGlobalVolumeVignette();
+                pui.LockOnEnemy(null);
+            }
+
+            /* ---------------------------------- 检查房屋 ---------------------------------- */
+            if (Keyboard.current.gKey.wasPressedThisFrame)
+            {
+                var pos = PosConvert.WorldToMapPos(cursorWorldPos);
+                var roomCheck = new MapUtils.RoomCheck(pos);
+                Debug.Log(roomCheck.IsValidConstruction() + "   Score: " + roomCheck.ScoreRoom());
+            }
+
+            /* ---------------------------------- 解锁区域 ---------------------------------- */
+            if (Keyboard.current.pKey.wasPressedThisFrame)
+            {
+                if (!isUnlockingRegion)
+                {
+                    isUnlockingRegion = true;
+
+                    //刷新解锁区域的渲染器
+                    RefreshUnlockingRegion();
+
+                    //相机缩放
+                    DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 0.06f, 0.7f).SetEase(Ease.InOutSine);
+                }
+                else
+                {
+                    isUnlockingRegion = false;
+
+                    //渲染器
+                    foreach (var (sr, _) in unlockedRegionColorRenderers) FadeRegionUnlockingRenderer(sr);
+
+                    //相机跟随
+                    Tools.instance.mainCameraController.lookAt = transform;
+
+                    //相机缩放
+                    DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 1, 0.7f).SetEase(Ease.InOutSine);
+                }
+            }
+            //TODO: 左下角显示技能点数
+            if (isUnlockingRegion)
+            {
+                void TryUnlockRegion(Vector2Int targetIndex)
+                {
+                    if (!CanBeUnlocked(targetIndex))
+                        return;
+
+                    var cost = GM.GetRegionUnlockingCost(targetIndex);
+
+                    if (coin < cost)
+                    {
+                        InternalUIAdder.instance.SetStatusText("金币不足!");
+                        return;
+                    }
+
+                    ServerAddCoin(-cost);
+                    ServerAddSkillPoint(1);
+
+                    GenerateRegion(targetIndex);
+                    RefreshRegionUnlockingRenderers();
+                    ServerDestroyRegionBarriers(targetIndex);
+                }
+
+                if (Keyboard.current.upArrowKey.wasPressedThisFrame)
+                {
+                    TryUnlockRegion(regionIndex + Vector2Int.up);
+                }
+                if (Keyboard.current.downArrowKey.wasPressedThisFrame)
+                {
+                    TryUnlockRegion(regionIndex + Vector2Int.down);
+                }
+                if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
+                {
+                    TryUnlockRegion(regionIndex + Vector2Int.left);
+                }
+                if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
+                {
+                    TryUnlockRegion(regionIndex + Vector2Int.right);
+                }
+            }
+
+
+            /* ----------------------------------- 睡眠 ----------------------------------- */
+            if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
+            {
+                //TODO: 睡眠
+            }
+
+            #region 切换物品
+
+            void FuncSwitchItem(Func<bool> funcCall, int ii)
+            {
+                if (!funcCall())
+                    return;
+
+                SwitchItem(ii - 1);
+            }
+
+            FuncSwitchItem(playerController.SwitchToItem1, 1);
+            FuncSwitchItem(playerController.SwitchToItem2, 2);
+            FuncSwitchItem(playerController.SwitchToItem3, 3);
+            FuncSwitchItem(playerController.SwitchToItem4, 4);
+            FuncSwitchItem(playerController.SwitchToItem5, 5);
+            FuncSwitchItem(playerController.SwitchToItem6, 6);
+            FuncSwitchItem(playerController.SwitchToItem7, 7);
+            FuncSwitchItem(playerController.SwitchToItem8, 8);
+
+            if (playerController.SwitchToPreviousItem())
+            {
+                int value = usingItemIndex - 1;
+
+                if (value < 0)
+                    value = quickInventorySlotCount - 1;
+
+                SwitchItem(value);
+            }
+            else if (playerController.SwitchToNextItem())
+            {
+                int value = usingItemIndex + 1;
+
+                if (value > quickInventorySlotCount - 1)
+                    value = 0;
+
+                SwitchItem(value);
+            }
+            #endregion
+
+            //通过触屏点击来使用物品
+            if (GControls.mode == ControlMode.Touchscreen && Touchscreen.current != null)
+            {
+                TouchControl tc = Touchscreen.current.touches[0];
+
+                if (tc.press.wasPressedThisFrame)
+                {
+                    var touchWorldPos = Tools.instance.mainCamera.ScreenToWorldPoint(tc.position.ReadValue());
+
+                    Interact(touchWorldPos);
+                }
+            }
+
+            //如果按右键
+            if (playerController.Interact())
+            {
+                Interact(cursorWorldPos);
+            }
+
+            //在脚底下放方块
+            if (playerController.PlaceBlockUnderPlayer())
+            {
+                var usingItem = GetUsingItemChecked();
+                var behaviour = GetUsingItemBehaviourChecked();
+
+                if (usingItem != null && behaviour != null && usingItem.data.isBlock)
+                {
+                    var downPoint = mainCollider.DownPoint();
+                    behaviour.UseAsBlock(PosConvert.WorldToMapPos(new(downPoint.x, downPoint.y - 1)), false);
+                }
+            }
+
+            isControllingBackground = playerController.IsControllingBackground();
+        }
+
+
+
+
+
+        #region 移动和转向
+
+        public override Vector2 GetMovementDirection()
+        {
+            //获取移动方向
+            var playerCanMove = PlayerCanControl(this) && !isDead;
+            var move = playerCanMove ? playerController.Move() : 0;
+
+            //更新移动状态
+            bool isMovingThisFrame = (move != 0);
+            if (isMovingThisFrame != isMoving)
+            {
+                isMoving = isMovingThisFrame;
+            }
+
+
+            float resultX = move;
+            float resultY = 0;
+
+            //地面摩擦
+            if (isOnGround && move == 0 && rb.velocity.x != 0)
+            {
+                resultX -= rb.velocity.x * blockFriction;
+            }
+
+            return new(resultX, resultY);
+        }
+
+        public override void SetOrientation(bool right)
+        {
+            base.SetOrientation(right);
+
+            //更改名字的朝向
+            if (nameText)
+            {
+                if (right)
+                    nameText.transform.SetScaleXAbs();
+                else
+                    nameText.transform.SetScaleXNegativeAbs();
+            }
+        }
+
+        public void SetOrientationByControl()
+        {
+            if (isDead)
+            {
+                SetOrientation(true);
+                return;
+            }
+
+            //如果玩家没在玩就返回
+            if (!Application.isFocused)
+                return;
+
+            switch (playerController.SetPlayerOrientation())
+            {
+                case PlayerController.PlayerOrientation.Left:
+                    SetOrientation(false);
+                    break;
+
+                case PlayerController.PlayerOrientation.Right:
+                    SetOrientation(true);
+                    break;
+
+                case PlayerController.PlayerOrientation.Previous:
+                    break;
+            }
+        }
+
+        void Rush(bool isRight)
+        {
+            var rushSpeed = 18f;
+            rb.AddVelocityX(isRight ? rushSpeed : -rushSpeed);
+            rushTimer = Tools.time + 1;
+        }
+
+        #endregion
+
+
+
+
+
+        #region 攻击/挖掘
+
+        public static Func<Player, Block, float> GetBlockExcavationCD = (player, block) =>
+        {
+            var result = player.GetUsingItemCD();
+
+            //采矿技能
+            if (player.IsSkillUnlocked(SkillID.Exploration_Mining))
+            {
+                result *= 0.92f;
+
+                //石头、矿物的额外加成
+                if (block.data.id == BlockID.Stone || block.data.HasTag("ori:ore"))
+                    result *= 0.85f;
+            }
+
+            return result;
+        };
+
+        private void ExcavateBlock(Block block)
+        {
+            if (!isLocalPlayer || block == null)
+                return;
+
+
+            //播放挖掘动画
+            if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)
+                animWeb.SwitchPlayingTo("attack_rightarm", 0);
+
+            //让目标方块 3x3 范围内扣血
+            if (block.data.IsValidForAreaMiningI() && IsSkillUnlocked(SkillID.Exploration_Mining_AreaMiningI))
+            {
+                for (int x = -1; x <= 1; x++)
+                {
+                    for (int y = -1; y <= 1; y++)
+                    {
+                        if (Map.instance.TryGetBlock(new(block.pos.x + x, block.pos.y + y), block.isBackground, out var currentBlock) &&
+                            currentBlock.data.IsValidForAreaMiningI())
+                        {
+                            currentBlock.TakeDamage(excavationStrength);
+                        }
+                    }
+                }
+            }
+            //连锁采矿
+            else if (block.data.HasTag("ori:ore") && IsSkillUnlocked(SkillID.Exploration_Mining_AreaMiningII))
+            {
+                List<Block> blocksFound = new();
+
+                void FindNeighbor(int x, int y)
+                {
+                    for (int currentX = x - 2; currentX <= x + 2; currentX++)
+                    {
+                        for (int currentY = y - 2; currentY <= y + 2; currentY++)
+                        {
+                            Vector2Int pos = new(currentX, currentY);
+                            if (Map.instance.TryGetBlock(pos, block.isBackground, out var currentBlock) &&
+                                currentBlock.data.id == block.data.id)
+                            {
+                                if (!blocksFound.Any(p => p.pos == pos))
+                                {
+                                    blocksFound.Add(currentBlock);
+                                    FindNeighbor(currentX, currentY);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //开始递归式搜索
+                FindNeighbor(block.pos.x, block.pos.y);
+
+                foreach (var currentBlock in blocksFound)
+                {
+                    currentBlock.TakeDamage(excavationStrength);
+                }
+            }
+            //让目标方块扣血
+            else
+            {
+                block.TakeDamage(excavationStrength);
+            }
+
+            //播放音效
+            GAudio.Play(AudioID.ExcavatingBlock);
+
+            //手柄震动
+            if (GControls.mode == ControlMode.Gamepad)
+                GControls.GamepadVibrationSlighter(0.1f);
+
+            //设置时间
+            ResetUseItemCD(GetBlockExcavationCD(this, block));
+        }
+
+        public void OnHoldAttack()
+        {
+            if (!HasItemCDPast())
+                return;
+
+            //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的 && 方块不是液体
+            if (IsPointInteractable(cursorWorldPos) &&
+                Map.instance.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
+                block.gameObject.activeInHierarchy &&
+                !block.data.HasTag("ori:liquid"))
+            {
+                ExcavateBlock(block);
+            }
+            //如果是刚刚点的攻击或者是触摸屏模式（触摸屏摇杆）
+            else if (playerController.ClickingAttack() || GControls.mode == ControlMode.Touchscreen)
+            {
+                OnStartAttack();
+
+                //设置时间
+                ResetUseItemCD(GetUsingItemCD());
+                previousAttackTime = Tools.time;
+            }
+        }
+
+        public override void OnStartAttack() => OnStartAttack(cursorWorldPos, false, true);
+
+        public void OnStartAttack(Vector2 point, bool left, bool right)
+        {
+            if (!isLocalPlayer || isDead)
+                return;
+
+            base.OnStartAttack();
+
+            ServerOnStartAttack(left, right);
+        }
+
+        [ServerRpc]
+        public void ServerOnStartAttack(bool leftArm, bool rightArm, NetworkConnection caller = null)
+        {
+            ClientStartAttack(leftArm, rightArm);
+        }
+
+        [ClientRpc]
+        public void ClientStartAttack(bool leftArm, bool rightArm, NetworkConnection caller = null)
+        {
+            //播放攻击动画
+            if (leftArm)
+                animWeb.SwitchPlayingTo("attack_leftarm", 0);
+            if (rightArm)
+                animWeb.SwitchPlayingTo("attack_rightarm", 0);
+        }
+
+        public bool AttackEntity(Entity entity)
+        {
+            //如果使用手柄就震动一下
+            if (GControls.mode == ControlMode.Gamepad)
+                GControls.GamepadVibrationMedium();
+
+            int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
+            return entity.TakeDamage(damage, 0.3f, transform.position, transform.localScale.x.Sign() * Vector2.right * 12);
+        }
+
+        #endregion
+
+
+
+
+
         #region 物品操作
 
         [ServerRpc]
@@ -1701,11 +1992,7 @@ namespace GameCore
                 ItemBehaviour usingItemBehaviour = GetUsingItemBehaviourChecked();
 
                 //使用物品
-                if ((usingItemBehaviour == null || !usingItemBehaviour.Use(point)) && Tools.time > rushTimer)
-                {
-                    //如果使用物品失败且冲刺CD过了就冲刺
-                    Rush(transform.localScale.x > 0);
-                }
+                usingItemBehaviour?.Use(point);
             }
         }
 
@@ -1756,268 +2043,7 @@ namespace GameCore
 
 
 
-
-
-        #region 移动和转向
-
-        public override Vector2 GetMovementDirection()
-        {
-            //获取移动方向
-            var playerCanMove = PlayerCanControl(this) && !isDead;
-            var move = playerCanMove ? playerController.Move() : 0;
-
-            //更新移动状态
-            bool isMovingThisFrame = (move != 0);
-            if (isMovingThisFrame != isMoving)
-            {
-                isMoving = isMovingThisFrame;
-            }
-
-
-            float resultX = move;
-            float resultY = 0;
-
-            //地面摩擦
-            if (isOnGround && move == 0 && rb.velocity.x != 0)
-            {
-                resultX -= rb.velocity.x * blockFriction;
-            }
-
-            return new(resultX, resultY);
-        }
-
-        public override void SetOrientation(bool right)
-        {
-            base.SetOrientation(right);
-
-            //更改名字的朝向
-            if (nameText)
-            {
-                if (right)
-                    nameText.transform.SetScaleXAbs();
-                else
-                    nameText.transform.SetScaleXNegativeAbs();
-            }
-        }
-
-        public void SetOrientationByControl()
-        {
-            if (isDead)
-            {
-                SetOrientation(true);
-                return;
-            }
-
-            //如果玩家没在玩就返回
-            if (!Application.isFocused)
-                return;
-
-            switch (playerController.SetPlayerOrientation())
-            {
-                case PlayerController.PlayerOrientation.Left:
-                    SetOrientation(false);
-                    break;
-
-                case PlayerController.PlayerOrientation.Right:
-                    SetOrientation(true);
-                    break;
-
-                case PlayerController.PlayerOrientation.Previous:
-                    break;
-            }
-        }
-
-        void Rush(bool isRight)
-        {
-            var rushSpeed = 18f;
-            rb.AddVelocityX(isRight ? rushSpeed : -rushSpeed);
-            rushTimer = Tools.time + 1;
-        }
-
         #endregion
-
-
-
-
-
-        #region 攻击
-
-        public Vector2 cursorWorldPos
-        {
-            get
-            {
-                return GControls.mode switch
-                {
-                    //* 如果是触摸屏, 返回光标位置
-                    ControlMode.Touchscreen => pui.touchScreenCursorImage.rectTransform.position,
-
-                    //* 如果是键鼠, 返回鼠标位置
-                    ControlMode.KeyboardAndMouse => Tools.instance.GetMouseWorldPos(),
-
-                    //* 如果是手柄, 返回虚拟光标位置
-                    ControlMode.Gamepad => (Vector2)Tools.instance.mainCamera.ScreenToWorldPoint(VirtualCursor.instance.image.ap),
-
-                    _ => Vector2.zero,
-                };
-            }
-        }
-
-        public static Func<Player, Block, float> GetBlockExcavationCD = (player, block) =>
-        {
-            var result = player.GetUsingItemCD();
-
-            //采矿技能
-            if (player.IsSkillUnlocked(SkillID.Exploration_Mining))
-            {
-                result *= 0.92f;
-
-                //石头、矿物的额外加成
-                if (block.data.id == BlockID.Stone || block.data.HasTag("ori:ore"))
-                    result *= 0.85f;
-            }
-
-            return result;
-        };
-
-        private void ExcavateBlock(Block block)
-        {
-            if (!isLocalPlayer || block == null)
-                return;
-
-
-            //播放挖掘动画
-            if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)
-                animWeb.SwitchPlayingTo("attack_rightarm", 0);
-
-            //让目标方块 3x3 范围内扣血
-            if (block.data.IsValidForAreaMiningI() && IsSkillUnlocked(SkillID.Exploration_Mining_AreaMiningI))
-            {
-                for (int x = -1; x <= 1; x++)
-                {
-                    for (int y = -1; y <= 1; y++)
-                    {
-                        if (Map.instance.TryGetBlock(new(block.pos.x + x, block.pos.y + y), block.isBackground, out var currentBlock) &&
-                            currentBlock.data.IsValidForAreaMiningI())
-                        {
-                            currentBlock.TakeDamage(excavationStrength);
-                        }
-                    }
-                }
-            }
-            //连锁采矿
-            else if (block.data.HasTag("ori:ore") && IsSkillUnlocked(SkillID.Exploration_Mining_AreaMiningII))
-            {
-                List<Block> blocksFound = new();
-
-                void FindNeighbor(int x, int y)
-                {
-                    for (int currentX = x - 2; currentX <= x + 2; currentX++)
-                    {
-                        for (int currentY = y - 2; currentY <= y + 2; currentY++)
-                        {
-                            Vector2Int pos = new(currentX, currentY);
-                            if (Map.instance.TryGetBlock(pos, block.isBackground, out var currentBlock) &&
-                                currentBlock.data.id == block.data.id)
-                            {
-                                if (!blocksFound.Any(p => p.pos == pos))
-                                {
-                                    blocksFound.Add(currentBlock);
-                                    FindNeighbor(currentX, currentY);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                //开始递归式搜索
-                FindNeighbor(block.pos.x, block.pos.y);
-
-                foreach (var currentBlock in blocksFound)
-                {
-                    currentBlock.TakeDamage(excavationStrength);
-                }
-            }
-            //让目标方块扣血
-            else
-            {
-                block.TakeDamage(excavationStrength);
-            }
-
-            //播放音效
-            GAudio.Play(AudioID.ExcavatingBlock);
-
-            //手柄震动
-            if (GControls.mode == ControlMode.Gamepad)
-                GControls.GamepadVibrationSlighter(0.1f);
-
-            //设置时间
-            ResetUseItemCD(GetBlockExcavationCD(this, block));
-        }
-
-        public void OnHoldAttack()
-        {
-            if (!HasItemCDPast())
-                return;
-
-            //如果 鼠标在挖掘范围内 && 在鼠标位置获取到方块 && 方块是激活的 && 方块不是液体
-            if (IsPointInteractable(cursorWorldPos) &&
-                Map.instance.TryGetBlock(PosConvert.WorldToMapPos(cursorWorldPos), isControllingBackground, out Block block) &&
-                block.gameObject.activeInHierarchy &&
-                !block.data.HasTag("ori:liquid"))
-            {
-                ExcavateBlock(block);
-            }
-            //如果是刚刚点的攻击或者是触摸屏模式（触摸屏摇杆）
-            else if (playerController.ClickingAttack() || GControls.mode == ControlMode.Touchscreen)
-            {
-                OnStartAttack();
-
-                //设置时间
-                ResetUseItemCD(GetUsingItemCD());
-                previousAttackTime = Tools.time;
-            }
-        }
-
-        public override void OnStartAttack() => OnStartAttack(cursorWorldPos, false, true);
-
-        public void OnStartAttack(Vector2 point, bool left, bool right)
-        {
-            if (!isLocalPlayer || isDead)
-                return;
-
-            base.OnStartAttack();
-
-            ServerOnStartAttack(left, right);
-        }
-
-        [ServerRpc]
-        public void ServerOnStartAttack(bool leftArm, bool rightArm, NetworkConnection caller = null)
-        {
-            ClientStartAttack(leftArm, rightArm);
-        }
-
-        [ClientRpc]
-        public void ClientStartAttack(bool leftArm, bool rightArm, NetworkConnection caller = null)
-        {
-            //播放攻击动画
-            if (leftArm)
-                animWeb.SwitchPlayingTo("attack_leftarm", 0);
-            if (rightArm)
-                animWeb.SwitchPlayingTo("attack_rightarm", 0);
-        }
-
-        public bool AttackEntity(Entity entity)
-        {
-            //如果使用手柄就震动一下
-            if (GControls.mode == ControlMode.Gamepad)
-                GControls.GamepadVibrationMedium();
-
-            int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
-            return entity.TakeDamage(damage, 0.3f, transform.position, transform.localScale.x.Sign() * Vector2.right * 12);
-        }
-
-        #endregion
-
 
 
 

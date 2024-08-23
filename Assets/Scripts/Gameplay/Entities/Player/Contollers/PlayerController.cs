@@ -11,6 +11,7 @@ namespace GameCore
         public abstract bool Apply();
         public abstract bool Jump();
         public abstract bool HoldingJump();
+        public abstract bool Rush();
         public abstract float Move();
         public abstract bool ClickingAttack();
         public abstract bool HoldingAttack();

@@ -5,9 +5,23 @@ namespace GameCore
 {
     public class KeyboardAndMouseController : PlayerController
     {
+        int lastMoveClickDirection;
+        float lastMoveClickTime;
+
         public override bool Apply() => (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
         public override bool Jump() => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
         public override bool HoldingJump() => Keyboard.current != null && Keyboard.current.spaceKey.isPressed;
+        public override bool Rush()
+        {
+            var instantAD = GControls.GetInstantAD();
+            var result = lastMoveClickDirection != 0 && instantAD == lastMoveClickDirection && Tools.time - lastMoveClickTime <= 0.25f;
+            if (instantAD != 0)
+            {
+                lastMoveClickTime = Tools.time;
+                lastMoveClickDirection = instantAD;
+            }
+            return result;
+        }
         public override float Move() => GControls.GetAD();
         public override bool ClickingAttack() => Mouse.current?.leftButton?.wasPressedThisFrame ?? false;
         public override bool HoldingAttack() => Mouse.current?.leftButton?.isPressed ?? false;
