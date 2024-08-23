@@ -367,7 +367,6 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         private readonly Collider2D[] itemPickUpObjectsDetectedTemp = new Collider2D[40];
         public PlayerController playerController;
-        private void UpdateController(ControlMode newMode) => playerController = ControlModeToController(this, newMode);
         float rushTimer;
         public Enemy lockOnTarget { get; private set; }
         readonly Collider2D[] lockOnOverlapTemp = new Collider2D[10];
@@ -1319,6 +1318,15 @@ namespace GameCore
             }
         }
 
+        private void UpdateController(ControlMode newMode) => playerController = ControlModeToController(this, newMode);
+        public static PlayerController ControlModeToController(Player player, ControlMode mode) => mode switch
+        {
+            ControlMode.Touchscreen => new TouchscreenController(player),
+            ControlMode.KeyboardAndMouse => new KeyboardAndMouseController(player),
+            ControlMode.Gamepad => new GamepadController(player),
+            _ => throw new()
+        };
+
 
 
 
@@ -2128,13 +2136,6 @@ namespace GameCore
         }
 
 
-        public static PlayerController ControlModeToController(Player player, ControlMode mode) => mode switch
-        {
-            ControlMode.Touchscreen => new TouchscreenController(player),
-            ControlMode.KeyboardAndMouse => new KeyboardAndMouseController(player),
-            ControlMode.Gamepad => new GamepadController(player),
-            _ => throw new()
-        };
 
 
 
