@@ -980,7 +980,7 @@ namespace GameCore.UI
                                     player.ServerAddItem(resultItem);
 
                                     //音效
-                                    GAudio.Play(AudioID.Crafting);
+                                    GAudio.Play(AudioID.Crafting, null);
 
                                     //制作后刷新合成界面, 原料表与标题
                                     player.OnInventoryItemChange(player.inventory, null);
@@ -1609,13 +1609,13 @@ namespace GameCore.UI
                 SetCraftingFacility(null);
 
                 GameUI.SetPage(null);
-                GAudio.Play(AudioID.CloseBackpack);
+                GAudio.Play(AudioID.CloseBackpack, null);
             }
             //禁用状态 -> 启用
             else
             {
                 player.OnInventoryItemChange(player.inventory, null);
-                GAudio.Play(AudioID.OpenBackpack);
+                GAudio.Play(AudioID.OpenBackpack, null);
 
                 GameUI.SetPage(backpackMask);
             }
@@ -1949,7 +1949,7 @@ namespace GameCore.UI
                         taskCompleteIcon.image.sprite = node.icon.image.sprite;
                         taskCompleteText.text.text = node.button.buttonText.text.text;
 
-                        GAudio.Play(AudioID.Complete);
+                        GAudio.Play(AudioID.Complete, null);
                         CoroutineStarter.Do(TaskCompleteTimer());
                     });
                 }
@@ -2084,7 +2084,7 @@ namespace GameCore.UI
                     AddChatMsg(ByteConverter.ToSprite(nm.portrait), nm.playerName, nm.msg);
 
                     //播放音效
-                    GAudio.Play(AudioID.Chat);
+                    GAudio.Play(AudioID.Chat, null);
                 });
             };
         }

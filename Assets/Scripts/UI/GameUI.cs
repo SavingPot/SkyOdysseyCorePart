@@ -426,7 +426,7 @@ namespace GameCore.UI
                     msg.checkmark.image.sprite = ModFactory.CompareTexture("ori:disabled").sprite;
             }
             msg.OnValueChangeBind(RefreshIt);
-            msg.OnValueChangeBind(_ => GAudio.Play(AudioID.Button));
+            msg.OnValueChangeBind(_ => GAudio.Play(AudioID.Button, null));
 
             return msg;
         }
@@ -476,7 +476,7 @@ namespace GameCore.UI
             msg.rectTransform.anchorMax = new(positionCurrent.z, positionCurrent.w);
             msg.rectTransform.localScale = Vector2.one;
             msg.button.image.sprite = ModFactory.CompareTexture("ori:button_flat").sprite;
-            msg.OnClickBind(() => GAudio.Play(AudioID.Button));
+            msg.OnClickBind(() => GAudio.Play(AudioID.Button, null));
 
             return msg;
         }
@@ -503,7 +503,7 @@ namespace GameCore.UI
             msg.rt.localScale = Vector2.one;
             msg.button.image.sprite = ModFactory.CompareTexture("ori:square_button").sprite;
             msg.field.image.sprite = ModFactory.CompareTexture("ori:button_flat").sprite;
-            msg.OnClickBind(() => GAudio.Play(AudioID.Button));
+            msg.OnClickBind(() => GAudio.Play(AudioID.Button, null));
 
             return msg;
         }

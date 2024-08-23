@@ -38,7 +38,7 @@ namespace GameCore
                 player.ServerReduceItemCount(inventoryIndex, 1);
 
                 //播放音效
-                GAudio.Play(AudioID.PlaceBlock);
+                GAudio.Play(AudioID.PlaceBlock, player.transform.position);
 
                 //播放手臂动画
                 if (!player.animWeb.GetAnim("attack_rightarm", 0).isPlaying)
@@ -64,7 +64,7 @@ namespace GameCore
 
                     player.ServerReduceItemCount(inventoryIndex, 1);
 
-                    GAudio.Play(AudioID.Eat);
+                    GAudio.Play(AudioID.Eat, player.transform.position);
 
                     return true;
                 }
@@ -72,7 +72,7 @@ namespace GameCore
                 else if (instance.data.Helmet != null)
                 {
                     player.ServerSwapItem(inventoryIndex, Inventory.helmetVar);
-                    GAudio.Play(AudioID.WearArmor);
+                    GAudio.Play(AudioID.WearArmor, player.transform.position);
 
                     return true;
                 }
@@ -80,7 +80,7 @@ namespace GameCore
                 else if (instance.data.Breastplate != null)
                 {
                     player.ServerSwapItem(inventoryIndex, Inventory.breastplateVar);
-                    GAudio.Play(AudioID.WearArmor);
+                    GAudio.Play(AudioID.WearArmor, player.transform.position);
 
                     return true;
                 }
@@ -88,7 +88,7 @@ namespace GameCore
                 else if (instance.data.Legging != null)
                 {
                     player.ServerSwapItem(inventoryIndex, Inventory.leggingVar);
-                    GAudio.Play(AudioID.WearArmor);
+                    GAudio.Play(AudioID.WearArmor, player.transform.position);
 
                     return true;
                 }
@@ -96,7 +96,7 @@ namespace GameCore
                 else if (instance.data.Boots != null)
                 {
                     player.ServerSwapItem(inventoryIndex, Inventory.bootsVar);
-                    GAudio.Play(AudioID.WearArmor);
+                    GAudio.Play(AudioID.WearArmor, player.transform.position);
 
                     return true;
                 }

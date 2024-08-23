@@ -40,7 +40,7 @@ namespace GameCore
 
         [ChineseName("设置混音器音量")] public static void SetMixerVolume(AudioMixerGroup audioMixerGroup, float value) => audioMixerGroup.audioMixer.SetFloat("MixerVolume", value);
 
-        public static void Play(string audioId, bool dontRepeatIfHasBeenPlaying = false)
+        public static void Play(string audioId, Vector2? soundOrigin, bool dontRepeatIfHasBeenPlaying = false)
         {
             //如果audioId为空或者为空字符串，则报错
             if (audioId.IsNullOrWhiteSpace())
@@ -61,6 +61,17 @@ namespace GameCore
                     //读取对象池池
                     var source = sourcePool.Get(audio);
                     audio.sources.Add(source);
+
+                    //设置空间音频
+                    if (soundOrigin.HasValue)
+                    {
+                        source.spatialBlend = 1;
+                        source.transform.position = soundOrigin.Value;
+                    }
+                    else
+                    {
+                        source.spatialBlend = 0;
+                    }
 
                     //播放新音频
                     source.Play();
@@ -137,9 +148,13 @@ namespace GameCore
 
         public override AudioSource Generation()
         {
-            var source = container.gameObject.AddComponent<AudioSource>();
+            var go = new GameObject("AudioSource");
+            var source = go.AddComponent<AudioSource>();
 
+            source.transform.SetParent(container);
             source.playOnAwake = false;
+            source.minDistance = 15;
+            source.maxDistance = 50;
 
             return source;
         }

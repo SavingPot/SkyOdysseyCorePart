@@ -827,7 +827,7 @@ namespace GameCore
 
             //播放受伤音频
             if (!data.hurtAudioId.IsNullOrWhiteSpace())
-                GAudio.Play(data.hurtAudioId);
+                GAudio.Play(data.hurtAudioId, transform.position);
 
             //记录受伤时的时间
             previousHurtTime = Tools.time;

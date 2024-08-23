@@ -222,7 +222,7 @@ namespace GameCore.UI
 
                     //减少金币
                     player.ServerAddCoin(-item.cost);
-                    GAudio.Play(AudioID.Trade);
+                    GAudio.Play(AudioID.Trade, null);
 
                     //给予物品
                     var itemToGive = ModFactory.CompareItem(item.itemId).DataToItem();

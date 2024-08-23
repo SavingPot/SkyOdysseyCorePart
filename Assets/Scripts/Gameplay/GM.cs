@@ -530,7 +530,7 @@ namespace GameCore
             //把指定位置的方块摧毁
             map.RemoveBlock(n.pos, n.isBackground, true, true);
 
-            GAudio.Play(AudioID.DestroyBlock);
+            GAudio.Play(AudioID.DestroyBlock, n.pos);
         }
 
         //当服务器收到 NMPos 消息时的回调

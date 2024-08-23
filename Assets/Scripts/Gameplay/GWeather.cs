@@ -76,7 +76,7 @@ namespace GameCore
             //酸雨
             AddWeather("ori:acid_rain", () =>
             {
-                GAudio.Play(AudioID.Rain, true);
+                GAudio.Play(AudioID.Rain, null, true);
 
                 //开始发射
                 gm.weatherParticleMain.startColor = Color.green;
@@ -103,7 +103,7 @@ namespace GameCore
             //雨天
             AddWeather("ori:rain", () =>
             {
-                GAudio.Play(AudioID.Rain, true);
+                GAudio.Play(AudioID.Rain, null, true);
 
                 //开始发射
                 gm.weatherParticleEmission.enabled = true;

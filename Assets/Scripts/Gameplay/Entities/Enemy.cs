@@ -142,7 +142,7 @@ namespace GameCore
                         rb.velocity += new Vector2(8 * (targetOrientation ? 1 : -1), 0);
 
                         //播放音效
-                        GAudio.Play(AudioID.ParrySucceed);
+                        GAudio.Play(AudioID.ParrySucceed, transform.position);
 
                         //播放盾反粒子
                         GM.instance.parrySuccessParticle.transform.position = 0.5f * (transform.position + targetEntity.transform.position);

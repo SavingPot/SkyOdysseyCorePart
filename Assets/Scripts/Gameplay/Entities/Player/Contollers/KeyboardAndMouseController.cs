@@ -11,7 +11,7 @@ namespace GameCore
         public override bool Apply() => (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
         public override bool Jump() => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
         public override bool HoldingJump() => Keyboard.current != null && Keyboard.current.spaceKey.isPressed;
-        public override bool Rush()
+        public override bool Rush(out bool direction)
         {
             var instantAD = GControls.GetInstantAD();
             var result = lastMoveClickDirection != 0 && instantAD == lastMoveClickDirection && Tools.time - lastMoveClickTime <= 0.25f;
@@ -20,6 +20,7 @@ namespace GameCore
                 lastMoveClickTime = Tools.time;
                 lastMoveClickDirection = instantAD;
             }
+            direction = instantAD == 1;
             return result;
         }
         public override float Move() => GControls.GetAD();

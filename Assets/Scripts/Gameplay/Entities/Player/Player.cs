@@ -653,7 +653,7 @@ namespace GameCore
             //血量低于 15 就播放心跳声 (死了不播放声音)
             if (health <= 15)
             {
-                GAudio.Play(AudioID.Heartbeat, true);
+                GAudio.Play(AudioID.Heartbeat, null, true);
             }
         }
 
@@ -714,14 +714,14 @@ namespace GameCore
                         return;
 
                     ServerAddItem(drop.item);
-                    GAudio.Play(AudioID.PickUpItem);
+                    GAudio.Play(AudioID.PickUpItem, null);
 
                     drop.Death();
                 }
                 else if (other.TryGetComponent<CoinEntity>(out var coinEntity) && coinEntity.CanBePickedUp())
                 {
                     ServerAddCoin(coinEntity.coinCount);
-                    GAudio.Play(AudioID.PickUpItem);
+                    GAudio.Play(AudioID.PickUpItem, null);
 
                     coinEntity.Death();
                 }
@@ -845,7 +845,7 @@ namespace GameCore
             //播放音效、显示重生界面
             if (isLocalPlayer)
             {
-                GAudio.Play(AudioID.Death);
+                GAudio.Play(AudioID.Death, null);
             }
 
             animWeb.Stop();
@@ -1339,10 +1339,10 @@ namespace GameCore
 
 
             /* ----------------------------------- 冲刺 ----------------------------------- */
-            if (Tools.time > rushTimer && playerController.Rush() && IsSkillUnlocked(SkillID.Exploration))
+            if (Tools.time > rushTimer && playerController.Rush(out var direction) && IsSkillUnlocked(SkillID.Exploration))
             {
                 //如果使用物品失败且冲刺CD过了就冲刺
-                Rush(transform.localScale.x > 0);
+                Rush(direction);
             }
 
 
@@ -1516,12 +1516,10 @@ namespace GameCore
 
             #region 切换物品
 
-            void FuncSwitchItem(Func<bool> funcCall, int ii)
+            void FuncSwitchItem(Func<bool> whetherToSwitch, int ii)
             {
-                if (!funcCall())
-                    return;
-
-                SwitchItem(ii - 1);
+                if (whetherToSwitch())
+                    SwitchItem(ii - 1);
             }
 
             FuncSwitchItem(playerController.SwitchToItem1, 1);
@@ -1758,7 +1756,7 @@ namespace GameCore
             }
 
             //播放音效
-            GAudio.Play(AudioID.ExcavatingBlock);
+            GAudio.Play(AudioID.ExcavatingBlock, transform.position);
 
             //手柄震动
             if (GControls.mode == ControlMode.Gamepad)
@@ -1944,7 +1942,7 @@ namespace GameCore
             EntityInventoryOwnerBehaviour.RefreshItemRenderers(this);
 
             //播放切换音效
-            GAudio.Play(AudioID.SwitchQuickInventorySlot);
+            GAudio.Play(AudioID.SwitchQuickInventorySlot, null);
 
             //改变状态文本
             string itemName = GameUI.CompareText(GetUsingItemChecked()?.data?.id);
@@ -2022,7 +2020,7 @@ namespace GameCore
             SetParryTimeVars();
 
             //播放盾反音效和动画
-            GAudio.Play(AudioID.Parry);
+            GAudio.Play(AudioID.Parry, transform.position);
             animWeb.SwitchPlayingTo("slight_leftarm_lift");
         }
 

@@ -152,7 +152,7 @@ namespace GameCore
                     //随机抽取一个实体并生成
                     AudioData audio = audios.Extract(RandomUpdateRandom);
 
-                    GAudio.Play(audio.id);
+                    GAudio.Play(audio.id, null);
                 }
             });
             #endregion

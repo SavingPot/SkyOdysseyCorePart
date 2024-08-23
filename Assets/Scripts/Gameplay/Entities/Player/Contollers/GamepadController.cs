@@ -9,7 +9,7 @@ namespace GameCore
         public override bool Apply() => Gamepad.current != null && Gamepad.current.aButton.wasPressedThisFrame;
         public override bool Jump() => GControls.leftStickVec.y >= 0.62f;
         public override bool HoldingJump() => GControls.leftStickVec.y >= 0.62f;
-        public override bool Rush() => throw new NotImplementedException();
+        public override bool Rush(out bool direction) => throw new NotImplementedException();
         public override float Move() => GControls.leftStickVec.x;
         public override bool ClickingAttack() => Gamepad.current?.rightTrigger?.wasPressedThisFrame ?? false;
         public override bool HoldingAttack() => Gamepad.current?.rightTrigger?.isPressed ?? false;
