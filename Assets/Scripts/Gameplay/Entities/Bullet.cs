@@ -14,12 +14,20 @@ namespace GameCore
         public int damage;
         [Sync] public uint? ownerId;
         [HideInInspector] public Collider2D[] besideObjectsDetected = new Collider2D[15];
+        float overlapRadius;
 
         protected override void Awake()
         {
             base.Awake();
 
             isHurtable = false;
+        }
+
+        public override void AfterInitialization()
+        {
+            base.AfterInitialization();
+
+            overlapRadius = Mathf.Max(data.colliderSize.x, data.colliderSize.y) / 2 + 0.1f;
         }
 
         protected virtual void HitEntity(Entity entity)
@@ -35,7 +43,7 @@ namespace GameCore
                 return;
 
             Array.Clear(besideObjectsDetected, 0, besideObjectsDetected.Length);
-            Physics2D.OverlapCircleNonAlloc(transform.position, 0.3f, besideObjectsDetected);
+            Physics2D.OverlapCircleNonAlloc(new(transform.position.x + data.colliderOffset.x, transform.position.y + data.colliderOffset.y), overlapRadius, besideObjectsDetected);
             foreach (var obj in besideObjectsDetected)
             {
                 if (!obj)
