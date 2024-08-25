@@ -9,7 +9,8 @@ namespace GameCore
     [NotSummonable]
     public class Bullet : Entity
     {
-        public bool destroyOnHit = true;
+        public bool destroyOnHitEntity = true;
+        public bool destroyOnCollideWithBlock = true;
         public int damage;
         [Sync] public uint? ownerId;
         [HideInInspector] public Collider2D[] besideObjectsDetected = new Collider2D[15];
@@ -19,6 +20,11 @@ namespace GameCore
             base.Awake();
 
             isHurtable = false;
+        }
+
+        protected virtual void HitEntity(Entity entity)
+        {
+            entity.TakeDamage(damage, 0.2f, transform.position, Vector2.zero);
         }
 
         protected override void ServerUpdate()
@@ -42,11 +48,11 @@ namespace GameCore
                     continue;
 
                 //实体
-                if (obj.gameObject.TryGetComponent<Entity>(out var hit) && hit.netId != ownerId)
+                if (obj.gameObject.TryGetComponent<Entity>(out var entity) && entity.netId != ownerId)
                 {
-                    hit.TakeDamage(damage, 0.2f, transform.position, Vector2.zero);
+                    HitEntity(entity);
 
-                    if (destroyOnHit)
+                    if (destroyOnHitEntity)
                         Death();
                 }
                 //方块
@@ -65,7 +71,8 @@ namespace GameCore
 
         public virtual void BlockCollision(Block block)
         {
-            Death();
+            if (destroyOnCollideWithBlock)
+                Death();
         }
     }
 }

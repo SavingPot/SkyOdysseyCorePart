@@ -45,7 +45,7 @@ namespace GameCore
             int portalMiddleX = PosConvert.MapToRegionPosX(region.spawnPoint.x, region.index);
             int portalMiddleY = PosConvert.MapToRegionPosY(region.spawnPoint.y + 10, region.index);
 
-            region.AddPos(BlockID.Portal, portalMiddleX, portalMiddleY, false, true);
+            region.AddPos(region.index.x == 0 ? BlockID.Portal : BlockID.SleepingPortal, portalMiddleX, portalMiddleY, false, true);
             region.AddPos(BlockID.PortalBase, portalMiddleX, portalMiddleY - 1, false, true);
             region.AddPos(BlockID.PortalBase, portalMiddleX - 2, portalMiddleY - 1, false, true);
             region.AddPos(BlockID.PortalBase, portalMiddleX - 1, portalMiddleY - 1, false, true);
