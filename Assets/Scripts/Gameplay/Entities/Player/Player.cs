@@ -600,7 +600,7 @@ namespace GameCore
 
             //生成地图
             if (regionIndexToGenerate.y == ChallengeRoomGeneration.challengeRoomIndexY || !RegionGeneration.IslandGenerationTable.ContainsKey(regionIndexToGenerate.y))
-                GenerateRegion(PosConvert.WorldPosToRegionIndex(((PlayerSave)Init.save).respawnPoint), true);
+                GenerateRespawnRegion(true);
             else
                 GenerateRegion(regionIndexToGenerate, Init.save.pos == Vector2.zero);
         }
@@ -1009,6 +1009,9 @@ namespace GameCore
             coroutineWaitingForRegionSegments = StartCoroutine(IEWaitForRegionSegments());
         }
 
+        [Button]
+        public void GenerateRespawnRegion(bool shouldTransportToTheRegion) => GenerateRegion(PosConvert.WorldPosToRegionIndex(((PlayerSave)Init.save).respawnPoint), shouldTransportToTheRegion);
+
         /// <summary>
         /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         /// </summary>
@@ -1135,8 +1138,8 @@ namespace GameCore
                 //这些代码必须在主线程里执行
                 MethodAgent.RunOnMainThread(() =>
                 {
-                    //如果存档中没有玩家位置, 则将玩家的位置设置到该区域出生点
-                    if (isFirstGeneration && shouldTransportToTheRegion)
+                    //将玩家的位置设置到该区域出生点
+                    if (shouldTransportToTheRegion)
                     {
                         var respawnPoint = regionToGenerate.spawnPoint.To2();
                         ConnectionSetPosition(respawnPoint, caller);
