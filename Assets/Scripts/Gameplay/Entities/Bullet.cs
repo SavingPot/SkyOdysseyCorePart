@@ -39,16 +39,14 @@ namespace GameCore
             foreach (var obj in besideObjectsDetected)
             {
                 if (!obj)
-                {
                     break;
-                }
 
                 //排除自己
                 if (obj.gameObject == gameObject)
                     continue;
 
                 //实体
-                if (obj.gameObject.TryGetComponent<Entity>(out var entity) && entity.netId != ownerId)
+                if (obj.gameObject.TryGetComponent<Entity>(out var entity) && entity.netId != ownerId && entity.CanTakeDamage())
                 {
                     HitEntity(entity);
 
