@@ -18,7 +18,7 @@ namespace GameCore
         public List<EntitySave> entities = new();
         public string biomeId;
         public Vector2Int size;
-        public Vector2Int spawnPoint;
+        public Vector2Int spawnPoint; //这个是地图坐标，不是区域坐标
         public Vector2Int maxPoint;
         public Vector2Int minPoint;
         public bool generatedAlready;

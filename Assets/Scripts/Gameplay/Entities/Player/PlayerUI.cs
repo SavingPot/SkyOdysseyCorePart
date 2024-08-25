@@ -1749,7 +1749,7 @@ namespace GameCore.UI
                 slot.content.image.color = new(slot.content.image.color.r, slot.content.image.color.g, slot.content.image.color.b, !slot.content.image.sprite ? 0 : 1);
 
                 //设置文本
-                slot.button.buttonText.text.text = item?.count.ToString();
+                slot.button.buttonText.text.text = Item.Null(item) || item.count == 1 ? string.Empty : slot.button.buttonText.text.text = item?.count.ToString();
 
                 //设置栏位图标
                 if (player.usingItemIndex == i)

@@ -122,6 +122,7 @@
      <Compile Include="Assets\Scripts\Gameplay\Entities\Behaviours\CreatureHumanBodyPartsBehaviour.cs" />
      <Compile Include="Assets\Scripts\Gameplay\WorldGeneration\IslandGeneration.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\InfoShowers.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\WorldGeneration\ChallengeRoomGeneration.cs" />
      <Compile Include="Assets\Scripts\Utils\JsonUtils.cs" />
      <Compile Include="Assets\Scripts\UI\NodeTree.cs" />
      <Compile Include="Assets\Scripts\UI\InfiniteBackground.cs" />

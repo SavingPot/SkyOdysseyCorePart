@@ -41,6 +41,11 @@ namespace GameCore
             return ChunkToRegionIndex(MapPosToChunkIndex(new((int)pos.x, (int)pos.y)));
         }
 
+        public static Vector2Int MapPosToRegionIndex(Vector2Int pos)
+        {
+            return ChunkToRegionIndex(MapPosToChunkIndex(new(pos.x, pos.y)));
+        }
+
         public static Vector2Int MapToRegionPos(this Chunk chunk, Vector2Int mapPos)
         {
             return new(mapPos.x - chunk.regionMiddleX, mapPos.y - chunk.regionMiddleY);

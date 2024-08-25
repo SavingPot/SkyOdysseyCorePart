@@ -778,6 +778,11 @@ namespace GameCore.UI
                         parallaxBackgrounds.Add(c2);
                         parallaxBackgrounds.Add(c3);
 
+                        c0.gameObject.layer = LayerMask.NameToLayer("UI");
+                        c1.gameObject.layer = LayerMask.NameToLayer("UI");
+                        c2.gameObject.layer = LayerMask.NameToLayer("UI");
+                        c3.gameObject.layer = LayerMask.NameToLayer("UI");
+
                         c0.parallaxFactor = 0.5f;
                         c1.parallaxFactor = 0.65f;
                         c2.parallaxFactor = 0.8f;

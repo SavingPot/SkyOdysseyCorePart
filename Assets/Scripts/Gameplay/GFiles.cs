@@ -13,7 +13,7 @@ namespace GameCore
     {
         public static GameSettings settings;
         public static World world;
-        public static Action SaveAllBlockDataToFiles = () => { };
+        public static Action ApplyBlockDataToWorld = () => { };
         public static Action OnSaveAllDataToFiles = () => { Debug.Log("保存了所有数据至文件"); };
 
 
@@ -89,7 +89,7 @@ namespace GameCore
                 world.basicData.weather = GWeather.weatherId;
 
                 //将方块数据写入
-                SaveAllBlockDataToFiles();
+                ApplyBlockDataToWorld();
 
                 //应用实体数据
                 ApplyEntityDataToWorld();

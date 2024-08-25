@@ -141,11 +141,12 @@ namespace GameCore
             sr.DOFade(0, 0.5f).OnComplete(() => sr.gameObject.SetActive(false));
         }
         /// <returns> 对应区域是否未解锁且纵深层存在 </returns>
-        bool CanBeUnlocked(Vector2Int regionIndex)
+        bool IsRegionUnlocked(Vector2Int regionIndex)
         {
             return !GFiles.world.TryGetRegion(regionIndex, out _) &&
                    !GM.instance.generatingNewRegions.Contains(regionIndex) &&
-                    RegionGeneration.IslandGenerationTable.ContainsKey(regionIndex.y);
+                    RegionGeneration.IslandGenerationTable.ContainsKey(regionIndex.y) &&
+                    regionIndex.y != ChallengeRoomGeneration.challengeRoomIndexY;
         }
         void RefreshRegionUnlockingRenderers()
         {
@@ -161,7 +162,7 @@ namespace GameCore
                 var (sr, ti) = unlockedRegionColorRenderers[index];
 
                 //TODO: 客户端的世界为空，这里需要进行一些处理
-                if (CanBeUnlocked(targetIndex))
+                if (IsRegionUnlocked(targetIndex))
                 {
                     sr.color = new(1, 1, 1, 0.8f);
                     sr.gameObject.SetActive(true);
@@ -195,7 +196,6 @@ namespace GameCore
         #region 区域生成
 
         public bool hasGeneratedFirstRegion;
-        private bool hasSetPosBySave;
         Coroutine coroutineWaitingForRegionSegments;
         public bool isAskingForGeneratingRegion { get; private set; }
         bool regionGeneration_isFirstGeneration;
@@ -365,6 +365,7 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         /*                                    临时数据                                    */
         /* -------------------------------------------------------------------------- */
+        private readonly Collider2D[] boundaryDetectionTemp = new Collider2D[10];
         private readonly Collider2D[] itemPickUpObjectsDetectedTemp = new Collider2D[40];
         public PlayerController playerController;
         float rushTimer;
@@ -586,11 +587,22 @@ namespace GameCore
         void RestorePlayerPositionFromSave(NetworkConnection caller = null)
         {
             if (Init.save.pos != Vector2.zero)
-            {
-                ConnectionSetPosition(Init.save.pos, caller);
-                regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos); //这里必须立刻设置 regionIndex，否则会导致 OnRegionIndexChanged 被调用
-                hasSetPosBySave = true;
-            }
+                regionIndex = PosConvert.WorldPosToRegionIndex(Init.save.pos);
+
+            ConnectionRestorePlayerPositionFromSave(Init.save.pos, caller);
+        }
+
+        [ConnectionRpc]
+        void ConnectionRestorePlayerPositionFromSave(Vector2 pos, NetworkConnection caller)
+        {
+            SetPosition(pos);
+            var regionIndexToGenerate = PosConvert.WorldPosToRegionIndex(pos);
+
+            //生成地图
+            if (regionIndexToGenerate.y == ChallengeRoomGeneration.challengeRoomIndexY || !RegionGeneration.IslandGenerationTable.ContainsKey(regionIndexToGenerate.y))
+                GenerateRegion(PosConvert.WorldPosToRegionIndex(((PlayerSave)Init.save).respawnPoint), true);
+            else
+                GenerateRegion(regionIndexToGenerate, Init.save.pos != Vector2.zero);
         }
 
         public override void AfterInitialization()
@@ -598,9 +610,6 @@ namespace GameCore
             base.AfterInitialization();
 
             PlayerCenter.AddPlayer(this);
-
-            //生成地图
-            GenerateRegion(regionIndex);
         }
 
         protected override void OnDestroy()
@@ -726,6 +735,11 @@ namespace GameCore
                     coinEntity.Death();
                 }
             }
+
+
+
+            //检测屏障
+            DetectBoundaries();
         }
 
 
@@ -774,13 +788,21 @@ namespace GameCore
         }
 
 
-        protected override void OnBlockEnter(Block block)
+        void DetectBoundaries()
         {
-            base.OnBlockEnter(block);
+            Array.Clear(boundaryDetectionTemp, 0, boundaryDetectionTemp.Length);
+            RayTools.OverlapCircleNonAlloc(transform.position, 1.5f, boundaryDetectionTemp, Block.blockLayerMask);
 
-            if (block.data.id == BlockID.Boundary)
+            foreach (var other in boundaryDetectionTemp)
             {
-                TakeDamage(2, 0.5f, transform.position, Vector2.zero);
+                if (other == null)
+                    break;
+
+                if (Map.instance.TryGetBlock(PosConvert.WorldToMapPos(other.transform.position), false, out var otherBlock) && otherBlock.data.id == BlockID.Boundary)
+                {
+                    TakeDamage(3, 0.5f, transform.position, Vector2.zero);
+                    break;
+                }
             }
         }
 
@@ -971,7 +993,7 @@ namespace GameCore
         public void GenerateExistingRegion(Vector2Int index)
         {
             //检查是否正在生成
-            if (regionGeneration_blockSaves != null || regionGeneration_region != null)
+            if (regionGeneration_blockSaves != null || regionGeneration_region != null || isAskingForGeneratingRegion)
             {
                 return;
             }
@@ -991,10 +1013,17 @@ namespace GameCore
         /// 告诉服务器要生成, 并让服务器生成 (隐性), 然后在生成好后传给客户端
         /// </summary>
         [Button]
-        public void GenerateRegion(Vector2Int index, string specificBiome = null)
+        public void GenerateRegion(Vector2Int index, bool shouldTransportToTheRegion, string specificBiome = null)
         {
+            //检查是否是挑战房间
+            if (index.y == ChallengeRoomGeneration.challengeRoomIndexY)
+            {
+                Debug.LogError($"不应该使用 {nameof(GenerateRegion)} 方法来生成挑战房间");
+                return;
+            }
+
             //检查是否正在生成
-            if (regionGeneration_blockSaves != null || regionGeneration_region != null)
+            if (regionGeneration_blockSaves != null || regionGeneration_region != null || isAskingForGeneratingRegion)
             {
                 Debug.LogError("正在生成区域, 请等待");
                 return;
@@ -1005,7 +1034,7 @@ namespace GameCore
             regionGeneration_blockSaves = new();
 
             //向服务器发送请求
-            ServerGenerateRegion(index, !hasGeneratedFirstRegion, specificBiome);
+            ServerGenerateRegion(index, !hasGeneratedFirstRegion, shouldTransportToTheRegion, specificBiome);
 
             //等待服务器发回所有资源切片
             coroutineWaitingForRegionSegments = StartCoroutine(IEWaitForRegionSegments());
@@ -1091,15 +1120,9 @@ namespace GameCore
         }
 
         [ServerRpc]
-        private void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, string specificBiome, NetworkConnection caller = null)
+        private void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, bool shouldTransportToTheRegion, string specificBiome, NetworkConnection caller = null)
         {
             Debug.Log($"Player={netId} 请求生成区域 {index}");
-
-            //TODO: 如果旧的区域没有玩家了，就回收区域
-            // if (!PlayerCenter.all.Any(currentPlayer => currentPlayer.regionIndex == currentPlayer.regionIndex))
-            // {
-            //     GM.instance.RecycleRegion(index);
-            // }
 
             MethodAgent.RunThread(() =>
             {
@@ -1113,7 +1136,7 @@ namespace GameCore
                 MethodAgent.RunOnMainThread(() =>
                 {
                     //如果存档中没有玩家位置, 则将玩家的位置设置到该区域出生点
-                    if (isFirstGeneration && !hasSetPosBySave)
+                    if (isFirstGeneration && shouldTransportToTheRegion)
                     {
                         var respawnPoint = regionToGenerate.spawnPoint.To2();
                         ConnectionSetPosition(respawnPoint, caller);
@@ -1286,6 +1309,52 @@ namespace GameCore
 
         #endregion
 
+
+        #region 生成挑战房间
+
+        [Button]
+        public void GenerateChallengeRoom(string challengeId)
+        {
+            ServerGenerateChallengeRoom(challengeId);
+        }
+
+        [ServerRpc]
+        void ServerGenerateChallengeRoom(string challengeId, NetworkConnection caller = null)
+        {
+            //设置 x 为 max(x)+1
+            int indexX = 0;
+            foreach (var item in GFiles.world.regionData)
+            {
+                if (item.index.y == ChallengeRoomGeneration.challengeRoomIndexY)
+                {
+                    if (item.index.x > indexX)
+                        indexX = item.index.x;
+                }
+            }
+            indexX++;
+
+
+            //生成并获取区域
+            Vector2Int index = new(indexX, ChallengeRoomGeneration.challengeRoomIndexY);
+            GM.instance.GenerateNewRegion(index, challengeId);
+            var regionToGenerate = GetRegionToGenerate(index) ?? throw new();
+
+
+            //将区域发送给客户端
+            ConnectionGenerateChallengeRoom(challengeId, regionToGenerate, caller);
+        }
+
+        [ConnectionRpc]
+        void ConnectionGenerateChallengeRoom(string challengeId, Region region, NetworkConnection caller)
+        {
+            //生成出区域
+            GM.instance.GenerateExistingRegion(region, () =>
+            {
+                transform.position = region.spawnPoint.To3();
+            }, null, (ushort)(GFiles.settings.performanceLevel * 2));
+        }
+
+        #endregion
 
 
 
@@ -1470,7 +1539,7 @@ namespace GameCore
             {
                 void TryUnlockRegion(Vector2Int targetIndex)
                 {
-                    if (!CanBeUnlocked(targetIndex))
+                    if (!IsRegionUnlocked(targetIndex))
                         return;
 
                     var cost = GM.GetRegionUnlockingCost(targetIndex);
@@ -1484,7 +1553,7 @@ namespace GameCore
                     ServerAddCoin(-cost);
                     ServerAddSkillPoint(1);
 
-                    GenerateRegion(targetIndex);
+                    GenerateRegion(targetIndex, false);
                     RefreshRegionUnlockingRenderers();
                     ServerDestroyRegionBarriers(targetIndex);
                 }
@@ -1493,15 +1562,15 @@ namespace GameCore
                 {
                     TryUnlockRegion(regionIndex + Vector2Int.up);
                 }
-                if (Keyboard.current.downArrowKey.wasPressedThisFrame)
+                else if (Keyboard.current.downArrowKey.wasPressedThisFrame)
                 {
                     TryUnlockRegion(regionIndex + Vector2Int.down);
                 }
-                if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
+                else if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
                 {
                     TryUnlockRegion(regionIndex + Vector2Int.left);
                 }
-                if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
+                else if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
                 {
                     TryUnlockRegion(regionIndex + Vector2Int.right);
                 }

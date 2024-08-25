@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameCore.High;
 using GameCore.Network;
 using GameCore.UI;
@@ -50,6 +51,17 @@ namespace GameCore
                             playerHealthUpTimer = Tools.time + 1f;
                             player.health = health + 1;
                         }
+                    }
+                }
+
+                //卸载不必要区域
+                for (int i = GM.instance.generatedExistingRegions.Count - 1; i >= 0 ; i--)
+                {
+                    //如果没有玩家的所处区域与其距离小于等于2，那么卸载
+                    var region = GM.instance.generatedExistingRegions[i];
+                    if (!all.Any(p => Mathf.Abs(p.regionIndex.x - region.index.x) <= 1 || Mathf.Abs(p.regionIndex.y - region.index.y) <= 1))
+                    {
+                        GM.instance.UnloadRegion(region.index);
                     }
                 }
             }

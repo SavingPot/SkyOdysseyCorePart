@@ -392,7 +392,7 @@ namespace GameCore
 
 
 
-        public void Kill()
+        public void Unload()
         {
             if (isPlayer)
                 return;
@@ -530,7 +530,7 @@ namespace GameCore
                     if (!region.generatedAlready)
                     {
                         Debug.Log($"实体 {name} 从 {regionIndex} 区域移到了未生成过的区域 {newRegionIndex}, 同时实体被销毁");
-                        Kill();
+                        Unload();
                     }
                     else
                     {
@@ -1072,7 +1072,7 @@ namespace GameCore
             {
                 if (item == null)
                     return entities;
-                    
+
                 if (item.TryGetComponent(out Entity entity))
                 {
                     entities.Add(entity);

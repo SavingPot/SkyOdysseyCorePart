@@ -20,14 +20,16 @@ namespace GameCore
 
         public static readonly Dictionary<int, string> IslandGenerationTable = new()
         {
+            { ChallengeRoomGeneration.challengeRoomIndexY, typeof(ChallengeRoomGeneration).FullName },
             { 0, typeof(SkyIslandGeneration).FullName },
             { -1, typeof(MoistZoneGeneration).FullName },
         };
 
-        public IslandGeneration NewIsland(Vector2Int centerPoint)
+        public IslandGeneration CreateIsland(Vector2Int centerPoint)
         {
             IslandGeneration islandGeneration = index.y switch
             {
+                ChallengeRoomGeneration.challengeRoomIndexY => new ChallengeRoomGeneration(this, centerPoint),
                 0 => new SkyIslandGeneration(this, centerPoint),
                 -1 => new MoistZoneGeneration(this, centerPoint),
                 _ => throw new NotImplementedException(),
@@ -37,8 +39,11 @@ namespace GameCore
 
         public void GeneratePortal()
         {
-            int portalMiddleX = region.spawnPoint.x;
-            int portalMiddleY = region.spawnPoint.y + 10;
+            if (index.y == ChallengeRoomGeneration.challengeRoomIndexY)
+                return;
+
+            int portalMiddleX = PosConvert.MapToRegionPosX(region.spawnPoint.x, region.index);
+            int portalMiddleY = PosConvert.MapToRegionPosY(region.spawnPoint.y + 10, region.index);
 
             region.AddPos(BlockID.Portal, portalMiddleX, portalMiddleY, false, true);
             region.AddPos(BlockID.PortalBase, portalMiddleX, portalMiddleY - 1, false, true);

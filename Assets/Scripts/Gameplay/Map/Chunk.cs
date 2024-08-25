@@ -66,12 +66,6 @@ namespace GameCore
             EnableRenderers();
         }
 
-        public void RecycleTotalRegion()
-        {
-            //删除区块所属的区域
-            GM.instance.RecycleRegion(regionIndex);
-        }
-
         [Button("关闭所有渲染器")] public void DisableRenderers() => SetRenderersEnabled(this, false);
 
         [Button("打开所有渲染器")] public void EnableRenderers() => SetRenderersEnabled(this, true);

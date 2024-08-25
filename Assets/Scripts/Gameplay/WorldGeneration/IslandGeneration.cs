@@ -346,6 +346,13 @@ namespace GameCore
 
                 AddBlock(block.blockId, blockX, blockY, block.isBackground);
             }
+
+            WriteCustomDataForStructure(x, y, structure);
+        }
+
+        protected virtual void WriteCustomDataForStructure(int x, int y, BiomeData_Structure structure)
+        {
+
         }
 
         //TODo
@@ -362,7 +369,7 @@ namespace GameCore
                 var blockIsBackground = block.isBackground;
 
                 //虽然知道一般会是预计的方块，但还是检查一下
-                if (!regionGeneration.region.TryGetBlock(block.blockId,blockIsBackground, out var blockSave) ||
+                if (!regionGeneration.region.TryGetBlock(block.blockId, blockIsBackground, out var blockSave) ||
                     !blockSave.TryGetLocation(blockX, blockY, out var blockLocation))
                 {
                     Debug.LogError($"写入方块自定义数据失败: 方块的位置不正确, 位置 ({blockX}, {blockY}) 应当是 {blockId} 方块, 但实际上是 {blockSave?.blockId} (偏移为 {block.offset.x}, {block.offset.y})");
@@ -606,27 +613,30 @@ namespace GameCore
             List<BiomeData_Block> postProcessBlocksTemp = new();
             List<BiomeData_Block> unexpectedBlocksTemp = new();
 
-            foreach (var g in biome.blocks)
+            if (biome.blocks != null)
             {
-                if (g == null)
+                foreach (var g in biome.blocks)
                 {
-                    Debug.Log($"生成岛屿时发现了一个空的方块生成规则");
-                    continue;
-                }
-                if (!g.initialized)
-                {
-                    Debug.Log($"生成岛屿时发现了一个未初始化的方块生成规则 {g.id}");
-                    continue;
-                }
+                    if (g == null)
+                    {
+                        Debug.Log($"生成岛屿时发现了一个空的方块生成规则");
+                        continue;
+                    }
+                    if (!g.initialized)
+                    {
+                        Debug.Log($"生成岛屿时发现了一个未初始化的方块生成规则 {g.id}");
+                        continue;
+                    }
 
-                if (IsValidDirectBlock(g))
-                    directBlocksTemp.Add(g);
-                else if (IsValidPerlinBlock(g))
-                    perlinBlocksTemp.Add(g);
-                else if (IsValidPostProcessBlock(g))
-                    postProcessBlocksTemp.Add(g);
-                else
-                    unexpectedBlocksTemp.Add(g);
+                    if (IsValidDirectBlock(g))
+                        directBlocksTemp.Add(g);
+                    else if (IsValidPerlinBlock(g))
+                        perlinBlocksTemp.Add(g);
+                    else if (IsValidPostProcessBlock(g))
+                        postProcessBlocksTemp.Add(g);
+                    else
+                        unexpectedBlocksTemp.Add(g);
+                }
             }
 
             directBlocks = directBlocksTemp.ToArray();

@@ -205,6 +205,8 @@ MonoBehaviour:
   toolsPrefab: {fileID: 4992625376824649478, guid: 42b14ce0d3381af488867b640823f7d7, type: 3}
   defaultMat: {fileID: 2100000, guid: dbb4ae1b4b1db0a48a6f20b0afa6877a, type: 2}
   spriteLitMat: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  blurShader: {fileID: 4800000, guid: d3461692e126a7748ab0bbdea7079f04, type: 3}
+  blurMaterial: {fileID: 2100000, guid: 3ed0b9132faa0a8498ccbd6eab53df52, type: 2}
   spriteUnknown: {fileID: 21300000, guid: eb6aa624a1e3d584ba801421178e1824, type: 3}
   textureUnknown:
     id: 

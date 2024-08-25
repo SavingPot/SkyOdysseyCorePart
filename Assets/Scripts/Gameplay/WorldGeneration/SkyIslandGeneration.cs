@@ -16,9 +16,9 @@ namespace GameCore
                 return base.CheckStructureConditions(x, y, structure);
         }
 
-        protected override void GenerateStructure(int x, int y, BiomeData_Structure structure)
+        protected override void WriteCustomDataForStructure(int x, int y, BiomeData_Structure structure)
         {
-            base.GenerateStructure(x, y, structure);
+            base.WriteCustomDataForStructure(x, y, structure);
 
             if (structure.structure.id != StructureID.UndergroundRelics)
                 return;

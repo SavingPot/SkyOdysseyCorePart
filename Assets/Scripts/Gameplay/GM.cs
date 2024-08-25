@@ -21,6 +21,7 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine;
+using System.Runtime.InteropServices;
 
 namespace GameCore
 {
@@ -54,6 +55,7 @@ namespace GameCore
 
 
         #region 地形生成
+
         [LabelText("地图")] private static Map map => Map.instance;
 
         public readonly List<Vector2Int> generatingNewRegions = new();
@@ -61,7 +63,6 @@ namespace GameCore
         public bool generatingNewRegion => generatingNewRegions.Count != 0;
         public bool generatingExistingRegion { get; private set; }
 
-        public List<Vector2Int> recoveringRegions = new();
         #endregion
 
 
@@ -299,9 +300,16 @@ namespace GameCore
                 return;
             }
 
-            //检查世界的方块
-            foreach (var region in GFiles.world.regionData)
+            //检查各个区域
+            for (int i = GFiles.world.regionData.Count - 1; i >= 0; i--)
             {
+                var region = GFiles.world.regionData[i];
+
+                //删除挑战房间
+                if (region.index.y == ChallengeRoomGeneration.challengeRoomIndexY)
+                    GFiles.world.regionData.RemoveAt(i);
+
+                //检查世界的方块
                 foreach (var blockSave in region.blocks)
                 {
                     if (ModFactory.CompareBlockData(blockSave.blockId) == null)
@@ -733,60 +741,6 @@ namespace GameCore
                 world.basicData.gameVersion = GInit.gameVersion;
         }
 
-        public void RecycleRegion(Vector2Int index)
-        {
-            //如果已经在回收就取消
-            foreach (var item in recoveringRegions)
-                if (item == index)
-                    return;
-
-            recoveringRegions.Add(index);
-
-
-            //回收该区域的所有区块
-            for (int i = map.chunks.Count - 1; i >= 0; i--)
-            {
-                Chunk chunk = map.chunks[i];
-
-                if (chunk.regionIndex == index)
-                    map.chunkPool.Recycle(chunk);
-            }
-
-            //回收该区域的所有实体
-            bool did = false;
-            for (int i = generatedExistingRegions.Count - 1; i >= 0; i--)
-            {
-                Region region = generatedExistingRegions[i];
-                if (region.index == index)
-                {
-                    did = true;
-
-                    //删除实体
-                    Entity[] entities = EntityCenter.all.ToArray();
-
-                    for (int e = entities.Length - 1; e >= 0; e--)
-                    {
-                        Entity entity = entities[e];
-
-                        if (entity.regionIndex == region.index)
-                        {
-                            entity.Kill();
-                        }
-                    }
-
-                    //从已生成列表去除
-                    generatedExistingRegions.RemoveAt(i);
-                    break;
-                    ////Debug.Log($"回收了区域 {index}");
-                }
-            }
-
-            recoveringRegions.Remove(index);
-
-            if (!did)
-                Debug.LogWarning($"区域 {index} 不存在");
-        }
-
         public void GenerateExistingRegion(Region region, Action afterGenerating, Action ifGenerated, ushort waitScale)
         {
             StartCoroutine(IEGenerateExistingRegion(region, afterGenerating, ifGenerated, waitScale));
@@ -920,7 +874,7 @@ namespace GameCore
 
             foreach (var centerPoint in islandCenterPoints)
             {
-                IslandGeneration islandGeneration = generation.NewIsland(centerPoint);
+                IslandGeneration islandGeneration = generation.CreateIsland(centerPoint);
 
 
                 //生成 Direct
@@ -938,6 +892,7 @@ namespace GameCore
                 //生成结构
                 islandGeneration.GenerateStructures();
 
+
                 //确定出生点
                 if (centerPoint == Vector2Int.zero)
                 {
@@ -950,7 +905,14 @@ namespace GameCore
                         islandGeneration.UpdateHighestPointFunction();
 
                         //设置出生点
-                        generation.region.spawnPoint = new(middleX, middleY + islandGeneration.wallHighestPointFunction[0] + 3);
+                        for (int posX = 0; posX < islandGeneration.size.x / 2; posX++)
+                        {
+                            if (islandGeneration.wallHighestPointFunction.TryGetValue(posX, out var highestPoint))
+                            {
+                                generation.region.spawnPoint = new(middleX, middleY + highestPoint + 3);
+                                break;
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -966,7 +928,7 @@ namespace GameCore
             //生成传送点
             generation.GeneratePortal();
 
-            //生成区域边界
+            //生成边界
             generation.GenerateBoundaries();
 
             //生成实体（脚本的绑定）
@@ -987,6 +949,36 @@ namespace GameCore
                 generatingNewRegions.Remove(index);
             }
             return generation.region;
+        }
+
+        public void UnloadRegion(Vector2Int regionIndex)
+        {
+            //卸载所有实体
+            foreach (var entity in EntityCenter.all)
+            {
+                if (entity.regionIndex == regionIndex)
+                {
+                    entity.Unload();
+                }
+            }
+
+            //卸载所有区块
+            for (int i = Map.instance.chunks.Count - 1; i >= 0; i--)
+            {
+                var chunk = Map.instance.chunks[i];
+                if (chunk.regionIndex == regionIndex)
+                    Map.instance.chunkPool.Recycle(chunk);
+            }
+
+            //删除区域
+            foreach (var region in generatedExistingRegions)
+                if (region.index == regionIndex)
+                {
+                    generatedExistingRegions.Remove(region);
+                    break;
+                }
+
+            Debug.Log($"卸载了区域 {regionIndex}");
         }
     }
 }

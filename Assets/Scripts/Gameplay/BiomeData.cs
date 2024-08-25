@@ -16,9 +16,9 @@ namespace GameCore
         [LabelText("战斗群系")] public bool isFightingBiome;
         [LabelText("最小尺寸")] public Vector2 minScale;
         [LabelText("最大尺寸")] public Vector2 maxScale;
-        [LabelText("随机实体"), NonSerialized] public List<RandomEntityData> randomEntityData = new();
-        [LabelText("结构"), NonSerialized] public BiomeData_Structure[] structures;
         [LabelText("方块")] public BiomeData_Block[] blocks;
+        [LabelText("结构"), NonSerialized] public BiomeData_Structure[] structures;
+        [LabelText("随机实体"), NonSerialized] public List<RandomEntityData> randomEntityData = new();
 
         [JsonIgnore, LabelText("标签")] public List<string> tags = new();
         List<string> ITags.tags { get => tags; }

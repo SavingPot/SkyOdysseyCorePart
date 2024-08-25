@@ -215,12 +215,12 @@ namespace GameCore
                 var mapPos = PosConvert.WorldToMapPos(other.transform.position);
                 var chunk = Map.instance.AddChunk(PosConvert.MapPosToChunkIndex(mapPos));
 
-                //先尝试获取背景层
-                block = chunk.GetBlock(mapPos, true);
+                //先尝试获取墙层
+                block = chunk.GetBlock(mapPos, false);
 
-                //如果获取失败, 就从墙层获取
+                //如果获取失败, 就从背景层获取
                 if (block == null || block.gameObject != other.gameObject)
-                    block = chunk.GetBlock(mapPos, false);
+                    block = chunk.GetBlock(mapPos, true);
 
                 if (block == null)
                 {

@@ -48,6 +48,7 @@ namespace GameCore
         public const string RemoteMarket = "ori:remote_market";
         public const string Rose = "ori:rose";
         public const string Sand = "ori:sand";
+        public const string SavannahGrassBlock = "ori:savannah_grass_block";
         public const string SoftClayFurnace = "ori:soft_clay_furnace";
         public const string SoupPot = "ori:soup_pot";
         public const string Stone = "ori:stone";
