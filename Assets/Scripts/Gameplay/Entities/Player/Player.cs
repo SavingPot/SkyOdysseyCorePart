@@ -602,7 +602,7 @@ namespace GameCore
             if (regionIndexToGenerate.y == ChallengeRoomGeneration.challengeRoomIndexY || !RegionGeneration.IslandGenerationTable.ContainsKey(regionIndexToGenerate.y))
                 GenerateRegion(PosConvert.WorldPosToRegionIndex(((PlayerSave)Init.save).respawnPoint), true);
             else
-                GenerateRegion(regionIndexToGenerate, Init.save.pos != Vector2.zero);
+                GenerateRegion(regionIndexToGenerate, Init.save.pos == Vector2.zero);
         }
 
         public override void AfterInitialization()
