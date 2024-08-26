@@ -765,7 +765,7 @@ namespace GameCore
                     if (jt.TryGetJToken("display", out var display))
                     {
                         newItem.description = display["description"]?.ToString();
-                        newItem.size = display["size"]?.ToVector2() ?? Vector2.one;
+                        newItem.size = display["size"]?.ToVector2() ?? EntityInventoryOwnerBehaviour.defaultItemLocalScale;
                         newItem.offset = display["offset"]?.ToVector2() ?? Vector2.zero;
                         newItem.rotation = display["rotation"]?.ToInt() ?? 0;
                     }

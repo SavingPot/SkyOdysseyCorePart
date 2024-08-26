@@ -6,6 +6,10 @@ namespace GameCore
 {
     public static class EntityInventoryOwnerBehaviour
     {
+        public static readonly Vector2 defaultItemLocalScale = new(1.2f, 1.2f);
+
+
+
         public static void OnUpdate<T>(T entity) where T : Entity, IInventoryOwner
         {
             var inventory = entity.GetInventory();
@@ -91,7 +95,7 @@ namespace GameCore
             entity.usingItemCollisionComponent.owner = entity;
 
             entity.ModifyUsingShieldRendererTransform();
-            entity.ModifyUsingItemRendererTransform(Vector2.zero, Vector2.one, 0);
+            entity.ModifyUsingItemRendererTransform(Vector2.zero, defaultItemLocalScale, 0);
         }
 
         public static void LoadInventoryFromCustomData<T>(T entity) where T : Entity, IInventoryOwner

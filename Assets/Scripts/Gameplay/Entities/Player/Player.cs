@@ -483,22 +483,11 @@ namespace GameCore
 
 
 
-            #region 初始化模型
-
-            CreateModel();
-            body = AddBodyPart("body", skinBody, Vector2.zero, 5, model.transform, BodyPartType.Body);
-            head = AddBodyPart("head", skinHead, new(0, -0.03f), 10, body, BodyPartType.Head, new(-0.03f, -0.04f));
-            rightArm = AddBodyPart("rightArm", skinRightArm, new(0, 0.03f), 8, body, BodyPartType.RightArm);
-            leftArm = AddBodyPart("leftArm", skinLeftArm, new(0, 0.03f), 3, body, BodyPartType.LeftArm);
-            rightLeg = AddBodyPart("rightLeg", skinRightLeg, new(0.02f, 0.04f), 3, body, BodyPartType.RightLeg);
-            leftLeg = AddBodyPart("leftLeg", skinLeftLeg, new(-0.02f, 0.04f), 1, body, BodyPartType.LeftLeg);
-            rightFoot = AddBodyPart("rightFoot", skinRightFoot, Vector2.zero, 3, rightLeg, BodyPartType.RightFoot);
-            leftFoot = AddBodyPart("leftFoot", skinLeftFoot, Vector2.zero, 1, leftLeg, BodyPartType.LeftFoot);
+            //初始化模型
+            GeneratePlayerShapedModel(this, skinHead, skinBody, skinRightArm, skinLeftArm, skinRightLeg, skinLeftLeg, skinRightFoot, skinLeftFoot);
 
             //添加手持物品的渲染器
             EntityInventoryOwnerBehaviour.CreateItemRenderers(this, leftArm.transform, rightArm.transform, 2, 9);
-
-            #endregion
 
 
 
@@ -2172,6 +2161,19 @@ namespace GameCore
             }));
 
             return results;
+        }
+
+        public static void GeneratePlayerShapedModel(Creature creature, Sprite head, Sprite body, Sprite rightArm, Sprite leftArm, Sprite rightLeg, Sprite leftLeg, Sprite rightFoot, Sprite leftFoot)
+        {
+            creature.CreateModel();
+            creature.body = creature.AddBodyPart("body", body, Vector2.zero, 5, creature.model.transform, BodyPartType.Body);
+            creature.head = creature.AddBodyPart("head", head, new(-0.015f, -0.03f), 10, creature.body, BodyPartType.Head, new(-0.03f, -0.04f));
+            creature.rightArm = creature.AddBodyPart("rightArm", rightArm, new(-0.015f, 0.03f), 8, creature.body, BodyPartType.RightArm);
+            creature.leftArm = creature.AddBodyPart("leftArm", leftArm, new(0.015f, 0.03f), 3, creature.body, BodyPartType.LeftArm);
+            creature.rightLeg = creature.AddBodyPart("rightLeg", rightLeg, new(0.02f, 0.04f), 3, creature.body, BodyPartType.RightLeg);
+            creature.leftLeg = creature.AddBodyPart("leftLeg", leftLeg, new(-0.02f, 0.04f), 1, creature.body, BodyPartType.LeftLeg);
+            creature.rightFoot = creature.AddBodyPart("rightFoot", rightFoot, Vector2.zero, 3, creature.rightLeg, BodyPartType.RightFoot);
+            creature.leftFoot = creature.AddBodyPart("leftFoot", leftFoot, Vector2.zero, 1, creature.leftLeg, BodyPartType.LeftFoot);
         }
 
         [RuntimeInitializeOnLoadMethod]
