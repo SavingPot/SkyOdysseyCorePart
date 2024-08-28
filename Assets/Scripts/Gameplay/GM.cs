@@ -741,12 +741,12 @@ namespace GameCore
                 world.basicData.gameVersion = GInit.gameVersion;
         }
 
-        public void GenerateExistingRegion(Region region, Action afterGenerating, Action ifGenerated, ushort waitScale)
+        public void GenerateExistingRegion(Region region, Action afterGenerating, Action ifHasEverGenerated, ushort waitScale)
         {
-            StartCoroutine(IEGenerateExistingRegion(region, afterGenerating, ifGenerated, waitScale));
+            StartCoroutine(IEGenerateExistingRegion(region, afterGenerating, ifHasEverGenerated, waitScale));
         }
 
-        private IEnumerator IEGenerateExistingRegion(Region region, Action afterGenerating, Action ifGenerated, ushort waitScale)
+        private IEnumerator IEGenerateExistingRegion(Region region, Action afterGenerating, Action ifHasEverGenerated, ushort waitScale)
         {
             /* -------------------------------------------------------------------------- */
             /*                                   检查生成状况                                   */
@@ -754,7 +754,7 @@ namespace GameCore
             if (generatedExistingRegions.Any(p => p.index == region.index && p.generatedAlready))
             {
                 Debug.LogWarning($"区域 {region.index} 已生成, 请勿频繁生成");
-                ifGenerated?.Invoke();
+                ifHasEverGenerated?.Invoke();
                 yield break;
             }
 

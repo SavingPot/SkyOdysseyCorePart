@@ -25,7 +25,18 @@ namespace GameCore
                 Particle p = enter[i];
                 foreach (Entity entity in Entity.GetEntitiesInRadius(p.position, 0.1f))
                 {
-                    entity.TakeDamage(1);
+                    bool shouldTakeDamage = true;
+
+                    //帽子可以防止扣血
+                    if (entity is IInventoryOwner owner)
+                    {
+                        var inventory = owner.GetInventory();
+                        if (inventory != null && !Item.Null(inventory.helmet))
+                            shouldTakeDamage = false;
+                    }
+
+                    if (shouldTakeDamage)
+                        entity.TakeDamage(1);
                 }
             }
         }

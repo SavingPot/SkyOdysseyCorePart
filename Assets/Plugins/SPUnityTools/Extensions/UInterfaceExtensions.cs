@@ -13,6 +13,7 @@ namespace SP.Tools.Unity
 
         public static float GetHeightToNormal(this ISpriteRenderer iSr) => iSr.sr.sprite.texture.height / iSr.sr.sprite.pixelsPerUnit * iSr.sr.transform.lossyScale.y;
 
+        public static void SetAPos(this IRectTransform irt, Vector2 pos) => irt.rectTransform.anchoredPosition = pos;
         public static void SetAPos(this IRectTransform irt, float x, float y) => irt.rectTransform.anchoredPosition = new Vector2(x, y);
 
         public static void SetAPosX(this IRectTransform irt, float x) => irt.rectTransform.anchoredPosition = new Vector2(x, irt.rectTransform.anchoredPosition.y);

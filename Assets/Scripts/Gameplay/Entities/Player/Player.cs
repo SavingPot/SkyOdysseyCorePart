@@ -645,6 +645,19 @@ namespace GameCore
                 }
             }
 
+            // if (Keyboard.current.mKey.wasPressedThisFrame)
+            // {
+            //     if (GameUI.page.ui == pui.mapPanel)
+            //     {
+            //         GameUI.SetPageBack();
+            //     }
+            //     else if (GameUI.page == null || !GameUI.page.ui)
+            //     {
+            //         GameUI.SetPage(pui.mapPanel);
+            //         ServerRefreshTeleportPoints();
+            //     }
+            // }
+
             if (PlayerCanControl(this))
                 ControlPlayer();
 
@@ -1053,7 +1066,8 @@ namespace GameCore
 
 
             //生成出区域
-            GM.instance.GenerateExistingRegion(regionGeneration_region, () =>
+            GM.instance.GenerateExistingRegion(regionGeneration_region, ClearData, ClearData, (ushort)(GFiles.settings.performanceLevel * (regionGeneration_isFirstGeneration ? 4 : 0.8f)));
+            void ClearData()
             {
                 if (regionGeneration_isFirstGeneration)
                 {
@@ -1065,7 +1079,7 @@ namespace GameCore
                 regionGeneration_region = null;
                 regionGeneration_blockSaves = null;
                 //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
-            }, null, (ushort)(GFiles.settings.performanceLevel * (regionGeneration_isFirstGeneration ? 4 : 0.8f)));
+            };
         }
 
         public Region GetRegionToGenerate(Vector2Int index)
@@ -2107,6 +2121,24 @@ namespace GameCore
         public bool HasItemCDPast() => Tools.time >= itemCDEndTime;
 
         #endregion
+
+
+
+
+        [ServerRpc] public void ServerAddTeleportPoint(Vector2 pos, NetworkConnection caller = null) => GFiles.world.basicData.teleportPoints.Add(pos);
+
+        [ServerRpc]
+        public void ServerRefreshTeleportPoints(NetworkConnection caller = null)
+        {
+            var teleportPoints = new TeleportPointInfo[GFiles.world.basicData.teleportPoints.Count];
+            for (int i = 0; i < teleportPoints.Length; i++)
+            {
+                var point = GFiles.world.basicData.teleportPoints[i];
+                teleportPoints[i] = new(point, GFiles.world.GetRegion(PosConvert.WorldPosToRegionIndex(point))?.biomeId);
+            }
+            ConnectionRefreshTeleportPoints(teleportPoints, caller);
+        }
+        [ConnectionRpc] void ConnectionRefreshTeleportPoints(TeleportPointInfo[] teleportPoints, NetworkConnection caller = null) => pui.RefreshTeleportPoints(teleportPoints);
 
 
 

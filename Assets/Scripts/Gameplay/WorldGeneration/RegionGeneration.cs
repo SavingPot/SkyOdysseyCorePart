@@ -45,8 +45,19 @@ namespace GameCore
             int portalMiddleX = PosConvert.MapToRegionPosX(region.spawnPoint.x, region.index);
             int portalMiddleY = PosConvert.MapToRegionPosY(region.spawnPoint.y + 10, region.index);
 
-            region.AddPos(region.index.x == 0 ? BlockID.Portal : BlockID.SleepingPortal, portalMiddleX, portalMiddleY, false, true);
-            region.AddPos(BlockID.PortalBase, portalMiddleX, portalMiddleY - 1, false, true);
+            //传送门
+            if (region.index.x == 0 && region.index.y == 0)
+            {
+                GFiles.world.basicData.teleportPoints.Add(new(portalMiddleX, portalMiddleY));
+                region.AddPos(BlockID.Portal, portalMiddleX, portalMiddleY, false, true);
+            }
+            else
+            {
+                region.AddPos(BlockID.SleepingPortal, portalMiddleX, portalMiddleY, false, true);
+            }
+
+            //底座
+            region.AddPos(BlockID.PortalBase, portalMiddleX, portalMiddleY - 1, isBackground: false, true);
             region.AddPos(BlockID.PortalBase, portalMiddleX - 2, portalMiddleY - 1, false, true);
             region.AddPos(BlockID.PortalBase, portalMiddleX - 1, portalMiddleY - 1, false, true);
             region.AddPos(BlockID.PortalBase, portalMiddleX + 1, portalMiddleY - 1, false, true);

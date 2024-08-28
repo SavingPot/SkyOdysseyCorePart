@@ -267,6 +267,7 @@ namespace GameCore
         public float totalTime = 0;
         public bool isAM = true;
         public string weather = WeatherID.Sunny;
+        public List<Vector2> teleportPoints = new();
 
 
 

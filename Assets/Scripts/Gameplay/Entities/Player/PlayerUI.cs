@@ -14,6 +14,7 @@ using System;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine;
+using System.Net;
 
 namespace GameCore.UI
 {
@@ -495,6 +496,79 @@ namespace GameCore.UI
                               .SetLoops(-1)
                               .Play();
         }
+
+
+
+
+
+
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    地图界面                                    */
+        /* -------------------------------------------------------------------------- */
+        public PanelIdentity mapPanel;
+        public ScrollViewIdentity mapTeleportPointView;
+
+        public void RefreshTeleportPoints(TeleportPointInfo[] teleportPoints)
+        {
+            mapTeleportPointView.Clear();
+
+            //添加所有传送点
+            foreach (var point in teleportPoints)
+            {
+                var regionIndex = PosConvert.WorldPosToRegionIndex(point.pos);
+
+                ButtonIdentity button = GameUI.AddButton(UIA.Middle, $"ori:button.map_teleport_point_{Tools.randomGUID}", mapTeleportPointView);
+                mapTeleportPointView.AddChild(button);
+                button.SetSizeDelta(80, 80);
+                button.SetSprite(ModFactory.CompareTexture(BlockID.Portal).sprite);
+                button.SetAPos(regionIndex * 300);
+                button.buttonText.DisableAutoCompare().SetText($"{regionIndex}\n{GameUI.CompareText(point.biomeId)} - {GameUI.CompareText($"ori:region_index_y.{regionIndex.y}")}");
+                button.buttonText.SetAPosY(-button.sd.y / 2 - button.buttonText.sd.y / 2 - 10);
+                button.buttonText.text.SetFontSize(20);
+                button.buttonText.text.raycastTarget = false;
+                button.OnClickBind(() =>
+                {
+                    player.GenerateRegion(regionIndex, true);
+                    GameUI.SetPage(null);
+                });
+            }
+
+            //添加玩家
+            foreach (var item in PlayerCenter.all)
+            {
+                ButtonIdentity button = GameUI.AddButton(UIA.Middle, $"ori:button.map_teleport_point_{Tools.randomGUID}", mapTeleportPointView);
+                mapTeleportPointView.AddChild(button);
+                button.SetSizeDelta(30, 30);
+                button.SetSprite(item.skinHead);
+                button.SetAPos(item.regionIndex * 300);
+                button.buttonText.DisableAutoCompare().SetText(item.playerName);
+                button.buttonText.SetSizeDeltaY(10);
+                button.buttonText.SetAPosY(-button.sd.y / 2 - button.buttonText.sd.y / 2 - 5);
+                button.buttonText.text.SetFontSize(10);
+                button.button.interactable = false;
+                button.buttonText.text.raycastTarget = false;
+            }
+        }
+
+        [Serializable]
+        public struct TeleportPointInfo
+        {
+            public Vector2 pos;
+            public string biomeId;
+
+            public TeleportPointInfo(Vector2 pos, string biomeId)
+            {
+                this.pos = pos;
+                this.biomeId = biomeId;
+            }
+        }
+
+
+
 
 
 
@@ -1403,6 +1477,20 @@ namespace GameCore.UI
 
 
             #endregion
+
+            #region 地图界面
+            {
+                mapPanel = GameUI.AddPanel("ori:panel.map", GameUI.canvas.transform, true);
+                mapTeleportPointView = GameUI.AddScrollView(UIA.StretchDouble, "ori:scrollview.map_teleport_points", mapPanel);
+                mapTeleportPointView.scrollRect.horizontal = true;   //允许水平拖拽
+                mapTeleportPointView.scrollRect.movementType = ScrollRect.MovementType.Unrestricted;   //不限制拖拽
+                mapTeleportPointView.scrollRect.scrollSensitivity = 0;   //不允许滚轮控制
+                mapTeleportPointView.ap = Vector2.zero;
+                mapTeleportPointView.sd = Vector2.zero;
+                mapTeleportPointView.OnUpdate += _ => mapTeleportPointView.viewportImage.color = Tools.instance.mainCamera.backgroundColor;
+                Component.Destroy(mapTeleportPointView.gridLayoutGroup);
+            }
+            #endregion
         }
 
         /// <summary>
@@ -1764,6 +1852,7 @@ namespace GameCore.UI
             inventoryLeggingSlot.button.image.sprite = Item.Null(player.inventory.legging) ? ModFactory.CompareTexture("ori:item_slot_legging").sprite : ModFactory.CompareTexture("ori:item_slot").sprite;
             inventoryBootsSlot.button.image.sprite = Item.Null(player.inventory.boots) ? ModFactory.CompareTexture("ori:item_slot_boots").sprite : ModFactory.CompareTexture("ori:item_slot").sprite;
             inventoryShieldSlot.button.image.sprite = Item.Null(player.inventory.shield) ? ModFactory.CompareTexture("ori:item_slot_shield").sprite : ModFactory.CompareTexture("ori:item_slot").sprite;
+
 
             /* ----------------------------------- 检测按键 ----------------------------------- */
             //TODO: PlayerControls ify

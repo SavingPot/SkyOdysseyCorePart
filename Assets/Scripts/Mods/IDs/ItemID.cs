@@ -26,6 +26,7 @@ namespace GameCore
         public const string FlintHoe = "ori:flint_hoe";
         public const string FlintKnife = "ori:flint_knife";
         public const string FlintSword = "ori:flint_sword";
+        public const string GrasslandKnife = "ori:grassland_knife";
         public const string IronHoe = "ori:iron_hoe";
         public const string IronKnife = "ori:iron_knife";
         public const string IronSword = "ori:iron_sword";

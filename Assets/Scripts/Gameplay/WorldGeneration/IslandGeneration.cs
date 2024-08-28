@@ -134,9 +134,9 @@ namespace GameCore
         public virtual void GenerateDirectBlocks()
         {
             //遍历每个点
-            for (int x = minPoint.x; x < maxPoint.x; x++)
+            for (int x = minPoint.x; x <= maxPoint.x; x++)
             {
-                for (int y = minPoint.y; y < maxPoint.y; y++)
+                for (int y = minPoint.y; y <= maxPoint.y; y++)
                 {
                     foreach (var g in directBlocks)
                     {
@@ -177,7 +177,7 @@ namespace GameCore
                 int lowestNoise = int.MaxValue;
                 int highestNoise = int.MaxValue;
 
-                for (int x = minPoint.x; x < maxPoint.x; x++)
+                for (int x = minPoint.x; x <= maxPoint.x; x++)
                 {
                     var xSample = (x + regionGeneration.actualSeed / 1000f) / perlin.fluctuationFrequency;
                     var noise = (int)(Mathf.PerlinNoise1D(xSample) * perlin.fluctuationHeight);
@@ -226,9 +226,9 @@ namespace GameCore
             foreach (var g in postProcessBlocks)
             {
                 //遍历每个点
-                for (int x = minPoint.x; x < maxPoint.x; x++)
+                for (int x = minPoint.x; x <= maxPoint.x; x++)
                 {
-                    for (int y = minPoint.y; y < maxPoint.y; y++)
+                    for (int y = minPoint.y; y <= maxPoint.y; y++)
                     {
                         //概率抽取
                         if (!Tools.Prob100(g.rules.probability, regionGeneration.random))
@@ -281,9 +281,9 @@ namespace GameCore
             if (structures.Length == 0)
                 return;
 
-            for (int x = minPoint.x; x < maxPoint.x; x++)
+            for (int x = minPoint.x; x <= maxPoint.x; x++)
             {
-                for (int y = minPoint.y; y < maxPoint.y; y++)
+                for (int y = minPoint.y; y <= maxPoint.y; y++)
                 {
                     foreach (var structure in structures)
                     {

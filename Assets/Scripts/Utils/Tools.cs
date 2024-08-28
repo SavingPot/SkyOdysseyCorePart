@@ -517,11 +517,8 @@ namespace GameCore
         }
 
         /// <summary>
-        /// 通过颜色获取十六进制颜色码.
-        /// Get hex color code from a color.
+        /// 通过颜色获取十六进制颜色码. (需要"#")
         /// </summary>
-        /// <param name="hexColorCode"></param>
-        /// <returns></returns>
         public static Color HexToColor(string hexColorCode) => ColorUtility.TryParseHtmlString(hexColorCode, out Color newColor) ? newColor : Color.white;
 
         /// <summary>
@@ -537,11 +534,7 @@ namespace GameCore
 
         /// <summary>
         /// 返回一个 (从开始端口到结束端口中) 未被占用端口.
-        /// return an unoccupiedPort (from beginPort to endPort).
         /// </summary>
-        /// <param name="beginPort"></param>
-        /// <param name="endPort"></param>
-        /// <returns></returns>
         public static ushort GetUnoccupiedPort(ushort beginPort = defaultPort, ushort endPort = ushort.MaxValue)
         {
             if (GInit.platform == RuntimePlatform.Android)
