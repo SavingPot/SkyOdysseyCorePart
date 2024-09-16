@@ -32,16 +32,16 @@ namespace GameCore
             const int minRoomBlockCount = 20;
             const int maxRoomBlockCount = 200;
 
-            (int x, int y, Block wallBlock)[] blocksInConstruction;
-            (int x, int y)[] spacesInConstruction;
-            int totalBlockCount;
-            int totalSpace;
-            Vector2Int pos;
+            public (int x, int y, Block wallBlock)[] blocksInConstruction;
+            public (int x, int y)[] spacesInConstruction;
+            public int totalBlockCount;
+            public int totalSpace;
+            public Vector2Int pos;
 
-            int minX;
-            int maxX;
-            int minY;
-            int maxY;
+            public int minX;
+            public int maxX;
+            public int minY;
+            public int maxY;
 
 
 

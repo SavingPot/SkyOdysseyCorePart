@@ -73,7 +73,7 @@ namespace GameCore
 
         public static PlayerSave NewPlayer(string playerName)
         {
-            return new PlayerSave()
+            PlayerSave result = new()
             {
                 id = playerName,
                 coin = 30,
@@ -82,7 +82,11 @@ namespace GameCore
                 completedTasks = new(),
                 unlockedSkills = new(),
                 skillPoints = 0,
-            }; ;
+            };
+
+            result.inventory.AddItem(ModFactory.CompareItem(BlockID.PotatoCrop).DataToItem().SetCount(5));
+
+            return result;
         }
     }
 }

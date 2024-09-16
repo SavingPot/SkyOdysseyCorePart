@@ -12,7 +12,7 @@ namespace GameCore.UI
     {
         public List<SpriteRenderer> renderers = new();
 
-        public void AddRenderers(string textureId, int count, int sortingOrder)
+        public void AddRenderers(string textureId, int count, int sortingOrder, float scaleOfPerObject = 1)
         {
             if (count % 2 != 0)
             {
@@ -30,6 +30,7 @@ namespace GameCore.UI
                 sr.sortingOrder = sortingOrder;
                 sr.transform.SetParent(transform);
                 sr.transform.AddPosX(i * deltaFactor);
+                sr.transform.localScale = new(scaleOfPerObject, scaleOfPerObject);
                 renderers.Add(sr);
             }
         }

@@ -1146,8 +1146,7 @@ namespace GameCore
                     {
                         var respawnPoint = regionToGenerate.spawnPoint.To2();
                         ConnectionSetPosition(respawnPoint, caller);
-                        ((PlayerSave)GetEntitySaveObjectFromWorld()).respawnPoint = respawnPoint;
-                        GFiles.SaveAllDataToFiles();
+                        ServerSetRespawnPoint(respawnPoint);
                     }
 
                     //* 如果是服务器发送的申请: 服务器生成
@@ -1311,6 +1310,19 @@ namespace GameCore
             Debug.Log(newPos);
             SetPosition(newPos);
         }
+
+
+
+
+
+        [ServerRpc]
+        public void ServerSetRespawnPoint(Vector2 point, NetworkConnection caller = null)
+        {
+            ((PlayerSave)GetEntitySaveObjectFromWorld()).respawnPoint = point;
+            GFiles.SaveAllDataToFiles();
+        }
+
+
 
 
         #endregion
