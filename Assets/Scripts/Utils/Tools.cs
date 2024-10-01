@@ -264,6 +264,13 @@ namespace GameCore
                 viewUpSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 1f)).y;
                 viewDownSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 0f)).y;
             }
+            else
+            {
+                viewLeftSideWorldPos = 0;
+                viewRightSideWorldPos = 0;
+                viewUpSideWorldPos = 0;
+                viewDownSideWorldPos = 0;
+            }
         }
 
 

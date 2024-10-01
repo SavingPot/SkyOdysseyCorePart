@@ -841,11 +841,12 @@ namespace GameCore.UI
             if (sunRenderer)
             {
                 var xDelta = Tools.instance.viewRightSideWorldPos - Tools.instance.viewLeftSideWorldPos;
-                var yDelta = Tools.instance.viewRightSideWorldPos - Tools.instance.viewLeftSideWorldPos;
+                var yDelta = Tools.instance.viewUpSideWorldPos - Tools.instance.viewDownSideWorldPos;
                 var timeFactor = (GTime.time24Format - 12) / 12f * -Mathf.PI;
                 var pos = new Vector3(Tools.instance.viewLeftSideWorldPos + xDelta * (Mathf.Sin(timeFactor) + 1) * 0.5f,
-                                      Tools.instance.viewDownSideWorldPos + yDelta * (Mathf.Cos(timeFactor) * 0.3f));
+                                      Tools.instance.viewDownSideWorldPos + yDelta * (Mathf.Cos(timeFactor) * 0.5f));
 
+                sunRenderer.gameObject.isStatic = true;
                 sunRenderer.transform.position = Vector3.Lerp(sunRenderer.transform.position, pos, Time.deltaTime * 100f);
             }
         }
