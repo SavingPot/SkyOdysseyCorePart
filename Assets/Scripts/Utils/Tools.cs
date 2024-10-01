@@ -55,6 +55,11 @@ namespace GameCore
         public float viewRightSideWorldPos;
         public float viewUpSideWorldPos;
         public float viewDownSideWorldPos;
+        public float viewAspect;
+        public float viewHalfHeight;
+        public float viewHalfWidth;
+        public float viewHeight;
+        public float viewWidth;
         public const ushort defaultPort = 24442;
 
         #region Default or Unknown
@@ -263,6 +268,11 @@ namespace GameCore
                 viewRightSideWorldPos = mainCamera.ViewportToWorldPoint(new(1f, 0.5f)).x;
                 viewUpSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 1f)).y;
                 viewDownSideWorldPos = mainCamera.ViewportToWorldPoint(new(0.5f, 0f)).y;
+                viewAspect = mainCamera.aspect;
+                viewHalfHeight = mainCamera.orthographicSize;
+                viewHalfWidth = viewHalfHeight * viewAspect;
+                viewHeight = viewHalfHeight * 2;
+                viewWidth = viewHalfWidth * 2;
             }
             else
             {
@@ -270,6 +280,11 @@ namespace GameCore
                 viewRightSideWorldPos = 0;
                 viewUpSideWorldPos = 0;
                 viewDownSideWorldPos = 0;
+                viewAspect = 0;
+                viewHalfHeight = 0;
+                viewHalfWidth = 0;
+                viewHeight = 0;
+                viewWidth = 0;
             }
         }
 

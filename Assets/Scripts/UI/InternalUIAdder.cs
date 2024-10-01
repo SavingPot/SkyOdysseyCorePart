@@ -92,7 +92,6 @@ namespace GameCore.UI
         /*                                     日夜                                     */
         /* -------------------------------------------------------------------------- */
         public ParallaxBackground sunRenderer;
-        public Light2D sunLight;
         public SpriteRenderer moonRenderer;
 
 
@@ -791,9 +790,15 @@ namespace GameCore.UI
                             CreateParallaxBackground("ParallaxBackground2", 0.8f, new(0, 12), "ori:world_background_islands", -3, 0.2f);
                             CreateParallaxBackground("ParallaxBackground4", 0.92f, new(0, -13), "ori:world_background_moist_zone", -4);
                             CreateParallaxBackground("ParallaxBackground5", 0.97f, new(0, -10), "ori:world_background_ocean", -5);
-                            CreateParallaxBackground("ParallaxBackground6", 0.98f, new(0, 10), "ori:world_background_clouds1", -6);
-                            CreateParallaxBackground("ParallaxBackground7", 1f, new(0, 10), "ori:world_background_clouds0", -7);
-                            CreateParallaxBackground("ParallaxBackground8", 0.99f, new(0, 10), "ori:world_background_clouds-1", -8);
+                            CreateParallaxBackground("ParallaxBackground6", 0.98f, new(0, 10), "ori:world_background_clouds1", -7);
+                            CreateParallaxBackground("ParallaxBackground7", 1f, new(0, 10), "ori:world_background_clouds0", -8);
+                            CreateParallaxBackground("ParallaxBackground8", 0.99f, new(0, 10), "ori:world_background_clouds-1", -9);
+
+                            sunRenderer = UObjectTools.CreateComponent<ParallaxBackground>("SunRenderer");
+                            sunRenderer.parallaxFactor = -0.035f;
+                            sunRenderer.AddRenderers("ori:sun", 1, -6);
+                            //sunLight.
+                            //moonRenderer;
 
                             void CreateParallaxBackground(string name, float parallaxFactor, Vector2 positionDelta, string textureId, int sortingOrder, float scaleOfPerObject = 1)
                             {
@@ -804,18 +809,6 @@ namespace GameCore.UI
                                 parallax.AddRenderers(textureId, 8, sortingOrder, scaleOfPerObject);
                                 parallaxBackgrounds.Add(parallax);
                             }
-                        }
-
-                        {
-                            sunRenderer = UObjectTools.CreateComponent<ParallaxBackground>("SunRenderer");
-                            sunRenderer.parallaxFactor = -0.035f;
-                            sunRenderer.AddRenderers("ori:sun", 1, 0);
-                            sunLight = sunRenderer.gameObject.AddComponent<Light2D>();
-                            sunLight.pointLightOuterRadius = 20;
-                            sunLight.shadowsEnabled = true;
-                            sunLight.shadowIntensity = 0.65f;
-                            sunLight.intensity = 0.4f;
-                            //moonRenderer;
                         }
 
                         break;
@@ -848,13 +841,11 @@ namespace GameCore.UI
             //日月
             if (sunRenderer)
             {
-                var xDelta = Tools.instance.viewRightSideWorldPos - Tools.instance.viewLeftSideWorldPos;
-                var yDelta = Tools.instance.viewUpSideWorldPos - Tools.instance.viewDownSideWorldPos;
                 var timeFactor = (GTime.time24Format - 12) / 12f * -Mathf.PI;
-                var pos = new Vector3(Tools.instance.viewLeftSideWorldPos + xDelta * (Mathf.Sin(timeFactor) + 1) * 0.5f,
-                                      Tools.instance.viewDownSideWorldPos + yDelta * (Mathf.Cos(timeFactor) * 0.5f));
+                var pos = new Vector3(-Tools.instance.viewHalfWidth + Tools.instance.viewHalfWidth * (Mathf.Sin(timeFactor) + 1),
+                                      -Tools.instance.viewHalfHeight * 1.5f + Tools.instance.viewHalfHeight * Mathf.Cos(timeFactor) * 1.25f);
 
-                sunRenderer.positionDelta =  pos;
+                sunRenderer.positionDelta = Tools.instance.mainCamera.transform.position + pos;
             }
         }
 
