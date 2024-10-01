@@ -845,7 +845,7 @@ namespace GameCore.UI
             {
                 var timeFactor = (GTime.time24Format - 12) / 12f * -Mathf.PI;
                 var pos = new Vector3(-Tools.instance.viewHalfWidth + Tools.instance.viewHalfWidth * (Mathf.Sin(timeFactor) + 1),
-                                      -Tools.instance.viewHalfHeight * 1.5f + Tools.instance.viewHalfHeight * Mathf.Cos(timeFactor) * 1.25f);
+                                      -Tools.instance.viewHalfHeight * 1.5f + Tools.instance.viewHalfHeight * Mathf.Cos(timeFactor) * 2.2f);
 
                 sunRenderer.positionDelta = Tools.instance.mainCamera.transform.position + pos;
             }
@@ -853,7 +853,7 @@ namespace GameCore.UI
             {
                 var timeFactor = (GTime.time24Format - 12) / 12f * -Mathf.PI;
                 var pos = new Vector3(Tools.instance.viewHalfWidth - Tools.instance.viewHalfWidth * (Mathf.Sin(timeFactor) + 1),
-                                      -Tools.instance.viewHalfHeight * 1.5f - Tools.instance.viewHalfHeight * Mathf.Cos(timeFactor) * 1.25f);
+                                      -Tools.instance.viewHalfHeight * 1.5f - Tools.instance.viewHalfHeight * Mathf.Cos(timeFactor) * 2.2f);
 
                 moonRenderer.positionDelta = Tools.instance.mainCamera.transform.position + pos;
             }
