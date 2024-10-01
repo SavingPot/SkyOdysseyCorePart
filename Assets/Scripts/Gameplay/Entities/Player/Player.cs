@@ -507,7 +507,7 @@ namespace GameCore
                 pui = new(this);
 
                 //设置相机跟随
-                Tools.instance.mainCameraController.lookAt = transform;
+                Tools.instance.mainCameraController.lookAt = GetPlayerLookAtTransform();
                 Tools.instance.mainCameraController.lookAtDelta = new(0, 2);
                 Tools.instance.mainCameraController.cameraScale.Add(() => playerCameraScale);
 
@@ -627,6 +627,13 @@ namespace GameCore
 
             EntityInventoryOwnerBehaviour.OnUpdate(this);
 
+            //模型复位
+            if (model.transform.localPosition != Vector3.zero)
+            {
+                model.transform.localPosition = Vector3.Lerp(model.transform.localPosition, Vector3.zero, Time.deltaTime * 30);
+                if (model.transform.localPosition.magnitude < 0.01f)
+                    model.transform.localPosition = Vector3.zero;
+            }
 
 #if DEBUG
             if (Keyboard.current?.spaceKey?.wasPressedThisFrame ?? false)
@@ -1418,6 +1425,12 @@ namespace GameCore
 
 
 
+        public Transform GetPlayerLookAtTransform() => body.transform;
+
+
+
+
+
         private void ControlPlayer()
         {
             /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
@@ -1546,7 +1559,7 @@ namespace GameCore
                     foreach (var (sr, _) in unlockedRegionColorRenderers) FadeRegionUnlockingRenderer(sr);
 
                     //相机跟随
-                    Tools.instance.mainCameraController.lookAt = transform;
+                    Tools.instance.mainCameraController.lookAt = GetPlayerLookAtTransform();
 
                     //相机缩放
                     DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 1, 0.7f).SetEase(Ease.InOutSine);
@@ -1701,6 +1714,31 @@ namespace GameCore
             {
                 resultX -= rb.velocity.x * blockFriction;
             }
+
+
+            //自动跨越
+            float stepDirection = 0;
+            if (move != 0)
+                stepDirection = move;
+            else if (rb.velocity.x.Abs() >= 0.5f)
+                stepDirection = rb.velocity.x.Sign();
+
+            if (stepDirection != 0)
+            {
+                var stepLength = 0.2f;
+                var colliderCenter = transform.position + mainCollider.offset.To3();
+                var headPos = new Vector2(colliderCenter.x, colliderCenter.y + mainCollider.size.y / 2 - 0.1f);
+                var footPos = new Vector2(colliderCenter.x, colliderCenter.y - mainCollider.size.y / 2 + 0.1f);
+
+                if (Physics2D.Raycast(footPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask) &&
+                    !Physics2D.Raycast(headPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask))
+                {
+                    var extraPosition = new Vector3(stepLength * 1.1f * stepDirection, 1.1f);
+                    transform.position = transform.position + extraPosition;
+                    model.transform.localPosition -= extraPosition;
+                }
+            }
+
 
             return new(resultX, resultY);
         }

@@ -77,7 +77,7 @@ namespace GameCore
         [BoxGroup("属性"), LabelText("跳跃计时器"), ReadOnly] public float jumpTimer;
         [BoxGroup("属性"), LabelText("跳跃CD"), ReadOnly] public float jumpCD = 0.3f;
         [BoxGroup("属性"), LabelText("掉落的Y位置")] public float fallenY;
-        public static float fallenDamageHeight = 9;
+        public float fallenDamageHeight = 9;
 
 
 
