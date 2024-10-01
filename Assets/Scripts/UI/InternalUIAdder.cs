@@ -92,7 +92,7 @@ namespace GameCore.UI
         /*                                     日夜                                     */
         /* -------------------------------------------------------------------------- */
         public ParallaxBackground sunRenderer;
-        public SpriteRenderer moonRenderer;
+        public ParallaxBackground moonRenderer;
 
 
 
@@ -797,8 +797,10 @@ namespace GameCore.UI
                             sunRenderer = UObjectTools.CreateComponent<ParallaxBackground>("SunRenderer");
                             sunRenderer.parallaxFactor = -0.035f;
                             sunRenderer.AddRenderers("ori:sun", 1, -6);
-                            //sunLight.
-                            //moonRenderer;
+
+                            moonRenderer = UObjectTools.CreateComponent<ParallaxBackground>("MoonRenderer");
+                            moonRenderer.parallaxFactor = -0.035f;
+                            moonRenderer.AddRenderers("ori:moon", 1, -6);
 
                             void CreateParallaxBackground(string name, float parallaxFactor, Vector2 positionDelta, string textureId, int sortingOrder, float scaleOfPerObject = 1)
                             {
@@ -846,6 +848,14 @@ namespace GameCore.UI
                                       -Tools.instance.viewHalfHeight * 1.5f + Tools.instance.viewHalfHeight * Mathf.Cos(timeFactor) * 1.25f);
 
                 sunRenderer.positionDelta = Tools.instance.mainCamera.transform.position + pos;
+            }
+            if (moonRenderer)
+            {
+                var timeFactor = (GTime.time24Format - 12) / 12f * -Mathf.PI;
+                var pos = new Vector3(Tools.instance.viewHalfWidth - Tools.instance.viewHalfWidth * (Mathf.Sin(timeFactor) + 1),
+                                      -Tools.instance.viewHalfHeight * 1.5f - Tools.instance.viewHalfHeight * Mathf.Cos(timeFactor) * 1.25f);
+
+                moonRenderer.positionDelta = Tools.instance.mainCamera.transform.position + pos;
             }
         }
 

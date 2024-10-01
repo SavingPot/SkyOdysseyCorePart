@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace GameCore
 {
     public static class EntityID
@@ -44,6 +40,7 @@ namespace GameCore
         public const string SnowfieldGuardSnowball = "ori:snowfield_guard_snowball";
         public const string Spark = "ori:spark";
         public const string Trader = "ori:trader";
+        public const string WaterSlime = "ori:water_slime";
         public const string Zombie = "ori:zombie";
     }
 }
