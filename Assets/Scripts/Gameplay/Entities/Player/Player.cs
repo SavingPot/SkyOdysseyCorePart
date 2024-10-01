@@ -1709,33 +1709,38 @@ namespace GameCore
             float resultX = move;
             float resultY = 0;
 
-            //地面摩擦
-            if (isOnGround && move == 0 && rb.velocity.x != 0)
+
+            if (isOnGround)
             {
-                resultX -= rb.velocity.x * blockFriction;
-            }
-
-
-            //自动跨越
-            float stepDirection = 0;
-            if (move != 0)
-                stepDirection = move;
-            else if (rb.velocity.x.Abs() >= 0.5f)
-                stepDirection = rb.velocity.x.Sign();
-
-            if (stepDirection != 0)
-            {
-                var stepLength = 0.2f;
-                var colliderCenter = transform.position + mainCollider.offset.To3();
-                var headPos = new Vector2(colliderCenter.x, colliderCenter.y + mainCollider.size.y / 2 - 0.1f);
-                var footPos = new Vector2(colliderCenter.x, colliderCenter.y - mainCollider.size.y / 2 + 0.1f);
-
-                if (Physics2D.Raycast(footPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask) &&
-                    !Physics2D.Raycast(headPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask))
+                //地面摩擦
+                if (move == 0 && rb.velocity.x != 0)
                 {
-                    var extraPosition = new Vector3(stepLength * 1.1f * stepDirection, 1.1f);
-                    transform.position = transform.position + extraPosition;
-                    model.transform.localPosition -= extraPosition;
+                    resultX -= rb.velocity.x * blockFriction;
+                }
+
+
+                //自动跨越
+                float stepDirection = 0;
+                if (move != 0)
+                    stepDirection = move;
+                else if (rb.velocity.x.Abs() >= 1f)
+                    stepDirection = rb.velocity.x.Sign();
+
+                if (stepDirection != 0)
+                {
+                    var stepLength = 0.2f;
+                    var colliderCenter = transform.position + mainCollider.offset.To3();
+                    var headPos = new Vector2(colliderCenter.x, colliderCenter.y + mainCollider.size.y / 2 - 0.1f);
+                    var footPos = new Vector2(colliderCenter.x, colliderCenter.y - mainCollider.size.y / 2 + 0.1f);
+
+                    //如果脚前有方块且头前没有
+                    if (Physics2D.Raycast(footPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask) &&
+                        !Physics2D.Raycast(headPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask))
+                    {
+                        var extraPosition = new Vector3(stepLength * 1.1f * stepDirection, 1.1f);
+                        transform.position = transform.position + extraPosition;
+                        model.transform.localPosition -= extraPosition;
+                    }
                 }
             }
 
