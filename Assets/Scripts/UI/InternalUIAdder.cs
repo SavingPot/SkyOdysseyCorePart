@@ -808,7 +808,7 @@ namespace GameCore.UI
 
                         {
                             sunRenderer = UObjectTools.CreateComponent<ParallaxBackground>("SunRenderer");
-                            sunRenderer.parallaxFactor = -0.02f;
+                            sunRenderer.parallaxFactor = -0.035f;
                             sunRenderer.AddRenderers("ori:sun", 1, 0);
                             sunLight = sunRenderer.gameObject.AddComponent<Light2D>();
                             sunLight.pointLightOuterRadius = 20;
