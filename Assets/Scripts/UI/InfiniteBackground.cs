@@ -14,9 +14,9 @@ namespace GameCore.UI
 
         public void AddRenderers(string textureId, int count, int sortingOrder, float scaleOfPerObject = 1)
         {
-            if (count % 2 != 0)
+            if (count % 2 != 0 && count != 1)
             {
-                Debug.LogError("无限背景的渲染器数量必须为偶数!");
+                Debug.LogError("无限背景的渲染器数量必须为偶数或1!");
             }
 
             var sprite = ModFactory.CompareTexture(textureId).sprite;

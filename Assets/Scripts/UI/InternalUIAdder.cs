@@ -91,7 +91,7 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         /*                                     日夜                                     */
         /* -------------------------------------------------------------------------- */
-        public SpriteRenderer sunRenderer;
+        public ParallaxBackground sunRenderer;
         public Light2D sunLight;
         public SpriteRenderer moonRenderer;
 
@@ -807,13 +807,14 @@ namespace GameCore.UI
                         }
 
                         {
-                            sunRenderer = ObjectTools.CreateSpriteObject("SunRenderer");
-                            sunRenderer.sprite = ModFactory.CompareTexture("ori:sun").sprite;
+                            sunRenderer = UObjectTools.CreateComponent<ParallaxBackground>("SunRenderer");
+                            sunRenderer.parallaxFactor = -0.02f;
+                            sunRenderer.AddRenderers("ori:sun", 1, 0);
                             sunLight = sunRenderer.gameObject.AddComponent<Light2D>();
                             sunLight.pointLightOuterRadius = 20;
                             sunLight.shadowsEnabled = true;
                             sunLight.shadowIntensity = 0.65f;
-                            sunLight.intensity = 0.4f; 
+                            sunLight.intensity = 0.4f;
                             //moonRenderer;
                         }
 
@@ -853,7 +854,7 @@ namespace GameCore.UI
                 var pos = new Vector3(Tools.instance.viewLeftSideWorldPos + xDelta * (Mathf.Sin(timeFactor) + 1) * 0.5f,
                                       Tools.instance.viewDownSideWorldPos + yDelta * (Mathf.Cos(timeFactor) * 0.5f));
 
-                sunRenderer.transform.position = Vector3.Lerp(sunRenderer.transform.position, pos, Time.deltaTime * 100f);
+                sunRenderer.positionDelta =  pos;
             }
         }
 
