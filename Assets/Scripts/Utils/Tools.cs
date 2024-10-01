@@ -55,7 +55,6 @@ namespace GameCore
         public float viewRightSideWorldPos;
         public float viewUpSideWorldPos;
         public float viewDownSideWorldPos;
-        private static StreamWriter logStreamWriter;
         public const ushort defaultPort = 24442;
 
         #region Default or Unknown

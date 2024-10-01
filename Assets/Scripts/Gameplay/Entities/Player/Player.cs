@@ -1912,7 +1912,7 @@ namespace GameCore
                 GControls.GamepadVibrationMedium();
 
             int damage = GetUsingItemChecked()?.data?.damage ?? ItemData.defaultDamage;
-            return entity.TakeDamage(damage, 0.3f, transform.position, transform.localScale.x.Sign() * Vector2.right * 12);
+            return entity.TakeDamage(damage, 0.3f, transform.position, new(impactForceConst.x * transform.localScale.x.Sign() * 1, impactForceConst.y));
         }
 
         #endregion
@@ -2023,7 +2023,8 @@ namespace GameCore
 
         public void SwitchItem(int index)
         {
-            usingItemIndex = index;
+            //切换物品
+            EntityInventoryOwnerBehaviour.SwitchUsingItemTo(this, index);
 
             //刷新物品栏
             EntityInventoryOwnerBehaviour.RefreshItemRenderers(this);

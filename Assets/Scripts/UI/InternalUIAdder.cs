@@ -87,6 +87,21 @@ namespace GameCore.UI
 
 
 
+        /* -------------------------------------------------------------------------- */
+        /*                                     日夜                                     */
+        /* -------------------------------------------------------------------------- */
+        public SpriteRenderer sunRenderer;
+        public SpriteRenderer moonRenderer;
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -766,25 +781,33 @@ namespace GameCore.UI
 
                 case SceneNames.GameScene:
                     {
-                        parallaxBackgrounds = new();
-
-                        CreateParallaxBackground("ParallaxBackground0", 0.5f, new(0, 12), "ori:world_background_islands", -1, 0.8f);
-                        CreateParallaxBackground("ParallaxBackground1", 0.65f, new(0, 12), "ori:world_background_islands", -2, 0.5f);
-                        CreateParallaxBackground("ParallaxBackground2", 0.8f, new(0, 12), "ori:world_background_islands", -3, 0.2f);
-                        CreateParallaxBackground("ParallaxBackground4", 0.92f, new(0, -13), "ori:world_background_moist_zone", -4);
-                        CreateParallaxBackground("ParallaxBackground5", 0.97f, new(0, -10), "ori:world_background_ocean", -5);
-                        CreateParallaxBackground("ParallaxBackground6", 0.98f, new(0, 10), "ori:world_background_clouds1", -6);
-                        CreateParallaxBackground("ParallaxBackground7", 1f, new(0, 10), "ori:world_background_clouds0", -7);
-                        CreateParallaxBackground("ParallaxBackground8", 0.99f, new(0, 10), "ori:world_background_clouds-1", -8);
-
-                        void CreateParallaxBackground(string name, float parallaxFactor, Vector2 positionDelta, string textureId, int sortingOrder, float scaleOfPerObject = 1)
                         {
-                            var parallax = UObjectTools.CreateComponent<ParallaxBackground>(name);
-                            parallax.gameObject.layer = LayerMask.NameToLayer("UI");
-                            parallax.parallaxFactor = parallaxFactor;
-                            parallax.positionDelta = positionDelta;
-                            parallax.AddRenderers(textureId, 8, sortingOrder, scaleOfPerObject);
-                            parallaxBackgrounds.Add(parallax);
+                            parallaxBackgrounds = new();
+
+                            CreateParallaxBackground("ParallaxBackground0", 0.5f, new(0, 12), "ori:world_background_islands", -1, 0.8f);
+                            CreateParallaxBackground("ParallaxBackground1", 0.65f, new(0, 12), "ori:world_background_islands", -2, 0.5f);
+                            CreateParallaxBackground("ParallaxBackground2", 0.8f, new(0, 12), "ori:world_background_islands", -3, 0.2f);
+                            CreateParallaxBackground("ParallaxBackground4", 0.92f, new(0, -13), "ori:world_background_moist_zone", -4);
+                            CreateParallaxBackground("ParallaxBackground5", 0.97f, new(0, -10), "ori:world_background_ocean", -5);
+                            CreateParallaxBackground("ParallaxBackground6", 0.98f, new(0, 10), "ori:world_background_clouds1", -6);
+                            CreateParallaxBackground("ParallaxBackground7", 1f, new(0, 10), "ori:world_background_clouds0", -7);
+                            CreateParallaxBackground("ParallaxBackground8", 0.99f, new(0, 10), "ori:world_background_clouds-1", -8);
+
+                            void CreateParallaxBackground(string name, float parallaxFactor, Vector2 positionDelta, string textureId, int sortingOrder, float scaleOfPerObject = 1)
+                            {
+                                var parallax = UObjectTools.CreateComponent<ParallaxBackground>(name);
+                                parallax.gameObject.layer = LayerMask.NameToLayer("UI");
+                                parallax.parallaxFactor = parallaxFactor;
+                                parallax.positionDelta = positionDelta;
+                                parallax.AddRenderers(textureId, 8, sortingOrder, scaleOfPerObject);
+                                parallaxBackgrounds.Add(parallax);
+                            }
+                        }
+
+                        {
+                            sunRenderer = ObjectTools.CreateSpriteObject("SunRenderer");
+                            sunRenderer.sprite = ModFactory.CompareTexture("ori:sun").sprite;
+                            //moonRenderer;
                         }
 
                         break;
@@ -812,6 +835,18 @@ namespace GameCore.UI
                         sr.color = color;
                     }
                 }
+            }
+
+            //日月
+            if (sunRenderer)
+            {
+                var xDelta = Tools.instance.viewRightSideWorldPos - Tools.instance.viewLeftSideWorldPos;
+                var yDelta = Tools.instance.viewRightSideWorldPos - Tools.instance.viewLeftSideWorldPos;
+                var timeFactor = (GTime.time24Format - 12) / 12f * -Mathf.PI;
+                var pos = new Vector3(Tools.instance.viewLeftSideWorldPos + xDelta * (Mathf.Sin(timeFactor) + 1) * 0.5f,
+                                      Tools.instance.viewDownSideWorldPos + yDelta * (Mathf.Cos(timeFactor) * 0.3f));
+
+                sunRenderer.transform.position = Vector3.Lerp(sunRenderer.transform.position, pos, Time.deltaTime * 100f);
             }
         }
 

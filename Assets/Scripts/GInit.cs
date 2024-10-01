@@ -193,7 +193,6 @@ namespace GameCore
 
 
             /* --------------------------------- 调整基础设置 --------------------------------- */
-            Debug.unityLogger.logEnabled = true; //允许 Debug.Log 输出日志
             Application.runInBackground = true; //允许 Windows 平台在窗口不被选择时持续运行
             QualitySettings.vSyncCount = 0; //关闭垂直同步
             Physics2D.queriesStartInColliders = false; //使射线不返回发射器本身
@@ -226,7 +225,7 @@ namespace GameCore
 
 
             /* ---------------------------------- 管理日志 ---------------------------------- */
-#if DEBUG
+#if DEBUG || ENABLE_LOG_FOR_RELEASE
             Debug.unityLogger.logEnabled = true;
 #else
             Debug.unityLogger.logEnabled = false;

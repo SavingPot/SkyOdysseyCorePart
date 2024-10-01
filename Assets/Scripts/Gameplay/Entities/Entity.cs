@@ -33,6 +33,8 @@ namespace GameCore
         public const string entityVarPrefix = nameof(GameCore) + "." + nameof(Entity) + ".";
         public static int entityLayer { get; internal set; }
         public static int entityLayerMask { get; internal set; }
+        public static Vector2 impactForceConst { get; } = new(12, 16f);
+        public const int height = 2;
 
 
 
@@ -112,7 +114,6 @@ namespace GameCore
         }
 
 
-        public const int height = 2;
 
 
 

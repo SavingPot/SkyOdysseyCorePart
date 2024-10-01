@@ -93,7 +93,7 @@ namespace GameCore
             if (targetEntity)
             {
                 //发动普通攻击
-                if (!isDead && data.normalAttack != null)
+                if (!isDead && !isHurting && data.normalAttack != null)
                     NormalAttackLoop();
                 else
                     exclamationMarkImage.image.enabled = false;
@@ -208,7 +208,7 @@ namespace GameCore
                 data.normalAttack.damage,
                 0.3f,
                 transform.position,
-                transform.position.x < targetEntity.transform.position.x ? Vector2.right * 12 : Vector2.left * 12
+                new(impactForceConst.x * (transform.position.x < targetEntity.transform.position.x ? 1 : -1), impactForceConst.y)
             );
         }
 

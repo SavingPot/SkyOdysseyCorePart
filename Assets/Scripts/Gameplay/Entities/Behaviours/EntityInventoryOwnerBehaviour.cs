@@ -10,6 +10,28 @@ namespace GameCore
 
 
 
+        public static void SwitchUsingItemTo<T>(T entity, int index) where T : Entity, IInventoryOwner
+        {
+            var inventory = entity.GetInventory();
+
+            if (inventory != null)
+            {
+                //切出回调
+                if (inventory.TryGetItemBehaviour(entity.usingItemIndex, out var itemBehaviour))
+                    itemBehaviour.OnSwitchFromThis();
+
+                entity.usingItemIndex = index;
+
+                //切入回调
+                if (inventory.TryGetItemBehaviour(index, out itemBehaviour))
+                    itemBehaviour.OnSwitchToThis();
+            }
+            else
+            {
+                throw new System.NullReferenceException($"实体 {entity.data.id} 没有物品栏");
+            }
+        }
+
         public static void OnUpdate<T>(T entity) where T : Entity, IInventoryOwner
         {
             var inventory = entity.GetInventory();
@@ -150,7 +172,7 @@ namespace GameCore
 
 
 
-        int usingItemIndex { get; }
+        int usingItemIndex { get; set; }
         SpriteRenderer usingShieldRenderer { get; set; }
         SpriteRenderer usingItemRenderer { get; set; }
         BoxCollider2D usingItemCollider { get; set; }

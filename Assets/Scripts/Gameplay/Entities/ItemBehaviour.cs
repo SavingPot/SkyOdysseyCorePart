@@ -135,6 +135,16 @@ namespace GameCore
 
         }
 
+        public virtual void OnSwitchToThis()
+        {
+
+        }
+
+        public virtual void OnSwitchFromThis()
+        {
+
+        }
+
         public virtual void Rendering(SpriteRenderer sr)
         {
             sr.sprite = instance.data.texture.sprite;
