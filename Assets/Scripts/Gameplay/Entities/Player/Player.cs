@@ -1732,10 +1732,12 @@ namespace GameCore
                     var colliderCenter = transform.position + mainCollider.offset.To3();
                     var headPos = new Vector2(colliderCenter.x, colliderCenter.y + mainCollider.size.y / 2 - 0.1f);
                     var footPos = new Vector2(colliderCenter.x, colliderCenter.y - mainCollider.size.y / 2 + 0.1f);
+                    var footRaycast = Physics2D.Raycast(footPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask);
+                    var headRaycast = Physics2D.Raycast(headPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask);
 
-                    //如果脚前有方块且头前没有
-                    if (Physics2D.Raycast(footPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask) &&
-                        !Physics2D.Raycast(headPos, Vector2.right * stepDirection, mainCollider.size.x / 2 + stepLength, Block.blockLayerMask))
+                    //如果脚前有非平台方块方块且头前没有
+                    if (footRaycast && Block.TryGetBlockFromCollider(footRaycast.collider, out var block) && block.status != BlockStatus.Platform &&
+                        !headRaycast)
                     {
                         var extraPosition = new Vector3(stepLength * 1.1f * stepDirection, 1.1f);
                         transform.position = transform.position + extraPosition;
