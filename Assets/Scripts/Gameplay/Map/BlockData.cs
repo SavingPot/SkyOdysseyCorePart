@@ -24,6 +24,7 @@ namespace GameCore
         [LabelText("可碰撞")] public bool collidible = true;
         [LabelText("掉落物")] public DropData[] drops;
         [LabelText("光亮等级")] public float lightLevel;
+        [LabelText("可变形")] public bool transformable;
 
         #region 方块行为
 

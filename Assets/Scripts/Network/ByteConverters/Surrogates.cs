@@ -285,7 +285,7 @@ namespace GameCore.Network
                 BlockSave_Location location = (BlockSave_Location)obj;
                 info.AddValue("x", location.x);
                 info.AddValue("y", location.y);
-                info.AddValue("s", location.status);
+                info.AddValue("s", location.s);
                 info.AddValue("c", location.cd == null ? null : Compressor.CompressBytes(ByteConverter.ToBytes(location.cd.ToString())));
             }
 

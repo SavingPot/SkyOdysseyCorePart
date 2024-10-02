@@ -1305,9 +1305,9 @@ namespace GameCore
             foreach (var block in mod.blocks)
             {
                 block.defaultTexture = CompareTexture(block.defaultTexture.id);
-                block.platformTexture = new(block.defaultTexture.id + ".platform", SpriteHandler.CutLowerHalfTextureKeepingUpperArea(block.defaultTexture.sprite));
-                block.upperStairTexture = new(block.defaultTexture.id + ".upper_stair", SpriteHandler.CutUpperHalfTextureKeepingLowerArea(block.defaultTexture.sprite));
-                block.lowerStairTexture = new(block.defaultTexture.id + ".lower_stair", SpriteHandler.CutLowerHalfTextureKeepingUpperArea(block.defaultTexture.sprite));
+                block.platformTexture = new(block.defaultTexture.id + ".platform", SpriteHandler.CutLowerThreeQuarterTextureKeepingUpperArea(block.defaultTexture.sprite));
+                block.upperStairTexture = new(block.defaultTexture.id + ".upper_stair", SpriteHandler.CutLowerHalfTextureKeepingUpperArea(block.defaultTexture.sprite));
+                block.lowerStairTexture = new(block.defaultTexture.id + ".lower_stair", SpriteHandler.CutUpperHalfTextureKeepingLowerArea(block.defaultTexture.sprite));
 
                 block.behaviourType = null;
                 GetBlockBehaviour(block);

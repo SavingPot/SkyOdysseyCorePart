@@ -12,8 +12,8 @@ namespace GameCore
 
 
         public override bool Apply() => pui != null && pui.gainRareItemButtonPanel.button.wasPressedThisFrame;
-        public override bool Jump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.65f;
-        public override bool HoldingJump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.65f;
+        public override bool Jump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.62f;
+        public override bool HoldingJump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.62f;
         public override bool Rush(out bool direction) => throw new NotImplementedException();
         public override float Move() => pui?.touchScreenMoveJoystick != null ? pui.touchScreenMoveJoystick.Horizontal : 0;
         public override bool ClickingAttack() => pui?.touchScreenAttackButton != null && pui.touchScreenAttackButton.button.wasPressedThisFrame;
@@ -24,6 +24,7 @@ namespace GameCore
         public override bool Backpack() => false;
         public override bool Interact() => pui != null && pui.touchScreenUseItemButton.button.wasPressedThisFrame;
         public override bool PlaceBlockUnderPlayer() => pui != null && pui.touchScreenPlaceBlockUnderPlayerButton.button.wasPressedThisFrame;
+        public override bool DisablePlatform() => pui != null && pui.touchScreenMoveJoystick.Vertical <= -0.62f;
         public override bool ThrowItem() => false;
         public override bool SwitchToPreviousItem() => false;
         public override bool SwitchToNextItem() => false;

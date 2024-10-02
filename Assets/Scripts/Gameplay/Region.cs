@@ -306,14 +306,14 @@ namespace GameCore
     {
         public int x;
         public int y;
-        public BlockStatus status;
+        public BlockStatus s;
         [LabelText("自定义数据")] public string cd;
 
         public BlockSave_Location(int x, int y, BlockStatus status, string customData)
         {
             this.x = x;
             this.y = y;
-            this.status = status;
+            this.s = status;
             this.cd = customData;
         }
     }

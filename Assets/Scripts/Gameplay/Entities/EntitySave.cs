@@ -84,7 +84,9 @@ namespace GameCore
                 skillPoints = 0,
             };
 
+            //初始物品
             result.inventory.AddItem(ModFactory.CompareItem(BlockID.PotatoCrop).DataToItem().SetCount(5));
+            result.inventory.AddItem(ModFactory.CompareItem(ItemID.Wrench).DataToItem());
 
             return result;
         }

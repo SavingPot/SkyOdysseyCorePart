@@ -813,7 +813,7 @@ namespace GameCore
                 {
                     BlockSave_Location location = save.locations[i];
 
-                    Map.instance.SetBlock(new(location.x + xDelta, location.y + yDelta), save.isBg, location.status, block, location.cd, false, false);
+                    Map.instance.SetBlock(new(location.x + xDelta, location.y + yDelta), save.isBg, location.s, block, location.cd, false, false);
 
                     //定时 Sleep 防止游戏卡死
                     if (i % waitScale == 0)

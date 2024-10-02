@@ -36,6 +36,7 @@ namespace GameCore
         public BlockData data;
         public SpriteRenderer crackSr { get; internal set; }
         public Light2D blockLight { get; internal set; }
+        public PlatformEffector2D platformEffector { get; internal set; }
         public DG.Tweening.Core.TweenerCore<Vector3, Vector3, DG.Tweening.Plugins.Options.VectorOptions> scaleAnimationTween;
 
 
@@ -98,15 +99,19 @@ namespace GameCore
 
         public virtual void DoStart()
         {
-            RefreshTexture();
-
-            blockCollider.isTrigger = !data.collidible || isBackground;
+            OnBlockStatusChange();
         }
 
         internal void ChangeBlockStatus(BlockStatus status)
         {
             this.status = status;
-            RefreshTexture();
+            OnBlockStatusChange();
+
+            //把状态写入存档
+            var posInRegion = chunk.MapToRegionPos(pos);
+            GFiles.world.GetRegion(chunk.regionIndex)
+                        .GetBlock(posInRegion.x, posInRegion.y, isBackground)
+                        .location.s = status;
         }
 
         public virtual void OnUpdate()
@@ -185,8 +190,9 @@ namespace GameCore
         }
 
 
-        public void RefreshTexture()
+        public void OnBlockStatusChange()
         {
+            //更改贴图
             sr.sprite = status switch
             {
                 BlockStatus.Normal => data.defaultTexture.sprite,
@@ -195,6 +201,29 @@ namespace GameCore
                 BlockStatus.LowerStair => data.lowerStairTexture.sprite,
                 _ => throw new()
             };
+
+            //更改碰撞体
+            blockCollider.isTrigger = isBackground || (!data.collidible && status != BlockStatus.Platform);
+            blockCollider.usedByEffector = status == BlockStatus.Platform;
+            if (status == BlockStatus.Platform && platformEffector == null)
+            {
+                platformEffector = gameObject.AddComponent<PlatformEffector2D>();
+                platformEffector.surfaceArc = 90;
+                platformEffector.rotationalOffset = chunk.map.GetPlatformEffectorRotation();
+                chunk.map.platformEffectorsToCheck.Add(platformEffector);
+            }
+            else if (status != BlockStatus.Platform && platformEffector != null)
+            {
+                DestroyPlatformEffector();
+            }
+        }
+
+
+        internal void DestroyPlatformEffector()
+        {
+            if (chunk.map.platformEffectorsToCheck.Contains(platformEffector)) chunk.map.platformEffectorsToCheck.Remove(platformEffector);
+            UnityEngine.Object.Destroy(platformEffector);
+            platformEffector = null;
         }
 
 

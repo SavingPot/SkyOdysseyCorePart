@@ -62,6 +62,52 @@ namespace GameCore
             return result;
         }
 
+        public static Texture2D CutLowerThreeQuarterTextureKeepingUpperArea(Texture2D source)
+        {
+            var result = new Texture2D(source.width, source.height, source.format, false);
+            var pixels = source.GetPixels();
+
+            for (int w = 0; w < result.width; ++w)
+            {
+                for (int h = result.height * 3 / 4; h < result.height; ++h)
+                {
+                    result.SetPixel(w, h, pixels[w + h * source.width]);
+                }
+
+                for (int h = 0; h < result.height * 3 / 4; ++h)
+                {
+                    result.SetPixel(w, h, Color.clear);
+                }
+            }
+
+            result.filterMode = source.filterMode;
+            result.Apply();
+            return result;
+        }
+
+        public static Texture2D CutLowerQuarterTextureKeepingUpperArea(Texture2D source)
+        {
+            var result = new Texture2D(source.width, source.height, source.format, false);
+            var pixels = source.GetPixels();
+
+            for (int w = 0; w < result.width; ++w)
+            {
+                for (int h = result.height  / 4; h < result.height; ++h)
+                {
+                    result.SetPixel(w, h, pixels[w + h * source.width]);
+                }
+
+                for (int h = 0; h < result.height  / 4; ++h)
+                {
+                    result.SetPixel(w, h, Color.clear);
+                }
+            }
+
+            result.filterMode = source.filterMode;
+            result.Apply();
+            return result;
+        }
+
         public static Texture2D CutUpperHalfTextureKeepingLowerArea(Texture2D source)
         {
             var result = new Texture2D(source.width, source.height, source.format, false);

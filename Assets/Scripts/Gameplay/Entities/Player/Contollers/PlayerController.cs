@@ -22,6 +22,7 @@ namespace GameCore
         public abstract bool Interact();
         public abstract bool PlaceBlockUnderPlayer();
         public abstract PlayerOrientation SetPlayerOrientation();
+        public abstract bool DisablePlatform();
         public abstract bool ThrowItem();
         public abstract bool SwitchToPreviousItem();
         public abstract bool SwitchToNextItem();

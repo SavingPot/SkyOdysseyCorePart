@@ -207,7 +207,7 @@ namespace GameCore
                     {
                         foreach (var locationTemp in saveTemp.locations)
                         {
-                            region.AddPos(saveTemp.blockId, locationTemp.x, locationTemp.y, saveTemp.isBg, locationTemp.status, true, locationTemp.cd);
+                            region.AddPos(saveTemp.blockId, locationTemp.x, locationTemp.y, saveTemp.isBg, locationTemp.s, true, locationTemp.cd);
                         }
                     }
 

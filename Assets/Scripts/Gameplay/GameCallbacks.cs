@@ -25,7 +25,7 @@ namespace GameCore
 
         public static OnBlockDestroyedDelegate OnBlockDestroyed = (_, _, _) => { };
         public static OnRemoveBlockDelegate OnRemoveBlock = (pos, isBackground, editRegion, successful) => { };
-        public static OnAddBlockDelegate OnAddBlock = (pos, isBackground, block, chunk) => { };
+        public static OnAddBlockDelegate OnAddBlock = (pos, isBackground, status, block, chunk) => { };
 
 
 
@@ -40,6 +40,6 @@ namespace GameCore
 
         public delegate void OnBlockDestroyedDelegate(Vector2Int pos, bool isBackground, BlockData blockData);
         public delegate void OnRemoveBlockDelegate(Vector2Int pos, bool isBackground, bool editRegion, bool successful);
-        public delegate void OnAddBlockDelegate(Vector2Int pos, bool isBackground, Block block, Chunk chunk);
+        public delegate void OnAddBlockDelegate(Vector2Int pos, bool isBackground,BlockStatus status, Block block, Chunk chunk);
     }
 }

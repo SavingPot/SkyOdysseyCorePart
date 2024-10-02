@@ -1723,7 +1723,7 @@ namespace GameCore
                 float stepDirection = 0;
                 if (move != 0)
                     stepDirection = move;
-                else if (rb.velocity.x.Abs() >= 1f)
+                else if (rb.velocity.x.Abs() >= 2f)
                     stepDirection = rb.velocity.x.Sign();
 
                 if (stepDirection != 0)
@@ -1826,11 +1826,29 @@ namespace GameCore
             if (!isLocalPlayer || block == null)
                 return;
 
-            block.ServerChangeStatus(block.status != BlockStatus.LowerStair ? block.status + 1 : 0);
-
             //播放挖掘动画
             if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)
                 animWeb.SwitchPlayingTo("attack_rightarm", 0);
+
+            //播放音效
+            GAudio.Play(AudioID.ExcavatingBlock, transform.position);
+
+            //手柄震动
+            if (GControls.mode == ControlMode.Gamepad)
+                GControls.GamepadVibrationSlighter(0.1f);
+
+            //设置时间
+            ResetUseItemCD(GetBlockExcavationCD(this, block));
+
+
+
+
+            //扳手
+            if (TryGetUsingItem(out var usingItem) && usingItem.data.id == ItemID.Wrench)
+            {
+                block.ServerChangeStatus(block.status != BlockStatus.LowerStair ? block.status + 1 : 0);
+                return;
+            }
 
             //让目标方块 3x3 范围内扣血
             if (block.data.IsValidForAreaMiningI() && IsSkillUnlocked(SkillID.Exploration_Mining_AreaMiningI))
@@ -1885,16 +1903,6 @@ namespace GameCore
             {
                 block.TakeDamage(excavationStrength);
             }
-
-            //播放音效
-            GAudio.Play(AudioID.ExcavatingBlock, transform.position);
-
-            //手柄震动
-            if (GControls.mode == ControlMode.Gamepad)
-                GControls.GamepadVibrationSlighter(0.1f);
-
-            //设置时间
-            ResetUseItemCD(GetBlockExcavationCD(this, block));
         }
 
         public void OnHoldAttack()

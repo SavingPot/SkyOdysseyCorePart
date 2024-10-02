@@ -28,7 +28,14 @@ namespace GameCore
 
         public List<Chunk> chunks = new();
         public Dictionary<Vector2Int, Chunk> chunkTable = new();
+        public List<PlatformEffector2D> platformEffectorsToCheck = new();
         public List<Block> blocksToCheckHealths = new();
+
+
+
+
+        float lastTimeDisablePlatformPressed;
+        bool isPlatformDisabledLastFrame;
 
 
 
@@ -52,9 +59,9 @@ namespace GameCore
 
         private void Update()
         {
-            /* ---------------------------------- 为方块回血 --------------------------------- */
-            if (Player.TryGetLocal(out Player localPlayer) && localPlayer.Init.isServerCompletelyReady && localPlayer.TryGetRegion(out _))
+            if (Player.TryGetLocal(out Player player) && player.Init.isServerCompletelyReady && player.TryGetRegion(out _))
             {
+                /* ---------------------------------- 为方块回血 --------------------------------- */
                 var deltaHealth = 20f * Performance.frameTime;
 
                 for (int i = blocksToCheckHealths.Count - 1; i >= 0; i--)
@@ -65,6 +72,22 @@ namespace GameCore
                     {
                         block.SetHealth(block.health + deltaHealth);
                     }
+                }
+
+
+                /* ---------------------------------- 设置平台 ---------------------------------- */
+                if (player.playerController.DisablePlatform())
+                    lastTimeDisablePlatformPressed = Tools.time;
+
+                bool isPlatformDisabled = Tools.time <= lastTimeDisablePlatformPressed + 0.1f; //按住后的0.1s内会禁用平台
+                if (isPlatformDisabled != isPlatformDisabledLastFrame)
+                {
+                    float platformRotation = GetPlatformEffectorRotation(isPlatformDisabled);
+                    foreach (var effector in platformEffectorsToCheck)
+                    {
+                        effector.rotationalOffset = platformRotation;
+                    }
+                    isPlatformDisabledLastFrame = isPlatformDisabled;
                 }
             }
 
@@ -92,6 +115,9 @@ namespace GameCore
                 }
             }
         }
+
+        public float GetPlatformEffectorRotation() => GetPlatformEffectorRotation(Player.TryGetLocal(out var player) ? player.playerController.DisablePlatform() : false);
+        public float GetPlatformEffectorRotation(bool isPlatformDisabled) => isPlatformDisabled ? 180f : 0f;
 
         public Chunk AddChunk(Vector2Int chunkIndex)
         {
@@ -286,7 +312,7 @@ namespace GameCore
             public Stack<GameObject> stack = new();
             private readonly Map map;
 
-            public Block Get(Chunk chunk, Vector2Int pos, bool isBackground, BlockData data, string customData)
+            public Block Get(Chunk chunk, Vector2Int pos, bool isBackground,BlockStatus status, BlockData data, string customData)
             {
                 GameObject go;
 
@@ -309,9 +335,10 @@ namespace GameCore
 
 
 
-                /* ---------------------------------- 设置位置 ---------------------------------- */
+                /* ---------------------------------- 设置位置、状态 ---------------------------------- */
                 block.pos = pos;
                 block.isBackground = isBackground;
+                block.status = status;
 
                 /* --------------------------------- 根据层设置参数 -------------------------------- */
                 if (isBackground)
@@ -390,6 +417,9 @@ namespace GameCore
                 if (map.blocksToCheckHealths.Contains(block)) map.blocksToCheckHealths.Remove(block);
                 block.scaleAnimationTween?.Kill();
                 block.shakeRotationTween?.Kill();
+
+                //回收平台效果器
+                if (block.platformEffector) block.DestroyPlatformEffector();
 
                 block.transform.SetParent(map.blockPoolTrans);
                 block.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);

@@ -57,5 +57,6 @@ namespace GameCore
         public const string WoodenBowl = "ori:wooden_bowl";
         public const string WoodenBowlWithWater = "ori:wooden_bowl_with_water";
         public const string WoodenSaw = "ori:wooden_saw";
+        public const string Wrench = "ori:wrench";
     }
 }

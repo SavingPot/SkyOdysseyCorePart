@@ -509,6 +509,7 @@ namespace GameCore
                     newBlock.hardness = property?["hardness"]?.ToFloat() ?? BlockData.defaultHardness;
                     newBlock.collidible = property?["collidible"]?.ToBool() ?? true;
                     newBlock.behaviourName = property?["behaviour"]?.ToString();
+                    newBlock.transformable = property?["transformable"]?.ToBool() ?? true;
                     property?["tags"]?.For(i =>
                     {
                         newBlock.tags.Add(i.ToString());

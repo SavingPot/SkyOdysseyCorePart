@@ -184,14 +184,14 @@ namespace GameCore
             }
 
             //从对象池获取方块
-            Block b = map.blockPool.Get(this, pos, isBackground, blockData, customData);
+            Block b = map.blockPool.Get(this, pos, isBackground, status, blockData, customData);
 
             if (executeBlockUpdate)
             {
                 map.UpdateAt(b.pos, b.isBackground);
             }
 
-            GameCallbacks.OnAddBlock(pos, isBackground, b, this);
+            GameCallbacks.OnAddBlock(pos, isBackground, status, b, this);
             return b;
         }
     }

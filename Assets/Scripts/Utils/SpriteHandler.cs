@@ -20,6 +20,20 @@ namespace GameCore
             return Sprite.Create(newTexture, background.rect, background.pivot, background.pixelsPerUnit);
         }
 
+        public static Sprite CutLowerThreeQuarterTextureKeepingUpperArea(Sprite sprite)
+        {
+            var newTexture = TextureHandler.CutLowerThreeQuarterTextureKeepingUpperArea(sprite.texture);
+
+            return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
+        }
+
+        public static Sprite CutLowerQuarterTextureKeepingUpperArea(Sprite sprite)
+        {
+            var newTexture = TextureHandler.CutLowerQuarterTextureKeepingUpperArea(sprite.texture);
+
+            return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
+        }
+
         public static Sprite CutUpperHalfTextureKeepingLowerArea(Sprite sprite)
         {
             var newTexture = TextureHandler.CutUpperHalfTextureKeepingLowerArea(sprite.texture);

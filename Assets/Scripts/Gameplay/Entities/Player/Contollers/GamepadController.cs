@@ -19,6 +19,7 @@ namespace GameCore
         public override bool Backpack() => Gamepad.current != null && Gamepad.current.yButton.wasPressedThisFrame;
         public override bool Interact() => Gamepad.current != null && Gamepad.current.leftTrigger.wasPressedThisFrame;
         public override bool PlaceBlockUnderPlayer() => Gamepad.current != null && Gamepad.current.bButton.wasPressedThisFrame;
+        public override bool DisablePlatform() => GControls.leftStickVec.y <= -0.62f;
         public override bool ThrowItem() => false;
         public override bool SwitchToPreviousItem() => Gamepad.current != null && Gamepad.current.leftShoulder.wasPressedThisFrame;
         public override bool SwitchToNextItem() => Gamepad.current != null && Gamepad.current.rightShoulder.wasPressedThisFrame;
