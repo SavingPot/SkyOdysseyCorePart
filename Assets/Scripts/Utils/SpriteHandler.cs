@@ -20,30 +20,58 @@ namespace GameCore
             return Sprite.Create(newTexture, background.rect, background.pivot, background.pixelsPerUnit);
         }
 
-        public static Sprite CutLowerThreeQuarterTextureKeepingUpperArea(Sprite sprite)
+        public static Sprite CutLowerThreeQuarterKeepingUpperArea(Sprite sprite)
         {
-            var newTexture = TextureHandler.CutLowerThreeQuarterTextureKeepingUpperArea(sprite.texture);
+            var newTexture = TextureHandler.CutLowerThreeQuarterKeepingUpperArea(sprite.texture);
 
             return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
         }
 
-        public static Sprite CutLowerQuarterTextureKeepingUpperArea(Sprite sprite)
+        public static Sprite CutLowerQuarterKeepingUpperArea(Sprite sprite)
         {
-            var newTexture = TextureHandler.CutLowerQuarterTextureKeepingUpperArea(sprite.texture);
+            var newTexture = TextureHandler.CutLowerQuarterKeepingUpperArea(sprite.texture);
 
             return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
         }
 
-        public static Sprite CutUpperHalfTextureKeepingLowerArea(Sprite sprite)
+        public static Sprite CutUpperHalfKeepingLowerArea(Sprite sprite)
         {
-            var newTexture = TextureHandler.CutUpperHalfTextureKeepingLowerArea(sprite.texture);
+            var newTexture = TextureHandler.CutUpperHalfKeepingLowerArea(sprite.texture);
 
             return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
         }
 
-        public static Sprite CutLowerHalfTextureKeepingUpperArea(Sprite sprite)
+        public static Sprite CutLowerHalfKeepingUpperArea(Sprite sprite)
         {
-            var newTexture = TextureHandler.CutLowerHalfTextureKeepingUpperArea(sprite.texture);
+            var newTexture = TextureHandler.CutLowerHalfKeepingUpperArea(sprite.texture);
+
+            return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
+        }
+
+        public static Sprite CutUpperLeft(Sprite sprite)
+        {
+            var newTexture = TextureHandler.CutUpperLeft(sprite.texture);
+
+            return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
+        }
+
+        public static Sprite CutUpperRight(Sprite sprite)
+        {
+            var newTexture = TextureHandler.CutUpperRight(sprite.texture);
+
+            return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
+        }
+
+        public static Sprite CutLowerLeft(Sprite sprite)
+        {
+            var newTexture = TextureHandler.CutLowerLeft(sprite.texture);
+
+            return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
+        }
+
+        public static Sprite CutLowerRight(Sprite sprite)
+        {
+            var newTexture = TextureHandler.CutLowerRight(sprite.texture);
 
             return Sprite.Create(newTexture, sprite.rect, new(0.5f, 0.5f), sprite.pixelsPerUnit);
         }

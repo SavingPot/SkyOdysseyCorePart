@@ -18,8 +18,12 @@ namespace GameCore
         [LabelText("硬度")] public float hardness;
         [JsonIgnore, LabelText("默认贴图")] public TextureData defaultTexture;
         [JsonIgnore, LabelText("平台贴图")] public TextureData platformTexture;
-        [JsonIgnore, LabelText("上台阶贴图")] public TextureData upperStairTexture;
-        [JsonIgnore, LabelText("下台阶贴图")] public TextureData lowerStairTexture;
+        [JsonIgnore, LabelText("上半砖贴图")] public TextureData upperSlabTexture;
+        [JsonIgnore, LabelText("下半砖贴图")] public TextureData lowerSlabTexture;
+        [JsonIgnore, LabelText("右楼梯贴图")] public TextureData rightStairTexture;
+        [JsonIgnore, LabelText("左楼梯贴图")] public TextureData leftStairTexture;
+        [JsonIgnore, LabelText("反右楼梯贴图")] public TextureData inverseRightStairTexture;
+        [JsonIgnore, LabelText("反左楼梯贴图")] public TextureData inverseLeftStairTexture;
         [LabelText("介绍")] public string description;
         [LabelText("可碰撞")] public bool collidible = true;
         [LabelText("掉落物")] public DropData[] drops;

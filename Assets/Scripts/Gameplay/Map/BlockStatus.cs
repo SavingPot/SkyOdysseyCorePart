@@ -4,7 +4,11 @@ namespace GameCore
     {
         Normal,
         Platform,
-        UpperStair,
-        LowerStair,
+        UpperSlab,
+        LowerSlab,
+        RightStair,
+        LeftStair,
+        InverseRightStair,
+        InverseLeftStair,
     }
 }

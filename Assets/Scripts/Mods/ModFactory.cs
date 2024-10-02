@@ -1305,9 +1305,13 @@ namespace GameCore
             foreach (var block in mod.blocks)
             {
                 block.defaultTexture = CompareTexture(block.defaultTexture.id);
-                block.platformTexture = new(block.defaultTexture.id + ".platform", SpriteHandler.CutLowerThreeQuarterTextureKeepingUpperArea(block.defaultTexture.sprite));
-                block.upperStairTexture = new(block.defaultTexture.id + ".upper_stair", SpriteHandler.CutLowerHalfTextureKeepingUpperArea(block.defaultTexture.sprite));
-                block.lowerStairTexture = new(block.defaultTexture.id + ".lower_stair", SpriteHandler.CutUpperHalfTextureKeepingLowerArea(block.defaultTexture.sprite));
+                block.platformTexture = new(block.defaultTexture.id + ".platform", SpriteHandler.CutLowerThreeQuarterKeepingUpperArea(block.defaultTexture.sprite));
+                block.upperSlabTexture = new(block.defaultTexture.id + ".upper_slab", SpriteHandler.CutLowerHalfKeepingUpperArea(block.defaultTexture.sprite));
+                block.lowerSlabTexture = new(block.defaultTexture.id + ".lower_slab", SpriteHandler.CutUpperHalfKeepingLowerArea(block.defaultTexture.sprite));
+                block.rightStairTexture = new(block.defaultTexture.id + ".right_stair", SpriteHandler.CutUpperLeft(block.defaultTexture.sprite));
+                block.leftStairTexture = new(block.defaultTexture.id + ".left_stair", SpriteHandler.CutUpperRight(block.defaultTexture.sprite));
+                block.inverseRightStairTexture = new(block.defaultTexture.id + ".inverse_right_stair", SpriteHandler.CutLowerLeft(block.defaultTexture.sprite));
+                block.inverseLeftStairTexture = new(block.defaultTexture.id + ".inverse_left_stair", SpriteHandler.CutLowerRight(block.defaultTexture.sprite));
 
                 block.behaviourType = null;
                 GetBlockBehaviour(block);

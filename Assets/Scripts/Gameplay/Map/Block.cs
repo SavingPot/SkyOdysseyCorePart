@@ -197,8 +197,12 @@ namespace GameCore
             {
                 BlockStatus.Normal => data.defaultTexture.sprite,
                 BlockStatus.Platform => data.platformTexture.sprite,
-                BlockStatus.UpperStair => data.upperStairTexture.sprite,
-                BlockStatus.LowerStair => data.lowerStairTexture.sprite,
+                BlockStatus.UpperSlab => data.upperSlabTexture.sprite,
+                BlockStatus.LowerSlab => data.lowerSlabTexture.sprite,
+                BlockStatus.RightStair => data.rightStairTexture.sprite,
+                BlockStatus.LeftStair => data.leftStairTexture.sprite,
+                BlockStatus.InverseRightStair => data.inverseRightStairTexture.sprite,
+                BlockStatus.InverseLeftStair => data.inverseLeftStairTexture.sprite,
                 _ => throw new()
             };
 

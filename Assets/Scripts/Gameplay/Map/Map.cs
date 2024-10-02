@@ -79,7 +79,7 @@ namespace GameCore
                 if (player.playerController.DisablePlatform())
                     lastTimeDisablePlatformPressed = Tools.time;
 
-                bool isPlatformDisabled = Tools.time <= lastTimeDisablePlatformPressed + 0.1f; //按住后的0.1s内会禁用平台
+                bool isPlatformDisabled = Tools.time <= lastTimeDisablePlatformPressed + 0.12f; //按住后的0.12s内会禁用平台
                 if (isPlatformDisabled != isPlatformDisabledLastFrame)
                 {
                     float platformRotation = GetPlatformEffectorRotation(isPlatformDisabled);

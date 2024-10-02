@@ -1845,10 +1845,10 @@ namespace GameCore
 
 
 
-            //扳手
-            if (TryGetUsingItem(out var usingItem) && usingItem.data.id == ItemID.Wrench)
+            //扳手改变方块形状
+            if (TryGetUsingItem(out var usingItem) && usingItem.data.id == ItemID.Wrench && block.data.transformable)
             {
-                block.ServerChangeStatus(block.status != BlockStatus.LowerStair ? block.status + 1 : 0);
+                block.ServerChangeStatus(block.status != BlockStatus.InverseLeftStair ? block.status + 1 : 0);
                 return;
             }
 

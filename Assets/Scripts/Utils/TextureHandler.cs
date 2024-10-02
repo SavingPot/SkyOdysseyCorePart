@@ -62,7 +62,7 @@ namespace GameCore
             return result;
         }
 
-        public static Texture2D CutLowerThreeQuarterTextureKeepingUpperArea(Texture2D source)
+        public static Texture2D CutLowerThreeQuarterKeepingUpperArea(Texture2D source)
         {
             var result = new Texture2D(source.width, source.height, source.format, false);
             var pixels = source.GetPixels();
@@ -85,19 +85,19 @@ namespace GameCore
             return result;
         }
 
-        public static Texture2D CutLowerQuarterTextureKeepingUpperArea(Texture2D source)
+        public static Texture2D CutLowerQuarterKeepingUpperArea(Texture2D source)
         {
             var result = new Texture2D(source.width, source.height, source.format, false);
             var pixels = source.GetPixels();
 
             for (int w = 0; w < result.width; ++w)
             {
-                for (int h = result.height  / 4; h < result.height; ++h)
+                for (int h = result.height / 4; h < result.height; ++h)
                 {
                     result.SetPixel(w, h, pixels[w + h * source.width]);
                 }
 
-                for (int h = 0; h < result.height  / 4; ++h)
+                for (int h = 0; h < result.height / 4; ++h)
                 {
                     result.SetPixel(w, h, Color.clear);
                 }
@@ -108,7 +108,7 @@ namespace GameCore
             return result;
         }
 
-        public static Texture2D CutUpperHalfTextureKeepingLowerArea(Texture2D source)
+        public static Texture2D CutUpperHalfKeepingLowerArea(Texture2D source)
         {
             var result = new Texture2D(source.width, source.height, source.format, false);
             var pixels = source.GetPixels();
@@ -131,7 +131,7 @@ namespace GameCore
             return result;
         }
 
-        public static Texture2D CutLowerHalfTextureKeepingUpperArea(Texture2D source)
+        public static Texture2D CutLowerHalfKeepingUpperArea(Texture2D source)
         {
             var result = new Texture2D(source.width, source.height, source.format, false);
             var pixels = source.GetPixels();
@@ -146,6 +146,90 @@ namespace GameCore
                 for (int h = 0; h < result.height / 2; ++h)
                 {
                     result.SetPixel(w, h, Color.clear);
+                }
+            }
+
+            result.filterMode = source.filterMode;
+            result.Apply();
+            return result;
+        }
+
+        public static Texture2D CutUpperLeft(Texture2D source)
+        {
+            var result = new Texture2D(source.width, source.height, source.format, false);
+            var pixels = source.GetPixels();
+
+            for (int w = 0; w < result.width; ++w)
+            {
+                for (int h = 0; h < result.height; ++h)
+                {
+                    if (w < result.width / 2 && h >= result.height / 2)
+                        result.SetPixel(w, h, Color.clear);
+                    else
+                        result.SetPixel(w, h, pixels[w + h * source.width]);
+                }
+            }
+
+            result.filterMode = source.filterMode;
+            result.Apply();
+            return result;
+        }
+
+        public static Texture2D CutUpperRight(Texture2D source)
+        {
+            var result = new Texture2D(source.width, source.height, source.format, false);
+            var pixels = source.GetPixels();
+
+            for (int w = 0; w < result.width; ++w)
+            {
+                for (int h = 0; h < result.height; ++h)
+                {
+                    if (w >= result.width / 2 && h >= result.height / 2)
+                        result.SetPixel(w, h, Color.clear);
+                    else
+                        result.SetPixel(w, h, pixels[w + h * source.width]);
+                }
+            }
+
+            result.filterMode = source.filterMode;
+            result.Apply();
+            return result;
+        }
+
+        public static Texture2D CutLowerLeft(Texture2D source)
+        {
+            var result = new Texture2D(source.width, source.height, source.format, false);
+            var pixels = source.GetPixels();
+
+            for (int w = 0; w < result.width; ++w)
+            {
+                for (int h = 0; h < result.height; ++h)
+                {
+                    if (w < result.width / 2 && h < result.height / 2)
+                        result.SetPixel(w, h, Color.clear);
+                    else
+                        result.SetPixel(w, h, pixels[w + h * source.width]);
+                }
+            }
+
+            result.filterMode = source.filterMode;
+            result.Apply();
+            return result;
+        }
+
+        public static Texture2D CutLowerRight(Texture2D source)
+        {
+            var result = new Texture2D(source.width, source.height, source.format, false);
+            var pixels = source.GetPixels();
+
+            for (int w = 0; w < result.width; ++w)
+            {
+                for (int h = 0; h < result.height; ++h)
+                {
+                    if (w >= result.width / 2 && h < result.height / 2)
+                        result.SetPixel(w, h, Color.clear);
+                    else
+                        result.SetPixel(w, h, pixels[w + h * source.width]);
                 }
             }
 
