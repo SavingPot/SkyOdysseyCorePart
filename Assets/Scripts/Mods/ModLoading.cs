@@ -664,6 +664,7 @@ namespace GameCore
                     probability = ModCreate.Get(jt, "data.biome.blocks.rules.probability", jfToLoad)?.ToFloat() ?? 100,
                 };
                 temp.attached = new(ModCreate.Get(jt, "data.biome.blocks.attached.id", jfToLoad)?.ToString(), ModCreate.Get(jt, "data.biome.blocks.attached.offset", jfToLoad)?.ToVector2Int() ?? new(0, -1), ModCreate.Get(jt, "data.biome.blocks.attached.offset", jfToLoad)?.ElementAtOrDefault(2)?.ToInt() < 0);
+                Enum.TryParse(ModCreate.Get(jt, "data.biome.blocks.status", jfToLoad)?.ToString(), out temp.status);
 
 
                 List<BiomeData_Block_Range> rangesTemp = new();

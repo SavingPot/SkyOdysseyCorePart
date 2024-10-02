@@ -1826,6 +1826,7 @@ namespace GameCore
             if (!isLocalPlayer || block == null)
                 return;
 
+            block.ServerChangeStatus(block.status != BlockStatus.LowerStair ? block.status + 1 : 0);
 
             //播放挖掘动画
             if (!animWeb.GetAnim("attack_rightarm", 0).isPlaying)

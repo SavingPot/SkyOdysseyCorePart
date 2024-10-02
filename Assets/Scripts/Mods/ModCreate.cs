@@ -236,6 +236,10 @@ namespace GameCore
                     new[] { "block" }
                 },
                 {
+                    new("data.biome.blocks.status", "0.6.2"),
+                    new[] { "status" }
+                },
+                {
                     new("data.biome.blocks.areas", "0.6.2"),
                     new[] { "areas" }
                 },

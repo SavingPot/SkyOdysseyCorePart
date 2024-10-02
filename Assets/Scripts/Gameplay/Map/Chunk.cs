@@ -168,7 +168,7 @@ namespace GameCore
             GameCallbacks.OnRemoveBlock(pos, isBackground, editRegion, false);
         }
 
-        public Block AddBlock(Vector2Int pos, bool isBackground, BlockData blockData, string customData, bool editRegion, bool executeBlockUpdate)
+        public Block AddBlock(Vector2Int pos, bool isBackground, BlockStatus status, BlockData blockData, string customData, bool editRegion, bool executeBlockUpdate)
         {
             if (blockData == null)
                 return null;
@@ -180,7 +180,7 @@ namespace GameCore
 
                 //在区域中添加
                 Region region = GFiles.world.GetOrAddRegion(regionIndex);
-                region.AddPos(blockData.id, blockRegionPos.x, blockRegionPos.y, isBackground, false, customData);
+                region.AddPos(blockData.id, blockRegionPos.x, blockRegionPos.y, isBackground, status, false, customData);
             }
 
             //从对象池获取方块

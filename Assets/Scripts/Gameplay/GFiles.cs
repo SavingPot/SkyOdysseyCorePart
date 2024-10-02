@@ -199,7 +199,7 @@ namespace GameCore
             {
                 var temp = regionData[i];
 
-                //如果有就合并数据 (以 传入的区域sb 为主)
+                //如果有就合并数据 (以 参数传入的区域(region)为主)
                 if (temp.index == region.index)
                 {
                     //遍历每一个方块并添加
@@ -207,7 +207,7 @@ namespace GameCore
                     {
                         foreach (var locationTemp in saveTemp.locations)
                         {
-                            region.AddPos(saveTemp.blockId, locationTemp.x, locationTemp.y, saveTemp.isBg);
+                            region.AddPos(saveTemp.blockId, locationTemp.x, locationTemp.y, saveTemp.isBg, locationTemp.status, true, locationTemp.cd);
                         }
                     }
 

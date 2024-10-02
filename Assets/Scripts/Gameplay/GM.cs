@@ -238,6 +238,7 @@ namespace GameCore
                 Server.Callback<NMSetBlock>(OnServerGetNMSetBlockMessage);
                 Server.Callback<NMRemoveBlock>(OnServerGetNMRemoveBlockMessage);
                 Server.Callback<NMSetBlockCustomData>(OnServerGetNMSetBlockCustomData);
+                Server.Callback<NMChangeBlockStatus>(OnServerGetNMChangeBlockStatus);
             };
             NetworkCallbacks.OnTimeToClientCallback += () =>
             {
@@ -245,6 +246,7 @@ namespace GameCore
                 Client.Callback<NMSetBlock>(OnClientGetNMSetBlockMessage);
                 Client.Callback<NMRemoveBlock>(OnClientGetNMRemoveBlockMessage);
                 Client.Callback<NMSetBlockCustomData>(OnClientGetNMSetBlockCustomData);
+                Client.Callback<NMChangeBlockStatus>(OnClientGetNMChangeBlockStatus);
             };
         }
 
@@ -464,7 +466,7 @@ namespace GameCore
         }
 
         #region 绑定
-        //当服务器收到 NMPos 消息时的回调
+
         static void OnServerGetNMDestroyBlock(NetworkConnection conn, NMDestroyBlock n)
         {
             if (GScene.name != SceneNames.GameScene)
@@ -495,21 +497,18 @@ namespace GameCore
             Server.Send(n);
         }
 
-        //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMSetBlockMessage(NetworkConnection conn, NMSetBlock n)
         {
             //将消息转发给客户端
             Server.Send(n);
         }
 
-        //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMRemoveBlockMessage(NetworkConnection conn, NMRemoveBlock n)
         {
             //将消息转发给客户端
             Server.Send(n);
         }
 
-        //当服务器收到 NMPos 消息时的回调
         static void OnServerGetNMSetBlockCustomData(NetworkConnection conn, NMSetBlockCustomData n)
         {
             if (GScene.name != SceneNames.GameScene)
@@ -529,7 +528,28 @@ namespace GameCore
             Server.Send(n);
         }
 
-        //当客户端收到 NMPos 消息时的回调
+        static void OnServerGetNMChangeBlockStatus(NetworkConnection conn, NMChangeBlockStatus n)
+        {
+            if (GScene.name != SceneNames.GameScene)
+                return;
+
+            if (map.TryGetBlock(n.pos, n.isBackground, out Block block))
+            {
+                //把自定义数据写入存档
+                block.ChangeBlockStatus(n.status);
+            }
+            else
+            {
+                Debug.LogError("未找到要求的方块, 自定义数据设置失败");
+            }
+
+            //将消息转发给客户端
+            Server.Send(n);
+        }
+
+
+
+
         static void OnClientGetNMDestroyBlockMessage(NMDestroyBlock n)
         {
             if (GScene.name != SceneNames.GameScene)
@@ -541,16 +561,14 @@ namespace GameCore
             GAudio.Play(AudioID.DestroyBlock, n.pos);
         }
 
-        //当服务器收到 NMPos 消息时的回调
         static void OnClientGetNMSetBlockMessage(NMSetBlock n)
         {
             if (GScene.name != SceneNames.GameScene)
                 return;
 
-            map.SetBlock(n.pos, n.isBackground, n.block == null ? null : ModFactory.CompareBlockData(n.block), n.customData, true, true);
+            map.SetBlock(n.pos, n.isBackground, n.status, n.block == null ? null : ModFactory.CompareBlockData(n.block), n.customData, true, true);
         }
 
-        //当客户端收到 NMPos 消息时的回调
         static void OnClientGetNMRemoveBlockMessage(NMRemoveBlock n)
         {
             if (GScene.name != SceneNames.GameScene)
@@ -560,7 +578,22 @@ namespace GameCore
             map.RemoveBlock(n.pos, n.isBackground, true, true);
         }
 
-        //当服务器收到 NMPos 消息时的回调
+        static void OnClientGetNMChangeBlockStatus(NMChangeBlockStatus n)
+        {
+            if (GScene.name != SceneNames.GameScene)
+                return;
+
+            if (map.TryGetBlock(n.pos, n.isBackground, out Block block))
+            {
+                //把自定义数据写入存档
+                block.ChangeBlockStatus(n.status);
+            }
+            else
+            {
+                Debug.LogError("未找到要求的方块, 自定义数据设置失败");
+            }
+        }
+
         static void OnClientGetNMSetBlockCustomData(NMSetBlockCustomData n)
         {
             if (GScene.name != SceneNames.GameScene)
@@ -780,7 +813,7 @@ namespace GameCore
                 {
                     BlockSave_Location location = save.locations[i];
 
-                    Map.instance.SetBlock(new(location.x + xDelta, location.y + yDelta), save.isBg, block, location.cd, false, false);
+                    Map.instance.SetBlock(new(location.x + xDelta, location.y + yDelta), save.isBg, location.status, block, location.cd, false, false);
 
                     //定时 Sleep 防止游戏卡死
                     if (i % waitScale == 0)

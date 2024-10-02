@@ -83,17 +83,17 @@ namespace GameCore
 
 
 
-        public void AddBlock(string blockId, int x, int y, bool isBackground, string customData = null)
+        public void AddBlock(string blockId, int x, int y, bool isBackground, BlockStatus status, string customData = null)
         {
             //? 添加到区域生成，需要根据岛的中心位置做偏移，而在添加到岛屿生成则不需要
-            regionGeneration.region.AddPos(blockId, x + centerPoint.x, y + centerPoint.y, isBackground, true, customData);
+            regionGeneration.region.AddPos(blockId, x + centerPoint.x, y + centerPoint.y, isBackground, status, true, customData);
 
             blockAdded.Add((new(x, y), isBackground)); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
         }
 
-        public void AddBlockForAreas(string blockId, int x, int y, Vector3Int[] areas)
+        public void AddBlockForAreas(string blockId, int x, int y, BlockStatus status, Vector3Int[] areas)
         {
-            regionGeneration.region.AddPos(blockId, x + centerPoint.x, y + centerPoint.y, areas, true); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
+            regionGeneration.region.AddPos(blockId, x + centerPoint.x, y + centerPoint.y, status, areas, true); //* 如果已经存在过方块可能会出问题，但是目前来看无伤大雅
 
             foreach (var item in areas)
             {
@@ -158,7 +158,7 @@ namespace GameCore
                                     range.maxFormula.ComputeFormula(directBlockComputationAlgebra)
                                 ))
                             {
-                                AddBlockForAreas(g.id, x, y, g.areas);
+                                AddBlockForAreas(g.id, x, y, g.status, g.areas);
                             }
                         }
                     }
@@ -208,7 +208,7 @@ namespace GameCore
 
                             if (i >= min && i <= max)
                             {
-                                AddBlock(block.block, noise.x, startY + i, block.isBackground);
+                                AddBlock(block.block, noise.x, startY + i, block.isBackground, BlockStatus.Normal);
                                 break;
                             }
                         }
@@ -267,7 +267,7 @@ namespace GameCore
                                     range.maxFormula.ComputeFormula(formulaAlgebra)
                                 ))
                             {
-                                AddBlockForAreas(g.id, x, y, g.areas);
+                                AddBlockForAreas(g.id, x, y, g.status, g.areas);
                             }
                         }
                     }
@@ -344,7 +344,7 @@ namespace GameCore
                 var blockX = x + block.offset.x;
                 var blockY = y + block.offset.y;
 
-                AddBlock(block.blockId, blockX, blockY, block.isBackground);
+                AddBlock(block.blockId, blockX, blockY, block.isBackground, block.status);
             }
 
             WriteCustomDataForStructure(x, y, structure);
@@ -485,7 +485,7 @@ namespace GameCore
                         if (generation.region.TryGetBlock(newX, newY, save.isBg, out var stone) && stone.save.blockId == BlockID.Stone)
                         {
                             stone.save.RemoveLocation(newX, newY);
-                            save.AddLocation(newX, newY);
+                            save.AddLocation(newX, newY, BlockStatus.Normal);
                         }
                     }
                 }
@@ -534,7 +534,7 @@ namespace GameCore
                         jo["ori:container"].AddObject("items");
                         jo["ori:container"]["items"].AddArray("array", group);
 
-                        islandGeneration.AddBlock(BlockID.Barrel, lootBlockPos.x, lootBlockPos.y, false, jo.ToString(Formatting.None));
+                        islandGeneration.AddBlock(BlockID.Barrel, lootBlockPos.x, lootBlockPos.y, false, BlockStatus.Normal, jo.ToString(Formatting.None));
                     }
                 }
 

@@ -41,6 +41,7 @@ namespace GameCore
 
         public Vector2Int pos { get; internal set; }
         public bool isBackground { get; internal set; }
+        public BlockStatus status { get; internal set; }
         [LabelText("自定义数据")] public JObject customData;
 
         public Tweener shakeRotationTween;
@@ -97,8 +98,15 @@ namespace GameCore
 
         public virtual void DoStart()
         {
-            sr.sprite = data.defaultTexture.sprite;
+            RefreshTexture();
+
             blockCollider.isTrigger = !data.collidible || isBackground;
+        }
+
+        internal void ChangeBlockStatus(BlockStatus status)
+        {
+            this.status = status;
+            RefreshTexture();
         }
 
         public virtual void OnUpdate()
@@ -160,12 +168,33 @@ namespace GameCore
         }
 
 
+
+        public void ServerChangeStatus(BlockStatus status)
+        {
+            //* 注：服务端会把这里的 newCustomData 写入存档，然后发送给客户端，客户端会在收到后更新 Block 的 customData
+            Client.Send<NMChangeBlockStatus>(new(pos, isBackground, status));
+        }
+
+
         public virtual void OutputDrops(Vector3 pos)
         {
             data.drops.For(drop =>
             {
                 GM.instance.SummonDrop(pos, drop.id, drop.count, customData?.ToString());
             });
+        }
+
+
+        public void RefreshTexture()
+        {
+            sr.sprite = status switch
+            {
+                BlockStatus.Normal => data.defaultTexture.sprite,
+                BlockStatus.Platform => data.platformTexture.sprite,
+                BlockStatus.UpperStair => data.upperStairTexture.sprite,
+                BlockStatus.LowerStair => data.lowerStairTexture.sprite,
+                _ => throw new()
+            };
         }
 
 

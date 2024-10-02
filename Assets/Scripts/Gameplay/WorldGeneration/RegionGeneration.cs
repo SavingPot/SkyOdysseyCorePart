@@ -49,19 +49,19 @@ namespace GameCore
             if (region.index.x == 0 && region.index.y == 0)
             {
                 GFiles.world.basicData.teleportPoints.Add(new(portalMiddleX, portalMiddleY));
-                region.AddPos(BlockID.Portal, portalMiddleX, portalMiddleY, false, true);
+                region.AddPos(BlockID.Portal, portalMiddleX, portalMiddleY, false, BlockStatus.Normal, true);
             }
             else
             {
-                region.AddPos(BlockID.SleepingPortal, portalMiddleX, portalMiddleY, false, true);
+                region.AddPos(BlockID.SleepingPortal, portalMiddleX, portalMiddleY, false, BlockStatus.Normal, true);
             }
 
             //底座
-            region.AddPos(BlockID.PortalBase, portalMiddleX, portalMiddleY - 1, isBackground: false, true);
-            region.AddPos(BlockID.PortalBase, portalMiddleX - 2, portalMiddleY - 1, false, true);
-            region.AddPos(BlockID.PortalBase, portalMiddleX - 1, portalMiddleY - 1, false, true);
-            region.AddPos(BlockID.PortalBase, portalMiddleX + 1, portalMiddleY - 1, false, true);
-            region.AddPos(BlockID.PortalBase, portalMiddleX + 2, portalMiddleY - 1, false, true);
+            region.AddPos(BlockID.PortalBase, portalMiddleX, portalMiddleY - 1, false, BlockStatus.Normal, true);
+            region.AddPos(BlockID.PortalBase, portalMiddleX - 2, portalMiddleY - 1, false, BlockStatus.Normal, true);
+            region.AddPos(BlockID.PortalBase, portalMiddleX - 1, portalMiddleY - 1, false, BlockStatus.Normal, true);
+            region.AddPos(BlockID.PortalBase, portalMiddleX + 1, portalMiddleY - 1, false, BlockStatus.Normal, true);
+            region.AddPos(BlockID.PortalBase, portalMiddleX + 2, portalMiddleY - 1, false, BlockStatus.Normal, true);
         }
 
         public void GenerateBoundaries()
@@ -82,7 +82,7 @@ namespace GameCore
                         region.RemovePos(x, y, true);
 
                         //添加边界方块
-                        region.AddPos(BlockID.Boundary, x, y, false, true);
+                        region.AddPos(BlockID.Boundary, x, y, false, BlockStatus.Normal, true);
                     }
                 }
             }

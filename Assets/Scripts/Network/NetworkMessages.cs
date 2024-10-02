@@ -232,13 +232,15 @@ namespace GameCore.Network
     {
         public Vector2Int pos;
         public bool isBackground;
+        public BlockStatus status;
         public string block;
         public string customData;
 
-        public NMSetBlock(Vector2Int pos, bool isBackground, string block, string customData)
+        public NMSetBlock(Vector2Int pos, bool isBackground, BlockStatus status, string block, string customData)
         {
             this.pos = pos;
             this.isBackground = isBackground;
+            this.status = status;
             this.block = block;
             this.customData = customData;
         }
@@ -255,6 +257,20 @@ namespace GameCore.Network
             this.pos = pos;
             this.isBackground = isBackground;
             this.customData = customData;
+        }
+    }
+
+    public struct NMChangeBlockStatus : NetworkMessage
+    {
+        public Vector2Int pos;
+        public bool isBackground;
+        public BlockStatus status;
+
+        public NMChangeBlockStatus(Vector2Int pos, bool isBackground, BlockStatus status)
+        {
+            this.pos = pos;
+            this.isBackground = isBackground;
+            this.status = status;
         }
     }
 

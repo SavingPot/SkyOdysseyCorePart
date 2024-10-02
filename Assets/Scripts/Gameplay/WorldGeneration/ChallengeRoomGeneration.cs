@@ -25,7 +25,7 @@ namespace GameCore
                     var length = regionGeneration.random.Next(5, 8);
                     for (int xDelta = 0; xDelta < length; xDelta++)
                     {
-                        AddBlock(BlockID.Stone, start + xDelta, y, false);
+                        AddBlock(BlockID.Stone, start + xDelta, y, false, BlockStatus.Platform);
                     }
                 }
             }

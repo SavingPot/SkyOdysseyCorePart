@@ -17,6 +17,9 @@ namespace GameCore
         //以 1 为标准
         [LabelText("硬度")] public float hardness;
         [JsonIgnore, LabelText("默认贴图")] public TextureData defaultTexture;
+        [JsonIgnore, LabelText("平台贴图")] public TextureData platformTexture;
+        [JsonIgnore, LabelText("上台阶贴图")] public TextureData upperStairTexture;
+        [JsonIgnore, LabelText("下台阶贴图")] public TextureData lowerStairTexture;
         [LabelText("介绍")] public string description;
         [LabelText("可碰撞")] public bool collidible = true;
         [LabelText("掉落物")] public DropData[] drops;
@@ -52,6 +55,7 @@ namespace GameCore
             this.id = id;
             this.hardness = defaultHardness;
             this.defaultTexture = GInit.instance.blockUnknown?.defaultTexture;
+            this.platformTexture = GInit.instance.blockUnknown?.defaultTexture;
             this.collidible = GInit.instance.blockUnknown?.collidible ?? true;
         }
 
@@ -88,6 +92,7 @@ namespace GameCore
             sb.Append(indentation).Append("id: ").AppendLine(id);
             sb.Append(indentation).Append("hardness: ").AppendLine(hardness.ToString());
             sb.Append(indentation).Append("defaultTexture: ").AppendLine(defaultTexture?.ToString());
+            sb.Append(indentation).Append("platformTexture: ").AppendLine(platformTexture?.ToString());
             sb.Append(indentation).Append("collidible: ").AppendLine(collidible.ToString());
 
             sb.Append(indentation).AppendLine("tags");

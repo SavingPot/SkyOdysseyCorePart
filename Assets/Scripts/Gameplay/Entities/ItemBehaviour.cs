@@ -28,7 +28,7 @@ namespace GameCore
                     return;
 
                 //放置方块
-                Map.instance.SetBlockNet(pos, isBackground, instance.data.id, instance.customData?.ToString());
+                Map.instance.SetBlockNet(pos, isBackground, BlockStatus.Normal, instance.data.id, instance.customData?.ToString());
 
                 //手柄震动
                 if (GControls.mode == ControlMode.Gamepad)

@@ -111,7 +111,7 @@ namespace GameCore
             return y;
         }
 
-        public void AddPos(string id, int centerX, int centerY, Vector3Int[] areas, bool overwriteIfContains, string customData = null)
+        public void AddPos(string id, int centerX, int centerY, BlockStatus status, Vector3Int[] areas, bool overwriteIfContains, string customData = null)
         {
             //TODO: Performance
             if (!blocks.Any(p => p.blockId == id && p.isBg))
@@ -129,14 +129,14 @@ namespace GameCore
                 {
                     if (save.blockId == id && save.isBg == targetIsBackground)
                     {
-                        save.AddLocation(targetX, targetY, overwriteIfContains);
+                        save.AddLocation(targetX, targetY, status, overwriteIfContains);
                         break;
                     }
                 }
             }
         }
 
-        public void AddPos(string id, int x, int y, bool isBackground, bool overwriteIfContains = false, string customData = null)
+        public void AddPos(string id, int x, int y, bool isBackground, BlockStatus status, bool overwriteIfContains = false, string customData = null)
         {
             //TODO: 检测 pos 是否超出区域边界
             //如果 id 为空, 意思就是要删掉这个点
@@ -158,13 +158,13 @@ namespace GameCore
                 {
                     if (save.blockId == id && save.isBg == isBackground)
                     {
-                        save.AddLocation(x, y, overwriteIfContains, customData);
+                        save.AddLocation(x, y, status, overwriteIfContains, customData);
 
                         return;
                     }
                 }
 
-                blocks.Add(new(x, y, id, isBackground, customData));
+                blocks.Add(new(x, y, id, isBackground, status, customData));
             }
         }
 
@@ -263,7 +263,7 @@ namespace GameCore
         public void RemoveBarriersBetweenNeighbors()
         {
             //删除上面的屏障方块
-            if (GFiles.world.TryGetRegion(index  + Vector2Int.up, out var neighborRegion))
+            if (GFiles.world.TryGetRegion(index + Vector2Int.up, out var neighborRegion))
             {
                 for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
                 {
@@ -306,12 +306,14 @@ namespace GameCore
     {
         public int x;
         public int y;
+        public BlockStatus status;
         [LabelText("自定义数据")] public string cd;
 
-        public BlockSave_Location(int x, int y, string customData)
+        public BlockSave_Location(int x, int y, BlockStatus status, string customData)
         {
             this.x = x;
             this.y = y;
+            this.status = status;
             this.cd = customData;
         }
     }
@@ -336,9 +338,9 @@ namespace GameCore
             this.isBg = isBg;
         }
 
-        public BlockSave(int x, int y, string blockId, bool isBg, string customData) : this()
+        public BlockSave(int x, int y, string blockId, bool isBg, BlockStatus status, string customData) : this()
         {
-            this.locations = new() { new(x, y, customData) };
+            this.locations = new() { new(x, y, status, customData) };
             this.blockId = blockId;
             this.isBg = isBg;
         }
@@ -368,7 +370,7 @@ namespace GameCore
             return result != null;
         }
 
-        public void AddLocation(int x, int y, bool overwriteIfContains = false, string customData = null)
+        public void AddLocation(int x, int y, BlockStatus status, bool overwriteIfContains = false, string customData = null)
         {
             for (int i = 0; i < locations.Count; i++)
             {
@@ -378,7 +380,7 @@ namespace GameCore
                 {
                     //覆写
                     if (overwriteIfContains)
-                        locations[i] = new(x, y, customData);
+                        locations[i] = new(x, y, status, customData);
                     //不覆写，报错
                     else
                         Debug.LogError($"添加方块 {blockId} (({x},{y}), {isBg}) 失败：方块已存在");
@@ -387,7 +389,7 @@ namespace GameCore
                 }
             }
 
-            locations.Add(new(x, y, customData));
+            locations.Add(new(x, y, status, customData));
         }
 
         public void RemoveLocation(int x, int y)

@@ -53,6 +53,7 @@ namespace GameCore
         public BiomeData_Block_Rules rules;
         public AttachedBlockDatum attached;
         public BiomeData_Block_Perlin perlin;
+        public BlockStatus status;
         public bool isPrefab;
         public bool initialized = true;
     }
@@ -112,6 +113,7 @@ namespace GameCore
         [LabelText("ID")] public string blockId;
         [LabelText("偏移")] public Vector2Int offset;
         [LabelText("背景")] public bool isBackground;
+        [LabelText("状态")] public BlockStatus status;
 
         public JObject ToJObject()
         {

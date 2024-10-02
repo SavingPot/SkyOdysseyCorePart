@@ -9,14 +9,13 @@ namespace GameCore
         public static Texture2D CombineTexture(Texture2D background, Texture2D cover)
         {
             //新tex，大小用哪个都无所谓，因为之前保证了所有素材大小一致
-            Texture2D newTex = new Texture2D(background.width, background.height);
+            var result = new Texture2D(background.width, background.height);
+            var bgColors = background.GetPixels();
+            var cvColors = cover.GetPixels();
+            var newColors = new Color[background.width * background.height];
 
-            Color[] bgColors = background.GetPixels();
-            Color[] cvColors = cover.GetPixels();
-            Color[] newColors = new Color[background.width * background.height];
-
-            for (int x = 0; x < newTex.width; x++)
-                for (int y = 0; y < newTex.height; y++)
+            for (int x = 0; x < result.width; x++)
+                for (int y = 0; y < result.height; y++)
                 {
                     int index = x + y * background.width;
                     //混合背景和封面
@@ -25,10 +24,11 @@ namespace GameCore
                 }
 
             //newTex.SetPixels(newColors);
-            newTex.SetPixels(newColors);
-            newTex.Apply();
+            result.filterMode = background.filterMode;
+            result.SetPixels(newColors);
+            result.Apply();
 
-            return newTex;
+            return result;
         }
 
         //注意：这个函数只适用于背景色完全不透明
@@ -46,7 +46,7 @@ namespace GameCore
 
         public static Texture2D ScaleTexture(Texture2D source, int targetWidth, int targetHeight)
         {
-            Texture2D result = new Texture2D(targetWidth, targetHeight, source.format, false);
+            var result = new Texture2D(targetWidth, targetHeight, source.format, false);
 
             for (int h = 0; h < result.height; ++h)
             {
@@ -57,6 +57,53 @@ namespace GameCore
                 }
             }
 
+            result.filterMode = source.filterMode;
+            result.Apply();
+            return result;
+        }
+
+        public static Texture2D CutUpperHalfTextureKeepingLowerArea(Texture2D source)
+        {
+            var result = new Texture2D(source.width, source.height, source.format, false);
+            var pixels = source.GetPixels();
+
+            for (int w = 0; w < result.width; ++w)
+            {
+                for (int h = 0; h < result.height / 2; ++h)
+                {
+                    result.SetPixel(w, h, pixels[w + h * source.width]);
+                }
+
+                for (int h = result.height / 2; h < result.height; ++h)
+                {
+                    result.SetPixel(w, h, Color.clear);
+                }
+            }
+
+            result.filterMode = source.filterMode;
+            result.Apply();
+            return result;
+        }
+
+        public static Texture2D CutLowerHalfTextureKeepingUpperArea(Texture2D source)
+        {
+            var result = new Texture2D(source.width, source.height, source.format, false);
+            var pixels = source.GetPixels();
+
+            for (int w = 0; w < result.width; ++w)
+            {
+                for (int h = result.height / 2; h < result.height; ++h)
+                {
+                    result.SetPixel(w, h, pixels[w + h * source.width]);
+                }
+
+                for (int h = 0; h < result.height / 2; ++h)
+                {
+                    result.SetPixel(w, h, Color.clear);
+                }
+            }
+
+            result.filterMode = source.filterMode;
             result.Apply();
             return result;
         }
