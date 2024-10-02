@@ -91,7 +91,7 @@ namespace GameCore
 
 
 
-            Bind("ori:summon_entities", 8, () =>
+            Bind("ori:summon_entities", 7, () =>
             {
                 //白天概率为晚上的 2/3
                 if (GTime.IsInTime(GTime.time24Format, 6, 18) && UnityEngine.Random.Range(0, 3) == 2)

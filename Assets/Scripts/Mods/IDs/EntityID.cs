@@ -18,6 +18,7 @@ namespace GameCore
         public const string FishingFloat = "ori:fishing_float";
         public const string FlintArrow = "ori:flint_arrow";
         public const string Fly = "ori:fly";
+        public const string GiantScorpion = "ori:giant_scorpion";
         public const string GrasslandGuard = "ori:grassland_guard";
         public const string GrasslandGuardSapling = "ori:grassland_guard_sapling";
         public const string GrasslandSpore = "ori:grassland_spore";

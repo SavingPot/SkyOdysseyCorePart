@@ -795,11 +795,11 @@ namespace GameCore.UI
                             CreateParallaxBackground("ParallaxBackground8", 0.99f, new(0, 10), "ori:world_background_clouds-1", -9);
 
                             sunRenderer = UObjectTools.CreateComponent<ParallaxBackground>("SunRenderer");
-                            sunRenderer.parallaxFactor = -0.035f;
+                            sunRenderer.parallaxFactor = -0.02f;
                             sunRenderer.AddRenderers("ori:sun", 1, -6);
 
                             moonRenderer = UObjectTools.CreateComponent<ParallaxBackground>("MoonRenderer");
-                            moonRenderer.parallaxFactor = -0.035f;
+                            moonRenderer.parallaxFactor = -0.02f;
                             moonRenderer.AddRenderers("ori:moon", 1, -6);
 
                             void CreateParallaxBackground(string name, float parallaxFactor, Vector2 positionDelta, string textureId, int sortingOrder, float scaleOfPerObject = 1)
