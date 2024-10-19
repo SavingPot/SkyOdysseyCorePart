@@ -17,11 +17,13 @@ namespace GameCore
         public static int enemyLayerMask { get; internal set; }
 
 
+        ImageIdentity healthBarBackground;
+        ImageIdentity healthBarFull;
 
         [Sync] public Entity targetEntity;
         public float searchTime = float.NegativeInfinity;
         public string[] attackAnimations = new[] { "attack_leftarm", "attack_rightarm" }; //TODO: 包含 动画的layer 信息
-        ImageIdentity exclamationMarkImage;
+        ImageIdentity statusMarkImage;
         NormalAttackTemp currentNormalAttack;
         class NormalAttackTemp
         {
@@ -67,14 +69,37 @@ namespace GameCore
         {
             base.AfterInitialization();
 
-            //初始化感叹号
+            //初始化画布
             GetOrAddEntityCanvas();
-            exclamationMarkImage = GameUI.AddImage(UIA.Middle, $"ori:image.exclamation_mark_{netId}", "ori:enemy_exclamation_mark", usingCanvas.transform);
-            exclamationMarkImage.AddAPosY(7);
-            exclamationMarkImage.SetSizeDelta(13, 13);
-            exclamationMarkImage.image.enabled = false;
+
+            //血条
+            healthBarBackground = GameUI.AddImage(UIA.Middle, $"ori:image.health_bar_background_{netId}", "ori:enemy_health_bar", usingCanvas.transform);
+            healthBarBackground.SetSizeDelta(15, 1.5f);
+            healthBarBackground.image.color = Color.gray;
+            healthBarBackground.gameObject.SetActive(false);
+            healthBarBackground.AddAPosY(10);
+            healthBarFull = GameUI.AddImage(UIA.Middle, $"ori:image.health_bar_background_{netId}", "ori:enemy_health_bar", healthBarBackground);
+            healthBarFull.image.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
+            healthBarFull.image.type = UnityEngine.UI.Image.Type.Filled;
+            healthBarFull.image.color = Color.red;
+            healthBarFull.SetSizeDelta(healthBarBackground.sd);
+            OnHealthChange += _ => RefreshHealthBar();
+            RefreshHealthBar();
+
+            //感叹号
+            statusMarkImage = GameUI.AddImage(UIA.Middle, $"ori:image.status_mark_{netId}", "ori:enemy_exclamation_mark", usingCanvas.transform);
+            statusMarkImage.AddAPosY(7);
+            statusMarkImage.SetSizeDelta(13, 13);
+            statusMarkImage.image.enabled = false;
 
             EnemyCenter.AddEnemy(this);
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            RefreshHealthBar();
         }
 
         protected override void OnDestroy()
@@ -96,12 +121,20 @@ namespace GameCore
                 if (!isDead && !isHurting && data.normalAttack != null)
                     NormalAttackLoop();
                 else
-                    exclamationMarkImage.image.enabled = false;
+                    statusMarkImage.image.enabled = false;
+
+                //显示血条
+                healthBarBackground.gameObject.SetActive(true);
 
                 CheckTargetStatus();
             }
             else
+            {
                 FindTarget();
+
+                //隐藏血条
+                healthBarBackground.gameObject.SetActive(false);
+            }
         }
 
         void NormalAttackLoop()
@@ -119,15 +152,15 @@ namespace GameCore
             if (Tools.time < currentNormalAttack.warningEndTime)
             {
                 //显示红色感叹号
-                exclamationMarkImage.image.enabled = true;
-                exclamationMarkImage.image.color = Color.red;
+                statusMarkImage.image.enabled = true;
+                statusMarkImage.image.color = Color.red;
             }
             //正在躲避空档中
             else if (Tools.time < currentNormalAttack.dodgeEndTime)
             {
                 //显示蓝色感叹号
-                exclamationMarkImage.image.enabled = true;
-                exclamationMarkImage.image.color = Color.blue;
+                statusMarkImage.image.enabled = true;
+                statusMarkImage.image.color = Color.blue;
 
                 //如果在攻击范围内且面对着目标
                 if (targetEntity is Player player && Tools.time < player.parryEndTime && player.lockOnTarget == this && IsEntityInNormalAttackRange(targetEntity))
@@ -154,7 +187,7 @@ namespace GameCore
             else if (Tools.time < currentNormalAttack.recoveryEndTime)
             {
                 //隐藏感叹号
-                exclamationMarkImage.image.enabled = false;
+                statusMarkImage.image.enabled = false;
 
                 //如果正在攻击判定时间中且还没有攻击到目标
                 if (Tools.time < currentNormalAttack.hitJudgementEndTime && !currentNormalAttack.hasSucceed && IsEntityInNormalAttackRange(targetEntity))
@@ -241,6 +274,11 @@ namespace GameCore
         {
             if (targetEntity.isDead || !IsEntityInSearchRange(targetEntity))
                 targetEntity = null;
+        }
+
+        void RefreshHealthBar()
+        {
+            healthBarFull.image.fillAmount = health / (float)maxHealth;
         }
     }
 

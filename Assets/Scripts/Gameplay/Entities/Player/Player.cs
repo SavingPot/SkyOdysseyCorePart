@@ -384,7 +384,8 @@ namespace GameCore
         public static float itemPickUpRadius = 1.8f;
         public static int quickInventorySlotCount = 8;   //偶数
         public static int halfQuickInventorySlotCount = quickInventorySlotCount / 2;
-        public static Func<Player, bool> PlayerCanControl = player => (GameUI.page == null || !GameUI.page.ui) && player.hasGeneratedFirstRegion && Application.isFocused && player.GetTemperatureEffectState() != TemperatureEffectState.Frozen && !player.isDead;
+        public static Func<Player, bool> Controllable = player => (GameUI.page == null || !GameUI.page.ui) && player.hasGeneratedFirstRegion && Application.isFocused && player.GetTemperatureEffectState() != TemperatureEffectState.Frozen && !player.isDead;
+        public static bool InteractiveControllable(Player player) => Controllable(player) && player.pui.IsInInteractionMode();
         public const float playerDefaultGravity = 6f;
         public const float defaultInteractiveRadius = 2.8f;
 
@@ -665,7 +666,7 @@ namespace GameCore
             //     }
             // }
 
-            if (PlayerCanControl(this))
+            if (Controllable(this))
                 ControlPlayer();
 
             //血量低于 15 就播放心跳声 (死了不播放声音)
@@ -1433,6 +1434,55 @@ namespace GameCore
 
         private void ControlPlayer()
         {
+            /* ---------------------------------- 互动模式 / 放置模式 ---------------------------------- */
+            if (playerController.SwitchControlMode())
+            {
+                var willBePlacementMode = !pui.IsInPlacementMode();
+                pui.placementModePanel.gameObject.SetActive(willBePlacementMode);
+
+                //切换到放置模式
+                if (willBePlacementMode)
+                {
+                    //缩小视野
+                    playerCameraScale = 0.35f;
+                }
+                //切换到互动模式
+                else
+                {
+                    //放大视野
+                    playerCameraScale = 1;
+                }
+            }
+            if (pui.IsInPlacementMode())
+            {
+                //TODO: 移动视野功能
+                //TODO: 缩放视野大小功能
+
+                /* ---------------------------------- 解锁区域 ---------------------------------- */
+                if (Keyboard.current.pKey.wasPressedThisFrame)
+                {
+                    if (!isUnlockingRegion)
+                    {
+                        isUnlockingRegion = true;
+
+                        //刷新解锁区域的渲染器
+                        RefreshUnlockingRegion();
+                    }
+                    else
+                    {
+                        isUnlockingRegion = false;
+
+                        //渲染器
+                        foreach (var (sr, _) in unlockedRegionColorRenderers) FadeRegionUnlockingRenderer(sr);
+
+                        //相机跟随
+                        Tools.instance.mainCameraController.lookAt = GetPlayerLookAtTransform();
+                    }
+                }
+                return;
+            }
+
+
             /* ------------------------------- 如果在地面上并且点跳跃 ------------------------------ */
             if (isOnGround && playerController.Jump())
                 rb.SetVelocityY(GetJumpVelocity(30));
@@ -1538,33 +1588,6 @@ namespace GameCore
                 Debug.Log(roomCheck.IsValidConstruction() + "   Score: " + roomCheck.ScoreRoom());
             }
 
-            /* ---------------------------------- 解锁区域 ---------------------------------- */
-            if (Keyboard.current.pKey.wasPressedThisFrame)
-            {
-                if (!isUnlockingRegion)
-                {
-                    isUnlockingRegion = true;
-
-                    //刷新解锁区域的渲染器
-                    RefreshUnlockingRegion();
-
-                    //相机缩放
-                    DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 0.06f, 0.7f).SetEase(Ease.InOutSine);
-                }
-                else
-                {
-                    isUnlockingRegion = false;
-
-                    //渲染器
-                    foreach (var (sr, _) in unlockedRegionColorRenderers) FadeRegionUnlockingRenderer(sr);
-
-                    //相机跟随
-                    Tools.instance.mainCameraController.lookAt = GetPlayerLookAtTransform();
-
-                    //相机缩放
-                    DOTween.To(() => playerCameraScale, v => playerCameraScale = v, 1, 0.7f).SetEase(Ease.InOutSine);
-                }
-            }
             //TODO: 左下角显示技能点数
             if (isUnlockingRegion)
             {
@@ -1695,7 +1718,7 @@ namespace GameCore
         public override Vector2 GetMovementDirection()
         {
             //获取移动方向
-            var playerCanMove = PlayerCanControl(this) && !isDead;
+            var playerCanMove = InteractiveControllable(this) && !isDead;
             var move = playerCanMove ? playerController.Move() : 0;
 
             //更新移动状态
@@ -1772,8 +1795,8 @@ namespace GameCore
                 return;
             }
 
-            //如果玩家没在玩就返回
-            if (!Application.isFocused)
+            //如果 玩家没在玩|在放置模式 就返回
+            if (!Application.isFocused || pui.IsInPlacementMode())
                 return;
 
             switch (playerController.SetPlayerOrientation())

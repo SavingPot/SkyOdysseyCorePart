@@ -18,5 +18,11 @@ namespace GameCore.UI
 
             IdentityCenter.panelIdentities.Add(this);
         }
+
+        public PanelIdentity DisableGameObject()
+        {
+            gameObject.SetActive(false);
+            return this;
+        }
     }
 }

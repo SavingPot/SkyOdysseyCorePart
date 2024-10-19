@@ -11,6 +11,7 @@ namespace GameCore
 
 
 
+        public override bool SwitchControlMode() => throw new NotImplementedException();
         public override bool Apply() => pui != null && pui.gainRareItemButtonPanel.button.wasPressedThisFrame;
         public override bool Jump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.62f;
         public override bool HoldingJump() => pui != null && pui.touchScreenMoveJoystick.Vertical >= 0.62f;

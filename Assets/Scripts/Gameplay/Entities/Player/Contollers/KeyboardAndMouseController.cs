@@ -8,6 +8,7 @@ namespace GameCore
         int lastMoveClickDirection;
         float lastMoveClickTime;
 
+        public override bool SwitchControlMode() => Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame;
         public override bool Apply() => (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
         public override bool Jump() => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
         public override bool HoldingJump() => Keyboard.current != null && Keyboard.current.spaceKey.isPressed;

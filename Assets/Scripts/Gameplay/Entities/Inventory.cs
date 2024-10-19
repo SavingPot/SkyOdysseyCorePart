@@ -805,7 +805,7 @@ namespace GameCore
     public class ItemData : ModClass, ITags
     {
         public const int defaultDamage = 5;
-        public const ushort defaultMaxCount = 48;
+        public const ushort defaultMaxCount = 99;
         public static float defaultExcavationStrength = 40;
         public static float defaultUseCD = 0.2f;
 

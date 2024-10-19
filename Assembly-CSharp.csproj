@@ -50,6 +50,7 @@
      <Compile Include="Assets\Scripts\UI\GameButton.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\InputButtonIdentity.cs" />
      <Compile Include="Assets\Scripts\Gameplay\GAudio.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Map\Doorplate.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\Chunk.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\EntityCenter.cs" />
      <Compile Include="Assets\Scripts\Utils\MethodAgent.cs" />

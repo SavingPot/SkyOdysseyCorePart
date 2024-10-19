@@ -6,6 +6,7 @@ namespace GameCore
 {
     public class GamepadController : PlayerController
     {
+        public override bool SwitchControlMode() => Gamepad.current != null && Gamepad.current.dpad.up.wasPressedThisFrame;
         public override bool Apply() => Gamepad.current != null && Gamepad.current.aButton.wasPressedThisFrame;
         public override bool Jump() => GControls.leftStickVec.y >= 0.62f;
         public override bool HoldingJump() => GControls.leftStickVec.y >= 0.62f;

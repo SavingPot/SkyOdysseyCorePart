@@ -410,7 +410,7 @@ namespace GameCore.UI
                         var chooseWorldScrollView = GameUI.AddScrollView(UIA.Middle, "ori:scrollview.choose_world", chooseWorldPanel);
                         chooseWorldScrollView.SetSizeDelta(450, 300);
                         chooseWorldScrollView.SetAPosY(30);
-                        chooseWorldScrollView.gridLayoutGroup.cellSize = new(450 - chooseWorldScrollView.scrollRect.verticalScrollbar.handleRect.sizeDelta.x, 70);
+                        chooseWorldScrollView.gridLayoutGroup.cellSize = new(450 - chooseWorldScrollView.scrollRect.verticalScrollbar.handleRect.sizeDelta.x, 60);
 
                         RefreshWorldFiles();
                         RefreshWorldList(ref chooseWorldScrollView, chooseWorldPanel);
