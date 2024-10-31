@@ -65,16 +65,16 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         /*                                    放置模式                                    */
         /* -------------------------------------------------------------------------- */
-        public PlacementModeUI placementModeUI;
-        public bool IsInInteractionMode() => !placementModeUI.placementModePanel.gameObject.activeSelf;
-        public bool IsInPlacementMode() => placementModeUI.placementModePanel.gameObject.activeSelf;
+        public PlacementModeUI PlacementMode { get; private set; }
+        public bool IsInInteractionMode() => !PlacementMode.placementModePanel.gameObject.activeSelf;
+        public bool IsInPlacementMode() => PlacementMode.placementModePanel.gameObject.activeSelf;
 
 
 
         /* -------------------------------------------------------------------------- */
         /*                                    手机端操纵                                   */
         /* -------------------------------------------------------------------------- */
-        public TouchScreenUI touchScreenUI;
+        public TouchScreenUI TouchScreen { get; private set; }
 
 
 
@@ -82,7 +82,7 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         /*                                    背包界面                                    */
         /* -------------------------------------------------------------------------- */
-        public BackpackPanelUI backpackPanelUI;
+        public BackpackPanelUI Backpack { get; private set; }
         public readonly InventorySlotUI[] quickInventorySlots;
 
 
@@ -522,17 +522,17 @@ namespace GameCore.UI
 
 
             //放置模式
-            placementModeUI = new(this);
+            PlacementMode = new(this);
 
 
 
             //触摸屏
-            touchScreenUI = new(this);
+            TouchScreen = new(this);
 
 
 
             //背包界面
-            backpackPanelUI = new(this);
+            Backpack = new(this);
 
 
 
@@ -663,7 +663,7 @@ namespace GameCore.UI
 
                     button.OnClickBind(() =>
                     {
-                        if (!backpackPanelUI. backpackMask.gameObject.activeSelf)
+                        if (!Backpack.backpackMask.gameObject.activeSelf)
                         {
                             player.SwitchItem(indexAs0);
                         }
@@ -884,10 +884,10 @@ namespace GameCore.UI
         public void Update()
         {
             //更新背包
-            backpackPanelUI.Update();
+            Backpack.Update();
 
             //手机操控
-            touchScreenUI.Update();
+            TouchScreen.Update();
 
             /* --------------------------------- 刷新快捷物品栏 -------------------------------- */
             //缓存物品栏以保证性能
@@ -926,19 +926,19 @@ namespace GameCore.UI
                         if (Keyboard.current != null)
                         {
                             if (Keyboard.current.cKey.wasReleasedThisFrame)
-                                backpackPanelUI.ShowOrHideBackpackAndSetPanelToCrafting();
+                                Backpack.ShowOrHideBackpackAndSetPanelToCrafting();
 
                             if (Keyboard.current.escapeKey.wasReleasedThisFrame)
-                                backpackPanelUI.PauseGame();
+                                Backpack.PauseGame();
 
                             if (Keyboard.current.enterKey.wasReleasedThisFrame)
                                 Chat();
 
                             if (Keyboard.current.tKey.wasReleasedThisFrame)
-                                backpackPanelUI.ShowOrHideBackpackAndSetPanelToTasks();
+                                Backpack.ShowOrHideBackpackAndSetPanelToTasks();
 
                             if (Keyboard.current.kKey.wasReleasedThisFrame)
-                                backpackPanelUI.ShowOrHideBackpackAndSetPanelToSkills();
+                                Backpack.ShowOrHideBackpackAndSetPanelToSkills();
                         }
 
                         break;
@@ -947,19 +947,19 @@ namespace GameCore.UI
                         if (Gamepad.current != null)
                         {
                             if (Gamepad.current.yButton.wasReleasedThisFrame)
-                                backpackPanelUI.ShowOrHideBackpackAndSetPanelToCrafting();
+                                Backpack.ShowOrHideBackpackAndSetPanelToCrafting();
 
                             if (Gamepad.current.startButton.wasReleasedThisFrame)
-                                backpackPanelUI.PauseGame();
+                                Backpack.PauseGame();
 
                             if (Gamepad.current.dpad.down.wasReleasedThisFrame)
                                 Chat();
 
                             if (Gamepad.current.dpad.up.wasReleasedThisFrame)
-                                backpackPanelUI.ShowOrHideBackpackAndSetPanelToTasks();
+                                Backpack.ShowOrHideBackpackAndSetPanelToTasks();
 
                             if (Gamepad.current.dpad.right.wasReleasedThisFrame)
-                                backpackPanelUI.ShowOrHideBackpackAndSetPanelToSkills();
+                                Backpack.ShowOrHideBackpackAndSetPanelToSkills();
                         }
 
                         break;
@@ -1049,32 +1049,6 @@ namespace GameCore.UI
             this.pui = pui;
             this.player = pui.player;
         }
-    }
-
-    public class BackpackPanel : IRectTransform
-    {
-        public string id;
-        public PanelIdentity panel;
-        public ImageIdentity switchButtonBackground;
-        public ButtonIdentity switchButton;
-        public Action Refresh;
-        public Action Activate;
-        public Action Deactivate;
-        public Action Update;
-
-        public BackpackPanel(string id, PanelIdentity panel, ImageIdentity switchButtonBackground, ButtonIdentity switchButton, Action Refresh, Action Activate, Action Deactivate, Action Update)
-        {
-            this.id = id;
-            this.panel = panel;
-            this.switchButtonBackground = switchButtonBackground;
-            this.switchButton = switchButton;
-            this.Refresh = Refresh;
-            this.Activate = Activate;
-            this.Deactivate = Deactivate;
-            this.Update = Update;
-        }
-
-        public RectTransform rectTransform => panel.rectTransform;
     }
 
 

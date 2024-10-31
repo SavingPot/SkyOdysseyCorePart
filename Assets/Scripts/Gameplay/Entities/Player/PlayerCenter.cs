@@ -73,7 +73,7 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    初始化任务                                   */
             /* -------------------------------------------------------------------------- */
-            PlayerUI.tasks = new()
+            BackpackPanelUI.tasks = new()
             {
                 new("ori:get_log", "ori:task.get_log", null, 1, null),
                 new("ori:get_feather_wing", "ori:task.get_feather_wing", "ori:get_log", 0, null),
@@ -87,17 +87,17 @@ namespace GameCore
             {
                 JObject jo = new();
                 SkillManuscriptBehaviour.WriteSkillId(ref jo, SkillID.Profound_Industry);
-                PlayerUI.tasks.Add(new("ori:get_ore", "ori:task.get_ore", "ori:get_log", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
+                BackpackPanelUI.tasks.Add(new("ori:get_ore", "ori:task.get_ore", "ori:get_log", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
             }
             {
                 JObject jo = new();
                 SkillManuscriptBehaviour.WriteSkillId(ref jo, SkillID.Agriculture_Cooking);
-                PlayerUI.tasks.Add(new("ori:get_meat", "ori:task.get_meat", "ori:get_log", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
+                BackpackPanelUI.tasks.Add(new("ori:get_meat", "ori:task.get_meat", "ori:get_log", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
             }
             {
                 JObject jo = new();
                 SkillManuscriptBehaviour.WriteSkillId(ref jo, SkillID.Economy_Building);
-                PlayerUI.tasks.Add(new("ori:get_campfire", "ori:task.get_campfire", "ori:get_planks", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
+                BackpackPanelUI.tasks.Add(new("ori:get_campfire", "ori:task.get_campfire", "ori:get_planks", 0, new[] { $"{ItemID.SkillManuscript}/=/1/=/{jo.ToString(Newtonsoft.Json.Formatting.None)}" }));
             }
 
 
@@ -107,7 +107,7 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             /*                                    初始化技能                                   */
             /* -------------------------------------------------------------------------- */
-            PlayerUI.skills = new()
+            BackpackPanelUI.skills = new()
             {
                 new(SkillID.Root, "ori:skill.root", null, "ori:skill_description.root", 99999),
                 new(SkillID.Agriculture, "ori:skill.agriculture", SkillID.Root, "ori:skill_description.agriculture", 1),

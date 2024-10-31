@@ -309,8 +309,8 @@ namespace GameCore
 
 
 
-public void Update()
-{
+        public void Update()
+        {
             //更新背包界面（需要 ToArray 以及 null 检查是因为在 Update 中移除面板会导致列表变化）
             foreach (var panel in backpackPanels.ToArray())
             {
@@ -1056,6 +1056,32 @@ public void Update()
             skillNodeTree.RefreshNodes(false);
 
             #endregion
+        }
     }
+
+    public class BackpackPanel : IRectTransform
+    {
+        public string id;
+        public PanelIdentity panel;
+        public ImageIdentity switchButtonBackground;
+        public ButtonIdentity switchButton;
+        public Action Refresh;
+        public Action Activate;
+        public Action Deactivate;
+        public Action Update;
+
+        public BackpackPanel(string id, PanelIdentity panel, ImageIdentity switchButtonBackground, ButtonIdentity switchButton, Action Refresh, Action Activate, Action Deactivate, Action Update)
+        {
+            this.id = id;
+            this.panel = panel;
+            this.switchButtonBackground = switchButtonBackground;
+            this.switchButton = switchButton;
+            this.Refresh = Refresh;
+            this.Activate = Activate;
+            this.Deactivate = Deactivate;
+            this.Update = Update;
+        }
+
+        public RectTransform rectTransform => panel.rectTransform;
     }
 }

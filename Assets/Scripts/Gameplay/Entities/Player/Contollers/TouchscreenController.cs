@@ -8,7 +8,7 @@ namespace GameCore
     public class TouchscreenController : PlayerController
     {
         PlayerUI pui => player.pui;
-        TouchScreenUI tui => pui.touchScreenUI;
+        TouchScreenUI tui => pui.TouchScreen;
 
 
 

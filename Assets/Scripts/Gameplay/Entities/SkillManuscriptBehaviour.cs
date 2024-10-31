@@ -23,7 +23,7 @@ namespace GameCore
                 return false;
             }
 
-            var node = player.pui.skillNodeTree.FindTreeNode(skill);
+            var node = player.pui.Backpack.skillNodeTree.FindTreeNode(skill);
             if (node == null)
             {
                 Debug.LogError($"技能稿纸所对的技能 {skill} 不存在");
@@ -39,14 +39,14 @@ namespace GameCore
 
             if (!node.IsParentLineUnlocked())
             {
-                var parent = player.pui.skillNodeTree.GetNodeButtonId(node.parent.data.id);
+                var parent = player.pui.Backpack.skillNodeTree.GetNodeButtonId(node.parent.data.id);
                 InternalUIAdder.instance.SetStatusText($"请先解锁 {GameUI.CompareText($"{parent}.text")}");
                 return true;
             }
 
-            player.pui.UnlockSkill(node);
+            player.pui.Backpack.UnlockSkill(node);
             player.ServerReduceUsingItemCount(1);
-            InternalUIAdder.instance.SetTitleText($"解锁技能: {GameUI.CompareText($"{player.pui.skillNodeTree.GetNodeButtonId(node.data.id)}.text")}");
+            InternalUIAdder.instance.SetTitleText($"解锁技能: {GameUI.CompareText($"{player.pui.Backpack.skillNodeTree.GetNodeButtonId(node.data.id)}.text")}");
             return true;
         }
 

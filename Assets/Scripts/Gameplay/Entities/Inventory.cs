@@ -1052,7 +1052,7 @@ namespace GameCore
             { BlockID.BuildingCenter, player => player.IsSkillUnlocked(SkillID.Economy_Building) },
         };
 
-        public bool IsEligibleFor(Player player) => (!conditions.ContainsKey(id) || conditions[id](player)) && facility == player.pui.backpackPanelUI.craftingFacility;
+        public bool IsEligibleFor(Player player) => (!conditions.ContainsKey(id) || conditions[id](player)) && facility == player.pui.Backpack.craftingFacility;
     }
 
     [Serializable]

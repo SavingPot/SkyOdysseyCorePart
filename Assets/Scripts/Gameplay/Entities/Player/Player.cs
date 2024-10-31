@@ -80,7 +80,7 @@ namespace GameCore
             if (isLocalPlayer)
             {
                 //刷新背包面板
-                pui.backpackPanelUI.RefreshCurrentBackpackPanel();
+                pui.Backpack.RefreshCurrentBackpackPanel();
 
                 //完成成就
                 if (!Item.Null(item))
@@ -88,7 +88,7 @@ namespace GameCore
                     //先通过 ID 查询任务
                     if (TaskNameTable.ContainsKey(item.data.id))
                     {
-                        pui.backpackPanelUI.CompleteTask(TaskNameTable[item.data.id]);
+                        pui.Backpack.CompleteTask(TaskNameTable[item.data.id]);
                     }
                     else
                     {
@@ -98,7 +98,7 @@ namespace GameCore
                             var tagName = tag.GetTagName();
                             if (TaskTagTable.ContainsKey(tagName))
                             {
-                                pui.backpackPanelUI.CompleteTask(TaskTagTable[tagName]);
+                                pui.Backpack.CompleteTask(TaskTagTable[tagName]);
                             }
                         });
                     }
@@ -249,7 +249,7 @@ namespace GameCore
         public void ServerAddSkillPoint(float count, NetworkConnection caller = null)
         {
             skillPoints += count;
-            pui.backpackPanelUI.skillPointText.RefreshUI();
+            pui.Backpack.skillPointText.RefreshUI();
 
             //显示文本（扣除技能点时不显示）
             if (count > 0)
@@ -650,7 +650,7 @@ namespace GameCore
             {
                 if (pui != null && GameUI.page?.ui != pui.dialogPanel)
                 {
-                    pui.backpackPanelUI.ShowOrHideBackpackAndSetPanelToInventory();
+                    pui.Backpack.ShowOrHideBackpackAndSetPanelToInventory();
                 }
             }
 
@@ -1401,7 +1401,7 @@ namespace GameCore
                 return GControls.mode switch
                 {
                     //* 如果是触摸屏, 返回光标位置
-                    ControlMode.Touchscreen => pui.touchScreenUI.cursorImage.rectTransform.position,
+                    ControlMode.Touchscreen => pui.TouchScreen.cursorImage.rectTransform.position,
 
                     //* 如果是键鼠, 返回鼠标位置
                     ControlMode.KeyboardAndMouse => Tools.instance.GetMouseWorldPos(),
@@ -1439,7 +1439,7 @@ namespace GameCore
             if (playerController.SwitchControlMode())
             {
                 var willBePlacementMode = !pui.IsInPlacementMode();
-                pui.placementModeUI.placementModePanel.gameObject.SetActive(willBePlacementMode);
+                pui.PlacementMode.placementModePanel.gameObject.SetActive(willBePlacementMode);
 
                 //切换到放置模式
                 if (willBePlacementMode)

@@ -192,7 +192,7 @@ namespace GameCore.UI
             (var modId, var panelName) = Tools.SplitModIdAndName(backpackPanelId);
 
             //物品视图
-            (itemPanel, itemView) = player.pui.GenerateItemViewBackpackPanel(
+            (itemPanel, itemView) = player.pui.Backpack.GenerateItemViewBackpackPanel(
                 backpackPanelId,
                 $"{modId}:switch_button.{panelName}",
                 80,
