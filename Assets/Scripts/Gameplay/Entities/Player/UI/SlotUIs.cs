@@ -1,5 +1,6 @@
 using System;
 using GameCore.UI;
+using Org.BouncyCastle.Crypto.Prng;
 using SP.Tools.Unity;
 using UnityEngine;
 
@@ -160,11 +161,12 @@ namespace GameCore.UI
 
     public class TradeUI
     {
-        public BackpackPanel itemPanel { get; set; }
-        public ScrollViewIdentity itemView { get; set; }
-        public ItemSlotUI[] slotUIs { get; set; }
+        public BackpackPanel itemBackpackPanel { get; private set; }
+        public ScrollViewIdentity itemView { get; private set; }
+        public ItemSlotUI[] slotUIs { get; private set; }
         public ItemTrade[] items;
         public string backpackPanelId;
+        internal PlayerUI pui;
 
         public void RefreshItems()
         {
@@ -179,35 +181,34 @@ namespace GameCore.UI
             }
         }
 
-        public TradeUI(string backpackPanelId, ItemTrade[] items)
+        private TradeUI()
         {
-            this.items = items;
-            this.backpackPanelId = backpackPanelId;
-            slotUIs = new ItemSlotUI[items.Length];
 
-            var player = Player.local;
+        }
 
-
-
+        static (TradeUI result, string modId, string panelName) NewTradeUI(PlayerUI pui, string backpackPanelId, ItemTrade[] items)
+        {
             (var modId, var panelName) = Tools.SplitModIdAndName(backpackPanelId);
+            var result = new TradeUI
+            {
+                items = items,
+                backpackPanelId = backpackPanelId,
+                slotUIs = new ItemSlotUI[items.Length],
+                pui = pui
+            };
 
-            //物品视图
-            (itemPanel, itemView) = player.pui.Backpack.GenerateItemViewBackpackPanel(
-                backpackPanelId,
-                $"{modId}:switch_button.{panelName}",
-                80,
-                Vector2.zero,
-                Vector2.zero,
-                RefreshItems,
-                () => itemView.gameObject.SetActive(true));
+            return (result, modId, panelName);
+        }
 
+        static void AddSlots(TradeUI tradeUI, ItemTrade[] items, Player player, string modId, string panelName)
+        {
             //初始化所有UI
-            for (int i = 0; i < slotUIs.Length; i++)
+            for (int i = 0; i < tradeUI.slotUIs.Length; i++)
             {
                 int index = i;
-                ItemSlotUI slotUI = new($"{modId}:button.{panelName}_item_{i}", $"{modId}:image.{panelName}_item_{i}", itemView.gridLayoutGroup.cellSize);
-                slotUIs[i] = slotUI;
-                itemView.AddChild(slotUI.button);
+                ItemSlotUI slotUI = new($"{modId}:button.{panelName}_item_{i}", $"{modId}:image.{panelName}_item_{i}", tradeUI.itemView.gridLayoutGroup.cellSize);
+                tradeUI.slotUIs[i] = slotUI;
+                tradeUI.itemView.AddChild(slotUI.button);
                 slotUI.button.button.onClick.RemoveAllListeners();
                 slotUI.button.OnClickBind(() =>
                 {
@@ -230,6 +231,48 @@ namespace GameCore.UI
                     player.ServerAddItem(itemToGive);
                 });
             }
+        }
+
+        public static TradeUI GenerateItemView(PlayerUI pui, string viewId, ItemTrade[] items, Transform parent)
+        {
+            var (result, modId, panelName) = NewTradeUI(pui, viewId, items);
+
+            //物品视图
+            result.itemView = pui.Backpack.GenerateItemView(
+                viewId,
+                80,
+                Vector2.zero,
+                Vector2.zero,
+                null);
+
+            result.itemView.transform.SetParent(parent, false);
+            result.itemView.SetAnchorMinMax(UIA.StretchDouble);
+            result.itemView.content.anchoredPosition = Vector2.zero;
+            result.itemView.content.sizeDelta = Vector2.zero;
+            Component.Destroy(result.itemView.viewportImage);
+
+            AddSlots(result, items, pui.player, modId, panelName);
+
+            return result;
+        }
+
+        public static TradeUI GenerateItemViewBackpackPanel(PlayerUI pui, string backpackPanelId, ItemTrade[] items)
+        {
+            var (result, modId, panelName) = NewTradeUI(pui, backpackPanelId, items);
+
+            //物品视图
+            (result.itemBackpackPanel, result.itemView) = pui.Backpack.GenerateItemViewBackpackPanel(
+                backpackPanelId,
+                $"{modId}:switch_button.{panelName}",
+                80,
+                Vector2.zero,
+                Vector2.zero,
+                result.RefreshItems,
+                () => result.itemView.gameObject.SetActive(true));
+
+            AddSlots(result, items, pui.player, modId, panelName);
+
+            return result;
         }
 
         public struct ItemTrade

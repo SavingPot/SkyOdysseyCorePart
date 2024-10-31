@@ -1048,7 +1048,6 @@ namespace GameCore
             { ItemID.FishingRod, player => player.IsSkillUnlocked(SkillID.Agriculture_Fishing) },
             { "ori:mana_altar", player => player.IsSkillUnlocked(SkillID.Profound_Magic) },
             { "ori:biome_crystal", player => player.IsSkillUnlocked(SkillID.Profound_Magic) },
-            { BlockID.RemoteMarket, player => player.IsSkillUnlocked(SkillID.Economy) },
             { BlockID.BuildingCenter, player => player.IsSkillUnlocked(SkillID.Economy_Building) },
         };
 

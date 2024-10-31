@@ -457,7 +457,7 @@ namespace GameCore
             (var modId, var panelName) = Tools.SplitModIdAndName(id);
 
             var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, Update, texture);
-            var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
+            var view = GenerateItemView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
             view.transform.SetParent(panel.panel.rt, false);
             view.SetAnchorMinMax(UIA.StretchDouble);
             view.content.anchoredPosition = Vector2.zero;
@@ -467,7 +467,7 @@ namespace GameCore
             return (panel, view);
         }
 
-        public ScrollViewIdentity GenerateItemScrollView(string id, float cellSize, Vector2 viewSize, Vector2 cellSpacing, string backgroundTexture)
+        public ScrollViewIdentity GenerateItemView(string id, float cellSize, Vector2 viewSize, Vector2 cellSpacing, string backgroundTexture)
         {
             //桶的物品视图
             var itemView = GameUI.AddScrollView(UIA.Middle, id);

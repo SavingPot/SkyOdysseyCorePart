@@ -45,7 +45,6 @@ namespace GameCore
         public const string PortalBase = "ori:portal_base";
         public const string PotatoCrop = "ori:potato_crop";
         public const string PumpkinCrop = "ori:pumpkin_crop";
-        public const string RemoteMarket = "ori:remote_market";
         public const string Rose = "ori:rose";
         public const string Sand = "ori:sand";
         public const string SavannahGrassBlock = "ori:savannah_grass_block";

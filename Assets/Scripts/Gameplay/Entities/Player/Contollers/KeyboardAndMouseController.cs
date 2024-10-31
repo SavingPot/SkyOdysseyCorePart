@@ -9,6 +9,8 @@ namespace GameCore
         float lastMoveClickTime;
 
         public override bool SwitchControlMode() => Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame;
+        public override float PlacementModeZoom() => Mouse.current?.scroll?.ReadValue().y ?? 0;
+        public override Vector2 PlacementModeMove() => GControls.GetWASDVec();
         public override bool Apply() => (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
         public override bool Jump() => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
         public override bool HoldingJump() => Keyboard.current != null && Keyboard.current.spaceKey.isPressed;

@@ -13,6 +13,8 @@ namespace GameCore
 
 
         public override bool SwitchControlMode() => throw new NotImplementedException();
+        public override float PlacementModeZoom() => throw new NotImplementedException();
+        public override Vector2 PlacementModeMove() => throw new NotImplementedException();
         public override bool Apply() => pui != null && pui.gainRareItemButtonPanel.button.wasPressedThisFrame;
         public override bool Jump() => pui != null && tui.moveJoystick.Vertical >= 0.62f;
         public override bool HoldingJump() => pui != null && tui.moveJoystick.Vertical >= 0.62f;

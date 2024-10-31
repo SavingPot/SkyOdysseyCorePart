@@ -9,6 +9,8 @@ namespace GameCore
 
 
         public abstract bool SwitchControlMode();
+        public abstract float PlacementModeZoom();
+        public abstract Vector2 PlacementModeMove();
         public abstract bool Apply();
         public abstract bool Jump();
         public abstract bool HoldingJump();

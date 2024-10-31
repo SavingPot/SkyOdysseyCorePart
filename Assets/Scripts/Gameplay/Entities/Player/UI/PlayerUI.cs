@@ -62,14 +62,6 @@ namespace GameCore.UI
 
 
 
-        /* -------------------------------------------------------------------------- */
-        /*                                    放置模式                                    */
-        /* -------------------------------------------------------------------------- */
-        public PlacementModeUI PlacementMode { get; private set; }
-        public bool IsInInteractionMode() => !PlacementMode.placementModePanel.gameObject.activeSelf;
-        public bool IsInPlacementMode() => PlacementMode.placementModePanel.gameObject.activeSelf;
-
-
 
         /* -------------------------------------------------------------------------- */
         /*                                    手机端操纵                                   */
@@ -84,6 +76,16 @@ namespace GameCore.UI
         /* -------------------------------------------------------------------------- */
         public BackpackPanelUI Backpack { get; private set; }
         public readonly InventorySlotUI[] quickInventorySlots;
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    放置模式                                    */
+        /* -------------------------------------------------------------------------- */
+        public PlacementModeUI PlacementMode { get; private set; }
+        public bool IsInInteractionMode() => !PlacementMode.placementModePanel.gameObject.activeSelf;
+        public bool IsInPlacementMode() => PlacementMode.placementModePanel.gameObject.activeSelf;
 
 
 
@@ -194,7 +196,7 @@ namespace GameCore.UI
         public DialogData displayingDialog;
         public Task dialogTask;
 
-        public void DisplayDialog(DialogData data)
+        public void DisplayDialog(DialogData data, Action onFinish = null)
         {
             if (displayingDialog != null)
             {
@@ -203,7 +205,7 @@ namespace GameCore.UI
             }
 
             displayingDialog = data;
-            dialogTask = DisplayDialogTask();
+            dialogTask = DisplayDialogTask(onFinish);
         }
 
         public static string[] dialogRichTextSupported = new[]
@@ -212,7 +214,7 @@ namespace GameCore.UI
             "</"
         };
 
-        public async Task DisplayDialogTask()
+        public async Task DisplayDialogTask(Action onFinish = null)
         {
             GameUI.SetPage(dialogPanel, GameUI.DisappearType.PositionUpToDown, GameUI.AppearType.PositionDownToUp);
 
@@ -304,12 +306,15 @@ namespace GameCore.UI
             while (!player.playerController.SkipDialog())
                 await UniTask.NextFrame();   //等一帧, 防止连续跳过 (我猜会有这个问题:D)
 
-            //等一帧防止跳跃
+            //等一帧防止玩家跳跃
             await UniTask.NextFrame();
 
             //关闭对话框
             GameUI.SetPage(null);
             displayingDialog = null;
+
+            //完成
+            onFinish?.Invoke();
         }
 
 
@@ -521,10 +526,6 @@ namespace GameCore.UI
 
 
 
-            //放置模式
-            PlacementMode = new(this);
-
-
 
             //触摸屏
             TouchScreen = new(this);
@@ -533,6 +534,11 @@ namespace GameCore.UI
 
             //背包界面
             Backpack = new(this);
+
+
+
+            //放置模式
+            PlacementMode = new(this);
 
 
 
