@@ -3,7 +3,7 @@ using UnityEngine;
 using SP.Tools.Unity;
 using System.Text;
 using System.Collections.Generic;
-using static GameCore.UI.PlayerUI;
+using static GameCore.BackpackPanelUI;
 
 namespace GameCore.UI
 {

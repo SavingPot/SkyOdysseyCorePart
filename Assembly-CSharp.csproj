@@ -177,6 +177,7 @@
      <Compile Include="Assets\Scripts\UI\UPC.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\CreatureBodyPart.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\IdentityCenter.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\UI\BackpackPanelUI.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Bullet.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\DamageTextPool.cs" />
      <Compile Include="Assets\Scripts\Network\Server.cs" />

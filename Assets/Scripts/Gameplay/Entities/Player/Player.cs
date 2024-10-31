@@ -16,10 +16,11 @@ using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine;
-using static GameCore.UI.PlayerUI;
 using ClientRpcAttribute = GameCore.Network.ClientRpcAttribute;
 using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
 using Random = UnityEngine.Random;
+using static GameCore.UI.PlayerUI;
+using static GameCore.BackpackPanelUI;
 
 namespace GameCore
 {
@@ -79,7 +80,7 @@ namespace GameCore
             if (isLocalPlayer)
             {
                 //刷新背包面板
-                pui.RefreshCurrentBackpackPanel();
+                pui.backpackPanelUI.RefreshCurrentBackpackPanel();
 
                 //完成成就
                 if (!Item.Null(item))
@@ -87,7 +88,7 @@ namespace GameCore
                     //先通过 ID 查询任务
                     if (TaskNameTable.ContainsKey(item.data.id))
                     {
-                        pui.CompleteTask(TaskNameTable[item.data.id]);
+                        pui.backpackPanelUI.CompleteTask(TaskNameTable[item.data.id]);
                     }
                     else
                     {
@@ -97,7 +98,7 @@ namespace GameCore
                             var tagName = tag.GetTagName();
                             if (TaskTagTable.ContainsKey(tagName))
                             {
-                                pui.CompleteTask(TaskTagTable[tagName]);
+                                pui.backpackPanelUI.CompleteTask(TaskTagTable[tagName]);
                             }
                         });
                     }
@@ -248,7 +249,7 @@ namespace GameCore
         public void ServerAddSkillPoint(float count, NetworkConnection caller = null)
         {
             skillPoints += count;
-            pui.skillPointText.RefreshUI();
+            pui.backpackPanelUI.skillPointText.RefreshUI();
 
             //显示文本（扣除技能点时不显示）
             if (count > 0)
@@ -649,7 +650,7 @@ namespace GameCore
             {
                 if (pui != null && GameUI.page?.ui != pui.dialogPanel)
                 {
-                    pui.ShowOrHideBackpackAndSetPanelToInventory();
+                    pui.backpackPanelUI.ShowOrHideBackpackAndSetPanelToInventory();
                 }
             }
 

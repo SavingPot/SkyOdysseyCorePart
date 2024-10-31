@@ -572,7 +572,7 @@ namespace GameCore.UI
         {
             var result = AddPanel(id, parent, disable);
 
-            result.SetSizeDelta(PlayerUI.backpackPanelWidth, PlayerUI.backpackPanelHeight);
+            result.SetSizeDelta(BackpackPanelUI.backpackPanelWidth, BackpackPanelUI.backpackPanelHeight);
             result.SetAnchorMinMax(UIA.Middle);
             result.panelImage.sprite = ModFactory.CompareTexture("ori:backpack_inventory_background").sprite;
             result.panelImage.color = Color.white;
