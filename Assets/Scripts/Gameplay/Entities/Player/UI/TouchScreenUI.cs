@@ -139,7 +139,7 @@ namespace GameCore
                 pauseButton.button.onClick.RemoveAllListeners();
                 pauseButton.OnClickBind(() =>
                 {
-                    pui.PauseGame();
+                    pui.backpackPanelUI.PauseGame();
                 });
             }
 
@@ -155,8 +155,8 @@ namespace GameCore
                 craftingButton.button.onClick.RemoveAllListeners();
                 craftingButton.OnClickBind(() =>
                 {
-                    if (pui.backpackMask && GameUI.page?.ui != pui.dialogPanel)
-                        pui.ShowOrHideBackpackAndSetPanelToInventory();
+                    if (pui.backpackPanelUI.backpackMask && GameUI.page?.ui != pui.dialogPanel)
+                        pui.backpackPanelUI.ShowOrHideBackpackAndSetPanelToInventory();
                 });
             }
 
@@ -172,8 +172,8 @@ namespace GameCore
                 showTaskButton.button.onClick.RemoveAllListeners();
                 showTaskButton.OnClickBind(() =>
                 {
-                    if (pui.backpackMask && GameUI.page?.ui != pui.dialogPanel)
-                        pui.ShowOrHideBackpackAndSetPanelToTasks();
+                    if (pui.backpackPanelUI.backpackMask && GameUI.page?.ui != pui.dialogPanel)
+                        pui.backpackPanelUI.ShowOrHideBackpackAndSetPanelToTasks();
                 });
             }
         }

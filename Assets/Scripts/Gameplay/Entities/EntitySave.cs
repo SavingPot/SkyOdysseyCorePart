@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Newtonsoft.Json;
 using UnityEngine;
+using static GameCore.BackpackPanelUI;
 using static GameCore.UI.PlayerUI;
 using Vector2 = UnityEngine.Vector2;
 
