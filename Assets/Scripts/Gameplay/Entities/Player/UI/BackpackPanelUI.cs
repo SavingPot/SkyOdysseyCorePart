@@ -21,6 +21,16 @@ namespace GameCore
         public Color backpackColor = Color.white;
 
 
+
+
+
+
+
+
+
+
+
+
         /* -------------------------------------------------------------------------- */
         /*                                     物品栏                                    */
         /* -------------------------------------------------------------------------- */
@@ -32,6 +42,14 @@ namespace GameCore
         public InventorySlotUI inventoryShieldSlot;
         public BackpackPanel inventoryItemPanel;
         public ScrollViewIdentity inventoryItemView;
+
+
+
+
+
+
+
+
 
 
         /* -------------------------------------------------------------------------- */
@@ -101,6 +119,10 @@ namespace GameCore
 
 
 
+
+
+
+
         /* -------------------------------------------------------------------------- */
         /*                                    任务系统                                    */
         /* -------------------------------------------------------------------------- */
@@ -112,16 +134,6 @@ namespace GameCore
         public static List<TaskData> tasks { get; internal set; }
 
 
-
-
-        /* -------------------------------------------------------------------------- */
-        /*                                    技能系统                                    */
-        /* -------------------------------------------------------------------------- */
-        public static List<SkillData> skills { get; internal set; }
-        public BackpackPanel skillPanel;
-        public TextIdentity skillPointText;
-        public NodeTree<SkillNode, SkillData> skillNodeTree;
-        public Action<SkillData> OnUnlockSkill = _ => { };
 
         #region 任务系统
 
@@ -225,6 +237,23 @@ namespace GameCore
 
 
 
+
+
+
+
+        /* -------------------------------------------------------------------------- */
+        /*                                    技能系统                                    */
+        /* -------------------------------------------------------------------------- */
+        public static List<SkillData> skills { get; internal set; }
+        public BackpackPanel skillPanel;
+        public TextIdentity skillPointText;
+        public NodeTree<SkillNode, SkillData> skillNodeTree;
+        public Action<SkillData> OnUnlockSkill = _ => { };
+
+
+
+
+
         #region 技能系统
 
 
@@ -300,6 +329,10 @@ namespace GameCore
         }
 
         #endregion
+
+
+
+
 
 
 
@@ -407,6 +440,53 @@ namespace GameCore
             BackpackPanel result = new(id, panel, switchButtonBackground, switchButton, Refresh, ActualActivate, ActualDeactivate, Update);
             backpackPanels.Add(result);
             return result;
+        }
+
+        public (BackpackPanel panel, ScrollViewIdentity itemView) GenerateItemViewBackpackPanel(
+            string id,
+            string switchButtonTexture,
+            float cellSize,
+            Vector2 viewSize,
+            Vector2 cellSpacing,
+            Action Refresh = null,
+            Action OnActivate = null,
+            Action OnDeactivate = null,
+            Action Update = null,
+            string texture = "ori:backpack_inventory_background")
+        {
+            (var modId, var panelName) = Tools.SplitModIdAndName(id);
+
+            var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, Update, texture);
+            var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
+            view.transform.SetParent(panel.panel.rt, false);
+            view.SetAnchorMinMax(UIA.StretchDouble);
+            view.content.anchoredPosition = Vector2.zero;
+            view.content.sizeDelta = Vector2.zero;
+            Component.Destroy(view.viewportImage);
+
+            return (panel, view);
+        }
+
+        public ScrollViewIdentity GenerateItemScrollView(string id, float cellSize, Vector2 viewSize, Vector2 cellSpacing, string backgroundTexture)
+        {
+            //桶的物品视图
+            var itemView = GameUI.AddScrollView(UIA.Middle, id);
+            itemView.SetSizeDelta(viewSize);
+            itemView.viewportImage.sprite = backgroundTexture == null ? null : ModFactory.CompareTexture(backgroundTexture).sprite;
+
+            //设置收缩
+            int offset = 5;
+            itemView.gridLayoutGroup.padding = new(offset, offset, offset, offset);
+
+            itemView.gridLayoutGroup.childAlignment = TextAnchor.UpperCenter;
+            itemView.gridLayoutGroup.cellSize = new(cellSize, cellSize);
+            itemView.gridLayoutGroup.spacing = cellSpacing;
+            itemView.scrollViewImage.color = Color.clear;
+            itemView.viewportImage.color = backpackColor;
+            itemView.content.sizeDelta = new(0, itemView.content.sizeDelta.y);
+            itemView.content.anchoredPosition = new(-backpackPanelBackground.sd.x / 2 - itemView.content.sizeDelta.x / 2, itemView.content.anchoredPosition.y);
+
+            return itemView;
         }
 
         public void DestroyBackpackPanel(string id)
@@ -562,57 +642,6 @@ namespace GameCore
 
 
 
-        public (BackpackPanel panel, ScrollViewIdentity itemView) GenerateItemViewBackpackPanel(
-            string id,
-            string switchButtonTexture,
-            float cellSize,
-            Vector2 viewSize,
-            Vector2 cellSpacing,
-            Action Refresh = null,
-            Action OnActivate = null,
-            Action OnDeactivate = null,
-            Action Update = null,
-            string texture = "ori:backpack_inventory_background")
-        {
-            (var modId, var panelName) = Tools.SplitModIdAndName(id);
-
-            var panel = GenerateBackpackPanel(id, switchButtonTexture, Refresh, OnActivate, OnDeactivate, Update, texture);
-            var view = GenerateItemScrollView($"{modId}:scrollview.{panelName}", cellSize, viewSize, cellSpacing, null);
-            view.transform.SetParent(panel.panel.rt, false);
-            view.SetAnchorMinMax(UIA.StretchDouble);
-            view.content.anchoredPosition = Vector2.zero;
-            view.content.sizeDelta = Vector2.zero;
-            Component.Destroy(view.viewportImage);
-
-            return (panel, view);
-        }
-
-        public ScrollViewIdentity GenerateItemScrollView(string id, float cellSize, Vector2 viewSize, Vector2 cellSpacing, string backgroundTexture)
-        {
-            //桶的物品视图
-            var itemView = GameUI.AddScrollView(UIA.Middle, id);
-            itemView.SetSizeDelta(viewSize);
-            itemView.viewportImage.sprite = backgroundTexture == null ? null : ModFactory.CompareTexture(backgroundTexture).sprite;
-
-            //设置收缩
-            int offset = 5;
-            itemView.gridLayoutGroup.padding = new(offset, offset, offset, offset);
-
-            itemView.gridLayoutGroup.childAlignment = TextAnchor.UpperCenter;
-            itemView.gridLayoutGroup.cellSize = new(cellSize, cellSize);
-            itemView.gridLayoutGroup.spacing = cellSpacing;
-            itemView.scrollViewImage.color = Color.clear;
-            itemView.viewportImage.color = backpackColor;
-            itemView.content.sizeDelta = new(0, itemView.content.sizeDelta.y);
-            itemView.content.anchoredPosition = new(-backpackPanelBackground.sd.x / 2 - itemView.content.sizeDelta.x / 2, itemView.content.anchoredPosition.y);
-
-            return itemView;
-        }
-
-
-
-
-
 
 
 
@@ -631,6 +660,11 @@ namespace GameCore
 
             backpackPanelBackground = GameUI.AddImage(UIA.Middle, "ori:image.backpack_panel_background", null, backpackMask);
             backpackPanelBackground.SetSizeDelta(backpackPanelWidth, backpackPanelHeight);
+
+
+
+
+
 
             #region 物品栏
 
@@ -696,6 +730,9 @@ namespace GameCore
             SetBackpackPanel("ori:inventory");
 
             #endregion
+
+
+
 
             #region 合成
 
@@ -867,6 +904,9 @@ namespace GameCore
 
             #endregion
 
+
+
+
             #region 暂停界面
 
             pausePanel = GenerateBackpackPanel("ori:pause", "ori:switch_button.pause");
@@ -881,6 +921,9 @@ namespace GameCore
             quitGame.rt.AddLocalPosY(-30);
 
             #endregion
+
+
+
 
             #region 任务系统
 
@@ -999,6 +1042,9 @@ namespace GameCore
             taskNodeTree.RefreshNodes(false);
 
             #endregion
+
+
+
 
             #region 技能树
 
