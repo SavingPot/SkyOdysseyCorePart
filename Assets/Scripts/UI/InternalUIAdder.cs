@@ -824,6 +824,7 @@ namespace GameCore.UI
             if (modConfiguringPanel && configuringModDir != null)
                 modConfiguringPanel.CustomMethod("ori:refresh", null);
 
+            //动态设置背景层的颜色和大小
             if (parallaxBackgrounds != null)
             {
                 Color color = new(
@@ -831,12 +832,17 @@ namespace GameCore.UI
                         GM.instance.globalLight.color.g * GM.instance.globalLight.intensity,
                         GM.instance.globalLight.color.b * GM.instance.globalLight.intensity);
 
+                float scaleValue = Tools.instance.mainCamera.orthographicSize / CameraController.defaultProjectionSize;
+                Vector3 scale = new(scaleValue, scaleValue);
+
                 foreach (var item in parallaxBackgrounds)
                 {
                     foreach (var sr in item.renderers)
                     {
                         sr.color = color;
                     }
+
+                    item.transform.localScale = scale;
                 }
             }
 

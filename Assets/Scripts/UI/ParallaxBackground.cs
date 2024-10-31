@@ -1,10 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using GameCore;
-using Sirenix.OdinInspector;
-using GameCore.High;
-using SP.Tools.Unity;
 
 namespace GameCore.UI
 {

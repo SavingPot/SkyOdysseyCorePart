@@ -94,8 +94,8 @@
      <Compile Include="Assets\Scripts\Gameplay\GM.cs" />
      <Compile Include="Assets\Scripts\Utils\Anim\AnimWeb.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\PosConvert.cs" />
-     <Compile Include="Assets\Scripts\Utils\JsonExtensions.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\UI\SlotUIs.cs" />
+     <Compile Include="Assets\Scripts\Utils\JsonExtensions.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\Interfaces.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\Binders.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Drop.cs" />
