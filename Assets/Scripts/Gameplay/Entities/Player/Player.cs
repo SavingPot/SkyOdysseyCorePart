@@ -1358,6 +1358,10 @@ namespace GameCore
                 //切换到放置模式
                 if (willBePlacementMode)
                 {
+                    //取消锁定敌人
+                    if (lockOnTarget)
+                        CancelLockOnTarget();
+
                     //缩小视野
                     playerCameraScale = 0.35f;
 
@@ -1380,8 +1384,20 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             if (pui.IsInPlacementMode())
             {
+                /* ---------------------------------- 检查房屋 ---------------------------------- */
+                if (Mouse.current.leftButton.wasPressedThisFrame)
+                {
+                    var pos = PosConvert.WorldToMapPos(cursorWorldPos);
+                    var roomCheck = new MapUtils.RoomCheck(pos);
+                    Debug.Log(roomCheck.IsValidConstruction(out var enclosingState) + "   Score: " + roomCheck.ScoreRoom() + $"({enclosingState})");
+                }
+
                 //移动视野
-                Tools.instance.mainCamera.transform.position += (playerController.PlacementModeMove() * Tools.instance.mainCamera.orthographicSize * Time.deltaTime).To3();
+                var cameraPos = Tools.instance.mainCamera.transform.position +
+                                (playerController.PlacementModeMove() * Tools.instance.mainCamera.orthographicSize * Time.deltaTime).To3();
+                Tools.instance.mainCamera.transform.position = new(Mathf.Clamp(cameraPos.x, transform.position.x - 400, transform.position.x + 400),
+                                                                 Mathf.Clamp(cameraPos.y, transform.position.y - 400, transform.position.y + 400),
+                                                                 cameraPos.z);
 
                 //缩放视野大小
                 playerCameraScale = Mathf.Clamp(playerCameraScale + playerController.PlacementModeZoom() * Time.deltaTime * 0.25f, PlacementModeUI.minCameraScale, PlacementModeUI.maxCameraScale);
@@ -1617,15 +1633,6 @@ namespace GameCore
                 Tools.instance.mainCameraController.secondLookAt = null;
                 Tools.instance.mainCameraController.DisableGlobalVolumeVignette();
                 pui.LockOnEnemy(null);
-            }
-
-            //TODO: 迁移到放置模式中
-            /* ---------------------------------- 检查房屋 ---------------------------------- */
-            if (Keyboard.current.gKey.wasPressedThisFrame)
-            {
-                var pos = PosConvert.WorldToMapPos(cursorWorldPos);
-                var roomCheck = new MapUtils.RoomCheck(pos);
-                Debug.Log(roomCheck.IsValidConstruction() + "   Score: " + roomCheck.ScoreRoom());
             }
         }
 

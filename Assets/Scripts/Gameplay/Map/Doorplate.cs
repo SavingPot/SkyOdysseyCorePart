@@ -26,7 +26,7 @@ namespace GameCore
         public override bool PlayerInteraction(Player player)
         {
             var roomCheck = new MapUtils.RoomCheck(pos);
-            if (roomCheck.IsValidConstruction())
+            if (roomCheck.IsValidConstruction(out _))
             {
                 if (GetRoomName().IsNullOrWhiteSpace())
                 {

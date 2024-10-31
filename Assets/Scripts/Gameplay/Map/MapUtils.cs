@@ -59,9 +59,10 @@ namespace GameCore
             }
 
 
-            public bool IsValidConstruction()
+            public bool IsValidConstruction(out EnclosingState enclosingState)
             {
-                return IsEnclosedConstruction() == EnclosingState.Passed && IsSizeSuitable();
+                enclosingState = IsEnclosedConstruction();
+                return enclosingState == EnclosingState.Passed && IsSizeSuitable();
             }
 
             public bool IsSizeSuitable()

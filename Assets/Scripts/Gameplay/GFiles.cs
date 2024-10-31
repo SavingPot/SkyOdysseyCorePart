@@ -13,8 +13,6 @@ namespace GameCore
     {
         public static GameSettings settings;
         public static World world;
-        public static Action ApplyBlockDataToWorld = () => { };
-        public static Action OnSaveAllDataToFiles = () => { Debug.Log("保存了所有数据至文件"); };
 
 
 
@@ -82,38 +80,17 @@ namespace GameCore
             //保存世界, 仅有服务器保存
             if (world != null)
             {
-                //将时间写入
-                world.basicData.time = GTime.time;
-                world.basicData.isAM = GTime.isMorning;
-                world.basicData.totalTime = GTime.totalTime;
-                world.basicData.weather = GWeather.weatherId;
-
-                //将方块数据写入
-                ApplyBlockDataToWorld();
-
-                //应用实体数据
-                ApplyEntityDataToWorld();
+                //应用数据
+                world.ApplyData();
 
                 //将世界数据写入文件
-                IOTools.CreateDirsIfNone(World.GetCachePath(world.worldPath), World.GetDisplayCachePath(world.worldPath));
-                SaveFileJson(World.GetBasicDataPath(world.worldPath), world.basicData, false, true);
-                SaveFileJson(World.GetRegionDataPath(world.worldPath), world.regionData, false, false);
-                SaveFileJson(World.GetPlayerDataPath(world.worldPath), world.playerSaves, false, true);
+                world.WriteDataToFiles();
             }
 
             //保存设置文件
             SaveFileJson(GInit.settingsPath, settings, false, true);
 
-            OnSaveAllDataToFiles();
-        }
-
-        public static void ApplyEntityDataToWorld()
-        {
-            List<Entity> entities = EntityCenter.all;
-            foreach (Entity entity in entities)
-            {
-                entity.WriteDataToWorldSave();
-            }
+            World.OnSaveAllDataToFiles();
         }
 
         public static void LoadGame()
@@ -155,6 +132,11 @@ namespace GameCore
 
 
 
+        public static Action ApplyBlockData = () => { };
+        public static Action OnSaveAllDataToFiles = () => { Debug.Log("保存了所有数据至文件"); };
+
+
+
         public string worldPath => basicData.worldPath;
         public string worldImagePath => GetImagePath(worldPath);
         public string worldRegionDataPath => GetRegionDataPath(worldPath);
@@ -164,6 +146,40 @@ namespace GameCore
         public WorldBasicData basicData = new();
         public List<Region> regionData = new();
         public List<PlayerSave> playerSaves = new();
+
+
+
+        public static void ApplyEntityData()
+        {
+            List<Entity> entities = EntityCenter.all;
+            foreach (Entity entity in entities)
+            {
+                entity.WriteDataToWorldSave();
+            }
+        }
+
+        public void ApplyData()
+        {
+            //将时间写入
+            basicData.time = GTime.time;
+            basicData.isAM = GTime.isMorning;
+            basicData.totalTime = GTime.totalTime;
+            basicData.weather = GWeather.weatherId;
+
+            //将方块数据写入
+            ApplyBlockData();
+
+            //应用实体数据
+            ApplyEntityData();
+        }
+
+        public void WriteDataToFiles()
+        {
+            IOTools.CreateDirsIfNone(GetCachePath(worldPath), GetDisplayCachePath(worldPath));
+            GFiles.SaveFileJson(GetBasicDataPath(worldPath), basicData, false, true);
+            GFiles.SaveFileJson(GetRegionDataPath(worldPath), regionData, false, false);
+            GFiles.SaveFileJson(GetPlayerDataPath(worldPath), playerSaves, false, true);
+        }
 
 
 
@@ -268,6 +284,7 @@ namespace GameCore
         public bool isAM = true;
         public string weather = WeatherID.Sunny;
         public List<Vector2> teleportPoints = new();
+        public int laborCount = 0;
 
 
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using DG.Tweening;
+using GameCore.High;
 
 namespace GameCore
 {
@@ -15,11 +16,10 @@ namespace GameCore
         /* -------------------------------------------------------------------------- */
         public const float minCameraScale = 0.04f;
         public const float maxCameraScale = 2;
+        public PanelIdentity placementModePanel;
         public List<PlacementEntry> placementEntries = new();
         public PlacementEntry currentEntry = null;
         public string currentEntryId = string.Empty;
-        public PanelIdentity placementModePanel;
-        public PanelIdentity housingRentalPanel;
 
         public class PlacementEntry : IRectTransform
         {
@@ -146,42 +146,7 @@ namespace GameCore
 
         /* ---------------------------------- 建造中心 ---------------------------------- */
         public PlacementEntry buildingCenterEntry;
-        public ButtonIdentity switchToHousingRentalPanelButton;
-        public ScrollViewIdentity housingRentalScrollView;
-        public PanelIdentity housingInfoPanel;
-        public ButtonIdentity housingInfoToRentalButton;
-        public ButtonIdentity housingInfoCollectRentButton;
-        public TextIdentity housingInfoNameText;
-        public ScrollViewIdentity housingRentalNPCScrollView;
-        HousingRentalScrollViewPool housingRentalScrollViewPool;
-        HousingRentalNPCScrollViewPool housingRentalNPCScrollViewPool;
-
-        public void ShowHouseInfo(Doorplate doorplate, string name, string tenantName)
-        {
-            //TODO: 需要确保NPC和房屋没有在查看时因为其它玩家失效
-            //设置房屋名
-            housingInfoNameText.SetText(name);
-            housingInfoCollectRentButton.SetText(tenantName.IsNullOrWhiteSpace() ? "收租：无租客" : $"向 {GameUI.CompareText(tenantName)} 收租：{Doorplate.GetRentAmount(tenantName)}");
-
-            //回收 NPC 列表
-            foreach (var item in housingRentalNPCScrollView.content.GetComponentsInChildren<ButtonIdentity>())
-                housingRentalNPCScrollViewPool.Recover(item);
-
-            //生成 NPC 列表
-            foreach (var npc in NPCCenter.all)
-            {
-                var button = housingRentalNPCScrollViewPool.Get(this);
-                button.SetText($"{GameUI.CompareText(npc.data.id)}");
-                button.SetOnClickBind(() =>
-                {
-                    doorplate.SetTenantName(npc.data.id);
-
-                    //刷新房屋信息
-                    ShowHouseInfo(doorplate, name, doorplate.GetTenantName());
-                });
-                button.BindButtonAudio();
-            }
-        }
+        HouseOccupiedSrPool houseOccupiedSrPool = new();
 
 
 
@@ -256,7 +221,7 @@ namespace GameCore
             /* ---------------------------------- 建造中心 ---------------------------------- */
             buildingCenterEntry = GenerateEntry("ori:building_center",
                 "ori:building_center_button",
-                () => housingRentalPanel.RefreshUI(),
+                null,
                 null,
                 null);
 
@@ -283,102 +248,11 @@ namespace GameCore
 
 
 
+
+            #region 建造中心
+
             #region 出租
-
-            housingRentalPanel = GameUI.AddPanel("ori:panel.building_center.housing_rental", buildingCenterEntry.panel);
-            housingRentalPanel.panelImage.raycastTarget = false;
-            housingRentalPanel.AfterRefreshing += _ =>
-            {
-                foreach (var item in housingRentalScrollView.content.GetComponentsInChildren<ButtonIdentity>())
-                    housingRentalScrollViewPool.Recover(item);
-
-                foreach (var chunk in Map.instance.chunks)
-                {
-                    //只会寻找当前区域内的房屋
-                    if (chunk.regionIndex != pui.player.regionIndex)
-                        continue;
-
-                    foreach (var block in chunk.wallBlocks)
-                    {
-                        if (block is Doorplate doorplate)
-                        {
-                            var button = housingRentalScrollViewPool.Get(this);
-                            var name = doorplate.GetRoomName();
-                            var hasName = !name.IsNullOrWhiteSpace();
-                            var tenantName = doorplate.GetTenantName();
-                            var hasTenant = !tenantName.IsNullOrWhiteSpace();
-
-                            //如果点击了就进入房屋设置
-                            button.SetOnClickBind(() =>
-                            {
-                                ShowHouseInfo(doorplate, name, tenantName);
-                                housingInfoPanel.gameObject.SetActive(true);
-                            });
-                            button.BindButtonAudio();
-
-                            button.SetColor((hasName, hasTenant) switch
-                            {
-                                (true, false) => Color.white, //有房间名无租客
-                                (true, true) => Color.gray,   //有房间名有租客
-                                _ => Color.red                //无房间名
-                            });
-
-                            button.SetText($"房间：{(hasName ? name : "未命名房间")}");
-                        }
-                    }
-                }
-            };
-
-            //侧边栏按钮
-            (_, switchToHousingRentalPanelButton) = GameUI.GenerateSidebarSwitchButton(
-                "ori:image.building_center.switch_to_housing_rental.background",
-                "ori:button.building_center.switch_to_housing_rental",
-                "ori:switch_to_housing_rental",
-                placementModePanel,
-                0);
-            switchToHousingRentalPanelButton.OnClickBind(() =>
-            {
-                housingRentalPanel.RefreshUI();
-                housingRentalPanel.gameObject.SetActive(true);
-            });
-
-
-
-            //房屋列表
-            housingRentalScrollView = GameUI.AddScrollView(UIA.Middle, "ori:sv.building_center.housing_rental", housingRentalPanel);
-            housingRentalScrollView.SetSizeDeltaX(250);
-            housingRentalScrollView.SetGridLayoutGroupCellSizeToMax(45);
-            housingRentalScrollViewPool = new();
-
-
-
-            //房屋信息面板
-            housingInfoPanel = GameUI.AddPanel("ori:panel.building_center.housing_info", housingRentalPanel, true);
-
-            housingInfoToRentalButton = GameUI.AddButton(UIA.UpperLeft, "ori:button.building_center.housing_info_to_rental", housingInfoPanel);
-            housingInfoToRentalButton.SetAPos(housingInfoToRentalButton.sd.x / 2 + 15, -housingInfoToRentalButton.sd.y / 2 - 15);
-            housingInfoToRentalButton.OnClickBind(() =>
-            {
-                housingInfoPanel.gameObject.SetActive(false);
-                housingRentalPanel.RefreshUI();
-            });
-
-            housingInfoCollectRentButton = GameUI.AddButton(UIA.Down, "ori:button.building_center.housing_info_collect_rent", housingInfoPanel);
-            housingInfoCollectRentButton.SetAPos(0, housingInfoCollectRentButton.sd.y / 2 + 15);
-            housingInfoCollectRentButton.buttonText.autoCompareText = false;
-
-            housingInfoNameText = GameUI.AddText(UIA.Middle, "ori:text.building_center.housing_info_name", housingInfoPanel);
-            housingInfoNameText.autoCompareText = false;
-            housingInfoNameText.text.raycastTarget = false;
-            housingInfoNameText.AddAPosY(150);
-
-
-
-            //NPC列表
-            housingRentalNPCScrollView = GameUI.AddScrollView(UIA.Middle, "ori:sv.building_center.housing_rental_npc", housingInfoPanel);
-            housingRentalNPCScrollView.SetSizeDeltaX(250);
-            housingRentalNPCScrollView.SetGridLayoutGroupCellSizeToMax(45);
-            housingRentalNPCScrollViewPool = new();
+            #endregion
 
             #endregion
 
@@ -388,7 +262,7 @@ namespace GameCore
             #region 市场中心
 
             tradeUI = TradeUI.GenerateItemView(pui, "ori:placement_trade", new TradeUI.ItemTrade[]
-            {
+{
                 new(BlockID.Torch, 1, 1),
                 new(BlockID.Dirt, 1, 1),
                 new(BlockID.Sand, itemCount: 1, 2),
@@ -403,7 +277,7 @@ namespace GameCore
                 new(BlockID.OakSeed, 1, 15),
                 new(BlockID.AcaciaSeed, 1, 22),
                 new(BlockID.MangroveSeed, 1, 30),
-            }, marketCenterEntry.panel.transform);
+}, marketCenterEntry.panel.transform);
 
             //UI向内收缩
             tradeUI.itemView.SetSizeDelta(-300, -100);
@@ -467,55 +341,27 @@ namespace GameCore
 
 
 
-        public sealed class HousingRentalScrollViewPool
+        public sealed class HouseOccupiedSrPool
         {
-            public Stack<ButtonIdentity> stack = new();
+            public Stack<SpriteRenderer> stack = new();
 
-            public ButtonIdentity Get(PlacementModeUI ui)
+            public SpriteRenderer Get(Vector2 pos)
             {
-                var result = (stack.Count == 0) ? Generation(ui) : stack.Pop();
+                var result = (stack.Count == 0) ? Generation() : stack.Pop();
                 result.gameObject.SetActive(true);
+                result.transform.position = pos;
                 return result;
             }
 
-            public void Recover(ButtonIdentity obj)
+            public void Recover(SpriteRenderer obj)
             {
                 obj.gameObject.SetActive(false);
                 stack.Push(obj);
             }
 
-            public ButtonIdentity Generation(PlacementModeUI ui)
+            public SpriteRenderer Generation()
             {
-                var result = GameUI.AddButton(UIA.Middle, $"ori:button.building_center.housing_rental_item_{Tools.randomInt}", ui.housingRentalScrollView.content);
-
-                result.buttonText.autoCompareText = false;
-
-                return result;
-            }
-        }
-
-        public sealed class HousingRentalNPCScrollViewPool
-        {
-            public Stack<ButtonIdentity> stack = new();
-
-            public ButtonIdentity Get(PlacementModeUI ui)
-            {
-                var result = (stack.Count == 0) ? Generation(ui) : stack.Pop();
-                result.gameObject.SetActive(true);
-                return result;
-            }
-
-            public void Recover(ButtonIdentity obj)
-            {
-                obj.gameObject.SetActive(false);
-                stack.Push(obj);
-            }
-
-            public ButtonIdentity Generation(PlacementModeUI ui)
-            {
-                var result = GameUI.AddButton(UIA.Middle, $"ori:button.building_center.housing_rental_npc_item_{Tools.randomInt}", ui.housingRentalNPCScrollView.content);
-
-                result.buttonText.autoCompareText = false;
+                var result = ObjectTools.CreateSpriteObject("HouseOccupiedSr");
 
                 return result;
             }
