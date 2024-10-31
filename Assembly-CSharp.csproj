@@ -61,7 +61,6 @@
      <Compile Include="Assets\Scripts\Gameplay\Entities\LootBagBehaviour.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Controls\GControls.cs" />
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursorRaycaster.cs" />
-     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\SlotUIs.cs" />
      <Compile Include="Assets\Scripts\Gameplay\BiomeData.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\TextImageIdentity.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ScrollViewIdentity.cs" />
@@ -96,6 +95,7 @@
      <Compile Include="Assets\Scripts\Utils\Anim\AnimWeb.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Map\PosConvert.cs" />
      <Compile Include="Assets\Scripts\Utils\JsonExtensions.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\UI\SlotUIs.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\Interfaces.cs" />
      <Compile Include="Assets\Scripts\Network\SyncPacker\Binders.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Drop.cs" />
@@ -121,14 +121,15 @@
      <Compile Include="Assets\Scripts\Gameplay\GameCallbacks.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Enemy.cs" />
      <Compile Include="Assets\Scripts\Utils\SundryExtensions.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\UI\PlacementModeUI.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Behaviours\CreatureHumanBodyPartsBehaviour.cs" />
      <Compile Include="Assets\Scripts\Gameplay\WorldGeneration\IslandGeneration.cs" />
-     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\InfoShowers.cs" />
      <Compile Include="Assets\Scripts\Gameplay\WorldGeneration\ChallengeRoomGeneration.cs" />
      <Compile Include="Assets\Scripts\Utils\JsonUtils.cs" />
      <Compile Include="Assets\Scripts\UI\NodeTree.cs" />
      <Compile Include="Assets\Scripts\UI\InfiniteBackground.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\Contollers\PlayerController.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\UI\PlayerUI.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Magic\ISpellContainer.cs" />
      <Compile Include="Assets\Scripts\Utils\Anim\Anim.cs" />
      <Compile Include="Assets\Scripts\Utils\RayTools.cs" />
@@ -137,6 +138,8 @@
      <Compile Include="Assets\Scripts\Gameplay\GTime.cs" />
      <Compile Include="Assets\Scripts\Utils\TextureHandler.cs" />
      <Compile Include="Assets\Scripts\UI\Joystick.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\UI\TouchScreenUI.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\UI\InfoShowers.cs" />
      <Compile Include="Assets\Scripts\ManagerCommands.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ToggleIdentity.cs" />
      <Compile Include="Assets\Scripts\Network\Rpc\Binders.cs" />
@@ -171,7 +174,6 @@
      <Compile Include="Assets\Scripts\UI\IdentityComponents\PanelIdentity.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\StateMachine.cs" />
      <Compile Include="Assets\Scripts\Utils\Anim\EasyAnim.cs" />
-     <Compile Include="Assets\Scripts\Gameplay\Entities\Player\PlayerUI.cs" />
      <Compile Include="Assets\Scripts\UI\UPC.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\CreatureBodyPart.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\IdentityCenter.cs" />

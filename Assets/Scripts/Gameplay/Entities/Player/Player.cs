@@ -1400,7 +1400,7 @@ namespace GameCore
                 return GControls.mode switch
                 {
                     //* 如果是触摸屏, 返回光标位置
-                    ControlMode.Touchscreen => pui.touchScreenCursorImage.rectTransform.position,
+                    ControlMode.Touchscreen => pui.touchScreenUI.cursorImage.rectTransform.position,
 
                     //* 如果是键鼠, 返回鼠标位置
                     ControlMode.KeyboardAndMouse => Tools.instance.GetMouseWorldPos(),
@@ -1438,7 +1438,7 @@ namespace GameCore
             if (playerController.SwitchControlMode())
             {
                 var willBePlacementMode = !pui.IsInPlacementMode();
-                pui.placementModePanel.gameObject.SetActive(willBePlacementMode);
+                pui.placementModeUI.placementModePanel.gameObject.SetActive(willBePlacementMode);
 
                 //切换到放置模式
                 if (willBePlacementMode)
