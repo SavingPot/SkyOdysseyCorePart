@@ -27,6 +27,7 @@ namespace GameCore
         public const string GetHurt = "ori:get_hurt";
         public const string Heartbeat = "ori:heartbeat";
         public const string Hoe = "ori:hoe";
+        public const string HouseDetect = "ori:house_detect";
         public const string Ignite = "ori:ignite";
         public const string OpenBackpack = "ori:open_backpack";
         public const string OpenDoor = "ori:open_door";

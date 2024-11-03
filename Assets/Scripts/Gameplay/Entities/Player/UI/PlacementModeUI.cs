@@ -146,7 +146,9 @@ namespace GameCore
 
         /* ---------------------------------- 建造中心 ---------------------------------- */
         public PlacementEntry buildingCenterEntry;
-        HouseOccupiedSrPool houseOccupiedSrPool = new();
+        readonly LaborHousingFlagPool laborHousingFlagPool = new();
+        readonly List<SpriteRenderer> usingLaborHousingFlags = new();
+
 
 
 
@@ -205,11 +207,37 @@ namespace GameCore
             }
         }
 
+        public void Refresh()
+        {
+            RefreshLaborHousingFlags();
+        }
 
+        public void RefreshLaborHousingFlags()
+        {
+            //归还使用中的住房标记
+            foreach (var item in usingLaborHousingFlags)
+                laborHousingFlagPool.Recover(item);
+            usingLaborHousingFlags.Clear();
 
+            //只在 放置模式-建筑中心 中显示旗帜
+            if (pui.IsInInteractionMode() || currentEntryId != buildingCenterEntry.id)
+                return;
 
-
-
+            //TODO: 网络化
+            //显示住房标记
+            foreach (var housing in GFiles.world.laborData.registeredHousings)
+            {
+                //只显示玩家距离500格以内的住房标记
+                var flagPos = housing.spaces[0];
+                if (Mathf.Abs(flagPos.x - player.transform.position.x) < 500 && Mathf.Abs(flagPos.y - player.transform.position.y) < 500)
+                {
+                    var sr = laborHousingFlagPool.Get();
+                    sr.transform.position = flagPos.To3();
+                    sr.sprite = housing.isOccupied ? ModFactory.CompareTexture("ori:labor_housing_occupied_flag").sprite : ModFactory.CompareTexture("ori:labor_housing_unoccupied_flag").sprite;
+                    usingLaborHousingFlags.Add(sr);
+                }
+            }
+        }
 
         internal PlacementModeUI(PlayerUI pui) : base(pui)
         {
@@ -221,9 +249,9 @@ namespace GameCore
             /* ---------------------------------- 建造中心 ---------------------------------- */
             buildingCenterEntry = GenerateEntry("ori:building_center",
                 "ori:building_center_button",
+                () => RefreshLaborHousingFlags(),
                 null,
-                null,
-                null);
+                () => RefreshLaborHousingFlags());
 
             marketCenterEntry = GenerateEntry("ori:market_center",
                 "ori:market_center_button",
@@ -249,9 +277,12 @@ namespace GameCore
 
 
 
+
+
             #region 建造中心
 
             #region 出租
+
             #endregion
 
             #endregion
@@ -262,7 +293,7 @@ namespace GameCore
             #region 市场中心
 
             tradeUI = TradeUI.GenerateItemView(pui, "ori:placement_trade", new TradeUI.ItemTrade[]
-{
+            {
                 new(BlockID.Torch, 1, 1),
                 new(BlockID.Dirt, 1, 1),
                 new(BlockID.Sand, itemCount: 1, 2),
@@ -277,7 +308,7 @@ namespace GameCore
                 new(BlockID.OakSeed, 1, 15),
                 new(BlockID.AcaciaSeed, 1, 22),
                 new(BlockID.MangroveSeed, 1, 30),
-}, marketCenterEntry.panel.transform);
+            }, marketCenterEntry.panel.transform);
 
             //UI向内收缩
             tradeUI.itemView.SetSizeDelta(-300, -100);
@@ -302,11 +333,11 @@ namespace GameCore
 
             #region 区域解锁
             unlockedRegionColorRenderers = new (SpriteRenderer, TextImageIdentity)[] {
-                    GenerateUnlockedRegionColorRenderers(),
-                    GenerateUnlockedRegionColorRenderers(),
-                    GenerateUnlockedRegionColorRenderers(),
-                    GenerateUnlockedRegionColorRenderers(),
-                };
+                GenerateUnlockedRegionColorRenderers(),
+                GenerateUnlockedRegionColorRenderers(),
+                GenerateUnlockedRegionColorRenderers(),
+                GenerateUnlockedRegionColorRenderers(),
+            };
 
             static (SpriteRenderer, TextImageIdentity) GenerateUnlockedRegionColorRenderers()
             {
@@ -341,15 +372,14 @@ namespace GameCore
 
 
 
-        public sealed class HouseOccupiedSrPool
+        public sealed class LaborHousingFlagPool
         {
             public Stack<SpriteRenderer> stack = new();
 
-            public SpriteRenderer Get(Vector2 pos)
+            public SpriteRenderer Get()
             {
                 var result = (stack.Count == 0) ? Generation() : stack.Pop();
                 result.gameObject.SetActive(true);
-                result.transform.position = pos;
                 return result;
             }
 
@@ -362,7 +392,8 @@ namespace GameCore
             public SpriteRenderer Generation()
             {
                 var result = ObjectTools.CreateSpriteObject("HouseOccupiedSr");
-
+                result.sortingOrder = 100;
+                result.material = GInit.instance.spriteDefaultMat;
                 return result;
             }
         }

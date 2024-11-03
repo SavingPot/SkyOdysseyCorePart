@@ -17,6 +17,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -318,6 +319,28 @@ namespace GameCore
 
 
         #region 其他
+
+        public static bool IsPointerOverInteractableUI()
+        {
+            PointerEventData eventDataCurrentPosition = new(EventSystem.current);
+            eventDataCurrentPosition.position = GControls.mousePos;
+
+            List<RaycastResult> results = new();
+            EventSystem.current.RaycastAll(eventDataCurrentPosition, results);
+
+            foreach (RaycastResult result in results)
+            {
+                if (result.gameObject.activeInHierarchy &&
+                    result.gameObject.TryGetComponent<Selectable>(out var selectable) && selectable.interactable)
+                {
+                    //并且当前UI启用、可选择，则视为被点击
+                    return true;
+                }
+            }
+
+            //没有UI被点击
+            return false;
+        }
 
         /// <summary>
         /// 检查物体是否有指定的 Component, 如果有就添加组件 com (where T : MonoBehaviour)

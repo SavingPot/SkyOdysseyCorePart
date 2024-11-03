@@ -123,6 +123,54 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &851538155
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 851538157}
+  - component: {fileID: 851538156}
+  m_Layer: 0
+  m_Name: ScrollingBackground
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &851538156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 851538155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7237089d1f3eb448b51b2808e012b2b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  renderers: []
+  scrollSpeed: -7
+  bound: -64
+  defaultPoint: {x: 0, y: 0}
+--- !u!4 &851538157
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 851538155}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1906424539
 GameObject:
   m_ObjectHideFlags: 0
@@ -205,8 +253,7 @@ MonoBehaviour:
   toolsPrefab: {fileID: 4992625376824649478, guid: 42b14ce0d3381af488867b640823f7d7, type: 3}
   defaultMat: {fileID: 2100000, guid: dbb4ae1b4b1db0a48a6f20b0afa6877a, type: 2}
   spriteLitMat: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
-  blurShader: {fileID: 4800000, guid: d3461692e126a7748ab0bbdea7079f04, type: 3}
-  blurMaterial: {fileID: 2100000, guid: 3ed0b9132faa0a8498ccbd6eab53df52, type: 2}
+  fontMat: {fileID: 2100000, guid: caf7a3571ae513f41aaba6dde327a6c0, type: 3}
   spriteUnknown: {fileID: 21300000, guid: eb6aa624a1e3d584ba801421178e1824, type: 3}
   textureUnknown:
     id: 
@@ -219,10 +266,32 @@ MonoBehaviour:
     defaultTexture:
       id: 
       texturePath: 
+    platformTexture:
+      id: 
+      texturePath: 
+    upperSlabTexture:
+      id: 
+      texturePath: 
+    lowerSlabTexture:
+      id: 
+      texturePath: 
+    rightStairTexture:
+      id: 
+      texturePath: 
+    leftStairTexture:
+      id: 
+      texturePath: 
+    inverseRightStairTexture:
+      id: 
+      texturePath: 
+    inverseLeftStairTexture:
+      id: 
+      texturePath: 
     description: 
     collidible: 1
     drops: []
     lightLevel: 0
+    transformable: 0
     behaviourName: 
     tags: []
   entityPrefab: {fileID: 5246644827719253145, guid: 89b8c0828bd2d8342b8d026735402211, type: 3}
@@ -271,3 +340,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 1906424541}
   - {fileID: 3573521923736553548}
+  - {fileID: 851538157}

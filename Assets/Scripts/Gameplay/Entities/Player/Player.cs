@@ -21,6 +21,7 @@ using ReadOnlyAttribute = Sirenix.OdinInspector.ReadOnlyAttribute;
 using Random = UnityEngine.Random;
 using static GameCore.UI.PlayerUI;
 using static GameCore.BackpackPanelUI;
+using UnityEngine.EventSystems;
 
 namespace GameCore
 {
@@ -1358,6 +1359,12 @@ namespace GameCore
                 //切换到放置模式
                 if (willBePlacementMode)
                 {
+                    //如果未设定条目，那么设置条目为建筑中心
+                    if (pui.PlacementMode.currentEntryId.IsNullOrWhitespace())
+                    {
+                        pui.PlacementMode.SetPlacementEntry(pui.PlacementMode.buildingCenterEntry.id);
+                    }
+
                     //取消锁定敌人
                     if (lockOnTarget)
                         CancelLockOnTarget();
@@ -1377,6 +1384,9 @@ namespace GameCore
                     //相机跟随玩家
                     Tools.instance.mainCameraController.lookAt = GetPlayerLookAtTransform();
                 }
+
+                //刷新放置模式UI
+                pui.PlacementMode.Refresh();
             }
 
             /* -------------------------------------------------------------------------- */
@@ -1385,11 +1395,10 @@ namespace GameCore
             if (pui.IsInPlacementMode())
             {
                 /* ---------------------------------- 检查房屋 ---------------------------------- */
-                if (Mouse.current.leftButton.wasPressedThisFrame)
+                //如果点击左键且没点到UI
+                if ((Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame) && !Tools.IsPointerOverInteractableUI())
                 {
-                    var pos = PosConvert.WorldToMapPos(cursorWorldPos);
-                    var roomCheck = new MapUtils.RoomCheck(pos);
-                    Debug.Log(roomCheck.IsValidConstruction(out var enclosingState) + "   Score: " + roomCheck.ScoreRoom() + $"({enclosingState})");
+                    HandleHousingRegistration(Mouse.current.leftButton.wasPressedThisFrame);
                 }
 
                 //移动视野
@@ -1427,6 +1436,7 @@ namespace GameCore
                     }
 
                     //ToDO：改为用鼠标点击要解锁的区域
+                    //TODO: 应用上音乐
                     if (Keyboard.current.upArrowKey.wasPressedThisFrame)
                     {
                         TryUnlockRegion(regionIndex + Vector2Int.up);
@@ -1633,6 +1643,55 @@ namespace GameCore
                 Tools.instance.mainCameraController.secondLookAt = null;
                 Tools.instance.mainCameraController.DisableGlobalVolumeVignette();
                 pui.LockOnEnemy(null);
+            }
+        }
+
+        private void HandleHousingRegistration(bool register)
+        {
+            var pos = PosConvert.WorldToMapPos(cursorWorldPos);
+            var roomCheck = new MapUtils.RoomCheck(pos);
+            var roomSuitable = roomCheck.IsValidConstruction(out var enclosingState);
+            var roomSpacesHash = roomCheck.spacesInConstruction.Select(p => new Vector2Int(p.x, p.y)).ToHashSet();
+
+            //TODO: 网络化
+            //检测房间有无交集
+            foreach (var housing in GFiles.world.laborData.registeredHousings)
+            {
+                if (housing.spaces.ToHashSet().Overlaps(roomSpacesHash))
+                {
+                    //如果玩家是想登记房屋
+                    if (register)
+                    {
+                        InternalUIAdder.instance.SetStatusText("该住房已经登记过了");
+                        GAudio.Play(AudioID.HouseDetect, null);
+                        return;
+                    }
+                    //如果玩家是想取消登记房屋
+                    else
+                    {
+                        //从存档中删除
+                        GFiles.world.laborData.registeredHousings.Remove(housing);
+
+                        InternalUIAdder.instance.SetStatusText("该住房已被取消登记");
+                        GAudio.Play(AudioID.HouseDetect, null);
+                        pui.PlacementMode.RefreshLaborHousingFlags();
+                        return;
+                    }
+                }
+            }
+
+            //如果玩家是想登记房屋且无重叠房屋
+            if (register)
+            {
+                //合适就添加到存档中并刷新旗帜
+                if (roomSuitable)
+                {
+                    GFiles.world.laborData.registeredHousings.Add(new(roomCheck.spacesInConstruction));
+                    pui.PlacementMode.RefreshLaborHousingFlags();
+                }
+
+                InternalUIAdder.instance.SetStatusText(roomSuitable ? $"房间登记成功，共{roomCheck.ScoreRoom()}分" : $"房间不合适，{enclosingState}");
+                GAudio.Play(AudioID.HouseDetect, null);
             }
         }
 

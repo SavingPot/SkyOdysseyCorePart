@@ -713,7 +713,6 @@ namespace GameCore
         {
             renderers.Add(renderer);
         }
-
         public void SetColorOfSpriteRenderers(float r, float g, float b) => SetColorOfSpriteRenderers(new(r, g, b));
         public void SetColorOfSpriteRenderers(float r, float g, float b, float a) => SetColorOfSpriteRenderers(new(r, g, b, a));
         public void SetColorOfSpriteRenderers(Color color)

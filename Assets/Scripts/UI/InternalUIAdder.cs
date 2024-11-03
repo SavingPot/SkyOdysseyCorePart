@@ -832,7 +832,8 @@ namespace GameCore.UI
                         GM.instance.globalLight.color.g * GM.instance.globalLight.intensity,
                         GM.instance.globalLight.color.b * GM.instance.globalLight.intensity);
 
-                float scaleValue = Tools.instance.mainCamera.orthographicSize / CameraController.defaultProjectionSize;
+                //随着视角变小，背景层的大小会变大以避免背景层看起来特别小，变大的速率是视角变小的速率的 45%
+                float scaleValue = 1 + (Tools.instance.mainCamera.orthographicSize / CameraController.defaultProjectionSize - 1) * 0.45f;
                 Vector3 scale = new(scaleValue, scaleValue);
 
                 foreach (var item in parallaxBackgrounds)

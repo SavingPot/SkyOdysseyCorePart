@@ -114,6 +114,7 @@
      <Compile Include="Assets\Scripts\Gameplay\Entities\Inventory.cs" />
      <Compile Include="Assets\Scripts\ModIdBindingAttributes.cs" />
      <Compile Include="Assets\Scripts\Utils\AngleTools.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\World.cs" />
      <Compile Include="Assets\Scripts\UI\ParallaxBackground.cs" />
      <Compile Include="Assets\Scripts\Gameplay\Entities\Player\Contollers\TouchscreenController.cs" />
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursorMover.cs" />

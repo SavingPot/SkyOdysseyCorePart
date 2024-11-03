@@ -1,5 +1,3 @@
-using System.Numerics;
-using Org.BouncyCastle.Math.EC.Rfc7748;
 using UnityEngine;
 
 namespace GameCore
@@ -16,9 +14,9 @@ namespace GameCore
 
 
         /// <summary>
-        /// 该类不被可复用
+        /// 该类不被可复用，所有的坐标都是地图坐标，不是相对坐标
         /// </summary>
-        public class RoomCheck
+        public sealed class RoomCheck
         {
             public enum EnclosingState
             {
@@ -29,19 +27,14 @@ namespace GameCore
                 WallHoleTooLarge
             }
 
-            const int minRoomBlockCount = 20;
-            const int maxRoomBlockCount = 200;
+            const int minRoomBlockCount = 18;
+            const int maxRoomBlockCount = 180;
 
-            public (int x, int y, Block wallBlock)[] blocksInConstruction;
+            public (int x, int y, Block wallBlock)[] wallsInConstruction;
             public (int x, int y)[] spacesInConstruction;
             public int totalBlockCount;
             public int totalSpace;
             public Vector2Int pos;
-
-            public int minX;
-            public int maxX;
-            public int minY;
-            public int maxY;
 
 
 
@@ -52,10 +45,6 @@ namespace GameCore
                 totalSpace = 0;
 
                 this.pos = pos;
-                minX = pos.x;
-                maxX = pos.x;
-                minY = pos.y;
-                maxY = pos.y;
             }
 
 
@@ -93,7 +82,7 @@ namespace GameCore
             /// <returns></returns>
             public EnclosingState IsEnclosedConstruction()
             {
-                blocksInConstruction = new (int, int, Block)[maxRoomBlockCount];
+                wallsInConstruction = new (int, int, Block)[maxRoomBlockCount];
                 spacesInConstruction = new (int, int)[maxRoomBlockCount];
 
 
@@ -111,8 +100,6 @@ namespace GameCore
 
                 EnclosingState enclosingState = EnclosingState.Passed;
                 CheckIfIsEnclosedConstruction(pos.x, pos.y, ref enclosingState);
-
-                Debug.Log(enclosingState);
                 return enclosingState;
             }
 
@@ -127,7 +114,7 @@ namespace GameCore
                     return;
 
                 //如果已经检测过了这个方块就返回，不重复检测
-                foreach (var existedPoint in blocksInConstruction)
+                foreach (var existedPoint in wallsInConstruction)
                     if (existedPoint.x == x && existedPoint.y == y)
                         return;
 
@@ -136,7 +123,7 @@ namespace GameCore
                 //刷新当前
                 var point = new Vector2Int(x, y);
                 var wallBlockAtThis = Map.instance[point, false];
-                blocksInConstruction[totalBlockCount] = (x, y, wallBlockAtThis);
+                wallsInConstruction[totalBlockCount] = (x, y, wallBlockAtThis);
                 totalBlockCount++;
 
                 //检测房间是否过大
@@ -162,36 +149,30 @@ namespace GameCore
 
 
 
-                //找到房间的边界
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
-
-
-
                 // 十字向遍历以当前方块为中心 5 个方块
-                // x x o x x
-                // x x o x x
-                // o o O o 0
-                // x x o x x
-                // x x o x x
+                // x x x o x x x
+                // x x x o x x x
+                // x x x o x x x
+                // o o o O o o o
+                // x x x o x x x
+                // x x x o x x x
+                // x x x o x x x
                 // 遍历 5 格直径而不是 3 格是因为如果是三格的话，只要墙体有一个洞就不能作为房子了，这太严苛了
-                bool hasBlockOnX = false;
-                bool hasBlockOnY = false;
-                for (int offset = -2; offset <= 2; offset++)
+                bool hasEnoughBlockOnX = false;
+                bool hasEnoughBlockOnY = false;
+                for (int offset = -3; offset <= 3; offset++)
                 {
                     Vector2Int xBlock = new(x + offset, y);
                     Vector2Int yBlock = new(x, y + offset);
 
                     //如果有背景墙，或者是房子在这个方向上结束了，就算成功
                     if (IsConstructionWall(xBlock, true) || IsConstructionWall(xBlock, false))
-                        hasBlockOnX = true;
+                        hasEnoughBlockOnX = true;
                     if (IsConstructionWall(yBlock, true) || IsConstructionWall(yBlock, false))
-                        hasBlockOnY = true;
+                        hasEnoughBlockOnY = true;
                 }
                 //检测房屋背景墙缺口是否过大
-                if (!hasBlockOnX || !hasBlockOnY)
+                if (!hasEnoughBlockOnX || !hasEnoughBlockOnY)
                 {
                     enclosingState = EnclosingState.WallHoleTooLarge;
                     Debug.LogError($"房屋缺口过大 ({x}, {y})", Map.instance.GetBlock(point, false)?.gameObject);
@@ -210,7 +191,7 @@ namespace GameCore
             //TODO
             public int ScoreRoom()
             {
-                if (blocksInConstruction == null)
+                if (wallsInConstruction == null)
                     throw new System.InvalidOperationException("请先调用 IsEnclosedConstruction 方法");
 
                 int score = totalSpace;

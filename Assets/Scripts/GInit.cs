@@ -59,6 +59,7 @@ namespace GameCore
         [Header("资源")]
         [AssetsOnly, Required(Tools.requiredErrorMessage), LabelText("默认材质")] public Material defaultMat;
         [AssetsOnly, Required(Tools.requiredErrorMessage), LabelText("光照材质")] public Material spriteLitMat;
+        [AssetsOnly, Required(Tools.requiredErrorMessage), LabelText("字体材质")] public Material fontMat;
         public Material spriteDefaultMat => new(Shader.Find("Sprites/Default"));
 
 

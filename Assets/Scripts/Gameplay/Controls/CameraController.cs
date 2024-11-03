@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
 
 namespace GameCore
 {
@@ -12,7 +13,6 @@ namespace GameCore
 
 
 
-        public Tools tools => Tools.instance;
         public Transform lookAt;
         public Vector2 lookAtDelta;
         public Transform secondLookAt;

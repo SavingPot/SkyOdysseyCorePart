@@ -14913,7 +14913,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d8e1b531d724c44aaba3264c4a9803f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  recoveringRegions: []
 --- !u!4 &412717718
 Transform:
   m_ObjectHideFlags: 0
@@ -15162,6 +15161,11 @@ MonoBehaviour:
   lookAtDelta: {x: 0, y: 0}
   secondLookAt: {fileID: 0}
   shakeLevel: 0
+  topBar: {fileID: 0}
+  bottomBar: {fileID: 0}
+  leftBar: {fileID: 0}
+  rightBar: {fileID: 0}
+  enableFilmic: 0
 --- !u!114 &519420035
 MonoBehaviour:
   m_ObjectHideFlags: 0
