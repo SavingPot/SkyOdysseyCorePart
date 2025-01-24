@@ -239,6 +239,12 @@ namespace GameCore
             shakeRotationTween = transform.DOShakeRotation(0.1f, new Vector3(0, 0, 15));
         }
 
+        public void TakeDamageWithParticle(float damage)
+        {
+            TakeDamage(damage);
+            GM.instance.blockParticlePool.Get(this);
+        }
+
         public void SetHealth(float value)
         {
             if (health == value)

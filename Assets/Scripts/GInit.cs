@@ -45,6 +45,7 @@ namespace GameCore
 
         [SerializeField, Required(Tools.requiredErrorMessage), AssetsOnly, LabelText("群系守护者粒子")] public ParticleSystem BiomeGuardParticleSystemPrefab;
         [SerializeField, Required(Tools.requiredErrorMessage), AssetsOnly, LabelText("血粒子")] public ParticleSystem BloodParticleSystemPrefab;
+        [SerializeField, Required(Tools.requiredErrorMessage), AssetsOnly, LabelText("方块粒子")] public ParticleSystem BlockParticleSystemPrefab;
         [SerializeField, Required(Tools.requiredErrorMessage), AssetsOnly, LabelText("伤害数字")] public TMP_Text DamageTextPrefab;
 
 

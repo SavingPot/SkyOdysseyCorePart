@@ -63,6 +63,7 @@
      <Compile Include="Assets\Scripts\UI\VirtualCursor\VirtualCursorRaycaster.cs" />
      <Compile Include="Assets\Scripts\Gameplay\BiomeData.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\TextImageIdentity.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Map\BlockParticlePool.cs" />
      <Compile Include="Assets\Scripts\UI\IdentityComponents\ScrollViewIdentity.cs" />
      <Compile Include="Assets\Scripts\UI\GameUI.cs" />
      <Compile Include="Assets\Scripts\Mods\Spell.cs" />

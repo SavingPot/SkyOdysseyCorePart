@@ -5,7 +5,7 @@ namespace GameCore
     public static class MapUtils
     {
         public static bool IsConstructionWall(Vector2Int pos, bool isBackground)
-            => Map.instance.TryGetBlock(pos, isBackground, out var block) && block.data.IsConstructionWall();
+            => Map.instance.TryGetBlock(pos, isBackground, out var block) && block.data.IsConstructionWall() && block.status != BlockStatus.Platform;
         public static bool IsFurniture(Vector2Int pos, bool isBackground)
             => Map.instance.TryGetBlock(pos, isBackground, out var block) && block.data.IsFurniture();
 
@@ -51,25 +51,7 @@ namespace GameCore
             public bool IsValidConstruction(out EnclosingState enclosingState)
             {
                 enclosingState = IsEnclosedConstruction();
-                return enclosingState == EnclosingState.Passed && IsSizeSuitable();
-            }
-
-            public bool IsSizeSuitable()
-            {
-                if (IsSizeTooLarge())
-                {
-                    Debug.LogError("房间过大");
-                    return false;
-                }
-
-                //检测房间是否过小（空气也会计入方块总数）
-                if (isSizeTooSmall())
-                {
-                    Debug.LogError($"房间过小，只有 {totalSpace}/{minRoomBlockCount} 格空间");
-                    return false;
-                }
-
-                return true;
+                return enclosingState == EnclosingState.Passed;
             }
 
             public bool IsSizeTooLarge() => totalBlockCount >= maxRoomBlockCount;
@@ -89,7 +71,7 @@ namespace GameCore
 
                 //如果检测的是一个固体方块，则直接返回false（应该是检测房间内空气）
                 var blockAtPoint = Map.instance[pos, false];
-                if (blockAtPoint != null && blockAtPoint.data.collidible)
+                if (blockAtPoint != null && blockAtPoint.data.collidible && blockAtPoint.status != BlockStatus.Platform)
                 {
                     Debug.LogError("检测的位置是固体方块");
                     return EnclosingState.DetectedCollidibleBlock;
@@ -100,6 +82,15 @@ namespace GameCore
 
                 EnclosingState enclosingState = EnclosingState.Passed;
                 CheckIfIsEnclosedConstruction(pos.x, pos.y, ref enclosingState);
+
+
+                //检测房间是否过小（空气也会计入方块总数）
+                if (isSizeTooSmall())
+                {
+                    Debug.LogError($"房间过小，只有 {totalSpace}/{minRoomBlockCount} 格空间");
+                    enclosingState = EnclosingState.TooSmall;
+                }
+
                 return enclosingState;
             }
 
@@ -136,7 +127,7 @@ namespace GameCore
 
 
                 //如果此地已经有可碰撞方块了，则该坐标成功了，达到封闭的条件
-                if (wallBlockAtThis != null && wallBlockAtThis.data.collidible)
+                if (wallBlockAtThis != null && wallBlockAtThis.data.collidible && wallBlockAtThis.status != BlockStatus.Platform)
                 {
                     return;
                 }

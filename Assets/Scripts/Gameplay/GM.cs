@@ -31,6 +31,7 @@ namespace GameCore
     public class GM : SingletonClass<GM>
     {
         public BloodParticlePool bloodParticlePool = new();
+        public BlockParticlePool blockParticlePool = new();
         public DamageTextPool damageTextPool = new();
 
         public WeatherParticleSystem weatherParticleSystem { get; protected set; }

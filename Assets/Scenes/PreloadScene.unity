@@ -123,54 +123,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &851538155
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 851538157}
-  - component: {fileID: 851538156}
-  m_Layer: 0
-  m_Name: ScrollingBackground
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &851538156
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 851538155}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7237089d1f3eb448b51b2808e012b2b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  renderers: []
-  scrollSpeed: -7
-  bound: -64
-  defaultPoint: {x: 0, y: 0}
---- !u!4 &851538157
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 851538155}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1906424539
 GameObject:
   m_ObjectHideFlags: 0
@@ -247,6 +199,7 @@ MonoBehaviour:
   inputButtonPrefab: {fileID: 2350845918341032102, guid: 674b25d6537d1a445aa5305b6fbcea8d, type: 3}
   BiomeGuardParticleSystemPrefab: {fileID: 485566635066567655, guid: fba59f987f0e86f43a646fc38f9bb47d, type: 3}
   BloodParticleSystemPrefab: {fileID: 6932245279680308088, guid: 8e91920c3298476478bde70485a58cb3, type: 3}
+  BlockParticleSystemPrefab: {fileID: 6932245279680308088, guid: ea72999260c46b04eaaf87aa218d8a16, type: 3}
   DamageTextPrefab: {fileID: 9112274955252947408, guid: 9f5e9fc64c8b8c948ab7ea33632d232d, type: 3}
   managerAudioPrefab: {fileID: 5908685896901835420, guid: 24942f41183a3454fa5e381481008343, type: 3}
   managerNetworkPrefab: {fileID: 1368055323630927165, guid: 1db77761612ac9d4d9cdfd9a2c490fff, type: 3}
@@ -340,4 +293,3 @@ SceneRoots:
   m_Roots:
   - {fileID: 1906424541}
   - {fileID: 3573521923736553548}
-  - {fileID: 851538157}

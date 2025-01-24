@@ -1857,6 +1857,7 @@ namespace GameCore
             //扳手改变方块形状
             if (TryGetUsingItem(out var usingItem) && usingItem.data.id == ItemID.Wrench && block.data.transformable)
             {
+                GM.instance.blockParticlePool.Get(block);
                 block.ServerChangeStatus(block.status != BlockStatus.InverseLeftStair ? block.status + 1 : 0);
                 return;
             }
@@ -1871,7 +1872,7 @@ namespace GameCore
                         if (Map.instance.TryGetBlock(new(block.pos.x + x, block.pos.y + y), block.isBackground, out var currentBlock) &&
                             currentBlock.data.IsValidForAreaMiningI())
                         {
-                            currentBlock.TakeDamage(excavationStrength);
+                            currentBlock.TakeDamageWithParticle(excavationStrength);
                         }
                     }
                 }
@@ -1906,13 +1907,13 @@ namespace GameCore
 
                 foreach (var currentBlock in blocksFound)
                 {
-                    currentBlock.TakeDamage(excavationStrength);
+                    currentBlock.TakeDamageWithParticle(excavationStrength);
                 }
             }
             //让目标方块扣血
             else
             {
-                block.TakeDamage(excavationStrength);
+                block.TakeDamageWithParticle(excavationStrength);
             }
         }
 
