@@ -1079,24 +1079,14 @@ namespace GameCore.UI
 
     public static class ItemDragger
     {
-        public class ItemDraggerUI
-        {
-            public ImageIdentity image;
-
-            public ItemDraggerUI(ImageIdentity image)
-            {
-                this.image = image;
-            }
-        }
-
-        public class ItemDraggerItem
+        public class DraggedItem
         {
             public Item item;
             public Action<Item> placement;
             public Action cancel;
             public Func<Item, bool> replacementCondition;
 
-            public ItemDraggerItem(Item item, Action<Item> placement, Action cancel, Func<Item, bool> replacementCondition)
+            public DraggedItem(Item item, Action<Item> placement, Action cancel, Func<Item, bool> replacementCondition)
             {
                 this.item = item;
                 this.placement = placement;
@@ -1105,11 +1095,21 @@ namespace GameCore.UI
             }
         }
 
-        public static ItemDraggerItem draggingItem;
+        public class DraggedItemImage
+        {
+            public ImageIdentity image;
 
-        private static ItemDraggerUI uiInstance;
+            public DraggedItemImage(ImageIdentity image)
+            {
+                this.image = image;
+            }
+        }
 
-        public static ItemDraggerUI GetUI()
+        public static DraggedItem draggingItem;
+
+        private static DraggedItemImage uiInstance;
+
+        public static DraggedItemImage GetUI()
         {
             if (uiInstance == null || !uiInstance.image)
             {
@@ -1133,7 +1133,7 @@ namespace GameCore.UI
 
         public static void DragItem(Item item, Vector2 iconSize, Action<Item> placement, Action onCancel, Func<Item, bool> replacementCondition)
         {
-            ItemDraggerUI ui = GetUI();
+            DraggedItemImage ui = GetUI();
 
             /* ------------------------------- 先去掉原本在拖拽的物品 ------------------------------- */
             if (draggingItem != null)
@@ -1171,7 +1171,7 @@ namespace GameCore.UI
 
         public static void CancelDragging()
         {
-            ItemDraggerUI ui = GetUI();
+            DraggedItemImage ui = GetUI();
             ui.image.gameObject.SetActive(false);
 
             if (draggingItem != null)
