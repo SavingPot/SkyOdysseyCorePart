@@ -6,6 +6,7 @@ using UnityEngine;
 using System;
 using DG.Tweening;
 using GameCore.High;
+using Unity.Burst.Intrinsics;
 
 namespace GameCore
 {
@@ -30,8 +31,9 @@ namespace GameCore
             public Action Activate;
             public Action Deactivate;
             public Action Update;
+            public Action OnPlacementOff;
 
-            public PlacementEntry(string id, PanelIdentity panel, ButtonIdentity switchButton, Action Refresh, Action Activate, Action Deactivate, Action Update)
+            public PlacementEntry(string id, PanelIdentity panel, ButtonIdentity switchButton, Action Refresh, Action Activate, Action Deactivate, Action Update, Action OnPlacementOff)
             {
                 this.id = id;
                 this.panel = panel;
@@ -40,6 +42,7 @@ namespace GameCore
                 this.Activate = Activate;
                 this.Deactivate = Deactivate;
                 this.Update = Update;
+                this.OnPlacementOff = OnPlacementOff;
             }
 
             public RectTransform rectTransform => panel.rectTransform;
@@ -51,7 +54,8 @@ namespace GameCore
             Action Refresh = null,
             Action OnActivate = null,
             Action OnDeactivate = null,
-            Action Update = null)
+            Action Update = null,
+            Action OnPlacementOff = null)
         {
             (var modId, var panelName) = Tools.SplitModIdAndName(id);
 
@@ -74,6 +78,11 @@ namespace GameCore
             var switchButton = GameUI.AddButton(UIA.UpperLeft, $"{modId}:button.{panelName}_switch", placementModePanel, switchButtonTexture);
             switchButton.sd = new(80, 80);
             switchButton.SetAPos(switchButton.sd.x / 2, -switchButton.sd.y * (placementEntries.Count + 0.5f));
+            switchButton.button.ClearColorEffects();
+            switchButton.SetOnClickBind(() =>
+            {
+                GAudio.Play(AudioID.SidebarSwitchButton, null);
+            });
             GameObject.Destroy(switchButton.buttonText.gameObject);
 
             /* ---------------------------------- 按钮功能 ---------------------------------- */
@@ -96,13 +105,15 @@ namespace GameCore
                 OnDeactivate?.Invoke();
             });
 
-            PlacementEntry result = new(id, panel, switchButton, Refresh, ActualActivate, ActualDeactivate, Update);
+            PlacementEntry result = new(id, panel, switchButton, Refresh, ActualActivate, ActualDeactivate, Update, OnPlacementOff);
             placementEntries.Add(result);
             return result;
         }
 
         public void SetPlacementEntry(string id)
         {
+            if (id == currentEntryId) return;
+
             //先关闭当前面板
             foreach (var panel in placementEntries)
             {
@@ -144,8 +155,10 @@ namespace GameCore
 
 
 
-        /* ---------------------------------- 建造中心 ---------------------------------- */
-        public PlacementEntry buildingCenterEntry;
+        /* ---------------------------------- 劳工中心 ---------------------------------- */
+        public PlacementEntry laborCenterEntry;
+        public TextIdentity laborCenterTitleText;
+        public TextIdentity laborCenterInfoText;
         readonly LaborHousingFlagPool laborHousingFlagPool = new();
         readonly List<SpriteRenderer> usingLaborHousingFlags = new();
 
@@ -156,6 +169,7 @@ namespace GameCore
 
         /* ---------------------------------- 市场中心 ---------------------------------- */
         public PlacementEntry marketCenterEntry;
+        public TextIdentity marketCenterTitleText;
         public TradeUI tradeUI;
         public ButtonIdentity sellItemButton;
 
@@ -166,11 +180,50 @@ namespace GameCore
 
         /* ---------------------------------- 区域解锁 ---------------------------------- */
         public PlacementEntry regionUnlockingEntry;
+        public TextIdentity regionUnlockingTitleText;
         public (SpriteRenderer sr, TextImageIdentity ti)[] unlockedRegionColorRenderers { get; private set; }
-        internal void FadeRegionUnlockingRenderer(SpriteRenderer sr)
+        internal void SkillRegionUnlockingRendererTweens(SpriteRenderer sr, TextImageIdentity ti)
         {
-            sr.DOFade(0, 0.5f).OnComplete(() => sr.gameObject.SetActive(false));
+            //用于防止动画冲突
+            Tools.KillTweensOf(sr);
+            Tools.KillTweensOf(ti);
+            Tools.KillTweensOf(ti.text.text);
         }
+        internal void FadeInRegionUnlockingRenderer(SpriteRenderer sr, TextImageIdentity ti)
+        {
+            var endAlpha = 1;
+            var duration = 0.5f;
+            SkillRegionUnlockingRendererTweens(sr, ti);
+
+            //初始状态
+            sr.gameObject.SetActive(true);
+            ti.image.gameObject.SetActive(true);
+            sr.color = new(1, 1, 1, 0);
+            ti.image.color = new(1, 1, 1, 0);
+            ti.text.text.color = new(1, 1, 1, 0);
+
+            //淡入
+            sr.DOFade(endAlpha * 0.8f, duration);
+            ti.image.DOFade(endAlpha, duration);
+            ti.text.text.DOFade(endAlpha, duration);
+        }
+        internal void FadeOutRegionUnlockingRenderer(SpriteRenderer sr, TextImageIdentity ti)
+        {
+            var endAlpha = 0;
+            var duration = 0.5f;
+            SkillRegionUnlockingRendererTweens(sr, ti);
+
+            //淡出
+            sr.DOFade(endAlpha, duration).OnComplete(() => sr.gameObject.SetActive(false));
+            ti.image.DOFade(endAlpha, duration).OnComplete(() => ti.image.gameObject.SetActive(false));
+            ti.text.text.DOFade(endAlpha, duration);
+        }
+        internal void FadeOutAllRegionUnlockingRenderers()
+        {
+            foreach (var (sr, ti) in unlockedRegionColorRenderers) FadeOutRegionUnlockingRenderer(sr, ti);
+        }
+
+
         /// <returns> 对应区域是否未解锁且纵深层存在 </returns>
         public static bool IsRegionUnlocked(Vector2Int regionIndex)
         {
@@ -195,14 +248,17 @@ namespace GameCore
                 //TODO: 客户端的世界为空，这里需要进行一些处理
                 if (IsRegionUnlocked(targetIndex))
                 {
-                    sr.color = new(1, 1, 1, 0.8f);
-                    sr.gameObject.SetActive(true);
+                    //更改渲染器位置并设置价格文本
                     sr.transform.position = Region.GetMiddle(targetIndex);
                     ti.SetText(GM.GetRegionUnlockingCost(targetIndex));
+
+                    //淡入
+                    FadeInRegionUnlockingRenderer(sr, ti);
                 }
                 else
                 {
-                    FadeRegionUnlockingRenderer(sr);
+                    //淡出
+                    FadeOutRegionUnlockingRenderer(sr, ti);
                 }
             }
         }
@@ -220,7 +276,7 @@ namespace GameCore
             usingLaborHousingFlags.Clear();
 
             //只在 放置模式-建筑中心 中显示旗帜
-            if (pui.IsInInteractionMode() || currentEntryId != buildingCenterEntry.id)
+            if (pui.IsInInteractionMode() || currentEntryId != laborCenterEntry.id)
                 return;
 
             //TODO: 网络化
@@ -247,9 +303,13 @@ namespace GameCore
             placementModePanel = GameUI.AddPanel("ori:panel.placement_mode").DisableGameObject();
 
             /* ---------------------------------- 建造中心 ---------------------------------- */
-            buildingCenterEntry = GenerateEntry("ori:building_center",
-                "ori:building_center_button",
-                () => RefreshLaborHousingFlags(),
+            laborCenterEntry = GenerateEntry("ori:labor_center",
+                "ori:labor_center_button",
+                () =>
+                {
+                    RefreshLaborHousingFlags();
+                    laborCenterInfoText.SetText($"共有 {GFiles.world.laborData.laborCount} 个劳工（共可居住 {GFiles.world.laborData.registeredHousings.Count} 个劳工）\n每日房租 {GFiles.world.laborData.GetHousingRent()} 金币"); //TODO: Client Logics
+                },
                 null,
                 () => RefreshLaborHousingFlags());
 
@@ -268,20 +328,34 @@ namespace GameCore
                     RefreshRegionUnlockingRenderers();
                     player.playerCameraScale = minCameraScale;
                 },
-                () =>
-                {
-                    //渲染器
-                    foreach (var (sr, _) in unlockedRegionColorRenderers) FadeRegionUnlockingRenderer(sr);
-                });
+                () => FadeOutAllRegionUnlockingRenderers(),
+                null,
+                () => FadeOutAllRegionUnlockingRenderers());
 
 
 
 
 
 
-            #region 建造中心
+            #region 劳工中心
 
-            #region 出租
+            laborCenterTitleText = GameUI.AddText(UIA.UpperLeft, "ori:text.labor_center_title", laborCenterEntry.panel.transform);
+            laborCenterTitleText.SetSizeDeltaY(48);
+            laborCenterTitleText.SetAPos(laborCenterEntry.switchButton.sd.x + laborCenterTitleText.sd.x / 2 + 10, -laborCenterTitleText.sd.y / 2);
+            laborCenterTitleText.text.alignment = TMPro.TextAlignmentOptions.Left;
+            laborCenterTitleText.text.SetFontSize(30);
+            laborCenterTitleText.text.raycastTarget = false;
+
+            laborCenterInfoText = GameUI.AddText(UIA.UpperLeft, "ori:text.labor_center_title", laborCenterEntry.panel.transform);
+            laborCenterInfoText.DisableAutoCompare().SetSizeDeltaY(40);
+            laborCenterInfoText.SetAPosOnBySizeDown(laborCenterTitleText, -10);
+            laborCenterInfoText.text.SetFontSize(16);
+            laborCenterInfoText.text.alignment = TMPro.TextAlignmentOptions.Left;
+            laborCenterInfoText.text.raycastTarget = false;
+
+            #region 宿舍标记
+
+            //类似浮岛物语的按钮，即一个园方形按钮，中间有房子图案，下面写着“劳工宿舍”
 
             #endregion
 
@@ -291,6 +365,13 @@ namespace GameCore
 
 
             #region 市场中心
+
+            marketCenterTitleText = GameUI.AddText(UIA.UpperLeft, "ori:text.market_center_title", marketCenterEntry.panel.transform);
+            marketCenterTitleText.SetSizeDeltaY(48);
+            marketCenterTitleText.SetAPos(marketCenterEntry.switchButton.sd.x + marketCenterTitleText.sd.x / 2 + 10, -marketCenterTitleText.sd.y / 2);
+            marketCenterTitleText.text.alignment = TMPro.TextAlignmentOptions.Left;
+            marketCenterTitleText.text.SetFontSize(30);
+            marketCenterTitleText.text.raycastTarget = false;
 
             tradeUI = TradeUI.GenerateItemView(pui, "ori:placement_trade", new TradeUI.ItemTrade[]
             {
@@ -332,6 +413,14 @@ namespace GameCore
 
 
             #region 区域解锁
+
+            regionUnlockingTitleText = GameUI.AddText(UIA.UpperLeft, "ori:text.region_unlocking_title", regionUnlockingEntry.panel.transform);
+            regionUnlockingTitleText.SetSizeDeltaY(48);
+            regionUnlockingTitleText.SetAPos(regionUnlockingEntry.switchButton.sd.x + regionUnlockingTitleText.sd.x / 2 + 10, -regionUnlockingTitleText.sd.y / 2);
+            regionUnlockingTitleText.text.alignment = TMPro.TextAlignmentOptions.Left;
+            regionUnlockingTitleText.text.SetFontSize(30);
+            regionUnlockingTitleText.text.raycastTarget = false;
+
             unlockedRegionColorRenderers = new (SpriteRenderer, TextImageIdentity)[] {
                 GenerateUnlockedRegionColorRenderers(),
                 GenerateUnlockedRegionColorRenderers(),
@@ -350,17 +439,14 @@ namespace GameCore
                 sr.transform.localScale = new(scale, scale);
                 sr.gameObject.SetActive(false);
 
-                //画布
+                //创建画布
                 var canvas = GameUI.AddWorldSpaceCanvas(sr.transform);
                 canvas.GetComponent<RectTransform>().sizeDelta = Vector3.zero;
                 canvas.sortingOrder = 101;
                 canvas.transform.localScale = new(1 / scale, 1 / scale, 0);
 
-                var textImage = GameUI.AddTextImage(UIA.Middle, $"ori:text_image.unlocked_region_color.{Tools.randomGUID}", "ori:coin", canvas.transform);
-                textImage.SetSizeDeltaBoth(50, 50);
-                textImage.SetTextAttach(TextImageIdentity.TextAttach.Right);
-                textImage.text.doRefresh = false;
-                textImage.SetAPosX(-textImage.sd.x / 2);
+                //添加金币显示
+                var textImage = GameUI.GenerateCoinTextImage(50, canvas.transform);
 
                 return (sr, textImage);
             }

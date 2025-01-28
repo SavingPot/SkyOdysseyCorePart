@@ -203,6 +203,14 @@ namespace GameCore
             //绑定随机更新
             RandomUpdater.Init();
 
+            //TODO: Network-ify
+            //房租
+            GTime.BindTimeEvent(5, true, () =>
+            {
+                InternalUIAdder.instance.SetTitleText($"新的一天，房租 {GFiles.world.laborData.GetHousingRent()}");
+                GAudio.Play(AudioID.Trade, null);
+            });
+
 
             base.Start();
             AfterPreparation();
@@ -302,6 +310,9 @@ namespace GameCore
                 Debug.LogError("世界版本被永久弃用了, 拒绝进入");
                 return;
             }
+
+            //修正世界
+            GFiles.world.Modify();
 
             //检查各个区域
             for (int i = GFiles.world.regionData.Count - 1; i >= 0; i--)

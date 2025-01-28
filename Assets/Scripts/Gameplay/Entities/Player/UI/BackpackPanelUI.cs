@@ -469,7 +469,7 @@ namespace GameCore
 
         public ScrollViewIdentity GenerateItemView(string id, float cellSize, Vector2 viewSize, Vector2 cellSpacing, string backgroundTexture)
         {
-            //桶的物品视图
+            //物品视图
             var itemView = GameUI.AddScrollView(UIA.Middle, id);
             itemView.SetSizeDelta(viewSize);
             itemView.viewportImage.sprite = backgroundTexture == null ? null : ModFactory.CompareTexture(backgroundTexture).sprite;

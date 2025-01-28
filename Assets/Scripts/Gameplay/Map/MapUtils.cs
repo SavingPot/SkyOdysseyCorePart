@@ -73,7 +73,7 @@ namespace GameCore
                 var blockAtPoint = Map.instance[pos, false];
                 if (blockAtPoint != null && blockAtPoint.data.collidible && blockAtPoint.status != BlockStatus.Platform)
                 {
-                    Debug.LogError("检测的位置是固体方块");
+                    Debug.LogWarning("检测的位置是固体方块");
                     return EnclosingState.DetectedCollidibleBlock;
                 }
 
@@ -87,7 +87,7 @@ namespace GameCore
                 //检测房间是否过小（空气也会计入方块总数）
                 if (isSizeTooSmall())
                 {
-                    Debug.LogError($"房间过小，只有 {totalSpace}/{minRoomBlockCount} 格空间");
+                    Debug.LogWarning($"房间过小，只有 {totalSpace}/{minRoomBlockCount} 格空间");
                     enclosingState = EnclosingState.TooSmall;
                 }
 
@@ -166,7 +166,7 @@ namespace GameCore
                 if (!hasEnoughBlockOnX || !hasEnoughBlockOnY)
                 {
                     enclosingState = EnclosingState.WallHoleTooLarge;
-                    Debug.LogError($"房屋缺口过大 ({x}, {y})", Map.instance.GetBlock(point, false)?.gameObject);
+                    Debug.LogWarning($"房屋缺口过大 ({x}, {y})", Map.instance.GetBlock(point, false)?.gameObject);
                     return;
                 }
 

@@ -82,7 +82,7 @@ namespace GameCore
             WorldBasicData basicData = JsonUtils.LoadTypeFromJsonPath<WorldBasicData>(GetBasicDataPath(dirPath));
             List<Region> regionData = JsonUtils.LoadTypeFromJsonPath<List<Region>>(GetRegionDataPath(dirPath));
             List<PlayerSave> playerData = JsonUtils.LoadTypeFromJsonPath<List<PlayerSave>>(GetPlayerDataPath(dirPath));
-            LaborData laborData = JsonUtils.LoadTypeFromJsonPath<LaborData>(GetLaborDataPath(dirPath));
+            LaborData laborData = JsonUtils.LoadTypeFromJsonPath<LaborData>(GetLaborDataPath(dirPath))??new();
 
             return new(basicData, regionData, playerData, laborData);
         }
@@ -102,6 +102,11 @@ namespace GameCore
             this.regionData = regionData;
             this.playerSaves = playerSaves;
             this.laborData = laborData;
+        }
+
+        public void Modify()
+        {
+            laborData.registeredHousings ??= new();
         }
 
         public void AddRegion(Region region)
@@ -192,6 +197,11 @@ namespace GameCore
         public List<LaborHousing> registeredHousings = new();
         public List<LaborWork> executingWorks = new();
         public int laborCount = 0;
+
+        public int GetHousingRent()
+        {
+            return laborCount * 5;
+        }
     }
 
     [Serializable]

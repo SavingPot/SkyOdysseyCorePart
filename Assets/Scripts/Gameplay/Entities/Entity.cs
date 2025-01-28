@@ -406,6 +406,7 @@ namespace GameCore
 
         public virtual void Hide()
         {
+            if (usingCanvas) usingCanvas.enabled = false;
             foreach (var renderer in renderers)
             {
                 renderer.enabled = false;
@@ -414,6 +415,7 @@ namespace GameCore
 
         public virtual void Show()
         {
+            if (usingCanvas) usingCanvas.enabled = true;
             foreach (var renderer in renderers)
             {
                 renderer.enabled = true;
@@ -875,7 +877,10 @@ namespace GameCore
         {
             //? 防止反复死亡
             if (this != null && !isDead)
+            {
+                Hide();
                 ServerDeath(null);
+            }
         }
 
         [ServerRpc]

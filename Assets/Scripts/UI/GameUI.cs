@@ -610,6 +610,29 @@ namespace GameCore.UI
         }
         #endregion
 
+        public static ImageTextButtonIdentity GenerateCoinImageTextButton(float size, Transform parent)
+        {
+            var button = AddImageTextButton(UIA.Middle, $"ori:image_text_button.unlocked_region_color.{Tools.randomGUID}", parent);
+            button.SetSizeDelta(size, size);
+            button.button.image.sprite = ModFactory.CompareTexture("ori:coin").sprite;
+            button.button.buttonText.text.alignment = TextAlignmentOptions.Left;
+            button.button.buttonText.doRefresh = false;
+            button.SetAPosX(-button.sd.x / 2);
+            return button;
+        }
+
+        public static TextImageIdentity GenerateCoinTextImage(float size, Transform parent)
+        {
+            var textImage = AddTextImage(UIA.Middle, $"ori:text_image.unlocked_region_color.{Tools.randomGUID}", "ori:coin", parent);
+            textImage.SetSizeDeltaBoth(size, size);
+            textImage.SetTextAttach(TextImageIdentity.TextAttach.Right);
+            textImage.SetAPosX(-textImage.sd.x / 2);
+            textImage.text.doRefresh = false;
+            textImage.text.text.SetFontSize((int)size / 2);
+            textImage.text.text.margin = Vector4.zero;
+            return textImage;
+        }
+
         //TODO: recomplete it
         public static (ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity, ImageIdentity) GenerateSkinShow(PlayerSkin skin, Transform parent)
         {
@@ -764,6 +787,8 @@ namespace GameCore.UI
 
             var switchButton = AddButton(UIA.Middle, buttonId, switchButtonBackground, switchButtonTexture);
             switchButton.sd = switchButtonBackground.sd;
+            switchButton.button.ClearColorEffects();
+            switchButton.SetOnClickBind(() => GAudio.Play(AudioID.SidebarSwitchButton, null));
             if (destroyButtonText)
                 GameObject.Destroy(switchButton.buttonText.gameObject);
 

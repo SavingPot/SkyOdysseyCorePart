@@ -221,12 +221,12 @@ namespace GameCore
             public Action action;
             internal bool hasNotCalledToday;
 
-            public EventForTime(float time, bool repeat, Action action)
+            public EventForTime(float time, bool repeat, Action action, bool callRightNow = false)
             {
                 this.time = time;
                 this.repeat = repeat;
                 this.action = action;
-                hasNotCalledToday = true;
+                hasNotCalledToday = callRightNow;
             }
         }
 

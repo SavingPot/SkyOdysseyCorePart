@@ -38,15 +38,18 @@ namespace GameCore.UI
             public string head;
             public float waitTime;
             public bool continued;
-            public Dictionary<int, Action> options;
+            public Action[] options;
 
-            public DialogDatum(string text, string head, float waitTime = 0.05f, bool continued = false, Dictionary<int, Action> options = null)
+            public DialogDatum(string text, string head, float waitTime = 0.05f, bool continued = false, Action[] options = null)
             {
                 this.text = text;
                 this.head = head;
                 this.waitTime = waitTime;
                 this.continued = continued;
-                this.options = options ?? new();
+
+                if (options == null) this.options = new Action[0];
+                else if (options.Length > 6) { this.options = new Action[0]; Debug.LogError("选项数量不能超过 6"); }
+                else this.options = options;
             }
         }
     }
@@ -294,26 +297,42 @@ namespace GameCore.UI
                 await UniTask.NextFrame();
 
                 //TODO: OPTIONS COMPLETE
-                if (current.options.Count != 0)
+                if (current.options.Length != 0)
                 {
+                    var keys = new[] { Keyboard.current.digit1Key, Keyboard.current.digit2Key, Keyboard.current.digit3Key, Keyboard.current.digit4Key, Keyboard.current.digit5Key, Keyboard.current.digit6Key };
 
+                    while (true)
+                    {
+                        await UniTask.NextFrame();   //等一帧, 防止连续跳过 (我猜会有这个问题:D)}
+
+                        for (int o = 0; o < current.options.Length; o++)
+                        {
+                            if (keys[o].wasPressedThisFrame)
+                            {
+                                current.options[o]?.Invoke();
+                                Debug.Log(o + 1); //TODO
+                                goto closeCurrentDialogStep;
+                            }
+                        }
+                    }
                 }
-                continue;
+
+                //等待玩家结束对话
+                while (!player.playerController.SkipDialog())
+                    await UniTask.NextFrame();   //等一帧, 防止连续跳过 (我猜会有这个问题:D)
+
+                closeCurrentDialogStep:
+
+                //等一帧防止玩家跳跃或其他操作
+                await UniTask.NextFrame();
+
+                //关闭对话框
+                GameUI.SetPage(null);
+                displayingDialog = null;
+
+                //完成
+                onFinish?.Invoke();
             }
-
-            //等待玩家结束对话
-            while (!player.playerController.SkipDialog())
-                await UniTask.NextFrame();   //等一帧, 防止连续跳过 (我猜会有这个问题:D)
-
-            //等一帧防止玩家跳跃
-            await UniTask.NextFrame();
-
-            //关闭对话框
-            GameUI.SetPage(null);
-            displayingDialog = null;
-
-            //完成
-            onFinish?.Invoke();
         }
 
 

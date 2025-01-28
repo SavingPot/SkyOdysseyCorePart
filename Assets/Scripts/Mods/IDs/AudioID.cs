@@ -45,6 +45,7 @@ namespace GameCore
         public const string ShieldBlock1 = "ori:shield_block_1";
         public const string ShieldBlock2 = "ori:shield_block_2";
         public const string ShieldBlock3 = "ori:shield_block_3";
+        public const string SidebarSwitchButton = "ori:sidebar_switch_button";
         public const string Skirmish0 = "ori:skirmish_0";
         public const string Smother = "ori:smother";
         public const string Swim0 = "ori:swim_0";

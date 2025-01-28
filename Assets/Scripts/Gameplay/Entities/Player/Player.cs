@@ -1001,7 +1001,8 @@ namespace GameCore
                 regionGeneration_region = null;
                 regionGeneration_blockSaves = null;
                 //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
-            };
+            }
+            ;
         }
 
         public Region GetRegionToGenerate(Vector2Int index)
@@ -1359,18 +1360,23 @@ namespace GameCore
                 //切换到放置模式
                 if (willBePlacementMode)
                 {
-                    //如果未设定条目，那么设置条目为建筑中心
+                    //缩小视野
+                    playerCameraScale = 0.35f;
+
+                    //如果未设定条目，那么设置条目为劳工中心
                     if (pui.PlacementMode.currentEntryId.IsNullOrWhitespace())
                     {
-                        pui.PlacementMode.SetPlacementEntry(pui.PlacementMode.buildingCenterEntry.id);
+                        pui.PlacementMode.SetPlacementEntry(pui.PlacementMode.laborCenterEntry.id);
+                    }
+                    else
+                    {
+                        //调用激活事件
+                        pui.PlacementMode.currentEntry.Activate?.Invoke();
                     }
 
                     //取消锁定敌人
                     if (lockOnTarget)
                         CancelLockOnTarget();
-
-                    //缩小视野
-                    playerCameraScale = 0.35f;
 
                     //取消相机跟随
                     Tools.instance.mainCameraController.lookAt = null;
@@ -1380,6 +1386,9 @@ namespace GameCore
                 {
                     //恢复视野
                     playerCameraScale = 1;
+
+                    //调用关闭放置模式事件
+                    pui.PlacementMode.currentEntry?.OnPlacementOff?.Invoke();
 
                     //相机跟随玩家
                     Tools.instance.mainCameraController.lookAt = GetPlayerLookAtTransform();
@@ -1395,8 +1404,8 @@ namespace GameCore
             if (pui.IsInPlacementMode())
             {
                 /* ---------------------------------- 检查房屋 ---------------------------------- */
-                //如果点击左键且没点到UI
-                if ((Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame) && !Tools.IsPointerOverInteractableUI())
+                //如果在劳工中心，且点击左键而没点到UI
+                if (pui.PlacementMode.currentEntry == pui.PlacementMode.laborCenterEntry && (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame) && !Tools.IsPointerOverInteractableUI())
                 {
                     HandleHousingRegistration(Mouse.current.leftButton.wasPressedThisFrame);
                 }
@@ -1436,7 +1445,7 @@ namespace GameCore
                     }
 
                     //ToDO：改为用鼠标点击要解锁的区域
-                    //TODO: 应用上音乐
+                    //TODO: 改为长按，并应用上音乐
                     if (Keyboard.current.upArrowKey.wasPressedThisFrame)
                     {
                         TryUnlockRegion(regionIndex + Vector2Int.up);

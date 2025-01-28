@@ -107,8 +107,14 @@ namespace GameCore
                 List<EntityData> entities = new();
                 foreach (var entity in entitiesSummonable)
                 {
+                    //游荡劳工的特殊生成逻辑
+                    if (entity.id == EntityID.WanderingLabor &&
+                        Tools.Prob100(entity.summon.defaultProbability * (GFiles.world.laborData.registeredHousings.Count * 5 - GFiles.world.laborData.laborCount * 3)))
+                    {
+                        entities.Add(entity);
+                    }
                     //如果 符合几率 没有NotSummonableAttribute特性 时间符合 就添加至预选列表
-                    if (Tools.Prob100(entity.summon.defaultProbability) &&
+                    else if (Tools.Prob100(entity.summon.defaultProbability) &&
                             GTime.IsInTime(GTime.time24Format, entity.summon.timeEarliest, entity.summon.timeLatest))
                     {
                         entities.Add(entity);
