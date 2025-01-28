@@ -1208,7 +1208,7 @@ namespace GameCore.UI
             /* ------------------------------- 如果物品相同 & 数量未满 ———— 合并 ------------------------------- */
             else if (itemToDrag.count < itemToDrag.data.maxCount)
             {
-                //TODO
+                //TODO: 合并有问题
                 //如果可以数量直接添加
                 if (previousItem.count + itemToDrag.count <= itemToDrag.data.maxCount)
                 {
