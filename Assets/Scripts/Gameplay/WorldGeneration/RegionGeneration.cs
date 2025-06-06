@@ -27,12 +27,14 @@ namespace GameCore
 
         public IslandGeneration CreateIsland(Vector2Int centerPoint)
         {
+            //TODO
             IslandGeneration islandGeneration = index.y switch
             {
                 ChallengeRoomGeneration.challengeRoomIndexY => new ChallengeRoomGeneration(this, centerPoint),
-                0 => new SkyIslandGeneration(this, centerPoint),
-                -1 => new MoistZoneGeneration(this, centerPoint),
-                _ => throw new NotImplementedException(),
+                _ => new SkyIslandGeneration(this, centerPoint),
+                //0 => new SkyIslandGeneration(this, centerPoint),
+                //-1 => new MoistZoneGeneration(this, centerPoint),
+                //_ => throw new NotImplementedException(),
             };
             return islandGeneration;
         }
@@ -64,7 +66,7 @@ namespace GameCore
             region.AddPos(BlockID.PortalBase, portalMiddleX + 2, portalMiddleY - 1, false, BlockStatus.Normal, true);
         }
 
-        public void GenerateBoundaries()
+        public void GenerateAllBoundaries()
         {
             //? 为什么是 "<=" 最高点, 而不是 "<" 最高点呢?
             //? 我们假设 min=(-3,-3), max=(3,3)
@@ -85,6 +87,144 @@ namespace GameCore
                         region.AddPos(BlockID.Boundary, x, y, false, BlockStatus.Normal, true);
                     }
                 }
+            }
+        }
+
+        public void GenerateBoundaries()
+        {
+            if (index.x == -Region.maxIndex)
+            {
+                //左下角
+                if (index.y == -Region.maxIndex)
+                {
+                    for (int x = minPoint.x; x <= maxPoint.x; x++)
+                    {
+                        region.RemovePos(x, minPoint.y, false);
+                        region.RemovePos(x, minPoint.y, true);
+
+                        region.AddPos(BlockID.Boundary, x, minPoint.y, false, BlockStatus.Normal, true);
+                    }
+                    for (int y = minPoint.y; y <= maxPoint.y; y++)
+                    {
+                        region.RemovePos(minPoint.x, y, false);
+                        region.RemovePos(minPoint.x, y, true);
+
+                        region.AddPos(BlockID.Boundary, minPoint.x, y, false, BlockStatus.Normal, true);
+                    }
+                }
+                //左上角
+                else if (index.y == Region.maxIndex)
+                {
+                    for (int x = minPoint.x; x <= maxPoint.x; x++)
+                    {
+                        region.RemovePos(x, maxPoint.y, false);
+                        region.RemovePos(x, maxPoint.y, true);
+
+                        region.AddPos(BlockID.Boundary, x, maxPoint.y, false, BlockStatus.Normal, true);
+                    }
+                    for (int y = minPoint.y; y <= maxPoint.y; y++)
+                    {
+                        region.RemovePos(minPoint.x, y, false);
+                        region.RemovePos(minPoint.x, y, true);
+
+                        region.AddPos(BlockID.Boundary, minPoint.x, y, false, BlockStatus.Normal, true);
+                    }
+                }
+                //左边界
+                else
+                {
+                    for (int y = minPoint.y; y <= maxPoint.y; y++)
+                    {
+                        region.RemovePos(minPoint.x, y, false);
+                        region.RemovePos(minPoint.x, y, true);
+
+                        region.AddPos(BlockID.Boundary, minPoint.x, y, false, BlockStatus.Normal, true);
+                    }
+                }
+            }
+            else if (index.x == Region.maxIndex)
+            {
+                //右下角
+                if (index.y == -Region.maxIndex)
+                {
+                    for (int x = minPoint.x; x <= maxPoint.x; x++)
+                    {
+                        region.RemovePos(x, minPoint.y, false);
+                        region.RemovePos(x, minPoint.y, true);
+
+                        region.AddPos(BlockID.Boundary, x, minPoint.y, false, BlockStatus.Normal, true);
+                    }
+                    for (int y = minPoint.y; y <= maxPoint.y; y++)
+                    {
+                        region.RemovePos(maxPoint.x, y, false);
+                        region.RemovePos(maxPoint.x, y, true);
+
+                        region.AddPos(BlockID.Boundary, maxPoint.x, y, false, BlockStatus.Normal, true);
+                    }
+                }
+                //右上角
+                else if (index.y == Region.maxIndex)
+                {
+                    for (int x = minPoint.x; x <= maxPoint.x; x++)
+                    {
+                        region.RemovePos(x, maxPoint.y, false);
+                        region.RemovePos(x, maxPoint.y, true);
+
+                        region.AddPos(BlockID.Boundary, x, maxPoint.y, false, BlockStatus.Normal, true);
+                    }
+                    for (int y = minPoint.y; y <= maxPoint.y; y++)
+                    {
+                        region.RemovePos(maxPoint.x, y, false);
+                        region.RemovePos(maxPoint.x, y, true);
+
+                        region.AddPos(BlockID.Boundary, maxPoint.x, y, false, BlockStatus.Normal, true);
+                    }
+                }
+                //右边界
+                else
+                {
+                    for (int y = minPoint.y; y <= maxPoint.y; y++)
+                    {
+                        region.RemovePos(maxPoint.x, y, false);
+                        region.RemovePos(maxPoint.x, y, true);
+
+                        region.AddPos(BlockID.Boundary, maxPoint.x, y, false, BlockStatus.Normal, true);
+                    }
+                }
+            }
+            else if (index.y == -Region.maxIndex)
+            {
+                //下边界
+                for (int x = minPoint.x; x <= maxPoint.x; x++)
+                {
+                    region.RemovePos(x, minPoint.y, false);
+                    region.RemovePos(x, minPoint.y, true);
+
+                    region.AddPos(BlockID.Boundary, x, minPoint.y, false, BlockStatus.Normal, true);
+                }
+            }
+            else if (index.y == Region.maxIndex)
+            {
+                //上边界
+                for (int x = minPoint.x; x <= maxPoint.x; x++)
+                {
+                    region.RemovePos(x, maxPoint.y, false);
+                    region.RemovePos(x, maxPoint.y, true);
+
+                    region.AddPos(BlockID.Boundary, x, maxPoint.y, false, BlockStatus.Normal, true);
+                }
+            }
+        }
+
+        public void GenerateManor(bool isManor)
+        {
+            region.isManor = isManor;
+
+            if (isManor)
+            {
+                var middleX = Region.GetMiddleX(index);
+
+                region.AddPos(BlockID.Campfire, 0, 5, false, BlockStatus.Normal, true);
             }
         }
 

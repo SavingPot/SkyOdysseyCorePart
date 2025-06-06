@@ -26,7 +26,6 @@ namespace GameCore
         public const string HostileFarmer = "ori:hostile_farmer";
         public const string IceSlime = "ori:ice_slime";
         public const string Katydid = "ori:katydid";
-        public const string WanderingLabor = "ori:wandering_labor";
         public const string Ladder = "ori:ladder";
         public const string Longicorn = "ori:longicorn";
         public const string Maggot = "ori:maggot";

@@ -92,7 +92,9 @@ namespace GameCore.UI
         /*                                     日夜                                     */
         /* -------------------------------------------------------------------------- */
         public ParallaxBackground sunRenderer;
+        public Light2D sunRendererLight;
         public ParallaxBackground moonRenderer;
+        public Light2D moonRendererLight;
 
 
 
@@ -785,9 +787,10 @@ namespace GameCore.UI
                         {
                             parallaxBackgrounds = new();
 
-                            CreateParallaxBackground("ParallaxBackground0", 0.5f, new(0, 12), "ori:world_background_islands", -1, 0.8f);
-                            CreateParallaxBackground("ParallaxBackground1", 0.65f, new(0, 12), "ori:world_background_islands", -2, 0.5f);
-                            CreateParallaxBackground("ParallaxBackground2", 0.8f, new(0, 12), "ori:world_background_islands", -3, 0.2f);
+                            //TODO: 更多好看的滚动背景
+                            //CreateParallaxBackground("ParallaxBackground0", 0.5f, new(0, 12), "ori:world_background_islands", -1, 0.8f);
+                            //CreateParallaxBackground("ParallaxBackground1", 0.65f, new(0, 12), "ori:world_background_islands", -2, 0.5f);
+                            //CreateParallaxBackground("ParallaxBackground2", 0.8f, new(0, 12), "ori:world_background_islands", -3, 0.2f);
                             CreateParallaxBackground("ParallaxBackground4", 0.92f, new(0, -13), "ori:world_background_moist_zone", -4);
                             CreateParallaxBackground("ParallaxBackground5", 0.97f, new(0, -10), "ori:world_background_ocean", -5);
                             CreateParallaxBackground("ParallaxBackground6", 0.98f, new(0, 10), "ori:world_background_clouds1", -7);
@@ -797,10 +800,30 @@ namespace GameCore.UI
                             sunRenderer = UObjectTools.CreateComponent<ParallaxBackground>("SunRenderer");
                             sunRenderer.parallaxFactor = -0.02f;
                             sunRenderer.AddRenderers("ori:sun", 1, -6);
+                            sunRendererLight = GInit.instance.CreateLightPrefab();
+                            sunRendererLight.transform.SetParent(sunRenderer.transform);
+                            sunRendererLight.intensity = 0.04f;
+                            sunRendererLight.pointLightOuterRadius = 50;
+                            sunRendererLight.shadowsEnabled = true;
+                            sunRendererLight.shadowIntensity = 1f;
+                            sunRendererLight.volumetricShadowsEnabled = true;
+                            sunRendererLight.volumeIntensityEnabled = true;
+                            sunRendererLight.volumeIntensity = 1.2f;
+                            sunRendererLight.shadowVolumeIntensity = 0.5f;
 
                             moonRenderer = UObjectTools.CreateComponent<ParallaxBackground>("MoonRenderer");
                             moonRenderer.parallaxFactor = -0.02f;
                             moonRenderer.AddRenderers("ori:moon", 1, -6);
+                            moonRendererLight = GInit.instance.CreateLightPrefab();
+                            moonRendererLight.transform.SetParent(moonRenderer.transform);
+                            moonRendererLight.intensity = 0.04f;
+                            moonRendererLight.pointLightOuterRadius = 50;
+                            moonRendererLight.shadowsEnabled = true;
+                            moonRendererLight.shadowIntensity = 1f;
+                            moonRendererLight.volumetricShadowsEnabled = true;
+                            moonRendererLight.volumeIntensityEnabled = true;
+                            moonRendererLight.volumeIntensity = 1.2f;
+                            moonRendererLight.shadowVolumeIntensity = 0.2f;
 
                             void CreateParallaxBackground(string name, float parallaxFactor, Vector2 positionDelta, string textureId, int sortingOrder, float scaleOfPerObject = 1)
                             {

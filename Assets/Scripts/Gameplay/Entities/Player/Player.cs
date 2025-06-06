@@ -5,7 +5,6 @@ using GameCore.UI;
 using Mirror;
 using Newtonsoft.Json.Linq;
 using Sirenix.OdinInspector;
-using Sirenix.Utilities;
 using SP.Tools.Unity;
 using SP.Tools;
 using System.Collections.Generic;
@@ -615,10 +614,15 @@ namespace GameCore
             //刷新状态栏
             pui?.Update();
 
-            //如果当前区域不存在就生成
-            if (!GM.instance.generatedExistingRegions.Exists(p => p.index == regionIndex))
+            //生成已存在区域
+            for (int x = -1; x <= 1; x++)
             {
-                GenerateExistingRegion(regionIndex);
+                for (int y = -1; y <= 1; y++)
+                {
+                    Vector2Int index = new(regionIndex.x + x, regionIndex.y + y);
+                    if (!GM.instance.generatedExistingRegions.Exists(p => p.index == index))
+                        GenerateExistingRegion(index);
+                }
             }
         }
 
@@ -892,6 +896,9 @@ namespace GameCore
         {
             coin += count;
 
+            //TODO: 鲁棒性(TryGet), 网络化
+            GetLordInWorld().coins = coin;
+
             Debug.Log("ADD COIN " + count);
         }
 
@@ -948,6 +955,12 @@ namespace GameCore
                 Debug.LogError($"不应该使用 {nameof(GenerateRegion)} 方法来生成挑战房间");
                 return;
             }
+            //检查是否序列是否过大
+            else if (Math.Abs(index.x) > Region.maxIndex || Math.Abs(index.y) > Region.maxIndex)
+            {
+                Debug.LogError($"区域序列大于 {Region.maxIndex}，超出范围");
+                return;
+            }
 
             //检查是否正在生成
             if (regionGeneration_blockSaves != null || regionGeneration_region != null || isAskingForGeneratingRegion)
@@ -1002,7 +1015,6 @@ namespace GameCore
                 regionGeneration_blockSaves = null;
                 //下面的参数: 如果是 首次中心生成 就快一点, 否则慢一些防止卡顿
             }
-            ;
         }
 
         public Region GetRegionToGenerate(Vector2Int index)
@@ -1051,6 +1063,13 @@ namespace GameCore
         [ServerRpc]
         private void ServerGenerateRegion(Vector2Int index, bool isFirstGeneration, bool shouldTransportToTheRegion, string specificBiome, NetworkConnection caller = null)
         {
+            //检查是否序列是否过大
+            if (index.y != ChallengeRoomGeneration.challengeRoomIndexY && Math.Abs(index.x) > Region.maxIndex || Math.Abs(index.y) > Region.maxIndex)
+            {
+                Debug.LogError($"区域序列大于 {Region.maxIndex}，超出范围");
+                return;
+            }
+
             Debug.Log($"Player={netId} 请求生成区域 {index}");
 
             MethodAgent.RunThread(() =>
@@ -1128,87 +1147,87 @@ namespace GameCore
 
 
 
-        /// <summary>
-        /// 删除区块的屏障方块，这个方法在服务器调用，作用是在存档中删除，而不是在地图中删除！
-        /// </summary>
-        /// <param name="targetRegionIndex"></param>
-        /// <param name="caller"></param>
-        [ServerRpc]
-        void ServerDestroyRegionBarriers(Vector2Int targetRegionIndex, NetworkConnection caller = null)
-        {
-            StartCoroutine(IEServerDestroyRegionBarriers(targetRegionIndex));
-        }
-        IEnumerator IEServerDestroyRegionBarriers(Vector2Int targetRegionIndex)
-        {
-            //等待目标区域生成
-            yield return new WaitUntil(() => GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex));
+        // /// <summary>
+        // /// 删除区块的屏障方块，这个方法在服务器调用，作用是在存档中删除，而不是在地图中删除！
+        // /// </summary>
+        // /// <param name="targetRegionIndex"></param>
+        // /// <param name="caller"></param>
+        // [ServerRpc]
+        // void ServerDestroyRegionBarriers(Vector2Int targetRegionIndex, NetworkConnection caller = null)
+        // {
+        //     StartCoroutine(IEServerDestroyRegionBarriers(targetRegionIndex));
+        // }
+        // IEnumerator IEServerDestroyRegionBarriers(Vector2Int targetRegionIndex)
+        // {
+        //     //等待目标区域生成
+        //     yield return new WaitUntil(() => GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex));
 
-            //获取原区域
-            var targetRegion = GFiles.world.GetRegion(targetRegionIndex);
+        //     //获取原区域
+        //     var targetRegion = GFiles.world.GetRegion(targetRegionIndex);
 
-            //从存档中删除屏障方块
-            targetRegion.RemoveBarriersBetweenNeighbors();
+        //     //从存档中删除屏障方块
+        //     targetRegion.RemoveBarriersBetweenNeighbors();
 
-            //让客户端删除屏障方块
-            var minPoint = targetRegion.RegionToMapPos(targetRegion.minPoint);
-            var maxPoint = targetRegion.RegionToMapPos(targetRegion.maxPoint);
-            ClientDestroyRegionBarriers(targetRegionIndex, minPoint, maxPoint);
-        }
-        /// <summary>
-        /// 这个方法在客户端调用，作用是在地图中删除方块，而不是在存档中删除！
-        /// </summary>
-        [ClientRpc]
-        void ClientDestroyRegionBarriers(Vector2Int targetRegionIndex, Vector2Int minPoint, Vector2Int maxPoint, NetworkConnection caller = null)
-        {
-            //删除上面的屏障方块
-            if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.up))
-            {
-                int selfY = maxPoint.y;
-                int otherY = maxPoint.y + 1;
+        //     //让客户端删除屏障方块
+        //     var minPoint = targetRegion.RegionToMapPos(targetRegion.minPoint);
+        //     var maxPoint = targetRegion.RegionToMapPos(targetRegion.maxPoint);
+        //     ClientDestroyRegionBarriers(targetRegionIndex, minPoint, maxPoint);
+        // }
+        // /// <summary>
+        // /// 这个方法在客户端调用，作用是在地图中删除方块，而不是在存档中删除！
+        // /// </summary>
+        // [ClientRpc]
+        // void ClientDestroyRegionBarriers(Vector2Int targetRegionIndex, Vector2Int minPoint, Vector2Int maxPoint, NetworkConnection caller = null)
+        // {
+        //     //删除上面的屏障方块
+        //     if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.up))
+        //     {
+        //         int selfY = maxPoint.y;
+        //         int otherY = maxPoint.y + 1;
 
-                for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
-                {
-                    Map.instance.RemoveBlock(new(x, selfY), false, false, true);
-                    Map.instance.RemoveBlock(new(x, otherY), false, false, true);
-                }
-            }
-            //删除下面的屏障方块
-            if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.down))
-            {
-                int selfY = minPoint.y;
-                int otherY = minPoint.y - 1;
+        //         for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
+        //         {
+        //             Map.instance.RemoveBlock(new(x, selfY), false, false, true);
+        //             Map.instance.RemoveBlock(new(x, otherY), false, false, true);
+        //         }
+        //     }
+        //     //删除下面的屏障方块
+        //     if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.down))
+        //     {
+        //         int selfY = minPoint.y;
+        //         int otherY = minPoint.y - 1;
 
-                for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
-                {
-                    Map.instance.RemoveBlock(new(x, otherY), false, false, true);
-                    Map.instance.RemoveBlock(new(x, selfY), false, false, true);
-                }
-            }
-            //删除左边的屏障方块
-            if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.left))
-            {
-                int selfX = minPoint.x;
-                int otherX = minPoint.x - 1;
+        //         for (int x = minPoint.x + 1; x <= maxPoint.x - 1; x++)
+        //         {
+        //             Map.instance.RemoveBlock(new(x, otherY), false, false, true);
+        //             Map.instance.RemoveBlock(new(x, selfY), false, false, true);
+        //         }
+        //     }
+        //     //删除左边的屏障方块
+        //     if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.left))
+        //     {
+        //         int selfX = minPoint.x;
+        //         int otherX = minPoint.x - 1;
 
-                for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
-                {
-                    Map.instance.RemoveBlock(new(otherX, y), false, false, true);
-                    Map.instance.RemoveBlock(new(selfX, y), false, false, true);
-                }
-            }
-            //删除右边的屏障方块
-            if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.right))
-            {
-                int selfX = maxPoint.x;
-                int otherX = maxPoint.x + 1;
+        //         for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
+        //         {
+        //             Map.instance.RemoveBlock(new(otherX, y), false, false, true);
+        //             Map.instance.RemoveBlock(new(selfX, y), false, false, true);
+        //         }
+        //     }
+        //     //删除右边的屏障方块
+        //     if (GM.instance.generatedExistingRegions.Exists(p => p.index == targetRegionIndex + Vector2Int.right))
+        //     {
+        //         int selfX = maxPoint.x;
+        //         int otherX = maxPoint.x + 1;
 
-                for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
-                {
-                    Map.instance.RemoveBlock(new(selfX, y), false, false, true);
-                    Map.instance.RemoveBlock(new(otherX, y), false, false, true);
-                }
-            }
-        }
+        //         for (int y = minPoint.y + 1; y <= maxPoint.y - 1; y++)
+        //         {
+        //             Map.instance.RemoveBlock(new(selfX, y), false, false, true);
+        //             Map.instance.RemoveBlock(new(otherX, y), false, false, true);
+        //         }
+        //     }
+        // }
 
 
 
@@ -1328,6 +1347,21 @@ namespace GameCore
             }
         }
 
+        public static Vector2 GetCursorWorldPos()
+        {
+            return GControls.mode switch
+            {
+                //* 如果是键鼠, 返回鼠标位置
+                ControlMode.KeyboardAndMouse => Tools.instance.GetMouseWorldPos(),
+
+                //* 如果是手柄, 返回虚拟光标位置
+                ControlMode.Gamepad => (Vector2)Tools.instance.mainCamera.ScreenToWorldPoint(VirtualCursor.instance.image.ap),
+
+                //* 如果是触摸屏, 也返回空
+                _ => Vector2.zero,
+            };
+        }
+
         private void UpdateController(ControlMode newMode) => playerController = ControlModeToController(this, newMode);
         public static PlayerController ControlModeToController(Player player, ControlMode mode) => mode switch
         {
@@ -1364,7 +1398,7 @@ namespace GameCore
                     playerCameraScale = 0.35f;
 
                     //如果未设定条目，那么设置条目为劳工中心
-                    if (pui.PlacementMode.currentEntryId.IsNullOrWhitespace())
+                    if (pui.PlacementMode.currentEntryId.IsNullOrWhiteSpace())
                     {
                         pui.PlacementMode.SetPlacementEntry(pui.PlacementMode.laborCenterEntry.id);
                     }
@@ -1403,66 +1437,59 @@ namespace GameCore
             /* -------------------------------------------------------------------------- */
             if (pui.IsInPlacementMode())
             {
-                /* ---------------------------------- 检查房屋 ---------------------------------- */
-                //如果在劳工中心，且点击左键而没点到UI
-                if (pui.PlacementMode.currentEntry == pui.PlacementMode.laborCenterEntry && (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame) && !Tools.IsPointerOverInteractableUI())
-                {
-                    HandleHousingRegistration(Mouse.current.leftButton.wasPressedThisFrame);
-                }
-
                 //移动视野
                 var cameraPos = Tools.instance.mainCamera.transform.position +
-                                (playerController.PlacementModeMove() * Tools.instance.mainCamera.orthographicSize * Time.deltaTime).To3();
+                            (playerController.PlacementModeMove() * Tools.instance.mainCamera.orthographicSize * Time.deltaTime).To3();
                 Tools.instance.mainCamera.transform.position = new(Mathf.Clamp(cameraPos.x, transform.position.x - 400, transform.position.x + 400),
                                                                  Mathf.Clamp(cameraPos.y, transform.position.y - 400, transform.position.y + 400),
                                                                  cameraPos.z);
 
                 //缩放视野大小
-                playerCameraScale = Mathf.Clamp(playerCameraScale + playerController.PlacementModeZoom() * Time.deltaTime * 0.25f, PlacementModeUI.minCameraScale, PlacementModeUI.maxCameraScale);
+                playerCameraScale = Mathf.Clamp(playerCameraScale * (1 + playerController.PlacementModeZoom() * Time.deltaTime * 0.25f), PlacementModeUI.minCameraScale, PlacementModeUI.maxCameraScale);
 
-                //解锁区域
-                if (pui.PlacementMode.regionUnlockingEntry.panel.gameObject.activeInHierarchy)
-                {
-                    void TryUnlockRegion(Vector2Int targetIndex)
-                    {
-                        if (!PlacementModeUI.IsRegionUnlocked(targetIndex))
-                            return;
+                // //解锁区域
+                // if (pui.PlacementMode.regionUnlockingEntry.panel.gameObject.activeInHierarchy)
+                // {
+                //     void TryUnlockRegion(Vector2Int targetIndex)
+                //     {
+                //         if (!PlacementModeUI.IsRegionUnlocked(targetIndex))
+                //             return;
 
-                        var cost = GM.GetRegionUnlockingCost(targetIndex);
+                //         var cost = GM.GetRegionUnlockingCost(targetIndex);
 
-                        if (coin < cost)
-                        {
-                            InternalUIAdder.instance.SetStatusText("金币不足!");
-                            return;
-                        }
+                //         if (coin < cost)
+                //         {
+                //             InternalUIAdder.instance.SetStatusText("金币不足!");
+                //             return;
+                //         }
 
-                        ServerAddCoin(-cost);
-                        ServerAddSkillPoint(1);
+                //         ServerAddCoin(-cost);
+                //         ServerAddSkillPoint(1);
 
-                        GenerateRegion(targetIndex, false);
-                        pui.PlacementMode.RefreshRegionUnlockingRenderers();
-                        ServerDestroyRegionBarriers(targetIndex);
-                    }
+                //         GenerateRegion(targetIndex, false);
+                //         pui.PlacementMode.RefreshRegionUnlockingRenderers();
+                //         ServerDestroyRegionBarriers(targetIndex);
+                //     }
 
-                    //ToDO：改为用鼠标点击要解锁的区域
-                    //TODO: 改为长按，并应用上音乐
-                    if (Keyboard.current.upArrowKey.wasPressedThisFrame)
-                    {
-                        TryUnlockRegion(regionIndex + Vector2Int.up);
-                    }
-                    else if (Keyboard.current.downArrowKey.wasPressedThisFrame)
-                    {
-                        TryUnlockRegion(regionIndex + Vector2Int.down);
-                    }
-                    else if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
-                    {
-                        TryUnlockRegion(regionIndex + Vector2Int.left);
-                    }
-                    else if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
-                    {
-                        TryUnlockRegion(regionIndex + Vector2Int.right);
-                    }
-                }
+                //     //ToDO：改为用鼠标点击要解锁的区域
+                //     //TODO: 改为长按，并应用上音乐
+                //     if (Keyboard.current.upArrowKey.wasPressedThisFrame)
+                //     {
+                //         TryUnlockRegion(regionIndex + Vector2Int.up);
+                //     }
+                //     else if (Keyboard.current.downArrowKey.wasPressedThisFrame)
+                //     {
+                //         TryUnlockRegion(regionIndex + Vector2Int.down);
+                //     }
+                //     else if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
+                //     {
+                //         TryUnlockRegion(regionIndex + Vector2Int.left);
+                //     }
+                //     else if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
+                //     {
+                //         TryUnlockRegion(regionIndex + Vector2Int.right);
+                //     }
+                // }
             }
             /* -------------------------------------------------------------------------- */
             /*                                   互动模式操控                                   */
@@ -1655,7 +1682,10 @@ namespace GameCore
             }
         }
 
-        private void HandleHousingRegistration(bool register)
+        public Lord GetLordInWorld() => GFiles.world.FindLord(playerName);
+        public bool TryGetLordInWorld(out Lord lord) => GFiles.world.TryFindLord(playerName, out lord);
+
+        public void HandleHousingRegistration(bool register)
         {
             var pos = PosConvert.WorldToMapPos(cursorWorldPos);
             var roomCheck = new MapUtils.RoomCheck(pos);
@@ -1663,8 +1693,15 @@ namespace GameCore
             var roomSpacesHash = roomCheck.spacesInConstruction.Select(p => new Vector2Int(p.x, p.y)).ToHashSet();
 
             //TODO: 网络化
+            //寻找 Lord
+            if (!TryGetLordInWorld(out var lord))
+            {
+                Debug.LogError("找不到领主信息");
+                return;
+            }
+
             //检测房间有无交集
-            foreach (var housing in GFiles.world.laborData.registeredHousings)
+            foreach (var housing in lord.laborData.registeredHousings)
             {
                 if (housing.spaces.ToHashSet().Overlaps(roomSpacesHash))
                 {
@@ -1679,7 +1716,7 @@ namespace GameCore
                     else
                     {
                         //从存档中删除
-                        GFiles.world.laborData.registeredHousings.Remove(housing);
+                        lord.laborData.registeredHousings.Remove(housing);
 
                         InternalUIAdder.instance.SetStatusText("该住房已被取消登记");
                         GAudio.Play(AudioID.HouseDetect, null);
@@ -1695,7 +1732,7 @@ namespace GameCore
                 //合适就添加到存档中并刷新旗帜
                 if (roomSuitable)
                 {
-                    GFiles.world.laborData.registeredHousings.Add(new(roomCheck.spacesInConstruction));
+                    lord.laborData.registeredHousings.Add(new(roomCheck.spacesInConstruction));
                     pui.PlacementMode.RefreshLaborHousingFlags();
                 }
 

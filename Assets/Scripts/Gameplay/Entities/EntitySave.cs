@@ -42,7 +42,6 @@ namespace GameCore
     }
 
     [Serializable, EntityBinding(EntityID.Player)]
-    //该类只在 ManagerNetwork 的 AddPlayer 环节中创建
     public sealed class PlayerSave : EntitySave
     {
         public int coin;
@@ -61,6 +60,7 @@ namespace GameCore
         [NonSerialized] public byte[] skinRightLeg;
         [NonSerialized] public byte[] skinLeftFoot;
         [NonSerialized] public byte[] skinRightFoot;
+        public static int defaultCoin = 100;
 
         public void WriteFromPlayer(Player player)
         {
@@ -77,7 +77,7 @@ namespace GameCore
             PlayerSave result = new()
             {
                 id = playerName,
-                coin = 30,
+                coin = defaultCoin,
                 mana = Player.defaultMana,
                 inventory = new(Player.inventorySlotCountConst, null),
                 completedTasks = new(),

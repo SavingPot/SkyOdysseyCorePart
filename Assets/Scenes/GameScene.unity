@@ -15161,11 +15161,6 @@ MonoBehaviour:
   lookAtDelta: {x: 0, y: 0}
   secondLookAt: {fileID: 0}
   shakeLevel: 0
-  topBar: {fileID: 0}
-  bottomBar: {fileID: 0}
-  leftBar: {fileID: 0}
-  rightBar: {fileID: 0}
-  enableFilmic: 0
 --- !u!114 &519420035
 MonoBehaviour:
   m_ObjectHideFlags: 0

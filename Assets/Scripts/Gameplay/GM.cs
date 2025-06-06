@@ -203,11 +203,23 @@ namespace GameCore
             //绑定随机更新
             RandomUpdater.Init();
 
-            //TODO: Network-ify
             //房租
             GTime.BindTimeEvent(5, true, () =>
             {
-                InternalUIAdder.instance.SetTitleText($"新的一天，房租 {GFiles.world.laborData.GetHousingRent()}");
+                if (Server.isServer)
+                {
+                    //为每一个领主结算硬币，包括玩家，这些都由服务器进行
+                    foreach (var lord in GFiles.world.lords)
+                    {
+                        lord.coins += lord.laborData.GetHousingRent();
+                    }
+                }
+
+                //为玩家显示标题
+                if (Player.TryGetLocal(out var player) && player.TryGetLordInWorld(out var playerLord))
+                    InternalUIAdder.instance.SetTitleText($"新的一天，房租 {playerLord.laborData.GetHousingRent()}");
+
+                //金币音效
                 GAudio.Play(AudioID.Trade, null);
             });
 
@@ -219,7 +231,7 @@ namespace GameCore
 
 
 
-        public void SetGlobalVolumeBloomToSunny() => Tools.instance.mainCameraController.SetGlobalVolumeBloom(0.95f, 0.5f);
+        public void SetGlobalVolumeBloomToSunny() => Tools.instance.mainCameraController.SetGlobalVolumeBloom(0.95f, 0.6f);
         public void SetGlobalVolumeBloomToRain() => Tools.instance.mainCameraController.SetGlobalVolumeBloom(0.8f, 2.5f);
 
 
@@ -314,7 +326,7 @@ namespace GameCore
             //修正世界
             GFiles.world.Modify();
 
-            //检查各个区域
+            //检查各个区域是否正常
             for (int i = GFiles.world.regionData.Count - 1; i >= 0; i--)
             {
                 var region = GFiles.world.regionData[i];
@@ -375,11 +387,6 @@ namespace GameCore
             await UniTask.WaitUntil(() => GScene.name == nameShouldBe);
 
             /* -------------------------------------------------------------------------- */
-            /*                                    公布服务器                                   */
-            /* -------------------------------------------------------------------------- */
-            ManagerNetwork.instance.discovery.AdvertiseServer();
-
-            /* -------------------------------------------------------------------------- */
             /*                                   等待加载区域                                   */
             /* -------------------------------------------------------------------------- */
             //到下一个场景了，要重新创建一个遮罩
@@ -399,6 +406,21 @@ namespace GameCore
 
             async void InternalAfterGeneratingExistingRegion(Region region)
             {
+                //生成所有区域
+                for (int x = -Region.maxIndex; x <= Region.maxIndex; x++)
+                {
+                    for (int y = -Region.maxIndex; y <= Region.maxIndex; y++)
+                    {
+                        var index = new Vector2Int(x, y);
+
+                        //如果该区域已经生成
+                        if (!GFiles.world.regionData.Exists(r => r.index == index))
+                        {
+                            instance.GenerateNewRegion(index);
+                        }
+                    }
+                }
+
                 await UniTask.WaitUntil(() => Player.local);
 
                 if (region.index == Player.local.regionIndex)
@@ -408,6 +430,11 @@ namespace GameCore
 
                     GameCallbacks.AfterGeneratingExistingRegion -= InternalAfterGeneratingExistingRegion;
                     callback.Invoke();
+
+                    /* -------------------------------------------------------------------------- */
+                    /*                                    公布服务器                                   */
+                    /* -------------------------------------------------------------------------- */
+                    ManagerNetwork.instance.discovery.AdvertiseServer();
                 }
             }
         }
@@ -936,7 +963,6 @@ namespace GameCore
                 //生成结构
                 islandGeneration.GenerateStructures();
 
-
                 //确定出生点
                 if (centerPoint == Vector2Int.zero)
                 {
@@ -974,6 +1000,17 @@ namespace GameCore
 
             //生成边界
             generation.GenerateBoundaries();
+
+            //决定并生成庄园
+            if (generation.index == Vector2Int.zero)
+            {
+                generation.GenerateManor(true);
+            }
+            else
+            {
+                generation.GenerateManor(Tools.Prob1(Region.possibilityToGenerateManor, generation.random));
+                GFiles.world.CreateLord($"AutoLord_{generation.region.index.x}_{generation.region.index.y}", generation.region.index);
+            }
 
             //生成实体（脚本的绑定）
             IslandGeneration.EntitiesGeneration(generation);

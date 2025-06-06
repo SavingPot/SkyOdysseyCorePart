@@ -133,6 +133,8 @@ namespace GameCore
         public Light2D GetBlockLightPrefab() => blockLightPrefab;
         public Light2D GetLightPrefab() => lightPrefab;
 
+        public Light2D CreateLightPrefab() => Instantiate(GetLightPrefab());
+
 
 
 

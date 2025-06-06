@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -343,6 +344,47 @@ namespace GameCore
         }
 
         /// <summary>
+        /// 传给 Action 的是 cursorWorldPos
+        /// </summary>
+        /// <param name="nextStep"></param>
+        /// <param name="breakWaitingCondition">如果返回 true 则终止等待</param>
+        /// <param name="waitFrameBeforeAction">如果需要一次选择多个点（嵌套ChoosePoint），那么不等待一帧就会同时触发下一个 ChoosePoint，所以此时要设置 waitFrameBeforeAction = true</param>
+        public void ChoosePoint(Action<Vector2> nextStep, Func<bool> breakWaitingCondition = null, bool waitFrameBeforeAction = false)
+        {
+            StartCoroutine(IEChoosePoint(nextStep, breakWaitingCondition, waitFrameBeforeAction));
+        }
+
+        /// <summary>
+        /// 传给 Action 的是 cursorWorldPos
+        /// </summary>
+        /// <param name="nextStep"></param>
+        /// <param name="breakWaitingCondition">如果返回 true 则终止等待</param>
+        /// <param name="waitFrameBeforeAction">如果需要一次选择多个点（嵌套ChoosePoint），那么不等待一帧就会同时触发下一个 ChoosePoint，所以此时要设置 waitFrameBeforeAction = true</param>
+        /// <returns></returns>
+        public IEnumerator IEChoosePoint(Action<Vector2> nextStep, Func<bool> breakWaitingCondition = null, bool waitFrameBeforeAction = false)
+        {
+            while (true)
+            {
+                if (breakWaitingCondition != null && breakWaitingCondition())
+                {
+                    yield break;
+                }
+                else if (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame)
+                {
+                    if (waitFrameBeforeAction)
+                        yield return null;
+
+                    nextStep?.Invoke(Player.GetCursorWorldPos());
+                    yield break;
+                }
+                else
+                {
+                    yield return null;
+                }
+            }
+        }
+
+        /// <summary>
         /// 检查物体是否有指定的 Component, 如果有就添加组件 com (where T : MonoBehaviour)
         /// </summary>
         /// <remarks>Check whether the object has the specified Component. If yes, add the component com to it. (where T : MonoBehaviour)</remarks>
@@ -454,6 +496,22 @@ namespace GameCore
         /// </summary>
         /// <returns></returns>
         public Vector2 GetMouseWorldPos() => mainCamera.ScreenToWorldPoint(GControls.mousePos);
+
+        public static bool Prob1(float probability)
+        {
+            if (probability >= 1)
+                return true;
+
+            return probability >= Random.value;
+        }
+
+        public static bool Prob1(float probability, System.Random random)
+        {
+            if (probability >= 1)
+                return true;
+
+            return probability >= random.NextDouble();
+        }
 
         public static bool Prob100(float probability)
         {

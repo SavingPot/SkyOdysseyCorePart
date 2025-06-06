@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using Cysharp.Threading.Tasks;
+using System.Runtime.InteropServices;
+using Org.BouncyCastle.Asn1.Esf;
 
 namespace GameCore.Network
 {
@@ -249,6 +251,7 @@ namespace GameCore.Network
                     init.entityId = EntityID.Player;
                     init.data = ModFactory.CompareEntity(EntityID.Player);
 
+                    //寻找 PlayerSave
                     PlayerSave playerSaveTemp = null;
                     foreach (var save in GFiles.world.playerSaves)
                     {
@@ -265,6 +268,7 @@ namespace GameCore.Network
                         Debug.LogWarning($"未在存档中匹配到玩家 {nm.playerName} 的数据, 已自动添加");
                     }
 
+                    //设置皮肤
                     playerSaveTemp.skinHead = nm.skinHead;
                     playerSaveTemp.skinBody = nm.skinBody;
                     playerSaveTemp.skinLeftArm = nm.skinLeftArm;
@@ -273,6 +277,56 @@ namespace GameCore.Network
                     playerSaveTemp.skinRightLeg = nm.skinRightLeg;
                     playerSaveTemp.skinLeftFoot = nm.skinLeftFoot;
                     playerSaveTemp.skinRightFoot = nm.skinRightFoot;
+
+                    //添加领主信息
+                    PlayerLord lord = null;
+                    bool lordFound = false;
+                    foreach (var iLord in GFiles.world.lords)
+                    {
+                        if (iLord.id == nm.playerName)
+                        {
+                            //把玩家对应的领主的类型强制转为 PlayerLord (因为存档中同意存储 Lord 而非 PlayerLord)
+                            lord = new(playerSaveTemp);
+                            lord.WriteData(iLord);
+                            lordFound = true;
+                            break;
+                        }
+                    }
+                    if (!lordFound)
+                    {
+                        bool hasHadZeroManor = false;
+                        Vector2Int manorIndex = Vector2Int.zero;
+                        foreach (var lordSave in GFiles.world.lords)
+                        {
+                            if (lordSave.manorIndex == Vector2Int.zero)
+                            {
+                                hasHadZeroManor = true;
+                                break;
+                            }
+                        }
+
+                        if (hasHadZeroManor)
+                        {
+                            foreach (var regionDatum in GFiles.world.regionData)
+                            {
+                                if (regionDatum.isManor)
+                                {
+                                    manorIndex = regionDatum.index;
+                                    goto complete;
+                                }
+                            }
+
+                            Debug.LogWarning($"严重错误！！！未在存档中匹配到玩家 {nm.playerName} 的领主信息, 但地图上没有多余庄园了！");
+                            conn.Disconnect();
+                            return;
+                        }
+
+                    complete:
+                        lord = new(playerSaveTemp);
+                        lord.WriteData(nm.playerName, manorIndex, null, playerSaveTemp.coin, new());
+                        GFiles.world.CreateLord(lord);
+                        Debug.LogWarning($"未在存档中匹配到玩家 {nm.playerName} 的领主信息, 已自动添加");
+                    }
 
                     init.save = playerSaveTemp;
 

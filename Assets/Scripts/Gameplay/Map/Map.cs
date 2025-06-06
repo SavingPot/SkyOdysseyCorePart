@@ -44,7 +44,7 @@ namespace GameCore
         protected override void Awake()
         {
             base.Awake();
-
+            
             blockPoolTrans = new GameObject("Block Pool").transform;
             blockPoolTrans.SetParent(transform);
             blockPoolTrans.gameObject.SetActive(false);
@@ -282,20 +282,6 @@ namespace GameCore
                 {
                     block?.OnUpdate();
                 }
-            }
-        }
-
-        public void GenerateStructure(StructureData structure, Vector2Int anchorPos)
-        {
-            //放置方块
-            foreach (var structBlock in structure.fixedBlocks)
-            {
-                var blockPos = anchorPos + structBlock.offset;
-
-                if (structBlock.blockId.IsNullOrEmpty())
-                    GetBlock(blockPos, structBlock.isBackground)?.DestroySelf();
-                else
-                    SetBlockNet(blockPos, structBlock.isBackground, structBlock.status, structBlock.blockId, null);
             }
         }
 

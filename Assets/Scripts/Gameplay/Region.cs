@@ -22,12 +22,15 @@ namespace GameCore
         public Vector2Int maxPoint;
         public Vector2Int minPoint;
         public bool generatedAlready;
+        public bool isManor;
 
         public Region ShallowCopy()
         {
             return (Region)MemberwiseClone();
         }
 
+        public const int maxIndex = 1;
+        public const float possibilityToGenerateManor = 0.5f;
         //单数!
         public const int chunkCount = 6 + 1;
         public const float chunkCountReciprocal = 1f / chunkCount;

@@ -107,14 +107,8 @@ namespace GameCore
                 List<EntityData> entities = new();
                 foreach (var entity in entitiesSummonable)
                 {
-                    //游荡劳工的特殊生成逻辑
-                    if (entity.id == EntityID.WanderingLabor &&
-                        Tools.Prob100(entity.summon.defaultProbability * (GFiles.world.laborData.registeredHousings.Count * 5 - GFiles.world.laborData.laborCount * 3)))
-                    {
-                        entities.Add(entity);
-                    }
                     //如果 符合几率 没有NotSummonableAttribute特性 时间符合 就添加至预选列表
-                    else if (Tools.Prob100(entity.summon.defaultProbability) &&
+                    if (Tools.Prob100(entity.summon.defaultProbability) &&
                             GTime.IsInTime(GTime.time24Format, entity.summon.timeEarliest, entity.summon.timeLatest))
                     {
                         entities.Add(entity);
@@ -143,7 +137,7 @@ namespace GameCore
             #endregion
 
             #region 环境音效
-            Bind("ori:ambient_audio", 6, () =>
+            Bind("ori:ambient_audio", 10, () =>
             {
                 List<AudioData> audios = new();
                 Array.ForEach(ModFactory.mods, m => m.audios.ForEach(a =>

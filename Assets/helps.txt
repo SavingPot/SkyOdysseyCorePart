@@ -3,6 +3,7 @@
 
 优化方法：少用 List 多用 Array，可以试着用 Queue 和 Stack，HashSet Dictionary HashTable 是一家
 
+问题：Render Pipeline error : the XR layout still contains active passes. Executing XRSystem.EndLayout() right now. 说明调用了AddComponent<Light2D>, 添加光源必须用预制体
 
 ------- 让物体随机晃动的好解决方案 -------
 float motionDiameter;

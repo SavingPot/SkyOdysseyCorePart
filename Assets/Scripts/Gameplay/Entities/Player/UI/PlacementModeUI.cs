@@ -7,6 +7,8 @@ using System;
 using DG.Tweening;
 using GameCore.High;
 using Unity.Burst.Intrinsics;
+using UnityEngine.InputSystem;
+using System.Collections;
 
 namespace GameCore
 {
@@ -21,6 +23,7 @@ namespace GameCore
         public List<PlacementEntry> placementEntries = new();
         public PlacementEntry currentEntry = null;
         public string currentEntryId = string.Empty;
+        public Func<bool> NotInLaborCenter;
 
         public class PlacementEntry : IRectTransform
         {
@@ -159,6 +162,11 @@ namespace GameCore
         public PlacementEntry laborCenterEntry;
         public TextIdentity laborCenterTitleText;
         public TextIdentity laborCenterInfoText;
+        public ButtonIdentity laborEmployButton;
+        public ButtonIdentity laborHousingCheckButton;
+        public ButtonIdentity laborExcavationButton;
+        public ButtonIdentity laborBuildingButton;
+        public ButtonIdentity laborStrategyBuildingButton;
         readonly LaborHousingFlagPool laborHousingFlagPool = new();
         readonly List<SpriteRenderer> usingLaborHousingFlags = new();
 
@@ -279,9 +287,15 @@ namespace GameCore
             if (pui.IsInInteractionMode() || currentEntryId != laborCenterEntry.id)
                 return;
 
+            if (!player.TryGetLordInWorld(out var lord))
+            {
+                Debug.LogError("找不到领主信息");
+                return;
+            }
+
             //TODO: 网络化
             //显示住房标记
-            foreach (var housing in GFiles.world.laborData.registeredHousings)
+            foreach (var housing in lord.laborData.registeredHousings)
             {
                 //只显示玩家距离500格以内的住房标记
                 var flagPos = housing.spaces[0];
@@ -297,6 +311,15 @@ namespace GameCore
 
         internal PlacementModeUI(PlayerUI pui) : base(pui)
         {
+            NotInLaborCenter = () => pui.PlacementMode.currentEntry != pui.PlacementMode.laborCenterEntry || !pui.IsInPlacementMode();
+
+            //寻找领主信息
+            if (!player.TryGetLordInWorld(out var lord))
+            {
+                Debug.LogError("找不到领主信息");
+                return;
+            }
+
             /* -------------------------------------------------------------------------- */
             /*                                    放置模式                                    */
             /* -------------------------------------------------------------------------- */
@@ -308,7 +331,7 @@ namespace GameCore
                 () =>
                 {
                     RefreshLaborHousingFlags();
-                    laborCenterInfoText.SetText($"共有 {GFiles.world.laborData.laborCount} 个劳工（共可居住 {GFiles.world.laborData.registeredHousings.Count} 个劳工）\n每日房租 {GFiles.world.laborData.GetHousingRent()} 金币"); //TODO: Client Logics
+                    laborCenterInfoText.SetText($"共有 {lord.laborData.laborCount} 个劳工（共可居住 {lord.laborData.registeredHousings.Count} 个劳工）\n每日房租 {lord.laborData.GetHousingRent()} 金币"); //TODO: Client Logics
                 },
                 null,
                 () => RefreshLaborHousingFlags());
@@ -353,10 +376,177 @@ namespace GameCore
             laborCenterInfoText.text.alignment = TMPro.TextAlignmentOptions.Left;
             laborCenterInfoText.text.raycastTarget = false;
 
+            #region 招募劳工
+
+            #endregion
+            laborEmployButton = GameUI.AddButton(UIA.UpperLeft, "ori:button.labor_center_employ", laborCenterEntry.panel.transform);
+            laborEmployButton.SetAPosOnBySizeDown(laborCenterInfoText, 10);
+            laborEmployButton.buttonText.DisableAutoCompare().SetText("招募劳工：10 金币"); //TODO：把 文字“金币” 改成 图标金币
+            laborEmployButton.OnClickBind(() =>
+            {
+                //TODO:网络化
+                Debug.Log(lord.coins);
+                if (lord.coins < 10)
+                {
+                    InternalUIAdder.instance.SetStatusText("金币不足 10");
+                }
+                else
+                {
+                    lord.laborData.laborCount++;
+                    lord.coins -= 10;
+                    lord.ApplyLordDataBack();
+                    laborCenterEntry.Refresh();
+                }
+            });
+
+
             #region 宿舍标记
 
-            //类似浮岛物语的按钮，即一个园方形按钮，中间有房子图案，下面写着“劳工宿舍”
+            //TODO: 类似浮岛物语的按钮，即一个园方形按钮，中间有房子图案，下面写着“劳工宿舍”
+            laborHousingCheckButton = GameUI.AddButton(UIA.UpperLeft, "ori:button.labor_center_housing_check", laborCenterEntry.panel.transform);
+            laborHousingCheckButton.SetAPosOnBySizeDown(laborEmployButton, 10);
+            laborHousingCheckButton.OnClickBind(() =>
+            {
+                //TODO: 让玩家知道自己在选择
+                //如果在劳工中心，且点击左键而没点到UI
+                Tools.instance.ChoosePoint(_ =>
+                {
+                    if (!Tools.IsPointerOverInteractableUI())
+                    {
+                        player.HandleHousingRegistration(Mouse.current.leftButton.wasPressedThisFrame);
+                    }
+                    else
+                    {
+                        Debug.Log("取消了");
+                        //TODO: 提示玩家失败了
+                    }
+                }, NotInLaborCenter);
+            });
 
+
+            // if (pui.PlacementMode.currentEntry == pui.PlacementMode.laborCenterEntry && (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame) && !Tools.IsPointerOverInteractableUI())
+            // {
+            //     HandleHousingRegistration(Mouse.current.leftButton.wasPressedThisFrame);
+            // }
+
+            #endregion
+
+            #region 挖掘
+
+            laborExcavationButton = GameUI.AddButton(UIA.UpperLeft, "ori:button.labor_center_excavation", laborCenterEntry.panel.transform);
+            laborExcavationButton.SetAPosOnBySizeDown(laborHousingCheckButton, 10);
+            laborExcavationButton.OnClickBind(() =>
+            {
+                //检查劳工数
+                if (lord.laborData.laborCount <= 0)
+                {
+                    InternalUIAdder.instance.SetStatusText("需要至少一个劳工");
+                    return;
+                }
+
+                //TODO：目前只有矩形模式
+                //TODO:网络化
+                //TODO: 花费
+                //TODO:显示出红色半透明矩形框
+                Tools.instance.ChoosePoint(pos1 => Tools.instance.ChoosePoint(pos2 =>
+                {
+                    //放置方块
+                    //TODO: 花费（在模板里设置）
+                    //TODO: 需要提供的材料（在模板里设置，可在市场购买）
+                    //TODO: 分配劳工个数（LaborTask, 先直接用一个 Slider，先不加Panel）
+                    var placeBlockSteps = new List<LaborPlaceBlockWorkStep>();
+                    var work = new LaborWork(placeBlockSteps, lord.laborData.laborCount);
+                    lord.laborData.executingWorks.Add(work);
+
+                    var mp1 = PosConvert.WorldToMapPos(pos1);
+                    var mp2 = PosConvert.WorldToMapPos(pos2);
+
+                    var minX = Mathf.Min(mp1.x, mp2.x);
+                    var maxX = Mathf.Max(mp1.x, mp2.x);
+                    var minY = Mathf.Min(mp1.y, mp2.y);
+                    var maxY = Mathf.Max(mp1.y, mp2.y);
+
+                    //遍历每一个方块，创建放置任务
+                    for (int x = minX; x <= maxX; x++)
+                    {
+                        for (int y = minY; y <= maxY; y++)
+                        {
+                            placeBlockSteps.Add(new(work, new(x, y), false, null, BlockStatus.Normal));
+                        }
+                    }
+
+                    //开始放置任务
+                    work.Begin();
+                }, NotInLaborCenter), NotInLaborCenter, true);
+            });
+
+            #endregion
+
+            #region 建造（根据模板） //TODO:加上玩家自定义模板的功能
+
+            laborBuildingButton = GameUI.AddButton(UIA.UpperLeft, "ori:button.labor_center_building", laborCenterEntry.panel.transform);
+            laborBuildingButton.SetAPosOnBySizeDown(laborExcavationButton, 10);
+            laborBuildingButton.OnClickBind(() =>
+            {
+                //检查劳工数
+                if (lord.laborData.laborCount <= 0)
+                {
+                    InternalUIAdder.instance.SetStatusText("需要至少一个劳工");
+                    return;
+                }
+
+                //TODO:网络化
+                //TODO：把Debugger的代码搬过来
+                Tools.instance.ChoosePoint(pos =>
+                {
+                    var structure = ModFactory.CompareStructure(StructureID.UndergroundRelics);
+                    var anchor = PosConvert.WorldToMapPos(pos);
+
+                    //放置方块
+                    //TODO: 花费（在模板里设置）
+                    //TODO: 需要提供的材料（在模板里设置，可在市场购买）
+                    //TODO: 分配劳工个数（LaborTask, 先直接用一个 Slider，先不加Panel）
+                    var placeBlockSteps = new List<LaborPlaceBlockWorkStep>();
+                    var work = new LaborWork(placeBlockSteps, lord.laborData.laborCount);
+                    lord.laborData.executingWorks.Add(work);
+
+                    //遍历每一个方块，创建放置任务
+                    foreach (var structBlock in structure.fixedBlocks)
+                    {
+                        var blockPos = anchor + structBlock.offset;
+                        var blockToDestroy = Map.instance.GetBlock(blockPos, structBlock.isBackground);
+                        placeBlockSteps.Add(new(work, blockPos, structBlock.isBackground, structBlock.blockId, structBlock.status));
+                    }
+
+                    //开始放置任务
+                    work.Begin();
+                }, NotInLaborCenter);
+            });
+
+            #endregion
+
+            #region 战略建造（瞬间生成，直接生成，无需使用 executingWorks）
+            laborStrategyBuildingButton = GameUI.AddButton(UIA.UpperLeft, "ori:button.labor_center_strategy_building", laborCenterEntry.panel.transform);
+            laborStrategyBuildingButton.SetAPosOnBySizeDown(laborBuildingButton, 10);
+            laborStrategyBuildingButton.OnClickBind(() =>
+            {
+                //检查劳工数
+                if (lord.laborData.laborCount <= 0)
+                {
+                    InternalUIAdder.instance.SetStatusText("需要至少一个劳工");
+                    return;
+                }
+
+
+                //TODO:网络化
+                //TODO: 花费（在模板里设置）
+                Tools.instance.ChoosePoint(pos =>
+                {
+                    var structure = ModFactory.CompareStructure(StructureID.UndergroundRelics);
+                    var anchor = PosConvert.WorldToMapPos(pos);
+                    StructureUtils.GenerateStructure(structure, anchor);
+                }, NotInLaborCenter);
+            });
             #endregion
 
             #endregion
